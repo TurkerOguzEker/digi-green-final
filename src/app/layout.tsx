@@ -7,7 +7,12 @@ export const metadata = {
   description: 'Vatandaş Odaklı Yerel Yeşil Gelecek için Dijital Dönüşüm - Erasmus+ Projesi',
 }
 
-export default function RootLayout({ children }) {
+// HATA BURADAYDI: children'a tür ekledik ({ children: React.ReactNode })
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode
+}) {
   return (
     <html lang="tr">
       <head>
