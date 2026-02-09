@@ -5,7 +5,6 @@ import { usePathname } from 'next/navigation';
 import { supabase } from '../lib/supabase';
 
 export default function Header() {
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const pathname = usePathname();
   const [content, setContent] = useState({});
 
@@ -21,6 +20,14 @@ export default function Header() {
     fetchData();
   }, []);
 
+  const navItems = [
+    { name: 'Ana Sayfa', path: '/' },
+    { name: 'Hakkında', path: '/about' },
+    { name: 'Ortaklar', path: '/partners' },
+    { name: 'Çıktılar', path: '/results' },
+    { name: 'Haberler', path: '/news' },
+  ];
+
   return (
     <header className="site-header">
         <div className="container header-container">
@@ -29,30 +36,28 @@ export default function Header() {
                     {content.header_logo_text || 'DIGI-GREEN'} <span className="highlight-green">{content.header_logo_highlight || 'FUTURE'}</span>
                 </span>
             </Link>
+          
+<nav className="main-nav">
+    <ul className="nav-list">
+        {navItems.map((item) => (
+            <li key={item.path}>
+                <Link href={item.path} className={pathname === item.path ? 'active-nav-link' : ''} 
+                      style={{padding:'8px 15px', borderRadius:'5px', transition:'0.3s'}}>
+                    {item.name}
+                </Link>
+            </li>
+        ))}
+        {/* İletişim butonu artık diğerleriyle aynı yapıda */}
+        <li>
+            <Link href="/contact" className={pathname === '/contact' ? 'active-nav-link' : ''}
+                  style={{padding:'8px 15px', borderRadius:'5px', transition:'0.3s'}}>
+                İletişim
+            </Link>
+        </li>
+    </ul>
+</nav>
 
-            <nav className={`main-nav ${mobileMenuOpen ? 'active' : ''}`}>
-                <ul className="nav-list">
-                    <li><Link href="/" className={pathname === '/' ? 'active' : ''}>Ana Sayfa</Link></li>
-                    <li><Link href="/about" className={pathname === '/about' ? 'active' : ''}>Hakkında</Link></li>
-                    <li><Link href="/partners" className={pathname === '/partners' ? 'active' : ''}>Ortaklar</Link></li>
-                    <li><Link href="/results" className={pathname === '/results' ? 'active' : ''}>Çıktılar</Link></li>
-                    <li><Link href="/news" className={pathname === '/news' ? 'active' : ''}>Haberler</Link></li>
-                    <li><Link href="/contact" className="btn-nav">İletişim</Link></li>
-                </ul>
-            </nav>
-            
-            <div className="mobile-menu-toggle" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
-                <i className={`fas ${mobileMenuOpen ? 'fa-times' : 'fa-bars'}`}></i>
-            </div>
         </div>
-        
-        <style jsx>{`
-            @media (max-width: 768px) {
-                .main-nav { display: ${mobileMenuOpen ? 'block' : 'none'}; position: absolute; top: 80px; left: 0; width: 100%; background: white; padding: 20px; box-shadow: 0 10px 20px rgba(0,0,0,0.1); border-top: 1px solid #eee; }
-                .nav-list { flex-direction: column; gap: 15px; }
-                .btn-nav { display: inline-block; text-align: center; }
-            }
-        `}</style>
     </header>
   );
 }

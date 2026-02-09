@@ -13,8 +13,7 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    // suppressHydrationWarning: Tarayıcı eklentilerinin HTML'e müdahale etmesinden 
-    // kaynaklanan hydration hatalarını engellemek için eklendi.
+    // 1. suppressHydrationWarning buraya eklendi (HTML seviyesi eklentiler için)
     <html lang="tr" suppressHydrationWarning>
       <head>
         {/* Google Fonts ve Font Awesome */}
@@ -23,7 +22,8 @@ export default function RootLayout({
         {/* Proje CSS dosyası */}
         <link rel="stylesheet" href="/assets/css/main.css" />
       </head>
-      <body>
+      {/* 2. suppressHydrationWarning buraya da eklendi (Body seviyesi eklentiler için - Örn: Grammarly) */}
+      <body suppressHydrationWarning>
         <Header />
         <main style={{ minHeight: '80vh' }}>
             {children}

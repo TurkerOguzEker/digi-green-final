@@ -59,7 +59,42 @@ export default function AboutPage() {
               </div>
           </div>
       </section>
+        
 
+
+
+<div style={{
+    maxWidth: '900px',           // Genişliği sınırladık (çok yayılmasın diye)
+    margin: '0 auto 40px auto',  // Kutuyu sayfanın tam ortasına getirir
+    background: '#f8f9fa',
+    padding: '30px',
+    borderRadius: '15px',
+    border: '1px solid #eee'
+}}>
+    <h3 style={{ 
+        color: '#003399', 
+        marginBottom: '20px', 
+        textAlign: 'center'      // Başlığı ortalar
+    }}>
+        Proje Künyesi
+    </h3>
+    <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+        <tbody>
+            {[
+                { label: 'Proje Adı', key: 'about_project_name' },
+                { label: 'Proje Kısaltması', key: 'about_project_code' },
+                { label: 'Program', key: 'about_project_program' },
+                { label: 'Süresi', key: 'about_project_duration' },
+                { label: 'Toplam Bütçe', key: 'about_project_budget' }
+            ].map((item, index) => (
+                <tr key={index} style={{ borderBottom: '1px solid #dee2e6' }}>
+                    <td style={{ padding: '12px', fontWeight: 'bold', width: '30%', verticalAlign: 'top' }}>{item.label}</td>
+                    <td style={{ padding: '12px' }}>{content[item.key] || '...'}</td>
+                </tr>
+            ))}
+        </tbody>
+    </table>
+</div>
       {/* --- HEDEF KİTLE (Kısmen Dinamik) --- */}
       <section className="section-padding bg-light">
           <div className="container">
