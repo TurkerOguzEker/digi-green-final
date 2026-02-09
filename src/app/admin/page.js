@@ -175,26 +175,32 @@ export default function AdminPage() {
                 </div>
             )}
 
-            {/* --- HAKKINDA SAYFASI DÜZENLEME --- */}
+             {/* --- HAKKINDA --- */}
+             {activeTab === 'about' && (
+                <div>
+                    <h2 style={{marginBottom:'20px', color:'#003399'}}>Hakkında Sayfası Düzenle</h2>
+                    
+                    <h4 style={{marginBottom:'10px', borderBottom:'1px solid #ddd'}}>1. Proje Künyesi</h4>
+                    <SettingInput label="Proje Adı" settingKey="about_project_name" />
+                    <SettingInput label="Proje Kısaltması" settingKey="about_project_code" />
+                    <SettingInput label="Program" settingKey="about_project_program" />
+                    <SettingInput label="Süresi" settingKey="about_project_duration" />
+                    <SettingInput label="Toplam Bütçe" settingKey="about_project_budget" />
 
+                    <h4 style={{margin:'30px 0 10px', borderBottom:'1px solid #ddd'}}>2. Strateji ve Vizyon</h4>
+                    <SettingInput label="Vizyon Başlığı" settingKey="about_vision_title" />
+                    <SettingInput label="Vizyon Metni" settingKey="about_vision_text" type="textarea" />
 
-{activeTab === 'about' && (
-    <div>
-        <h2 style={{ marginBottom: '20px', color: '#003399' }}>Hakkında Sayfası Düzenle</h2>
-        
-        <h4 style={{ marginBottom: '10px', borderBottom: '1px solid #ddd' }}>1. Proje Künyesi</h4>
-        <SettingInput label="Proje Adı" settingKey="about_project_name" />
-        <SettingInput label="Proje Kısaltması" settingKey="about_project_code" />
-        <SettingInput label="Program" settingKey="about_project_program" />
-        <SettingInput label="Süresi" settingKey="about_project_duration" />
-        <SettingInput label="Toplam Bütçe" settingKey="about_project_budget" />
+                    <h4 style={{margin:'30px 0 10px', borderBottom:'1px solid #ddd'}}>3. Etki ve Sürdürülebilirlik</h4>
+                    <SettingInput label="Etki Başlığı" settingKey="about_impact_title" />
+                    <SettingInput label="Etki Metni" settingKey="about_impact_text" type="textarea" />
 
-        <h4 style={{ margin: '30px 0 10px', borderBottom: '1px solid #ddd' }}>2. İçerik ve Vizyon</h4>
-        <SettingInput label="Sayfa Başlığı" settingKey="about_page_title" />
-        <SettingInput label="Vizyon Metni" settingKey="about_vision_text" type="textarea" />
-        <SettingInput label="Hedef Kitle Başlığı" settingKey="about_target_title" />
-    </div>
-)}
+                    {/* YENİ EKLENEN KISIM: PROJE PLANI */}
+                    <h4 style={{margin:'30px 0 10px', borderBottom:'1px solid #ddd'}}>4. Proje Planı</h4>
+                    <SettingInput label="Plan Başlığı" settingKey="about_plan_title" />
+                    <SettingInput label="Plan Alt Başlığı" settingKey="about_plan_text" type="textarea" />
+                </div>
+            )}
 
             {/* --- HABERLER --- */}
             {activeTab === 'news' && (
@@ -249,6 +255,7 @@ export default function AdminPage() {
                      <div style={{background:'white', padding:'20px', borderRadius:'8px', marginBottom:'20px', border:'1px solid #ddd'}}>
                         <form onSubmit={(e) => saveItem(e, 'results', resultForm, setResultForm)} style={{display:'grid', gap:'10px'}}>
                             <input className="form-control" placeholder="Dosya Başlığı" value={resultForm.title} onChange={e=>setResultForm({...resultForm, title:e.target.value})} required />
+                            <textarea className="form-control" placeholder="Açıklama" value={resultForm.description} onChange={e=>setResultForm({...resultForm, description:e.target.value})}></textarea>
                             <FileInput value={resultForm.link} onChange={(url) => setResultForm({...resultForm, link: url})} placeholder="Dosya Seç (PDF/Doc)" />
                             <button type="submit" className="btn btn-primary">Dosya Ekle</button>
                         </form>

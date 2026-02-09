@@ -1,39 +1,159 @@
-@import "tailwindcss";
+/* ... Önceki kodlarınızın altına ekleyin ... */
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+/* DROPDOWN MENU STİLLERİ */
+.nav-item-with-dropdown {
+    position: relative; /* Alt menü buna göre konumlanacak */
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+/* Gizli Menü Kutusu */
+.dropdown-menu {
+    display: none; /* Başlangıçta gizli */
+    position: absolute;
+    top: 100%; /* Linkin hemen altında */
+    left: 0;
+    background: white;
+    min-width: 250px; /* Genişlik */
+    box-shadow: 0 8px 16px rgba(0,0,0,0.15);
+    border-radius: 8px;
+    z-index: 1000;
+    padding: 10px 0;
+    list-style: none;
+    border-top: 4px solid #003399; /* Üstte şık bir çizgi */
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+/* Hover olunca göster */
+.nav-item-with-dropdown:hover .dropdown-menu {
+    display: block;
+    animation: fadeIn 0.3s ease;
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+/* Dropdown Linkleri */
+.dropdown-menu li a {
+    display: block;
+    padding: 10px 20px;
+    color: #333;
+    text-decoration: none;
+    font-size: 0.9rem;
+    transition: 0.2s;
+    border-bottom: 1px solid #f0f0f0;
 }
-.social-btn {
-    width: 35px;
-    height: 35px;
-    border-radius: 50%;
-    background: #003399;
-    color: white !important;
+
+.dropdown-menu li:last-child a {
+    border-bottom: none;
+}
+
+.dropdown-menu li a:hover {
+    background-color: #f8f9fa;
+    color: #003399;
+    padding-left: 25px; /* Hafif sağa kayma efekti */
+}
+
+/* Animasyon */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+/* --- AÇILIR MENÜ (DROPDOWN) STİLLERİ --- */
+.nav-item-with-dropdown {
+    position: relative;
+    height: 100%;
     display: flex;
     align-items: center;
-    justify-content: center;
-    transition: 0.3s;
 }
-.social-btn:hover { background: #27ae60; transform: translateY(-3px); }
-.active-nav-link { background: #003399 !important; color: white !important; }
+
+.dropdown-menu {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    background: white;
+    min-width: 280px;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+    border-radius: 0 0 8px 8px;
+    z-index: 1000;
+    padding: 10px 0;
+    list-style: none;
+    border-top: 4px solid #003399;
+}
+
+/* Fare üzerine gelince göster */
+.nav-item-with-dropdown:hover .dropdown-menu {
+    display: block;
+    animation: slideUp 0.3s ease;
+}
+
+.dropdown-menu li a {
+    display: block;
+    padding: 12px 20px;
+    color: #444;
+    text-decoration: none;
+    font-size: 0.9rem;
+    border-bottom: 1px solid #f0f0f0;
+    transition: 0.2s;
+}
+
+.dropdown-menu li:last-child a { border-bottom: none; }
+
+.dropdown-menu li a:hover {
+    background-color: #f0f4f8;
+    color: #003399;
+    padding-left: 25px; /* Kayma efekti */
+}
+
+@keyframes slideUp {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+/* --- DROPDOWN MENÜ STİLLERİ --- */
+.nav-item-with-dropdown {
+    position: relative;
+    height: 100%;
+    display: flex;
+    align-items: center;
+}
+
+/* Menü Kutusu */
+.dropdown-menu {
+    display: none; /* Gizli başlar */
+    position: absolute;
+    top: 100%;
+    left: 0;
+    background: white;
+    min-width: 260px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    border-radius: 0 0 8px 8px;
+    z-index: 1000;
+    padding: 10px 0;
+    list-style: none;
+    border-top: 4px solid #003399; /* Üst çizgi */
+}
+
+/* Hover olunca göster */
+.nav-item-with-dropdown:hover .dropdown-menu {
+    display: block;
+    animation: slideUp 0.3s ease;
+}
+
+/* Linkler */
+.dropdown-menu li a {
+    display: block;
+    padding: 12px 20px;
+    color: #444;
+    text-decoration: none;
+    font-size: 0.9rem;
+    border-bottom: 1px solid #f9f9f9;
+    transition: all 0.2s;
+}
+
+.dropdown-menu li:last-child a { border-bottom: none; }
+
+.dropdown-menu li a:hover {
+    background-color: #f0f4f8;
+    color: #003399;
+    padding-left: 25px; /* Kayma efekti */
+}
+
+@keyframes slideUp {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
