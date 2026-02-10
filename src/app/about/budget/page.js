@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../../../lib/supabase';
 
-export default function BudgetPage() {
+export default function RoadmapPage() {
   const [content, setContent] = useState({});
 
   useEffect(() => {
@@ -15,26 +15,83 @@ export default function BudgetPage() {
 
   return (
     <div className="container section-padding">
-        <h1 style={{color:'#003399', marginBottom:'30px', textAlign:'center'}}>Bütçe ve Proje Künyesi</h1>
         
-        <div style={{maxWidth:'800px', margin:'0 auto', boxShadow:'0 5px 20px rgba(0,0,0,0.05)', borderRadius:'15px', overflow:'hidden'}}>
-            <table style={{width:'100%', borderCollapse:'collapse'}}>
-                <tbody>
-                    {[
-                        { label: 'Proje Adı', key: 'about_project_name' },
-                        { label: 'Proje Kısaltması', key: 'about_project_code' },
-                        { label: 'Program', key: 'about_project_program' },
-                        { label: 'Süresi', key: 'about_project_duration' },
-                        { label: 'Toplam Bütçe', key: 'about_project_budget' }
-                    ].map((item, index) => (
-                        <tr key={index} style={{borderBottom:'1px solid #eee', background: index % 2 === 0 ? '#f9f9f9' : 'white'}}>
-                            <td style={{padding:'20px', fontWeight:'bold', color:'#333', width:'35%'}}>{item.label}</td>
-                            <td style={{padding:'20px', color:'#555'}}>{content[item.key] || '...'}</td>
-                        </tr>
-                    ))}
-                </tbody>
-            </table>
+        {/* SAYFA BAŞLIĞI */}
+        <div className="section-title text-center" style={{marginBottom:'50px'}}>
+            <h1 style={{color:'#003399', marginBottom:'15px', fontSize:'2.2rem'}}>III. Proje Yol Haritası</h1>
+            <p style={{fontSize:'1.2rem', color:'#666', fontWeight:'300'}}>Faaliyet Zaman Çizelgesi (24 Ay)</p>
+            <div style={{width:'80px', height:'4px', background:'#27ae60', margin:'20px auto', borderRadius:'2px'}}></div>
         </div>
+
+        {/* GÖRSEL ALANI */}
+        <div style={{
+            maxWidth:'1200px', 
+            margin:'0 auto', 
+            background:'white', 
+            padding:'20px', 
+            borderRadius:'15px', 
+            boxShadow:'0 10px 30px rgba(0,0,0,0.1)',
+            border: '1px solid #eee'
+        }}>
+            {/* ÖNEMLİ: Resmi 'public/images/roadmap.png' konumuna koyduğunuzdan emin olun.
+                Eğer birden fazla resim varsa alt alta img etiketlerini çoğaltabilirsiniz.
+            */}
+            <img 
+                src="/images/1.png" 
+                alt="Bütçe" 
+                style={{
+                    width: '100%', 
+                    height: 'auto', 
+                    borderRadius: '5px',
+                    display: 'block'
+                }} 
+            />
+             <img 
+                src="/images/2.png" 
+                alt="Bütçe" 
+                style={{
+                    width: '100%', 
+                    height: 'auto', 
+                    borderRadius: '5px',
+                    display: 'block'
+                }} 
+            /> <img 
+                src="/images/3.png" 
+                alt="Bütçe" 
+                style={{
+                    width: '100%', 
+                    height: 'auto', 
+                    borderRadius: '5px',
+                    display: 'block'
+                }} 
+            /> <img 
+                src="/images/4.png" 
+                alt="Bütçe" 
+                style={{
+                    width: '100%', 
+                    height: 'auto', 
+                    borderRadius: '5px',
+                    display: 'block'
+                }} 
+            /><img 
+                src="/images/5.png" 
+                alt="Bütçe" 
+                style={{
+                    width: '100%', 
+                    height: 'auto', 
+                    borderRadius: '5px',
+                    display: 'block'
+                }} 
+            />
+        </div>
+        
+        {/* İndirme Butonu (Opsiyonel - Resmi büyütmek veya indirmek için) */}
+        <div className="text-center" style={{marginTop:'30px'}}>
+            <a href="/images/roadmap.png" target="_blank" className="btn" style={{background:'#003399', color:'white', padding:'10px 25px', borderRadius:'30px', textDecoration:'none', display:'inline-flex', alignItems:'center', gap:'10px'}}>
+                <i className="fas fa-search-plus"></i> Resmi Büyüt / İndir
+            </a>
+        </div>
+
     </div>
   );
 }

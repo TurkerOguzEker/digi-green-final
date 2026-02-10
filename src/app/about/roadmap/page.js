@@ -18,7 +18,7 @@ export default function RoadmapPage() {
         
         {/* SAYFA BAŞLIĞI */}
         <div className="section-title text-center" style={{marginBottom:'40px'}}>
-            <h1 style={{color:'#003399', marginBottom:'10px', fontSize:'2rem'}}>III. Proje Yol Haritası</h1>
+            <h1 style={{color:'#003399', marginBottom:'10px', fontSize:'2rem'}}>Proje Yol Haritası</h1>
             <p style={{fontSize:'1.1rem', color:'#666', fontWeight:'300'}}>24 Aylık Faaliyet Zaman Çizelgesi</p>
             <div style={{width:'60px', height:'4px', background:'#27ae60', margin:'15px auto', borderRadius:'2px'}}></div>
         </div>
