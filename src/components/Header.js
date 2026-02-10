@@ -21,15 +21,15 @@ export default function Header() {
     fetchData();
   }, []);
 
-  // YENİ MENÜ YAPISI (AYRI SAYFALAR)
+  // YENİ MENÜ YAPISI
   const navItems = [
     { name: 'Ana Sayfa', path: '/' },
     { 
       name: 'Hakkında', 
-      path: '/about', // Ana başlık tıklandığında yine genel hakkında sayfasına gidebilir
+      path: '/about', 
       subItems: [
         { name: 'Stratejik Genel Bakış', path: '/about/strategy' },
-       { name: 'Konsorsiyum Ortaklıkları', path: '/about/consortium' }, // Ortaklar sayfasına gider
+        { name: 'Konsorsiyum Ortaklıkları', path: '/about/consortium' },
         { name: 'Proje Planı', path: '/about/plan' },
         { name: 'Etki ve Sürdürülebilirlik', path: '/about/impact' },
         { name: 'Proje Yol Haritası', path: '/about/roadmap' },
@@ -39,6 +39,7 @@ export default function Header() {
     { name: 'Ortaklar', path: '/partners' },
     { name: 'Çıktılar', path: '/results' },
     { name: 'Haberler', path: '/news' },
+    { name: 'İletişim', path: '/contact' }, // İletişim buraya eklendi, artık diğerleriyle aynı hizada olacak
   ];
 
   return (
@@ -77,13 +78,7 @@ export default function Header() {
                             )}
                         </li>
                     ))}
-                    
-                    <li>
-                        <Link href="/contact" className={pathname === '/contact' ? 'active-nav-link' : ''}
-                              style={{padding:'8px 15px', borderRadius:'5px', transition:'0.3s'}}>
-                            İletişim
-                        </Link>
-                    </li>
+                    {/* Manuel İletişim li etiketi buradan kaldırıldı */}
                 </ul>
             </nav>
 
