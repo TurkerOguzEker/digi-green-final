@@ -37,7 +37,7 @@ export default function Header() {
       ]
     },
     { name: 'Ortaklar', path: '/partners' },
-    { name: 'Çıktılar', path: '/results' },
+    { name: 'Dosyalar', path: '/results' },
     { name: 'Haberler', path: '/news' },
     { name: 'İletişim', path: '/contact' }, // İletişim buraya eklendi, artık diğerleriyle aynı hizada olacak
   ];

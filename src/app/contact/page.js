@@ -30,12 +30,19 @@ export default function ContactPage() {
       setStatus(null);
 
       try {
+          // Veri Gönderimi
           const { error } = await supabase.from('contact_messages').insert([formData]);
-          if (error) throw error;
+          
+          if (error) {
+              // Hata varsa detaylı göster
+              console.error('Supabase Hatası:', JSON.stringify(error, null, 2));
+              throw error;
+          }
+
           setStatus('success');
           setFormData({ name: '', email: '', subject: '', message: '' }); // Formu temizle
       } catch (error) {
-          console.error('Hata:', error);
+          console.error('İşlem Hatası:', error);
           setStatus('error');
       } finally {
           setLoading(false);
@@ -152,7 +159,7 @@ export default function ContactPage() {
                               <textarea name="message" className="form-control" rows="5" required value={formData.message} onChange={handleChange} placeholder="Mesajınızı buraya yazın..."></textarea>
                           </div>
                           
-                          {/* SUBMIT BUTONU (AÇIK YEŞİL) */}
+                          {/* SUBMIT BUTONU (AÇIK YEŞİL - SOSYAL İKONLARLA AYNI) */}
                           <button type="submit" className="submit-btn" disabled={loading}>
                               {loading ? 'Gönderiliyor...' : 'MESAJI GÖNDER'}
                           </button>
@@ -231,7 +238,7 @@ export default function ContactPage() {
                   background: #2ecc71; /* Hover: Daha da açık yeşil */
               }
 
-              /* SUBMIT BUTONU - AÇIK YEŞİL (#27ae60) */
+              /* SUBMIT BUTONU (#27ae60 - AYNI RENK) */
               .submit-btn {
                   width: 100%;
                   padding: 12px;

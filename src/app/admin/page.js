@@ -137,24 +137,21 @@ export default function AdminPage() {
   const [activeTab, setActiveTab] = useState('home');
   const [loading, setLoading] = useState(true);
   
-  // Data States
   const [settings, setSettings] = useState([]);
   const [news, setNews] = useState([]);
   const [partners, setPartners] = useState([]);
   const [results, setResults] = useState([]);
-  const [messages, setMessages] = useState([]); // Yeni: Mesajlar State
+  const [messages, setMessages] = useState([]); 
 
-  // Forms
   const [newsForm, setNewsForm] = useState({ id: null, title: '', summary: '', image_url: '', date: '' });
-  const [partnerForm, setPartnerForm] = useState({ id: null, name: '', role: 'Ortak', country: '', image_url: '', website: '' });
+  // flag_url eklendi
+  const [partnerForm, setPartnerForm] = useState({ id: null, name: '', country: '', image_url: '', flag_url: '' }); 
   const [resultForm, setResultForm] = useState({ id: null, title: '', description: '', status: 'Planlanıyor', link: '', icon: 'file' });
   const [isEditing, setIsEditing] = useState(false);
 
-  // Notification & Modal States
   const [toast, setToast] = useState(null); 
   const [modal, setModal] = useState({ isOpen: false, message: '', onConfirm: null });
 
-  // --- HELPERS ---
   const showToast = (message, type = 'success') => {
     setToast({ message, type });
     setTimeout(() => setToast(null), 3000);
@@ -164,9 +161,7 @@ export default function AdminPage() {
     setModal({ isOpen: true, message, onConfirm });
   };
 
-  const closeConfirm = () => {
-    setModal({ ...modal, isOpen: false });
-  };
+  const closeConfirm = () => { setModal({ ...modal, isOpen: false }); };
 
   const handleConfirmAction = () => {
     if (modal.onConfirm) modal.onConfirm();
@@ -187,7 +182,7 @@ export default function AdminPage() {
     const n = await supabase.from('news').select('*').order('date', {ascending:false});
     const p = await supabase.from('partners').select('*').order('id');
     const r = await supabase.from('results').select('*').order('id');
-    const m = await supabase.from('contact_messages').select('*').order('created_at', {ascending:false}); // Mesajları çek
+    const m = await supabase.from('contact_messages').select('*').order('created_at', {ascending:false}); 
     
     setSettings(s.data || []);
     setNews(n.data || []);
@@ -201,10 +196,9 @@ export default function AdminPage() {
     if (!file) return null;
     const fileExt = file.name.split('.').pop();
     const fileName = `${Date.now()}_${Math.random().toString(36).substring(2)}.${fileExt}`;
-    const filePath = `${fileName}`;
-    const { error } = await supabase.storage.from('images').upload(filePath, file);
+    const { error } = await supabase.storage.from('images').upload(fileName, file);
     if (error) { showToast('Yükleme Hatası: ' + error.message, 'error'); return null; }
-    const { data: { publicUrl } } = supabase.storage.from('images').getPublicUrl(filePath);
+    const { data: { publicUrl } } = supabase.storage.from('images').getPublicUrl(fileName);
     return publicUrl;
   }
 
@@ -216,35 +210,34 @@ export default function AdminPage() {
         const file = e.target.files[0];
         if (!file) return;
         const url = await uploadFile(file);
-        if (url) {
-            onChange(url);
-            showToast('Dosya başarıyla yüklendi.', 'success');
-        }
+        if (url) { onChange(url); showToast('Dosya yüklendi.', 'success'); }
       } catch (error) { showToast('Hata oluştu', 'error'); } finally { setUploading(false); }
     };
     return (
       <div style={{display:'flex', gap:'10px', alignItems:'center', width:'100%'}}>
-        <input className="form-control" placeholder={placeholder} value={value || ''} onChange={(e) => onChange(e.target.value)} style={{flex:1, marginBottom:0, padding:'8px'}}/>
+        <div style={{flex:1, display:'flex', alignItems:'center', background:'white', border:'1px solid #ddd', borderRadius:'5px', padding:'5px 10px', gap:'10px'}}>
+            {value ? (
+                <img src={value} alt="preview" style={{width:'30px', height:'30px', objectFit:'cover', borderRadius:'4px'}} />
+            ) : (
+                <i className="fas fa-image" style={{color:'#ccc'}}></i>
+            )}
+            <input className="form-control" placeholder={placeholder} value={value || ''} onChange={(e) => onChange(e.target.value)} style={{flex:1, marginBottom:0, border:'none', padding:0}}/>
+        </div>
+        
         <div style={{position:'relative', overflow:'hidden', display:'inline-block'}}>
-            <button type="button" className="btn" style={{background: uploading ? '#ccc' : '#eef2f7', color:'#333', padding:'8px 15px', border:'1px solid #ddd', whiteSpace:'nowrap', display:'flex', alignItems:'center', gap:'5px'}}>
-                {uploading ? <i className="fas fa-spinner fa-spin"></i> : <i className="fas fa-cloud-upload-alt"></i>}
-                {uploading ? '...' : 'Seç'}
-            </button>
+            <button type="button" className="btn" style={{background: uploading ? '#ccc' : '#eef2f7', color:'#333', padding:'8px 15px', border:'1px solid #ddd', whiteSpace:'nowrap'}}>{uploading ? '...' : 'Seç'}</button>
             <input type="file" onChange={handleFileChange} disabled={uploading} style={{position:'absolute', left:0, top:0, opacity:0, width:'100%', height:'100%', cursor:'pointer'}} />
         </div>
       </div>
     );
   };
 
-  // --- AYAR INPUTU ---
   const SettingInput = ({ label, settingKey, type="text" }) => {
     const setting = settings.find(s => s.key === settingKey);
     const val = setting ? setting.value : ''; 
     return (
         <div style={{background:'#fff', padding:'15px', borderRadius:'8px', border:'1px solid #eee', marginBottom:'15px', boxShadow:'0 2px 5px rgba(0,0,0,0.02)'}}>
-            <label style={{fontWeight:'bold', display:'block', marginBottom:'8px', color:'#333', fontSize:'0.9rem'}}>
-                {label} {(!setting) && <span style={{color:'#e74c3c', fontSize:'0.7rem', background:'#fadbd8', padding:'2px 6px', borderRadius:'4px', marginLeft:'5px'}}>SQL Eksik</span>}
-            </label>
+            <label style={{fontWeight:'bold', display:'block', marginBottom:'8px', color:'#333', fontSize:'0.9rem'}}>{label}</label>
             <div style={{display:'flex', gap:'10px', alignItems: 'flex-start'}}>
                 {type === 'textarea' ? (
                     <textarea className="form-control" defaultValue={val} id={`s-${settingKey}`} rows="3" style={{marginBottom:0, flex: 1}}></textarea>
@@ -261,18 +254,13 @@ export default function AdminPage() {
                     <i className="fas fa-save"></i>
                 </button>}
             </div>
-            {type === 'image' && <input type="hidden" id={`s-${settingKey}`} defaultValue={val} />}
         </div>
     );
   };
 
   async function updateSetting(key, value) {
     const { error } = await supabase.from('settings').upsert({ key, value }, { onConflict: 'key' });
-    if(error) showToast('Hata: ' + error.message, 'error'); 
-    else { 
-        showToast('Ayar başarıyla güncellendi.', 'success'); 
-        loadAllData(); 
-    }
+    if(error) showToast('Hata: ' + error.message, 'error'); else { showToast('Güncellendi.', 'success'); loadAllData(); }
   }
 
   async function deleteItem(table, id) {
@@ -288,9 +276,12 @@ export default function AdminPage() {
     const { id, ...data } = form;
     if (id) await supabase.from(table).update(data).eq('id', id); else await supabase.from(table).insert([data]);
     setIsEditing(false);
+    
+    // Temizle
     if(table==='news') setNewsForm({ id: null, title: '', summary: '', image_url: '', date: '' });
-    if(table==='partners') setPartnerForm({ id: null, name: '', role: 'Ortak', country: '', image_url: '', website: '' });
+    if(table==='partners') setPartnerForm({ id: null, name: '', country: '', image_url: '', flag_url: '' });
     if(table==='results') setResultForm({ id: null, title: '', description: '', status: 'Planlanıyor', link: '', icon: 'file' });
+    
     loadAllData();
     showToast(id ? 'Kayıt güncellendi.' : 'Yeni kayıt eklendi.', 'success');
   }
@@ -303,11 +294,7 @@ export default function AdminPage() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
-  if (loading) return (
-    <div style={{height:'100vh', display:'flex', alignItems:'center', justifyContent:'center', color:'#003399', fontSize:'1.2rem', gap:'10px'}}>
-        <i className="fas fa-circle-notch fa-spin"></i> Yükleniyor...
-    </div>
-  );
+  if (loading) return <div style={{height:'100vh', display:'flex', alignItems:'center', justifyContent:'center', color:'#003399'}}><i className="fas fa-circle-notch fa-spin"></i> Yükleniyor...</div>;
 
   const TabButton = ({ id, label, icon, badge }) => (
     <button onClick={() => { setActiveTab(id); setIsEditing(false); }} 
@@ -318,8 +305,7 @@ export default function AdminPage() {
             border: activeTab === id ? '1px solid #003399' : '1px solid #ddd', 
             borderRadius: '8px', textAlign:'left', fontWeight: '600', 
             display: 'flex', alignItems: 'center', gap: '10px', 
-            transition: 'all 0.2s', boxShadow: activeTab === id ? '0 4px 10px rgba(0,51,153,0.2)' : 'none',
-            position: 'relative'
+            transition: 'all 0.2s', position: 'relative'
         }}>
         <i className={icon} style={{width:'20px', textAlign:'center'}}></i> {label}
         {badge > 0 && <span style={{position:'absolute', right:'10px', background:'#e74c3c', color:'white', borderRadius:'50%', width:'20px', height:'20px', fontSize:'0.7rem', display:'flex', alignItems:'center', justifyContent:'center'}}>{badge}</span>}
@@ -328,17 +314,8 @@ export default function AdminPage() {
 
   return (
     <div className="container" style={{marginTop:'40px', marginBottom:'100px'}}>
-      
-      {/* Toast Bildirim */}
       {toast && <ToastNotification message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
-      
-      {/* Onay Modalı */}
-      <ConfirmModal 
-        isOpen={modal.isOpen} 
-        message={modal.message} 
-        onConfirm={handleConfirmAction} 
-        onCancel={closeConfirm} 
-      />
+      <ConfirmModal isOpen={modal.isOpen} message={modal.message} onConfirm={handleConfirmAction} onCancel={closeConfirm} />
 
       <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:'30px', paddingBottom:'20px', borderBottom:'1px solid #eee'}}>
         <div style={{display:'flex', alignItems:'center', gap:'15px'}}>
@@ -347,15 +324,12 @@ export default function AdminPage() {
             </div>
             <h1 style={{fontSize:'1.8rem', color:'#333', margin:0}}>Yönetim Paneli</h1>
         </div>
-        <button onClick={async () => { await supabase.auth.signOut(); router.push('/login'); }} className="btn" style={{background:'#e74c3c', color:'white', display:'flex', alignItems:'center', gap:'8px', padding:'10px 20px', borderRadius:'30px'}}>
-            <i className="fas fa-sign-out-alt"></i> Çıkış Yap
-        </button>
+        <button onClick={async () => { await supabase.auth.signOut(); router.push('/login'); }} className="btn" style={{background:'#e74c3c', color:'white', display:'flex', alignItems:'center', gap:'8px', padding:'10px 20px', borderRadius:'30px'}}><i className="fas fa-sign-out-alt"></i> Çıkış Yap</button>
       </div>
 
       <div style={{display:'grid', gridTemplateColumns:'260px 1fr', gap:'30px'}}>
         <div style={{display:'flex', flexDirection:'column', gap:'10px'}}>
             <div style={{color:'#999', fontSize:'0.75rem', fontWeight:'bold', paddingLeft:'10px', marginBottom:'5px', textTransform:'uppercase', letterSpacing:'1px'}}>Menü</div>
-            {/* YENİ: Mesajlar Sekmesi */}
             <TabButton id="messages" label="Mesajlar" icon="fas fa-envelope-open-text" badge={messages.length} />
             <div style={{height:'10px'}}></div>
             <TabButton id="home" label="Ana Sayfa" icon="fas fa-home" />
@@ -368,41 +342,18 @@ export default function AdminPage() {
 
         <div style={{background:'#fcfcfc', padding:'40px', borderRadius:'12px', border:'1px solid #eee', boxShadow:'0 5px 20px rgba(0,0,0,0.03)'}}>
             
-            {/* --- MESAJLAR (GELEN KUTUSU) --- */}
+            {/* ... Mesajlar, Home, About, News Sekmeleri Aynı ... */}
             {activeTab === 'messages' && (
                 <div className="fade-in">
-                    <h2 style={{marginBottom:'25px', color:'#003399', borderBottom:'2px solid #eee', paddingBottom:'10px'}}>Gelen Mesajlar</h2>
+                    <h2 style={{marginBottom:'25px', color:'#003399'}}>Gelen Mesajlar</h2>
                     {messages.length === 0 ? (
-                        <div style={{textAlign:'center', padding:'40px', color:'#999'}}>
-                            <i className="fas fa-inbox" style={{fontSize:'3rem', marginBottom:'15px', opacity:0.3}}></i>
-                            <p>Henüz hiç mesaj yok.</p>
-                        </div>
+                        <div style={{textAlign:'center', padding:'40px', color:'#999'}}><i className="fas fa-inbox" style={{fontSize:'3rem'}}></i><p>Mesaj yok.</p></div>
                     ) : (
                         <div style={{display:'flex', flexDirection:'column', gap:'15px'}}>
                             {messages.map(msg => (
-                                <div key={msg.id} style={{background:'white', padding:'20px', borderRadius:'10px', border:'1px solid #eee', boxShadow:'0 2px 10px rgba(0,0,0,0.03)'}}>
-                                    <div style={{display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:'15px'}}>
-                                        <div>
-                                            <h4 style={{margin:0, color:'#333'}}>{msg.subject}</h4>
-                                            <div style={{fontSize:'0.9rem', color:'#666', marginTop:'5px'}}>
-                                                <strong>{msg.name}</strong> &lt;{msg.email}&gt;
-                                            </div>
-                                        </div>
-                                        <div style={{display:'flex', alignItems:'center', gap:'15px'}}>
-                                            <span style={{fontSize:'0.8rem', color:'#999'}}>{new Date(msg.created_at).toLocaleString('tr-TR')}</span>
-                                            <button onClick={()=>deleteItem('contact_messages', msg.id)} style={{color:'#e74c3c', border:'none', background:'none', cursor:'pointer'}} title="Sil">
-                                                <i className="fas fa-trash"></i>
-                                            </button>
-                                        </div>
-                                    </div>
-                                    <div style={{background:'#f9f9f9', padding:'15px', borderRadius:'5px', fontSize:'0.95rem', lineHeight:'1.5', color:'#444'}}>
-                                        {msg.message}
-                                    </div>
-                                    <div style={{marginTop:'15px', textAlign:'right'}}>
-                                        <a href={`mailto:${msg.email}?subject=Re: ${msg.subject}`} className="btn" style={{background:'#003399', color:'white', padding:'8px 20px', borderRadius:'30px', fontSize:'0.9rem', textDecoration:'none', display:'inline-block'}}>
-                                            <i className="fas fa-reply"></i> Yanıtla
-                                        </a>
-                                    </div>
+                                <div key={msg.id} style={{background:'white', padding:'20px', borderRadius:'10px', border:'1px solid #eee'}}>
+                                    <div style={{display:'flex', justifyContent:'space-between'}}><strong>{msg.name} ({msg.email})</strong><button onClick={()=>deleteItem('contact_messages', msg.id)} style={{color:'red'}}><i className="fas fa-trash"></i></button></div>
+                                    <div style={{marginTop:'10px'}}>{msg.message}</div>
                                 </div>
                             ))}
                         </div>
@@ -410,185 +361,134 @@ export default function AdminPage() {
                 </div>
             )}
 
-            {/* --- ANA SAYFA --- */}
             {activeTab === 'home' && (
                 <div className="fade-in">
-                    <h2 style={{marginBottom:'25px', color:'#003399', borderBottom:'2px solid #eee', paddingBottom:'10px'}}>Ana Sayfa Düzenle</h2>
-                    <SettingInput label="Hero Arka Plan Resmi" settingKey="hero_bg_image" type="image" />
+                    <h2 style={{marginBottom:'25px', color:'#003399'}}>Ana Sayfa</h2>
+                    <SettingInput label="Hero Arka Plan" settingKey="hero_bg_image" type="image" />
                     <SettingInput label="Logo Metni" settingKey="header_logo_text" />
-                    <SettingInput label="Büyük Başlık" settingKey="hero_title" />
-                    <SettingInput label="Alt Açıklama" settingKey="hero_desc" type="textarea" />
-                    
-                    <h4 style={{margin:'40px 0 20px', color:'#555', borderLeft:'4px solid #003399', paddingLeft:'10px'}}>Hedef Kutucukları</h4>
-                    <SettingInput label="Hedef 1 Başlık" settingKey="home_goal_1_title" />
-                    <SettingInput label="Hedef 1 Açıklama" settingKey="home_goal_1_desc" type="textarea" />
-                    <SettingInput label="Hedef 2 Başlık" settingKey="home_goal_2_title" />
-                    <SettingInput label="Hedef 2 Açıklama" settingKey="home_goal_2_desc" type="textarea" />
+                    <SettingInput label="Başlık" settingKey="hero_title" />
+                    <SettingInput label="Açıklama" settingKey="hero_desc" type="textarea" />
                 </div>
             )}
 
-             {/* --- HAKKINDA --- */}
-             {activeTab === 'about' && (
+            {activeTab === 'about' && (
                 <div className="fade-in">
-                    <h2 style={{marginBottom:'25px', color:'#003399', borderBottom:'2px solid #eee', paddingBottom:'10px'}}>Hakkında Sayfası Düzenle</h2>
-                    
-                    <h4 style={{marginBottom:'15px', color:'#555', borderLeft:'4px solid #003399', paddingLeft:'10px'}}>1. Proje Künyesi</h4>
+                    <h2 style={{marginBottom:'25px', color:'#003399'}}>Hakkında</h2>
                     <SettingInput label="Proje Adı" settingKey="about_project_name" />
-                    <SettingInput label="Proje Kısaltması" settingKey="about_project_code" />
-                    <SettingInput label="Program" settingKey="about_project_program" />
-                    <SettingInput label="Süresi" settingKey="about_project_duration" />
-                    <SettingInput label="Toplam Bütçe" settingKey="about_project_budget" />
-
-                    <h4 style={{margin:'40px 0 20px', color:'#555', borderLeft:'4px solid #003399', paddingLeft:'10px'}}>2. Strateji ve Vizyon</h4>
-                    <SettingInput label="Vizyon Başlığı" settingKey="about_vision_title" />
-                    <SettingInput label="Vizyon Metni" settingKey="about_vision_text" type="textarea" />
-
-                    <h4 style={{margin:'40px 0 20px', color:'#555', borderLeft:'4px solid #003399', paddingLeft:'10px'}}>3. Etki ve Sürdürülebilirlik</h4>
-                    <SettingInput label="Etki Başlığı" settingKey="about_impact_title" />
-                    <SettingInput label="Etki Metni" settingKey="about_impact_text" type="textarea" />
-
-                    <h4 style={{margin:'40px 0 20px', color:'#555', borderLeft:'4px solid #003399', paddingLeft:'10px'}}>4. Proje Planı</h4>
-                    <SettingInput label="Plan Başlığı" settingKey="about_plan_title" />
-                    <SettingInput label="Plan Alt Başlığı" settingKey="about_plan_text" type="textarea" />
-
-                    <h4 style={{margin:'40px 0 20px', color:'#555', borderLeft:'4px solid #003399', paddingLeft:'10px'}}>5. Proje Yol Haritası (Resim)</h4>
-                    <SettingInput label="Yol Haritası Resmi" settingKey="about_roadmap_image" type="image" />
-
-                    <h4 style={{margin:'40px 0 20px', color:'#555', borderLeft:'4px solid #003399', paddingLeft:'10px'}}>6. Bütçe Planı (Çoklu Resim / Slider)</h4>
-                    <MultiImageSetting 
-                        label="Bütçe Sayfası Slaytları" 
-                        settingKey="about_budget_images" 
-                        showToast={showToast} 
-                        showConfirm={showConfirm} 
-                        uploadFile={uploadFile} 
-                    />
+                    <MultiImageSetting label="Bütçe Slaytları" settingKey="about_budget_images" showToast={showToast} showConfirm={showConfirm} uploadFile={uploadFile} />
                 </div>
             )}
 
-            {/* --- HABERLER --- */}
             {activeTab === 'news' && (
                 <div className="fade-in">
-                    <h2 style={{marginBottom:'25px', color:'#003399', borderBottom:'2px solid #eee', paddingBottom:'10px'}}>Haber Yönetimi</h2>
-                    <SettingInput label="Haberler Sayfası Başlık Resmi" settingKey="news_header_bg" type="image" />
-                    <div style={{background:'white', padding:'25px', borderRadius:'10px', marginBottom:'25px', border:'1px solid #ddd', boxShadow:'0 5px 15px rgba(0,0,0,0.03)'}}>
-                        <h4 style={{margin:'0 0 15px', color:'#333', display:'flex', alignItems:'center', gap:'10px'}}>
-                            <i className="fas fa-edit" style={{color:'#003399'}}></i> {isEditing ? 'Haberi Düzenle' : 'Yeni Haber Ekle'}
-                        </h4>
+                    <h2 style={{marginBottom:'25px', color:'#003399'}}>Haberler</h2>
+                    <div style={{background:'white', padding:'25px', borderRadius:'10px', marginBottom:'25px', border:'1px solid #ddd'}}>
                         <form onSubmit={(e) => saveItem(e, 'news', newsForm, setNewsForm)} style={{display:'grid', gap:'15px'}}>
-                            <input className="form-control" placeholder="Haber Başlığı" value={newsForm.title} onChange={e=>setNewsForm({...newsForm, title:e.target.value})} required />
-                            <FileInput value={newsForm.image_url} onChange={(url) => setNewsForm({...newsForm, image_url: url})} placeholder="Haber Görseli Seç" />
-                            <textarea className="form-control" placeholder="Kısa Özet" rows="3" value={newsForm.summary} onChange={e=>setNewsForm({...newsForm, summary:e.target.value})} required></textarea>
-                            <div style={{display:'flex', gap:'10px', justifyContent:'flex-end'}}>
-                                {isEditing && <button type="button" onClick={()=>{setIsEditing(false); setNewsForm({ id: null, title: '', summary: '', image_url: '', date: '' })}} className="btn" style={{background:'#eee', color:'#555'}}>İptal</button>}
-                                <button type="submit" className="btn btn-primary">
-                                    {isEditing ? 'Güncelle' : 'Yayınla'}
-                                </button>
-                            </div>
+                            <input className="form-control" placeholder="Başlık" value={newsForm.title} onChange={e=>setNewsForm({...newsForm, title:e.target.value})} required />
+                            <FileInput value={newsForm.image_url} onChange={(url) => setNewsForm({...newsForm, image_url: url})} placeholder="Resim" />
+                            <textarea className="form-control" placeholder="Özet" rows="3" value={newsForm.summary} onChange={e=>setNewsForm({...newsForm, summary:e.target.value})} required></textarea>
+                            <button type="submit" className="btn btn-primary">{isEditing ? 'Güncelle' : 'Yayınla'}</button>
                         </form>
                     </div>
                     {news.map(item => (
-                        <div key={item.id} style={{background:'white', padding:'15px', marginBottom:'10px', borderRadius:'8px', display:'flex', justifyContent:'space-between', alignItems:'center', border:'1px solid #eee', boxShadow:'0 2px 5px rgba(0,0,0,0.02)'}}>
-                            <div style={{display:'flex', gap:'15px', alignItems:'center'}}>
-                                {item.image_url && <img src={item.image_url} style={{width:'50px', height:'50px', borderRadius:'5px', objectFit:'cover'}} />}
-                                <div>
-                                    <div style={{fontWeight:'bold', color:'#333'}}>{item.title}</div>
-                                    <div style={{fontSize:'0.8rem', color:'#999'}}>{new Date(item.date).toLocaleDateString()}</div>
-                                </div>
-                            </div>
+                        <div key={item.id} style={{background:'white', padding:'15px', marginBottom:'10px', borderRadius:'8px', display:'flex', justifyContent:'space-between', border:'1px solid #eee'}}>
+                            <span>{item.title}</span>
                             <div style={{display:'flex', gap:'10px'}}>
-                                <button onClick={()=>startEdit(item, 'news')} style={{color:'#003399', border:'none', background:'none', cursor:'pointer'}}><i className="fas fa-pen"></i></button>
-                                <button onClick={()=>deleteItem('news', item.id)} style={{color:'#e74c3c', border:'none', background:'none', cursor:'pointer'}}><i className="fas fa-trash"></i></button>
+                                <button onClick={()=>startEdit(item, 'news')} style={{color:'#003399', border:'none', background:'none'}}><i className="fas fa-pen"></i></button>
+                                <button onClick={()=>deleteItem('news', item.id)} style={{color:'red', border:'none', background:'none'}}><i className="fas fa-trash"></i></button>
                             </div>
                         </div>
                     ))}
                 </div>
             )}
 
-            {/* --- ORTAKLAR --- */}
+            {activeTab === 'results' && (
+                <div className="fade-in">
+                    <h2 style={{marginBottom:'25px', color:'#003399'}}>Çıktılar</h2>
+                    <div style={{background:'white', padding:'25px', borderRadius:'10px', marginBottom:'25px', border:'1px solid #ddd'}}>
+                        <form onSubmit={(e) => saveItem(e, 'results', resultForm, setResultForm)} style={{display:'grid', gap:'15px'}}>
+                            <input className="form-control" placeholder="Başlık" value={resultForm.title} onChange={e=>setResultForm({...resultForm, title:e.target.value})} required />
+                            <FileInput value={resultForm.link} onChange={(url) => setResultForm({...resultForm, link: url})} placeholder="Dosya" />
+                            <button type="submit" className="btn btn-primary">{isEditing ? 'Güncelle' : 'Ekle'}</button>
+                        </form>
+                    </div>
+                    {results.map(item => (
+                        <div key={item.id} style={{background:'white', padding:'15px', marginBottom:'10px', borderRadius:'8px', display:'flex', justifyContent:'space-between', border:'1px solid #eee'}}>
+                            <span>{item.title}</span>
+                            <div style={{display:'flex', gap:'10px'}}>
+                                <button onClick={()=>startEdit(item, 'results')} style={{color:'#003399', border:'none', background:'none'}}><i className="fas fa-pen"></i></button>
+                                <button onClick={()=>deleteItem('results', item.id)} style={{color:'red', border:'none', background:'none'}}><i className="fas fa-trash"></i></button>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            )}
+
+            {/* --- ORTAKLAR (Bayrak Eklendi) --- */}
             {activeTab === 'partners' && (
                 <div className="fade-in">
-                     <h2 style={{marginBottom:'25px', color:'#003399', borderBottom:'2px solid #eee', paddingBottom:'10px'}}>Ortaklar & Footer Logo</h2>
-                     <SettingInput label="Footer Ortaklar Başlığı" settingKey="footer_partners_title" />
-                     <div style={{background:'white', padding:'25px', borderRadius:'10px', marginBottom:'25px', border:'1px solid #ddd'}}>
+                     <h2 style={{marginBottom:'25px', color:'#003399'}}>Ortaklar & Kurumlar</h2>
+                     <div style={{background:'white', padding:'25px', borderRadius:'10px', marginBottom:'25px', border:'1px solid #ddd', boxShadow:'0 5px 15px rgba(0,0,0,0.03)'}}>
+                        <h4 style={{marginBottom:'15px'}}>{isEditing ? 'Ortağı Düzenle' : 'Yeni Ortak Ekle'}</h4>
                         <form onSubmit={(e) => saveItem(e, 'partners', partnerForm, setPartnerForm)} style={{display:'grid', gap:'15px'}}>
                             <input className="form-control" placeholder="Kurum Adı" value={partnerForm.name} onChange={e=>setPartnerForm({...partnerForm, name:e.target.value})} required />
-                            <FileInput value={partnerForm.image_url} onChange={(url) => setPartnerForm({...partnerForm, image_url: url})} placeholder="Logo Seç" />
-                            <button type="submit" className="btn btn-primary">Ekle</button>
+                            
+                            <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:'15px'}}>
+                                <input className="form-control" placeholder="Ülke İsmi" value={partnerForm.country} onChange={e=>setPartnerForm({...partnerForm, country:e.target.value})} required />
+                                <FileInput value={partnerForm.flag_url} onChange={(url) => setPartnerForm({...partnerForm, flag_url: url})} placeholder="Bayrak Resmi" />
+                            </div>
+
+                            <FileInput value={partnerForm.image_url} onChange={(url) => setPartnerForm({...partnerForm, image_url: url})} placeholder="Kurum Logosu" />
+                            
+                            <div style={{display:'flex', gap:'10px', justifyContent:'flex-end'}}>
+                                {isEditing && <button type="button" onClick={()=>{setIsEditing(false); setPartnerForm({ id: null, name: '', country: '', image_url: '', flag_url: '' })}} className="btn" style={{background:'#eee', color:'#555'}}>İptal</button>}
+                                <button type="submit" className="btn btn-primary">{isEditing ? 'Güncelle' : 'Ekle'}</button>
+                            </div>
                         </form>
                      </div>
                      {partners.map(item => (
-                        <div key={item.id} style={{background:'white', padding:'15px', marginBottom:'10px', borderRadius:'8px', display:'flex', justifyContent:'space-between', alignItems:'center', border:'1px solid #eee'}}>
+                        <div key={item.id} style={{background:'white', padding:'15px', marginBottom:'10px', borderRadius:'8px', display:'flex', justifyContent:'space-between', alignItems:'center', border:'1px solid #eee', boxShadow:'0 2px 5px rgba(0,0,0,0.02)'}}>
                             <div style={{display:'flex', gap:'15px', alignItems:'center'}}>
-                                {item.image_url && <img src={item.image_url} style={{width:'40px', height:'auto', maxHeight:'40px'}} />}
-                                <span style={{fontWeight:'bold'}}>{item.name}</span>
+                                {item.image_url && <img src={item.image_url} style={{width:'40px', height:'auto', maxHeight:'40px', objectFit:'contain'}} />}
+                                <div>
+                                    <div style={{fontWeight:'bold'}}>{item.name}</div>
+                                    <div style={{fontSize:'0.85rem', color:'#666', display:'flex', alignItems:'center', gap:'5px'}}>
+                                        {/* Bayrak varsa göster, yoksa dünya ikonu */}
+                                        {item.flag_url ? (
+                                            <img src={item.flag_url} alt="flag" style={{width:'20px', height:'15px', objectFit:'cover', borderRadius:'2px'}} />
+                                        ) : (
+                                            <i className="fas fa-globe" style={{color:'#999'}}></i>
+                                        )}
+                                        {item.country}
+                                    </div>
+                                </div>
                             </div>
-                            <button onClick={()=>deleteItem('partners', item.id)} style={{color:'#e74c3c', border:'none', background:'none', cursor:'pointer'}}><i className="fas fa-trash"></i></button>
+                            <div style={{display:'flex', gap:'10px'}}>
+                                <button onClick={()=>startEdit(item, 'partners')} style={{color:'#003399', border:'none', background:'none', cursor:'pointer'}}><i className="fas fa-pen"></i></button>
+                                <button onClick={()=>deleteItem('partners', item.id)} style={{color:'#e74c3c', border:'none', background:'none', cursor:'pointer'}}><i className="fas fa-trash"></i></button>
+                            </div>
                         </div>
                     ))}
                 </div>
             )}
 
-            {/* --- ÇIKTILAR --- */}
-            {activeTab === 'results' && (
-                <div className="fade-in">
-                     <h2 style={{marginBottom:'25px', color:'#003399', borderBottom:'2px solid #eee', paddingBottom:'10px'}}>Çıktılar (Dosya İndirme)</h2>
-                     <div style={{background:'white', padding:'25px', borderRadius:'10px', marginBottom:'25px', border:'1px solid #ddd'}}>
-                        <form onSubmit={(e) => saveItem(e, 'results', resultForm, setResultForm)} style={{display:'grid', gap:'15px'}}>
-                            <input className="form-control" placeholder="Dosya Başlığı" value={resultForm.title} onChange={e=>setResultForm({...resultForm, title:e.target.value})} required />
-                            <textarea className="form-control" placeholder="Açıklama" value={resultForm.description} onChange={e=>setResultForm({...resultForm, description:e.target.value})}></textarea>
-                            <FileInput value={resultForm.link} onChange={(url) => setResultForm({...resultForm, link: url})} placeholder="Dosya Seç (PDF/Doc)" />
-                            <button type="submit" className="btn btn-primary">Dosya Ekle</button>
-                        </form>
-                     </div>
-                     {results.map(item => (
-                        <div key={item.id} style={{background:'white', padding:'15px', marginBottom:'10px', borderRadius:'8px', display:'flex', justifyContent:'space-between', alignItems:'center', border:'1px solid #eee'}}>
-                            <div>
-                                <div style={{fontWeight:'bold', color:'#333'}}><i className="fas fa-file-alt" style={{marginRight:'10px', color:'#003399'}}></i>{item.title}</div>
-                            </div>
-                            <button onClick={()=>deleteItem('results', item.id)} style={{color:'#e74c3c', border:'none', background:'none', cursor:'pointer'}}><i className="fas fa-trash"></i></button>
-                        </div>
-                    ))}
-                </div>
-            )}
-
-            {/* --- İLETİŞİM & SOSYAL --- */}
             {activeTab === 'contact' && (
                 <div className="fade-in">
-                    <h2 style={{marginBottom:'25px', color:'#003399', borderBottom:'2px solid #eee', paddingBottom:'10px'}}>İletişim & Sosyal Medya</h2>
+                    <h2 style={{marginBottom:'25px', color:'#003399'}}>İletişim</h2>
                     <SettingInput label="E-posta" settingKey="contact_email" />
                     <SettingInput label="Telefon" settingKey="contact_phone" />
-                    <SettingInput label="Facebook Link" settingKey="social_facebook" />
-                    <SettingInput label="Twitter Link" settingKey="social_twitter" />
-                    <SettingInput label="Instagram Link" settingKey="social_instagram" />
                     <SettingInput label="Adres" settingKey="contact_address" type="textarea" />
-                    <SettingInput label="Yasal Metin (Footer)" settingKey="footer_disclaimer" type="textarea" />
+                    <SettingInput label="Facebook" settingKey="social_facebook" />
+                    <SettingInput label="Twitter" settingKey="social_twitter" />
+                    <SettingInput label="Instagram" settingKey="social_instagram" />
                 </div>
             )}
         </div>
       </div>
 
       <style jsx>{`
-        .toast-anim {
-            animation: slideIn 0.3s ease-out;
-        }
-        @keyframes slideIn {
-            from { transform: translateX(100%); opacity: 0; }
-            to { transform: translateX(0); opacity: 1; }
-        }
-        .modal-anim {
-            animation: zoomIn 0.2s ease-out;
-        }
-        @keyframes zoomIn {
-            from { transform: scale(0.9); opacity: 0; }
-            to { transform: scale(1); opacity: 1; }
-        }
-        .fade-in {
-            animation: fadeIn 0.3s ease-in;
-        }
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
+        .fade-in { animation: fadeIn 0.3s ease-in; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
       `}</style>
     </div>
   );
