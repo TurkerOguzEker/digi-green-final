@@ -21,7 +21,6 @@ export default function Header() {
     fetchData();
   }, []);
 
-  // YENİ MENÜ YAPISI
   const navItems = [
     { name: 'Ana Sayfa', path: '/' },
     { 
@@ -39,7 +38,7 @@ export default function Header() {
     { name: 'Ortaklar', path: '/partners' },
     { name: 'Dosyalar', path: '/results' },
     { name: 'Haberler', path: '/news' },
-    { name: 'İletişim', path: '/contact' }, // İletişim buraya eklendi, artık diğerleriyle aynı hizada olacak
+    { name: 'İletişim', path: '/contact' },
   ];
 
   return (
@@ -64,7 +63,6 @@ export default function Header() {
                                 {item.subItems && <i className="fas fa-chevron-down" style={{fontSize:'0.7rem', opacity:0.7}}></i>}
                             </Link>
 
-                            {/* AÇILIR MENÜ */}
                             {item.subItems && (
                                 <ul className="dropdown-menu">
                                     {item.subItems.map((subItem, index) => (
@@ -78,7 +76,6 @@ export default function Header() {
                             )}
                         </li>
                     ))}
-                    {/* Manuel İletişim li etiketi buradan kaldırıldı */}
                 </ul>
             </nav>
 

@@ -22,7 +22,6 @@ export default function Footer() {
       <footer className="site-footer">
           <div className="container footer-grid">
               
-              {/* 1. KOLON: LOGO & AÇIKLAMA */}
               <div className="footer-col">
                   <Link href="/" className="footer-logo">
                       {content.header_logo_text || 'DIGI-GREEN'} <span className="highlight-green">{content.header_logo_highlight || 'FUTURE'}</span>
@@ -31,7 +30,6 @@ export default function Footer() {
                       {content.footer_desc || 'Kapaklı Belediyesi liderliğinde yürütülen sürdürülebilir kalkınma projesi.'}
                   </p>
                   
-                  {/* SOSYAL MEDYA İKONLARI (Lacivert Uyumlu) */}
                   <div className="social-icons">
                       {content.social_facebook && (
                           <a href={content.social_facebook} target="_blank" className="social-link" aria-label="Facebook">
@@ -51,7 +49,6 @@ export default function Footer() {
                   </div>
               </div>
               
-              {/* 2. KOLON: HIZLI MENÜ */}
               <div className="footer-col">
                   <h4>{content.footer_column2_title || 'Hızlı Menü'}</h4>
                   <ul className="footer-links">
@@ -62,17 +59,15 @@ export default function Footer() {
                   </ul>
               </div>
               
-              {/* 3. KOLON: İLETİŞİM */}
               <div className="footer-col">
                   <h4>{content.footer_column3_title || 'İletişim'}</h4>
                   <ul className="contact-list">
                       <li><i className="fas fa-envelope"></i> {content.contact_email || 'info@digigreen.eu'}</li>
-                      <li><i className="fas fa-phone"></i> {content.contact_phone || '...'}</li>
+                      <li><i className="fas fa-phone"></i> {content.contact_phone || '+90 282 717 10 10'}</li>
                   </ul>
               </div>
           </div>
           
-          {/* AB LOGO VE METİN */}
           <div className="eu-disclaimer-bar">
               <div className="container disclaimer-content">
                   <img src="/assets/images/eu-flag.png" alt="EU Flag" width="45" style={{marginRight:'15px'}} onError={(e)=>e.target.style.display='none'} />
@@ -82,7 +77,7 @@ export default function Footer() {
 
           <style jsx>{`
               .site-footer {
-                  background-color: #0b1e3b; /* Koyu Lacivert Arka Plan */
+                  background-color: #0b1e3b; 
                   color: #dbe4ef;
                   padding-top: 60px;
                   font-size: 0.95rem;
@@ -93,82 +88,26 @@ export default function Footer() {
                   gap: 40px;
                   padding-bottom: 50px;
               }
-              
-              .footer-logo {
-                  font-size: 1.8rem;
-                  font-weight: 800;
-                  color: white;
-                  text-decoration: none;
-                  display: inline-block;
-                  margin-bottom: 15px;
-              }
-              .highlight-green { color: #2ecc71; } /* Yeşil vurgu */
-              
-              .footer-desc {
-                  line-height: 1.6;
-                  margin-bottom: 20px;
-                  max-width: 90%;
-                  opacity: 0.8;
-              }
-
-              .footer-col h4 {
-                  color: white;
-                  margin-bottom: 20px;
-                  font-size: 1.2rem;
-                  border-left: 3px solid #2ecc71;
-                  padding-left: 15px;
-              }
-
+              .footer-logo { font-size: 1.8rem; font-weight: 800; color: white; text-decoration: none; display: inline-block; margin-bottom: 15px; }
+              .highlight-green { color: #2ecc71; }
+              .footer-desc { line-height: 1.6; margin-bottom: 20px; max-width: 90%; opacity: 0.8; }
+              .footer-col h4 { color: white; margin-bottom: 20px; font-size: 1.2rem; border-left: 3px solid #2ecc71; padding-left: 15px; }
               .footer-links { list-style: none; padding: 0; }
               .footer-links li { margin-bottom: 10px; }
-              .footer-links li a { 
-                  color: #dbe4ef; 
-                  text-decoration: none; 
-                  transition: 0.3s; 
-              }
+              .footer-links li a { color: #dbe4ef; text-decoration: none; transition: 0.3s; }
               .footer-links li a:hover { color: #2ecc71; padding-left: 5px; }
-
               .contact-list { list-style: none; padding: 0; }
               .contact-list li { margin-bottom: 12px; display: flex; align-items: center; gap: 10px; }
               .contact-list i { color: #2ecc71; width: 20px; text-align: center; }
-
-              /* SOSYAL MEDYA BUTONLARI (GÜNCELLENDİ) */
               .social-icons { display: flex; gap: 12px; margin-top: 20px; }
               .social-link {
-                  width: 40px;
-                  height: 40px;
-                  border-radius: 50%;
-                  display: flex;
-                  align-items: center;
-                  justify-content: center;
-                  color: white;
-                  font-size: 1.1rem;
-                  transition: all 0.3s;
-                  background: rgba(255,255,255,0.1); /* Şeffaf beyaz */
-                  text-decoration: none;
-                  border: 1px solid rgba(255,255,255,0.2);
+                  width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+                  color: white; font-size: 1.1rem; transition: all 0.3s; background: rgba(255,255,255,0.1); 
+                  text-decoration: none; border: 1px solid rgba(255,255,255,0.2);
               }
-              .social-link:hover { 
-                  transform: translateY(-3px); 
-                  background: #2ecc71; /* Hover'da Yeşil */
-                  border-color: #2ecc71;
-                  box-shadow: 0 5px 15px rgba(46, 204, 113, 0.4);
-              }
-              
-              .eu-disclaimer-bar {
-                  background: #051021; /* Çok koyu lacivert */
-                  padding: 20px 0;
-                  border-top: 1px solid rgba(255,255,255,0.05);
-              }
-              .disclaimer-content {
-                  display: flex;
-                  align-items: center;
-                  justify-content: center;
-                  text-align: center;
-                  font-size: 0.85rem;
-                  color: #8fa1b8;
-              }
-
+              .social-link:hover { transform: translateY(-3px); background: #2ecc71; border-color: #2ecc71; box-shadow: 0 5px 15px rgba(46, 204, 113, 0.4); }
+              .eu-disclaimer-bar { background: #051021; padding: 20px 0; border-top: 1px solid rgba(255,255,255,0.05); }
+              .disclaimer-content { display: flex; align-items: center; justify-content: center; text-align: center; font-size: 0.85rem; color: #8fa1b8; }
               @media (max-width: 768px) {
                   .footer-grid { grid-template-columns: 1fr; gap: 30px; }
                   .disclaimer-content { flex-direction: column; gap: 10px; }

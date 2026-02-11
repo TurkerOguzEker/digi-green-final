@@ -1,31 +1,67 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { supabase } from '../lib/supabase';
 
 // TypeScript Tipleri
 interface ContentState { [key: string]: string; }
 interface CounterProps { end: number; duration?: number; }
 
+// --- AKILLI SAYAÇ BİLEŞENİ ---
 const Counter = ({ end, duration = 2000 }: CounterProps) => {
   const [count, setCount] = useState(0);
+  const [isVisible, setIsVisible] = useState(false);
+  const counterRef = useRef<HTMLSpanElement>(null);
+
   useEffect(() => {
-    let start = 0; const increment = end / (duration / 16); 
-    const timer = setInterval(() => { start += increment; if (start >= end) { setCount(end); clearInterval(timer); } else { setCount(Math.floor(start)); } }, 16);
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          setIsVisible(true);
+          observer.disconnect();
+        }
+      },
+      { threshold: 0.1 }
+    );
+    if (counterRef.current) observer.observe(counterRef.current);
+    return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
+    if (!isVisible) return;
+    let start = 0;
+    const increment = end / (duration / 16); 
+    const timer = setInterval(() => {
+      start += increment;
+      if (start >= end) {
+        setCount(end);
+        clearInterval(timer);
+      } else {
+        setCount(Math.floor(start));
+      }
+    }, 16);
     return () => clearInterval(timer);
-  }, [end, duration]);
-  return <span>{count}</span>;
+  }, [end, duration, isVisible]);
+
+  return <span ref={counterRef}>{count}</span>;
 };
 
 export default function Home() {
   const [content, setContent] = useState<ContentState>({});
+  const [isLoading, setIsLoading] = useState(true); // YÜKLEME KONTROLÜ
 
   useEffect(() => {
     async function fetchSettings() {
-      const { data } = await supabase.from('settings').select('*');
-      if (data) {
-        const map: ContentState = {};
-        data.forEach((item: { key: string; value: string }) => { map[item.key] = item.value; });
-        setContent(map);
+      try {
+        const { data } = await supabase.from('settings').select('*');
+        if (data) {
+          const map: ContentState = {};
+          data.forEach((item: { key: string; value: string }) => { map[item.key] = item.value; });
+          setContent(map);
+        }
+      } catch (error) {
+        console.error("Veri hatası:", error);
+      } finally {
+        setIsLoading(false); // Veri gelsin veya gelmesin yüklemeyi bitir
       }
     }
     fetchSettings();
@@ -33,6 +69,7 @@ export default function Home() {
 
   // Scroll Animasyon Tetikleyici
   useEffect(() => {
+    if (isLoading) return; // Yüklenirken animasyonları başlatma
     const handleScroll = () => {
       const reveals = document.querySelectorAll('.reveal');
       for (let i = 0; i < reveals.length; i++) {
@@ -41,14 +78,24 @@ export default function Home() {
         if (elementTop < windowHeight - 100) { reveals[i].classList.add('active'); }
       }
     };
-    window.addEventListener('scroll', handleScroll); handleScroll();
+    window.addEventListener('scroll', handleScroll);
+    handleScroll();
     return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
+  }, [isLoading]);
+
+  // EĞER VERİLER GELMEDİYSE EKRAN BOŞ KALSIN (TİTREMEYİ ÖNLER)
+  if (isLoading) {
+    return (
+      <div style={{height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#fff'}}>
+          <div style={{color: '#003399', fontSize: '1.2rem', fontWeight: 'bold', fontFamily: 'sans-serif'}}>Yükleniyor...</div>
+      </div>
+    );
+  }
 
   return (
     <main className="overflow-hidden">
       
-      {/* 1️⃣ HERO ALANI (Admin Bağlantılı) */}
+      {/* 1️⃣ HERO ALANI */}
       <section style={{position:'relative', height:'100vh', minHeight:'600px', display:'flex', alignItems:'center', justifyContent:'center', textAlign:'center', color:'white', overflow:'hidden'}}>
           <div className="hero-bg-animate" style={{position:'absolute', top:0, left:0, width:'100%', height:'100%', backgroundImage: content.hero_bg_image ? `url(${content.hero_bg_image})` : 'linear-gradient(135deg, #1B5E20 0%, #004d40 100%)', backgroundSize: 'cover', backgroundPosition: 'center', zIndex: -2}}></div>
           <div className="hero-overlay" style={{position:'absolute', top:0, left:0, width:'100%', height:'100%', zIndex:-1}}></div>
@@ -69,15 +116,15 @@ export default function Home() {
           </div>
       </section>
 
-      {/* 2️⃣ HIZLI ÖZET KARTLARI (Admin Bağlantılı) */}
+      {/* 2️⃣ HIZLI ÖZET KARTLARI */}
       <section className="section-padding" style={{background:'transparent', marginTop:'-100px', position:'relative', zIndex:50, paddingBottom:'0'}}>
           <div className="container">
               <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(250px, 1fr))', gap:'25px'}}>
                   {[
                       { icon: 'fa-clock', val: content.home_summary_1_val || '24 Ay', label: content.home_summary_1_label || 'Proje Süresi' },
                       { icon: 'fa-euro-sign', val: content.home_summary_2_val || '250.000€', label: content.home_summary_2_label || 'Toplam Bütçe' },
-                      { icon: 'fa-handshake', val: content.home_summary_3_val || '5 Kurum', label: content.home_summary_3_label || 'Ortak Sayısı' },
-                      { icon: 'fa-users', val: content.home_summary_4_val || '2.000+', label: content.home_summary_4_label || 'Hedef Vatandaş' }
+                      { icon: 'fa-handshake', val: content.home_summary_3_val || 'KA220-ADU', label: content.home_summary_3_label || 'Program' },
+                      { icon: 'fa-globe', val: content.home_summary_4_val || '3 Ülke', label: content.home_summary_4_label || 'Kapsam' }
                   ].map((item, i) => (
                       <div key={i} className={`glass-card reveal reveal-up delay-${(i+1)*100}`}>
                           <i className={`fas ${item.icon}`} style={{fontSize:'2.5rem', color:'#27ae60'}}></i>
@@ -89,7 +136,7 @@ export default function Home() {
           </div>
       </section>
 
-      {/* 3️⃣ PROJE HAKKINDA (Admin Bağlantılı) */}
+      {/* 3️⃣ PROJE HAKKINDA */}
       <section className="section-padding" style={{background:'white', overflow:'hidden'}}>
           <div className="container" style={{display:'flex', flexWrap:'wrap', alignItems:'center', gap:'60px'}}>
               <div className="reveal reveal-left" style={{flex:'1 1 500px'}}>
@@ -124,7 +171,7 @@ export default function Home() {
           </div>
       </section>
 
-      {/* 4️⃣ HEDEF KİTLE (Admin Bağlantılı) */}
+      {/* 4️⃣ HEDEF KİTLE */}
       <section className="section-padding" style={{background:'#f0f4f8'}}>
           <div className="container">
               <div className="reveal reveal-up" style={{textAlign:'center', marginBottom:'50px'}}>
@@ -135,7 +182,7 @@ export default function Home() {
                   {[
                       {title: content.home_target_1_title || 'Vatandaşlar', desc: content.home_target_1_desc || 'Mobil uygulamalar ile geri dönüşüme katılın, puan kazanın ve şehrinizi güzelleştirin.', icon: 'fa-user'},
                       {title: content.home_target_2_title || 'Yerel Yönetimler', desc: content.home_target_2_desc || 'Veriye dayalı kararlar alarak, kaynakları verimli kullanın ve operasyonel maliyetleri düşürün.', icon: 'fa-building'},
-                      {title: content.home_target_3_title || 'Çevre & Gelecek', desc: content.home_target_3_desc || 'Karbon ayak izini azaltarak, gelecek nesillere daha yaşanabilir bir dünya bırakın.', icon: 'fa-tree'}
+                      {title: content.home_target_3_title || 'STK ve Akademik', desc: content.home_target_3_desc || 'Araştırma, eğitim ve toplumsal farkındalık çalışmalarında aktif rol alın.', icon: 'fa-tree'}
                   ].map((kitle, i) => (
                       <div key={i} className="reveal reveal-up" style={{background:'white', padding:'30px', borderRadius:'15px', textAlign:'center', borderBottom:'4px solid #27ae60'}}>
                           <div style={{width:'60px', height:'60px', background:'#e8f5e9', borderRadius:'50%', display:'flex', alignItems:'center', justifyContent:'center', margin:'0 auto 20px', color:'#27ae60', fontSize:'1.5rem'}}>
@@ -149,7 +196,7 @@ export default function Home() {
           </div>
       </section>
 
-      {/* 5️⃣ DİJİTAL EKOSİSTEM (Admin Bağlantılı) */}
+      {/* 5️⃣ DİJİTAL EKOSİSTEM (AĞAÇ YAPISI) */}
       <section id="solutions" className="section-padding bg-grid-green" style={{backgroundColor:'#fff'}}>
           <div className="container">
               <div className="reveal reveal-up" style={{textAlign:'center', marginBottom:'60px'}}>
@@ -168,7 +215,7 @@ export default function Home() {
                       <div className="tree-dot"></div>
                       <div className="tree-card">
                           <div style={{color:'#003399', fontSize:'2rem', marginBottom:'15px'}}><i className="fas fa-mobile-screen"></i></div>
-                          <h3 style={{fontSize:'1.4rem', fontWeight:'bold', marginBottom:'10px'}}>{content.home_eco_1_title || 'Mobil Uygulama'}</h3>
+                          <h3 style={{fontSize:'1.4rem', fontWeight:'bold', marginBottom:'10px'}}>{content.home_eco_1_title || 'Mobil Entegrasyon'}</h3>
                           <p style={{color:'#666', lineHeight:1.6}}>{content.home_eco_1_desc || 'Vatandaşların belediye hizmetlerine tek tıkla ulaşmasını sağlayan entegre mobil çözüm.'}</p>
                       </div>
                   </div>
@@ -177,7 +224,7 @@ export default function Home() {
                       <div className="tree-dot"></div>
                       <div className="tree-card">
                           <div style={{color:'#27ae60', fontSize:'2rem', marginBottom:'15px'}}><i className="fas fa-recycle"></i></div>
-                          <h3 style={{fontSize:'1.4rem', fontWeight:'bold', marginBottom:'10px'}}>{content.home_eco_2_title || 'Akıllı Geri Dönüşüm'}</h3>
+                          <h3 style={{fontSize:'1.4rem', fontWeight:'bold', marginBottom:'10px'}}>{content.home_eco_2_title || 'Yapay Zeka & Atık'}</h3>
                           <p style={{color:'#666', lineHeight:1.6}}>{content.home_eco_2_desc || 'Yapay zeka destekli sensörler ile atık yönetimini optimize ediyor, doluluk oranlarına göre rota planlıyoruz.'}</p>
                       </div>
                   </div>
@@ -185,18 +232,18 @@ export default function Home() {
                   <div className="tree-item left reveal reveal-left">
                       <div className="tree-dot"></div>
                       <div className="tree-card">
-                          <div style={{color:'#f39c12', fontSize:'2rem', marginBottom:'15px'}}><i className="fas fa-wind"></i></div>
-                          <h3 style={{fontSize:'1.4rem', fontWeight:'bold', marginBottom:'10px'}}>{content.home_eco_3_title || 'Hava Kalitesi Ağı'}</h3>
-                          <p style={{color:'#666', lineHeight:1.6}}>{content.home_eco_3_desc || 'Şehrin 100 farklı noktasına yerleştirilen IoT sensörleri ile anlık hava kalitesi ölçümü.'}</p>
+                          <div style={{color:'#f39c12', fontSize:'2rem', marginBottom:'15px'}}><i className="fas fa-graduation-cap"></i></div>
+                          <h3 style={{fontSize:'1.4rem', fontWeight:'bold', marginBottom:'10px'}}>{content.home_eco_3_title || 'E-Öğrenme Platformu'}</h3>
+                          <p style={{color:'#666', lineHeight:1.6}}>{content.home_eco_3_desc || 'İklim değişikliği ve dijital okuryazarlık üzerine modüler çevrimiçi eğitimler.'}</p>
                       </div>
                   </div>
 
                   <div className="tree-item right reveal reveal-right">
                       <div className="tree-dot"></div>
                       <div className="tree-card">
-                          <div style={{color:'#00acc1', fontSize:'2rem', marginBottom:'15px'}}><i className="fas fa-bottle-water"></i></div>
-                          <h3 style={{fontSize:'1.4rem', fontWeight:'bold', marginBottom:'10px'}}>{content.home_eco_4_title || 'İade Otomatları'}</h3>
-                          <p style={{color:'#666', lineHeight:1.6}}>{content.home_eco_4_desc || 'Depozito iadeli otomatlar ile geri dönüşümü teşvik eden, anında ödül veren sistem.'}</p>
+                          <div style={{color:'#00acc1', fontSize:'2rem', marginBottom:'15px'}}><i className="fas fa-leaf"></i></div>
+                          <h3 style={{fontSize:'1.4rem', fontWeight:'bold', marginBottom:'10px'}}>{content.home_eco_4_title || 'Sürdürülebilir Etki'}</h3>
+                          <p style={{color:'#666', lineHeight:1.6}}>{content.home_eco_4_desc || 'Karbon ayak izini azaltan ve kopyalanabilir dijital modeller.'}</p>
                       </div>
                   </div>
 
@@ -204,15 +251,15 @@ export default function Home() {
           </div>
       </section>
 
-      {/* 6️⃣ SAYAÇLAR (Admin Bağlantılı) */}
+      {/* 6️⃣ SAYAÇLAR */}
       <section className="section-padding" style={{background:'#1B5E20', color:'white'}}>
           <div className="container">
               <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(200px, 1fr))', gap:'40px', textAlign:'center'}}>
                   {[
-                      { icon: 'fa-users', val: parseInt(content.home_counter_1_val) || 2000, label: content.home_counter_1_label || 'Vatandaş Eğitimi' },
+                      { icon: 'fa-euro-sign', val: parseInt(content.home_counter_1_val) || 250000, label: content.home_counter_1_label || 'Toplam Hibe (€)' },
                       { icon: 'fa-globe-europe', val: parseInt(content.home_counter_2_val) || 3, label: content.home_counter_2_label || 'Ortak Ülke' },
-                      { icon: 'fa-euro-sign', val: parseInt(content.home_counter_3_val) || 250000, label: content.home_counter_3_label || 'Toplam Hibe' },
-                      { icon: 'fa-video', val: parseInt(content.home_counter_4_val) || 4, label: content.home_counter_4_label || 'Eğitim Videosu' }
+                      { icon: 'fa-handshake', val: parseInt(content.home_counter_3_val) || 5, label: content.home_counter_3_label || 'Proje Ortağı' },
+                      { icon: 'fa-clock', val: parseInt(content.home_counter_4_val) || 24, label: content.home_counter_4_label || 'Ay Süre' }
                   ].map((stat, i) => (
                       <div key={i} className="reveal reveal-up" style={{transitionDelay: `${i * 0.1}s`}}>
                           <i className={`fas ${stat.icon}`} style={{fontSize:'3rem', color:'#69F0AE', marginBottom:'20px'}}></i>
@@ -226,7 +273,7 @@ export default function Home() {
           </div>
       </section>
 
-      {/* 7️⃣ CTA (Admin Bağlantılı) */}
+      {/* 7️⃣ CTA */}
       <section style={{background:'#003399', padding:'100px 0', textAlign:'center', color:'white', position:'relative', overflow:'hidden'}}>
           <div className="reveal reveal-left" style={{position:'absolute', top:'-50px', left:'-50px', width:'200px', height:'200px', borderRadius:'50%', background:'rgba(255,255,255,0.1)'}}></div>
           <div className="reveal reveal-right" style={{position:'absolute', bottom:'-50px', right:'-50px', width:'300px', height:'300px', borderRadius:'50%', background:'rgba(255,255,255,0.05)'}}></div>
