@@ -3,178 +3,155 @@
 @tailwind utilities;
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --primary: #003399;
+  --secondary: #27ae60;
+  --dark: #1a1a1a;
+  --light: #f4f6f8;
 }
 
 body {
-  color: var(--foreground);
-  background: var(--background);
-  font-family: Arial, Helvetica, sans-serif;
-  overflow-x: hidden; /* Yatay taşmayı engeller */
+  font-family: 'Inter', sans-serif;
+  background-color: var(--light);
+  color: var(--dark);
+  overflow-x: hidden;
+  margin: 0;
+  padding: 0;
 }
 
-/* --- 1. DIGI-GREEN ÖZEL TASARIM (Glassmorphism & Harita) --- */
+/* =========================================
+   1. SCROLL ANİMASYONLARI
+   ========================================= */
+.reveal { opacity: 0; transition: all 1s cubic-bezier(0.5, 0, 0, 1); }
+.reveal.active { opacity: 1; transform: translate(0, 0); }
+.reveal-left { transform: translateX(-100px); }
+.reveal-right { transform: translateX(100px); }
+.reveal-up { transform: translateY(50px); }
 
-/* Cam Efekti (Glassmorphism) */
-.glass-card {
-  background: rgba(255, 255, 255, 0.7);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.5);
-  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.1);
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
-}
-.glass-card:hover {
-  transform: translateY(-10px);
-  box-shadow: 0 15px 40px rgba(46, 125, 50, 0.2);
-  border-color: #2E7D32;
-}
+/* Gecikmeler */
+.delay-100.active { transition-delay: 0.1s; }
+.delay-200.active { transition-delay: 0.2s; }
+.delay-300.active { transition-delay: 0.3s; }
 
-/* Harita Noktası (Pulse Efekti) */
-.map-dot {
-  width: 15px;
-  height: 15px;
-  background-color: #2E7D32;
-  border-radius: 50%;
-  position: absolute;
-  cursor: pointer;
-  z-index: 10;
-}
-.map-dot::after {
-  content: '';
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 100%;
-  height: 100%;
-  border-radius: 50%;
-  background-color: rgba(46, 125, 50, 0.6);
-  animation: mapPulse 2s infinite;
-}
-@keyframes mapPulse {
-  0% { width: 100%; height: 100%; opacity: 1; }
-  100% { width: 300%; height: 300%; opacity: 0; }
-}
+/* =========================================
+   2. HERO & ORTAK ALANLAR
+   ========================================= */
+.hero-bg-animate { animation: slowZoom 20s ease-in-out infinite alternate; }
+@keyframes slowZoom { 0% { transform: scale(1); } 100% { transform: scale(1.1); } }
+.hero-overlay { background: linear-gradient(135deg, rgba(0,51,153,0.85) 0%, rgba(39,174,96,0.7) 100%); }
 
-/* Arka Plan Deseni (Yeşil Ağ) */
 .bg-grid-green {
-  background-image: 
-    linear-gradient(rgba(46, 125, 50, 0.05) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(46, 125, 50, 0.05) 1px, transparent 1px);
+  background-image: linear-gradient(rgba(46, 125, 50, 0.05) 1px, transparent 1px),
+  linear-gradient(90deg, rgba(46, 125, 50, 0.05) 1px, transparent 1px);
   background-size: 40px 40px;
 }
 
-/* --- 2. ANİMASYONLAR --- */
-
-/* Alttan Yukarı Kayarak Gelme */
-@keyframes fadeInUp {
-  from { opacity: 0; transform: translateY(30px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-/* Soldan Sağa Kayarak Gelme */
-@keyframes slideInLeft {
-  from { opacity: 0; transform: translateX(-50px); }
-  to { opacity: 1; transform: translateX(0); }
-}
-
-/* Sağdan Sola Kayarak Gelme */
-@keyframes slideInRight {
-  from { opacity: 0; transform: translateX(50px); }
-  to { opacity: 1; transform: translateX(0); }
-}
-
-/* Süzülme / Yüzme Efekti */
-@keyframes float {
-  0% { transform: translateY(0px); }
-  50% { transform: translateY(-15px); }
-  100% { transform: translateY(0px); }
-}
-
-/* Nefes Alma / Büyüme Efekti */
-@keyframes breathe {
-  0% { transform: scale(1); }
-  50% { transform: scale(1.05); }
-  100% { transform: scale(1); }
-}
-
-/* İkon Zıplama Efekti */
-@keyframes bounce {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-10px); }
-}
-
-/* --- KULLANILACAK ANİMASYON SINIFLARI --- */
-
-.anim-text { opacity: 0; animation: fadeInUp 0.8s ease-out forwards; }
-.anim-slide-left { opacity: 0; animation: slideInLeft 0.8s ease-out forwards; }
-.anim-slide-right { opacity: 0; animation: slideInRight 0.8s ease-out forwards; }
-.anim-float { animation: float 4s ease-in-out infinite; }
-.anim-breathe { animation: breathe 5s ease-in-out infinite; }
-.icon-bounce:hover { animation: bounce 1s infinite; }
-
-/* Gecikme Sınıfları */
-.delay-1 { animation-delay: 0.2s; }
-.delay-2 { animation-delay: 0.4s; }
-.delay-3 { animation-delay: 0.6s; }
-.delay-4 { animation-delay: 0.8s; }
-
-/* --- 3. DROPDOWN (AÇILIR MENÜ) STİLLERİ --- */
-
-.nav-item-with-dropdown {
+/* =========================================
+   3. AĞAÇ / TİMELİNE TASARIMI (YENİ)
+   ========================================= */
+.tree-container {
   position: relative;
-  height: 100%;
-  display: flex;
-  align-items: center;
+  padding: 40px 0;
 }
 
-/* Menü Kutusu */
-.dropdown-menu {
-  display: none; /* Gizli başlar */
+/* Ortadaki Çizgi (Gövde) */
+.tree-line {
   position: absolute;
-  top: 100%; /* Linkin hemen altında */
-  left: 0;
+  left: 50%;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: linear-gradient(to bottom, #27ae60, #003399);
+  transform: translateX(-50%);
+  border-radius: 4px;
+}
+
+/* Dallar (Kartlar) */
+.tree-item {
+  position: relative;
+  width: 50%;
+  padding: 20px 40px;
+  box-sizing: border-box;
+}
+
+/* Sol ve Sağ Yerleşim */
+.tree-item.left { left: 0; text-align: right; }
+.tree-item.right { left: 50%; text-align: left; }
+
+/* Ortadaki Noktalar (Yaprak/Meyve) */
+.tree-dot {
+  position: absolute;
+  top: 40px;
+  width: 24px;
+  height: 24px;
   background: white;
-  min-width: 260px;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.15); /* Gölge efekti */
-  border-radius: 0 0 8px 8px;
-  z-index: 1000;
-  padding: 10px 0;
-  list-style: none;
-  border-top: 4px solid #003399; /* Üst çizgi rengi */
+  border: 4px solid #27ae60;
+  border-radius: 50%;
+  z-index: 10;
+  transition: 0.3s;
+}
+.tree-item.left .tree-dot { right: -12px; }
+.tree-item.right .tree-dot { left: -12px; }
+
+.tree-item:hover .tree-dot {
+  background: #27ae60;
+  transform: scale(1.3);
+  box-shadow: 0 0 15px rgba(39, 174, 96, 0.6);
 }
 
-/* Hover olunca göster */
-.nav-item-with-dropdown:hover .dropdown-menu {
-  display: block;
-  animation: slideUp 0.3s ease;
+/* Mobil Uyumluluk */
+@media (max-width: 768px) {
+  .tree-line { left: 20px; }
+  .tree-item { width: 100%; padding-left: 50px; padding-right: 20px; }
+  .tree-item.left, .tree-item.right { left: 0; text-align: left; }
+  .tree-item.left .tree-dot, .tree-item.right .tree-dot { left: 8px; right: auto; }
 }
 
-/* Menü Linkleri */
-.dropdown-menu li a {
-  display: block;
-  padding: 12px 20px;
-  color: #444;
-  text-decoration: none;
-  font-size: 0.95rem;
-  font-weight: 500;
-  border-bottom: 1px solid #f5f5f5;
-  transition: all 0.2s;
+/* Kart Tasarımı */
+.tree-card {
+  background: white;
+  padding: 30px;
+  border-radius: 20px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+  border: 1px solid #eee;
+  transition: 0.4s ease;
+  position: relative;
+  overflow: hidden;
+}
+.tree-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 20px 40px rgba(0, 51, 153, 0.1);
+  border-color: #27ae60;
 }
 
-.dropdown-menu li:last-child a { border-bottom: none; }
-
-/* Hover Durumu */
-.dropdown-menu li a:hover {
-  background-color: #f0f4f8;
-  color: #003399;
-  padding-left: 25px; /* Hafif sağa kayma efekti */
+/* =========================================
+   4. DİĞER KARTLAR
+   ========================================= */
+.glass-card {
+  background: rgba(255, 255, 255, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+  border-radius: 16px;
+  padding: 30px 20px;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  min-height: 180px;
+  transition: transform 0.3s ease, border-color 0.3s ease;
 }
+.glass-card:hover { transform: translateY(-10px); border-color: var(--secondary); }
+.glass-card i { margin-bottom: 15px; }
+.glass-card h3 { margin: 0 0 5px 0; line-height: 1.2; }
+.glass-card p { margin: 0; line-height: 1.4; }
 
-/* Açılma Animasyonu */
-@keyframes slideUp {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
-}
+/* =========================================
+   5. YARDIMCI SINIFLAR
+   ========================================= */
+.form-control { width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid #ddd; border-radius: 8px; }
+.btn { display: inline-flex; align-items: center; justify-content: center; padding: 10px 20px; border-radius: 5px; font-weight: 600; cursor: pointer; transition: 0.3s; gap:8px;}
+.btn-primary { background: var(--primary); color: white; }
+.btn-hero { padding: 15px 40px; background: var(--secondary); color: white; border-radius: 50px; font-weight: bold; font-size: 1.1rem; display: inline-block; transition: 0.3s; }
+.btn-hero:hover { transform: translateY(-3px); background: #219150; }
+
+.nav-item-with-dropdown { position: relative; height: 100%; display: flex; align-items: center; }
+.dropdown-menu { display: none; position: absolute; top: 100%; left: 0; background: white; min-width: 250px; border-radius: 8px; z-index: 1000; border-top: 4px solid var(--primary); padding: 10px 0; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
+.nav-item-with-dropdown:hover .dropdown-menu { display: block; }
+.dropdown-menu li a { display: block; padding: 12px 20px; color: #444; border-bottom: 1px solid #f5f5f5; }
+.dropdown-menu li a:hover { background: #f0f4f8; color: var(--primary); padding-left: 25px; }

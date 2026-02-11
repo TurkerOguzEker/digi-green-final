@@ -2,138 +2,121 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 
-// TypeScript için veri tiplerini tanımlıyoruz
-interface ContentState {
-  [key: string]: string; // Objenin içinde herhangi bir string anahtar olabilir
-}
+// TypeScript Tipleri
+interface ContentState { [key: string]: string; }
+interface CounterProps { end: number; duration?: number; }
 
-interface CounterProps {
-  end: number;
-  duration?: number;
-}
-
-// Sayaç Bileşeni
 const Counter = ({ end, duration = 2000 }: CounterProps) => {
   const [count, setCount] = useState(0);
   useEffect(() => {
-    let start = 0;
-    const increment = end / (duration / 16); 
-    const timer = setInterval(() => {
-      start += increment;
-      if (start >= end) {
-        setCount(end);
-        clearInterval(timer);
-      } else {
-        setCount(Math.floor(start));
-      }
-    }, 16);
+    let start = 0; const increment = end / (duration / 16); 
+    const timer = setInterval(() => { start += increment; if (start >= end) { setCount(end); clearInterval(timer); } else { setCount(Math.floor(start)); } }, 16);
     return () => clearInterval(timer);
   }, [end, duration]);
   return <span>{count}</span>;
 };
 
 export default function Home() {
-  // content state'ine tipini belirtiyoruz: <ContentState>
   const [content, setContent] = useState<ContentState>({});
 
-  // Admin panelinden verileri çek
   useEffect(() => {
     async function fetchSettings() {
       const { data } = await supabase.from('settings').select('*');
       if (data) {
         const map: ContentState = {};
-        // Gelen verinin tipini belirtiyoruz
-        data.forEach((item: { key: string; value: string }) => {
-             map[item.key] = item.value;
-        });
+        data.forEach((item: { key: string; value: string }) => { map[item.key] = item.value; });
         setContent(map);
       }
     }
     fetchSettings();
   }, []);
 
+  // Scroll Animasyon Tetikleyici
+  useEffect(() => {
+    const handleScroll = () => {
+      const reveals = document.querySelectorAll('.reveal');
+      for (let i = 0; i < reveals.length; i++) {
+        const windowHeight = window.innerHeight;
+        const elementTop = reveals[i].getBoundingClientRect().top;
+        if (elementTop < windowHeight - 100) { reveals[i].classList.add('active'); }
+      }
+    };
+    window.addEventListener('scroll', handleScroll); handleScroll();
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
   return (
     <main className="overflow-hidden">
       
-      {/* 1️⃣ HERO ALANI (Admin Panel Bağlantılı) */}
-      <section className="relative min-h-screen flex items-center justify-center text-center text-white" 
-        style={{
-            backgroundImage: content.hero_bg_image ? `url(${content.hero_bg_image})` : 'linear-gradient(135deg, #1B5E20 0%, #004d40 100%)',
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
-            backgroundAttachment: 'fixed'
-        }}>
-        {/* Karartma ve Desen */}
-        <div className="absolute top-0 left-0 w-full h-full bg-black/50 z-0"></div>
-        <div className="absolute top-0 left-0 w-full h-full bg-grid-green opacity-20 z-0 pointer-events-none"></div>
-
-        <div className="container relative z-10 px-4">
-            <span className="inline-block py-2 px-6 border-2 border-white/30 rounded-full font-bold tracking-widest mb-6 bg-white/10 backdrop-blur-md anim-text">
-                {content.header_logo_text || 'DIGI-GREEN FUTURE'}
-            </span>
-            <h1 className="text-4xl md:text-6xl font-extrabold mb-6 leading-tight drop-shadow-lg anim-text delay-1">
-                {content.hero_title || 'Vatandaş Odaklı Yerel Yeşil Gelecek İçin Dijital Dönüşüm'}
-            </h1>
-            <p className="text-lg md:text-xl max-w-3xl mx-auto mb-10 opacity-90 leading-relaxed anim-text delay-2">
-                {content.hero_desc || 'Erasmus+ KA220-ADU kapsamında 3 ülkede sürdürülebilir ve dijital belediyecilik çözümleri geliştiriyoruz.'}
-            </p>
-            <div className="flex flex-wrap justify-center gap-5 anim-text delay-3">
-                <a href="#solutions" className="px-8 py-4 bg-[#00C853] text-white rounded-full font-bold text-lg shadow-lg hover:bg-[#00E676] transition transform hover:scale-105">
-                    📱 Mobil Çözümleri Keşfet
-                </a>
-                <a href="/about" className="px-8 py-4 bg-white text-[#1B5E20] rounded-full font-bold text-lg shadow-lg hover:bg-gray-100 transition transform hover:scale-105">
-                    🌍 Projeyi İncele
-                </a>
-            </div>
-        </div>
+      {/* 1️⃣ HERO ALANI (Admin Bağlantılı) */}
+      <section style={{position:'relative', height:'100vh', minHeight:'600px', display:'flex', alignItems:'center', justifyContent:'center', textAlign:'center', color:'white', overflow:'hidden'}}>
+          <div className="hero-bg-animate" style={{position:'absolute', top:0, left:0, width:'100%', height:'100%', backgroundImage: content.hero_bg_image ? `url(${content.hero_bg_image})` : 'linear-gradient(135deg, #1B5E20 0%, #004d40 100%)', backgroundSize: 'cover', backgroundPosition: 'center', zIndex: -2}}></div>
+          <div className="hero-overlay" style={{position:'absolute', top:0, left:0, width:'100%', height:'100%', zIndex:-1}}></div>
+          <div className="container" style={{zIndex:10}}>
+              <span className="reveal reveal-up" style={{background:'rgba(255,255,255,0.15)', backdropFilter:'blur(5px)', padding:'10px 25px', borderRadius:'50px', border:'1px solid rgba(255,255,255,0.3)', fontWeight:'bold', letterSpacing:'2px', textTransform:'uppercase', fontSize:'0.9rem'}}>
+                  {content.header_logo_text || 'DIGI-GREEN FUTURE'}
+              </span>
+              <h1 className="reveal reveal-up delay-100" style={{fontSize:'clamp(2.5rem, 5vw, 4.5rem)', fontWeight:'800', margin:'25px 0', textShadow:'0 10px 30px rgba(0,0,0,0.3)', lineHeight:1.1}}>
+                  {content.hero_title || 'Sürdürülebilir Gelecek İçin Dijital Dönüşüm'}
+              </h1>
+              <p className="reveal reveal-up delay-200" style={{fontSize:'1.25rem', maxWidth:'700px', margin:'0 auto 40px', opacity:0.95, lineHeight:1.6}}>
+                  {content.hero_desc || 'Erasmus+ KA220-ADU kapsamında 3 ülkede sürdürülebilir ve dijital belediyecilik çözümleri geliştiriyoruz.'}
+              </p>
+              <div className="reveal reveal-up delay-300" style={{display:'flex', justifyContent:'center', gap:'20px', flexWrap:'wrap'}}>
+                  <a href="#solutions" className="btn-hero">📱 Mobil Çözümler</a>
+                  <a href="/about" className="btn-hero" style={{background:'white', color:'#003399', border:'2px solid white'}}>🌍 Projeyi İncele</a>
+              </div>
+          </div>
       </section>
 
-      {/* 2️⃣ HIZLI ÖZET KARTLARI (Glassmorphism) */}
-      <section className="py-20 bg-[#f9fcf9] relative -mt-20 z-20">
-          <div className="container mx-auto px-4">
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+      {/* 2️⃣ HIZLI ÖZET KARTLARI (Admin Bağlantılı) */}
+      <section className="section-padding" style={{background:'transparent', marginTop:'-100px', position:'relative', zIndex:50, paddingBottom:'0'}}>
+          <div className="container">
+              <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(250px, 1fr))', gap:'25px'}}>
                   {[
-                      { icon: 'fa-clock', val: '24 Ay', label: 'Proje Süresi' },
-                      { icon: 'fa-euro-sign', val: '250.000€', label: 'Toplam Bütçe' },
-                      { icon: 'fa-handshake', val: '5 Kurum', label: 'Ortak Sayısı' },
-                      { icon: 'fa-users', val: '2.000+', label: 'Hedef Vatandaş' }
+                      { icon: 'fa-clock', val: content.home_summary_1_val || '24 Ay', label: content.home_summary_1_label || 'Proje Süresi' },
+                      { icon: 'fa-euro-sign', val: content.home_summary_2_val || '250.000€', label: content.home_summary_2_label || 'Toplam Bütçe' },
+                      { icon: 'fa-handshake', val: content.home_summary_3_val || '5 Kurum', label: content.home_summary_3_label || 'Ortak Sayısı' },
+                      { icon: 'fa-users', val: content.home_summary_4_val || '2.000+', label: content.home_summary_4_label || 'Hedef Vatandaş' }
                   ].map((item, i) => (
-                      <div key={i} className="glass-card p-8 rounded-2xl text-center">
-                          <i className={`fas ${item.icon} text-4xl text-[#2E7D32] mb-4`}></i>
-                          <h3 className="text-2xl font-bold text-gray-800">{item.val}</h3>
-                          <p className="text-gray-500 font-medium">{item.label}</p>
+                      <div key={i} className={`glass-card reveal reveal-up delay-${(i+1)*100}`}>
+                          <i className={`fas ${item.icon}`} style={{fontSize:'2.5rem', color:'#27ae60'}}></i>
+                          <h3 style={{fontSize:'2rem', fontWeight:'800', color:'#333'}}>{item.val}</h3>
+                          <p style={{color:'#666', fontSize:'1rem', fontWeight:'500', textTransform:'uppercase', letterSpacing:'1px'}}>{item.label}</p>
                       </div>
                   ))}
               </div>
           </div>
       </section>
 
-      {/* 3️⃣ PROJENİN AMACI (Resimli) */}
-      <section className="py-24 bg-white">
-          <div className="container mx-auto px-4 flex flex-col md:flex-row items-center gap-16">
-              <div className="w-full md:w-1/2 relative">
-                  {/* Temsili Görsel Alanı */}
-                  <div className="relative rounded-2xl overflow-hidden shadow-2xl border-4 border-[#e8f5e9]">
-                      <img src="https://images.unsplash.com/photo-1518173946687-a4c8892bbd9f?q=80&w=1000&auto=format&fit=crop" alt="Smart City" className="w-full h-auto object-cover transform hover:scale-105 transition duration-700" />
-                      <div className="absolute bottom-0 left-0 bg-[#2E7D32] text-white px-6 py-3 rounded-tr-xl font-bold">
-                          %29 Geri Dönüşüm Hedefi
+      {/* 3️⃣ PROJE HAKKINDA (Admin Bağlantılı) */}
+      <section className="section-padding" style={{background:'white', overflow:'hidden'}}>
+          <div className="container" style={{display:'flex', flexWrap:'wrap', alignItems:'center', gap:'60px'}}>
+              <div className="reveal reveal-left" style={{flex:'1 1 500px'}}>
+                  <div style={{position:'relative', padding:'20px'}}>
+                      <div style={{borderRadius:'20px', overflow:'hidden', boxShadow:'0 20px 50px rgba(0,0,0,0.1)', border:'10px solid white'}}>
+                          <img src={content.home_about_image || "https://images.unsplash.com/photo-1497366216548-37526070297c?q=80&w=1000"} alt="About" style={{width:'100%', display:'block'}} />
+                      </div>
+                      <div style={{position:'absolute', bottom:'0', right:'0', background:'#003399', color:'white', padding:'30px', borderRadius:'20px', boxShadow:'0 10px 30px rgba(0,51,153,0.3)', maxWidth:'250px'}}>
+                          <h4 style={{fontSize:'1.2rem', fontWeight:'bold', margin:0, lineHeight:1.4}}>
+                              {content.home_summary_1_val || '24 Ay'} Sürecek Dijital ve Yeşil Bir Yolculuk
+                          </h4>
                       </div>
                   </div>
               </div>
-              <div className="w-full md:w-1/2">
-                  <h2 className="text-3xl md:text-4xl font-bold text-[#1B5E20] mb-6">İklim Değişikliğiyle Dijital Mücadele</h2>
-                  <p className="text-gray-600 text-lg leading-relaxed mb-6">
-                      Kapaklı Belediyesi liderliğinde yürütülen bu proje, iklim değişikliğinin yerel etkilerini azaltmak için teknolojiyi kullanıyor. Mobil uygulamalar ve yapay zeka destekli atık yönetimi ile karbon ayak izini düşürmeyi hedefliyoruz.
+              <div className="reveal reveal-right" style={{flex:'1 1 500px'}}>
+                  <h4 style={{color:'#27ae60', fontWeight:'bold', textTransform:'uppercase', letterSpacing:'1px', marginBottom:'10px'}}>Proje Hakkında</h4>
+                  <h2 style={{fontSize:'2.5rem', fontWeight:'800', color:'#1a1a1a', marginBottom:'25px', lineHeight:1.2}}>
+                      {content.home_about_title || 'Teknoloji ve Doğanın Mükemmel Uyumu'}
+                  </h2>
+                  <p style={{color:'#555', fontSize:'1.1rem', lineHeight:1.7, marginBottom:'30px'}}>
+                      {content.home_about_text || 'Kapaklı Belediyesi liderliğinde yürütülen DIGI-GREEN FUTURE, iklim değişikliği ile mücadelede dijital araçları kullanmayı hedefleyen öncü bir Erasmus+ projesidir.'}
                   </p>
-                  <ul className="space-y-4">
-                      {[
-                          'Dijital Belediyecilik Entegrasyonu',
-                          'Geri Dönüşüm Oranını %24\'ten %29\'a Çıkarma',
-                          'Aktif Vatandaş Katılımı ve Ödül Sistemi',
-                          'Hava Kalitesi İzleme Ağı'
-                      ].map((li, i) => (
-                          <li key={i} className="flex items-center gap-3 text-gray-700 font-medium">
-                              <i className="fas fa-check-circle text-[#00C853]"></i> {li}
+                  <ul style={{display:'grid', gap:'15px'}}>
+                      {['Mobil Uygulama Entegrasyonu', 'Yapay Zeka Destekli Atık Yönetimi', 'Uluslararası İşbirliği Ağı'].map((item, i) => (
+                          <li key={i} style={{display:'flex', alignItems:'center', gap:'15px', background:'#f8f9fa', padding:'15px', borderRadius:'10px'}}>
+                              <div style={{width:'30px', height:'30px', background:'#27ae60', borderRadius:'50%', display:'flex', alignItems:'center', justifyContent:'center', color:'white', fontSize:'0.9rem'}}><i className="fas fa-check"></i></div>
+                              <span style={{fontWeight:'600', color:'#333'}}>{item}</span>
                           </li>
                       ))}
                   </ul>
@@ -141,127 +124,122 @@ export default function Home() {
           </div>
       </section>
 
-      {/* 4️⃣ 3 ÜLKE - 3 ŞEHİR (Basit Harita Görünümü) */}
-      <section className="py-24 bg-[#e8f5e9] relative">
-          <div className="container mx-auto px-4 text-center">
-              <h2 className="text-3xl font-bold text-[#1B5E20] mb-12">3 Ülke – 3 Stratejik Ortak 🌍</h2>
-              
-              {/* Basit Harita Temsili */}
-              <div className="relative max-w-4xl mx-auto bg-white rounded-3xl shadow-xl p-8 overflow-hidden">
-                  <img src="/globe.svg" alt="Map Map" className="w-full h-auto opacity-20 absolute top-0 left-0" />
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-8 relative z-10">
-                      <div className="p-6 bg-white/80 rounded-xl shadow-sm hover:shadow-md transition">
-                          <div className="text-4xl mb-4">🇹🇷</div>
-                          <h3 className="text-xl font-bold text-[#003399]">Kapaklı, Türkiye</h3>
-                          <p className="text-sm text-gray-600 mt-2">Proje Koordinatörü & Pilot Uygulama Alanı</p>
-                      </div>
-                      <div className="p-6 bg-white/80 rounded-xl shadow-sm hover:shadow-md transition">
-                          <div className="text-4xl mb-4">🇱🇻</div>
-                          <h3 className="text-xl font-bold text-[#003399]">Liepāja, Letonya</h3>
-                          <p className="text-sm text-gray-600 mt-2">Akıllı Şehir & Dijital Atık Uzmanlığı</p>
-                      </div>
-                      <div className="p-6 bg-white/80 rounded-xl shadow-sm hover:shadow-md transition">
-                          <div className="text-4xl mb-4">🇵🇹</div>
-                          <h3 className="text-xl font-bold text-[#003399]">Cascais, Portekiz</h3>
-                          <p className="text-sm text-gray-600 mt-2">İklim Eylemi & Vatandaş Katılımı</p>
-                      </div>
-                  </div>
+      {/* 4️⃣ HEDEF KİTLE (Admin Bağlantılı) */}
+      <section className="section-padding" style={{background:'#f0f4f8'}}>
+          <div className="container">
+              <div className="reveal reveal-up" style={{textAlign:'center', marginBottom:'50px'}}>
+                  <h2 style={{fontSize:'2.2rem', fontWeight:'800', color:'#333'}}>Projemiz Kimler İçin?</h2>
+                  <p style={{color:'#666'}}>Toplumun her kesimine dokunan çözümler.</p>
               </div>
-          </div>
-      </section>
-
-      {/* 5️⃣ DİJİTAL ÇÖZÜMLER (Grid) */}
-      <section id="solutions" className="py-24 bg-white">
-          <div className="container mx-auto px-4">
-              <div className="text-center mb-16">
-                  <h2 className="text-3xl md:text-4xl font-bold text-[#1B5E20] mb-4">Dijital Çözümlerimiz</h2>
-                  <p className="text-gray-600 max-w-2xl mx-auto">Yeşil bir gelecek için geliştirdiğimiz teknolojik araçlar.</p>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+              <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(300px, 1fr))', gap:'30px'}}>
                   {[
-                      { icon: 'fa-mobile-screen', title: 'Mobil Belediye', desc: '5.000+ İndirme Hedefi, Geri Bildirim Sistemi', color: '#2E7D32' },
-                      { icon: 'fa-recycle', title: 'AI Atık Yönetimi', desc: 'Yapay Zeka Destekli Akıllı Atık Kutuları', color: '#1565C0' },
-                      { icon: 'fa-wind', title: 'Hava Kalitesi', desc: '100 Adet IoT Tabanlı Hava Sensör Ağı', color: '#F9A825' },
-                      { icon: 'fa-bottle-water', title: 'İade Makineleri', desc: 'Depozito İadeli Otomatlar (Pilot)', color: '#00838F' }
-                  ].map((item, i) => (
-                      <div key={i} className="group p-8 bg-gray-50 rounded-2xl border border-gray-100 hover:bg-white hover:shadow-xl transition duration-300 text-center">
-                          <div className={`w-16 h-16 mx-auto rounded-full flex items-center justify-center text-white text-2xl mb-6 shadow-lg transform group-hover:rotate-12 transition`} style={{backgroundColor: item.color}}>
-                              <i className={`fas ${item.icon}`}></i>
+                      {title: content.home_target_1_title || 'Vatandaşlar', desc: content.home_target_1_desc || 'Mobil uygulamalar ile geri dönüşüme katılın, puan kazanın ve şehrinizi güzelleştirin.', icon: 'fa-user'},
+                      {title: content.home_target_2_title || 'Yerel Yönetimler', desc: content.home_target_2_desc || 'Veriye dayalı kararlar alarak, kaynakları verimli kullanın ve operasyonel maliyetleri düşürün.', icon: 'fa-building'},
+                      {title: content.home_target_3_title || 'Çevre & Gelecek', desc: content.home_target_3_desc || 'Karbon ayak izini azaltarak, gelecek nesillere daha yaşanabilir bir dünya bırakın.', icon: 'fa-tree'}
+                  ].map((kitle, i) => (
+                      <div key={i} className="reveal reveal-up" style={{background:'white', padding:'30px', borderRadius:'15px', textAlign:'center', borderBottom:'4px solid #27ae60'}}>
+                          <div style={{width:'60px', height:'60px', background:'#e8f5e9', borderRadius:'50%', display:'flex', alignItems:'center', justifyContent:'center', margin:'0 auto 20px', color:'#27ae60', fontSize:'1.5rem'}}>
+                              <i className={`fas ${kitle.icon}`}></i>
                           </div>
-                          <h3 className="text-xl font-bold text-gray-800 mb-3">{item.title}</h3>
-                          <p className="text-gray-500 text-sm">{item.desc}</p>
+                          <h4 style={{fontSize:'1.3rem', fontWeight:'bold', marginBottom:'10px'}}>{kitle.title}</h4>
+                          <p style={{color:'#666', lineHeight:1.6}}>{kitle.desc}</p>
                       </div>
                   ))}
               </div>
           </div>
       </section>
 
-      {/* 6️⃣ EĞİTİM & ETKİ (Sayaçlar) */}
-      <section className="py-20 bg-[#1B5E20] text-white relative overflow-hidden">
-          <div className="absolute top-0 left-0 w-full h-full opacity-10 bg-[url('/file.svg')] bg-repeat space-x-10"></div>
-          <div className="container mx-auto px-4 relative z-10">
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
+      {/* 5️⃣ DİJİTAL EKOSİSTEM (Admin Bağlantılı) */}
+      <section id="solutions" className="section-padding bg-grid-green" style={{backgroundColor:'#fff'}}>
+          <div className="container">
+              <div className="reveal reveal-up" style={{textAlign:'center', marginBottom:'60px'}}>
+                  <h2 style={{fontSize:'2.5rem', fontWeight:'800', color:'#1a1a1a', marginBottom:'15px'}}>
+                      Dijital <span style={{color:'#27ae60'}}>Ekosistemimiz</span>
+                  </h2>
+                  <p style={{color:'#666', maxWidth:'600px', margin:'0 auto'}}>
+                      Teknolojiyi doğanın hizmetine sunan entegre çözüm ağımız.
+                  </p>
+              </div>
+
+              <div className="tree-container">
+                  <div className="tree-line"></div>
+
+                  <div className="tree-item left reveal reveal-left">
+                      <div className="tree-dot"></div>
+                      <div className="tree-card">
+                          <div style={{color:'#003399', fontSize:'2rem', marginBottom:'15px'}}><i className="fas fa-mobile-screen"></i></div>
+                          <h3 style={{fontSize:'1.4rem', fontWeight:'bold', marginBottom:'10px'}}>{content.home_eco_1_title || 'Mobil Uygulama'}</h3>
+                          <p style={{color:'#666', lineHeight:1.6}}>{content.home_eco_1_desc || 'Vatandaşların belediye hizmetlerine tek tıkla ulaşmasını sağlayan entegre mobil çözüm.'}</p>
+                      </div>
+                  </div>
+
+                  <div className="tree-item right reveal reveal-right">
+                      <div className="tree-dot"></div>
+                      <div className="tree-card">
+                          <div style={{color:'#27ae60', fontSize:'2rem', marginBottom:'15px'}}><i className="fas fa-recycle"></i></div>
+                          <h3 style={{fontSize:'1.4rem', fontWeight:'bold', marginBottom:'10px'}}>{content.home_eco_2_title || 'Akıllı Geri Dönüşüm'}</h3>
+                          <p style={{color:'#666', lineHeight:1.6}}>{content.home_eco_2_desc || 'Yapay zeka destekli sensörler ile atık yönetimini optimize ediyor, doluluk oranlarına göre rota planlıyoruz.'}</p>
+                      </div>
+                  </div>
+
+                  <div className="tree-item left reveal reveal-left">
+                      <div className="tree-dot"></div>
+                      <div className="tree-card">
+                          <div style={{color:'#f39c12', fontSize:'2rem', marginBottom:'15px'}}><i className="fas fa-wind"></i></div>
+                          <h3 style={{fontSize:'1.4rem', fontWeight:'bold', marginBottom:'10px'}}>{content.home_eco_3_title || 'Hava Kalitesi Ağı'}</h3>
+                          <p style={{color:'#666', lineHeight:1.6}}>{content.home_eco_3_desc || 'Şehrin 100 farklı noktasına yerleştirilen IoT sensörleri ile anlık hava kalitesi ölçümü.'}</p>
+                      </div>
+                  </div>
+
+                  <div className="tree-item right reveal reveal-right">
+                      <div className="tree-dot"></div>
+                      <div className="tree-card">
+                          <div style={{color:'#00acc1', fontSize:'2rem', marginBottom:'15px'}}><i className="fas fa-bottle-water"></i></div>
+                          <h3 style={{fontSize:'1.4rem', fontWeight:'bold', marginBottom:'10px'}}>{content.home_eco_4_title || 'İade Otomatları'}</h3>
+                          <p style={{color:'#666', lineHeight:1.6}}>{content.home_eco_4_desc || 'Depozito iadeli otomatlar ile geri dönüşümü teşvik eden, anında ödül veren sistem.'}</p>
+                      </div>
+                  </div>
+
+              </div>
+          </div>
+      </section>
+
+      {/* 6️⃣ SAYAÇLAR (Admin Bağlantılı) */}
+      <section className="section-padding" style={{background:'#1B5E20', color:'white'}}>
+          <div className="container">
+              <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(200px, 1fr))', gap:'40px', textAlign:'center'}}>
                   {[
-                      { val: 2000, label: 'Vatandaş Eğitimi', icon: 'fa-users' },
-                      { val: 50, label: 'Belediye Personeli', icon: 'fa-user-tie' },
-                      { val: 1, label: 'SECAP Planı', icon: 'fa-file-contract' },
-                      { val: 4, label: 'Eğitim Videosu', icon: 'fa-video' }
+                      { icon: 'fa-users', val: parseInt(content.home_counter_1_val) || 2000, label: content.home_counter_1_label || 'Vatandaş Eğitimi' },
+                      { icon: 'fa-globe-europe', val: parseInt(content.home_counter_2_val) || 3, label: content.home_counter_2_label || 'Ortak Ülke' },
+                      { icon: 'fa-euro-sign', val: parseInt(content.home_counter_3_val) || 250000, label: content.home_counter_3_label || 'Toplam Hibe' },
+                      { icon: 'fa-video', val: parseInt(content.home_counter_4_val) || 4, label: content.home_counter_4_label || 'Eğitim Videosu' }
                   ].map((stat, i) => (
-                      <div key={i}>
-                          <i className={`fas ${stat.icon} text-3xl mb-4 text-[#69F0AE]`}></i>
-                          <div className="text-4xl md:text-5xl font-bold mb-2">
+                      <div key={i} className="reveal reveal-up" style={{transitionDelay: `${i * 0.1}s`}}>
+                          <i className={`fas ${stat.icon}`} style={{fontSize:'3rem', color:'#69F0AE', marginBottom:'20px'}}></i>
+                          <div style={{fontSize:'3.5rem', fontWeight:'800', marginBottom:'10px', lineHeight:1}}>
                               <Counter end={stat.val} />
                           </div>
-                          <p className="text-[#C8E6C9] font-medium">{stat.label}</p>
+                          <p style={{color:'#C8E6C9', fontSize:'1.1rem', fontWeight:'500', textTransform:'uppercase'}}>{stat.label}</p>
                       </div>
                   ))}
               </div>
           </div>
       </section>
 
-      {/* 7️⃣ FARKINDALIK & GÖRÜNÜRLÜK */}
-      <section className="py-20 bg-white">
-          <div className="container mx-auto px-4 text-center">
-              <h2 className="text-2xl font-bold text-[#333] mb-10">Farkındalık & Görünürlük Çalışmaları</h2>
-              <div className="flex flex-wrap justify-center gap-10 md:gap-20 opacity-70">
-                  <div className="flex flex-col items-center gap-3">
-                      <i className="fab fa-instagram text-4xl text-pink-600 icon-bounce"></i>
-                      <span className="font-bold">Sosyal Medya</span>
-                  </div>
-                  <div className="flex flex-col items-center gap-3">
-                      <i className="fas fa-newspaper text-4xl text-gray-600 icon-bounce"></i>
-                      <span className="font-bold">Basın Bültenleri</span>
-                  </div>
-                  <div className="flex flex-col items-center gap-3">
-                      <i className="fas fa-book-open text-4xl text-blue-600 icon-bounce"></i>
-                      <span className="font-bold">1000+ Broşür</span>
-                  </div>
-                  <div className="flex flex-col items-center gap-3">
-                      <i className="fas fa-video text-4xl text-red-600 icon-bounce"></i>
-                      <span className="font-bold">Tanıtım Filmleri</span>
-                  </div>
-              </div>
-          </div>
-      </section>
-
-      {/* 9️⃣ GÜÇLÜ KAPANIŞ (CTA) */}
-      <section className="py-24 text-center relative bg-gray-900 text-white">
-          <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1473341304170-5799a28c3463?q=80&w=2070&auto=format&fit=crop')] bg-cover bg-center opacity-30"></div>
-          <div className="container mx-auto px-4 relative z-10">
-              <h2 className="text-4xl md:text-5xl font-bold mb-6">“Dijitalleşerek Yeşil Geleceğe”</h2>
-              <p className="text-xl text-gray-300 mb-10 max-w-2xl mx-auto">
-                  Siz de bu dönüşümün bir parçası olun. Proje çıktılarını inceleyin veya bizimle iletişime geçin.
+      {/* 7️⃣ CTA (Admin Bağlantılı) */}
+      <section style={{background:'#003399', padding:'100px 0', textAlign:'center', color:'white', position:'relative', overflow:'hidden'}}>
+          <div className="reveal reveal-left" style={{position:'absolute', top:'-50px', left:'-50px', width:'200px', height:'200px', borderRadius:'50%', background:'rgba(255,255,255,0.1)'}}></div>
+          <div className="reveal reveal-right" style={{position:'absolute', bottom:'-50px', right:'-50px', width:'300px', height:'300px', borderRadius:'50%', background:'rgba(255,255,255,0.05)'}}></div>
+          <div className="container reveal reveal-up" style={{position:'relative', zIndex:5}}>
+              <h2 style={{fontSize:'2.5rem', fontWeight:'800', marginBottom:'20px'}}>
+                  {content.home_cta_title || 'Geleceği Birlikte Tasarlayalım'}
+              </h2>
+              <p style={{fontSize:'1.2rem', opacity:0.9, maxWidth:'700px', margin:'0 auto 40px'}}>
+                  {content.home_cta_text || 'DIGI-GREEN FUTURE projesi hakkında daha fazla bilgi almak, eğitimlere katılmak veya işbirliği yapmak için bize ulaşın.'}
               </p>
-              <div className="flex justify-center gap-5">
-                  <a href="/results" className="px-8 py-3 bg-white text-gray-900 rounded-full font-bold hover:bg-gray-100 transition">
-                      Proje Dokümanları
-                  </a>
-                  <a href="/contact" className="px-8 py-3 border-2 border-white text-white rounded-full font-bold hover:bg-white hover:text-gray-900 transition">
-                      İletişime Geçin
-                  </a>
-              </div>
+              <a href="/contact" className="btn" style={{background:'white', color:'#003399', padding:'15px 45px', borderRadius:'50px', fontSize:'1.1rem', boxShadow:'0 10px 20px rgba(0,0,0,0.2)', fontWeight:'bold'}}>
+                  İletişime Geç <i className="fas fa-arrow-right"></i>
+              </a>
           </div>
       </section>
 
