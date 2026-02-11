@@ -3,14 +3,21 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '../../lib/supabase';
 
+// --- SABİT LİSTELER ---
+const COUNTRIES = [
+    "Türkiye", "Almanya", "Avusturya", "Belçika", "Bulgaristan", "Çekya", 
+    "Danimarka", "Estonya", "Finlandiya", "Fransa", "Hırvatistan", "Hollanda", 
+    "İrlanda", "İspanya", "İsveç", "İtalya", "Kıbrıs", "Letonya", "Litvanya", 
+    "Lüksemburg", "Macaristan", "Malta", "Polonya", "Portekiz", "Romanya", 
+    "Slovakya", "Slovenya", "Yunanistan"
+];
+
 // --- MODERN BİLEŞENLER ---
 
-// 1. Toast Bildirim
 const ToastNotification = ({ message, type, onClose }) => {
   if (!message) return null;
   const bgColor = type === 'error' ? '#e74c3c' : '#27ae60';
   const icon = type === 'error' ? 'fa-exclamation-circle' : 'fa-check-circle';
-
   return (
     <div className="toast-anim" style={{
         position: 'fixed', top: '20px', right: '20px', zIndex: 9999,
@@ -28,7 +35,6 @@ const ToastNotification = ({ message, type, onClose }) => {
   );
 };
 
-// 2. Onay Modalı
 const ConfirmModal = ({ isOpen, message, onConfirm, onCancel }) => {
   if (!isOpen) return null;
   return (
@@ -38,9 +44,6 @@ const ConfirmModal = ({ isOpen, message, onConfirm, onCancel }) => {
         display:'flex', alignItems:'center', justifyContent:'center', backdropFilter: 'blur(3px)'
     }}>
         <div className="modal-anim" style={{background:'white', borderRadius:'12px', padding:'30px', width:'400px', maxWidth:'90%', textAlign:'center', boxShadow:'0 10px 40px rgba(0,0,0,0.3)'}}>
-            <div style={{width:'60px', height:'60px', background:'#fef9e7', borderRadius:'50%', display:'flex', alignItems:'center', justifyContent:'center', margin:'0 auto 20px'}}>
-                <i className="fas fa-question" style={{fontSize:'1.8rem', color:'#f1c40f'}}></i>
-            </div>
             <h3 style={{margin:'0 0 10px', color:'#333'}}>Emin misiniz?</h3>
             <p style={{color:'#666', marginBottom:'25px', lineHeight:'1.5'}}>{message}</p>
             <div style={{display:'flex', gap:'10px', justifyContent:'center'}}>
@@ -52,11 +55,9 @@ const ConfirmModal = ({ isOpen, message, onConfirm, onCancel }) => {
   );
 };
 
-// --- YARDIMCI BİLEŞEN: Çoklu Resim Yönetimi ---
 const MultiImageSetting = ({ label, settingKey, showToast, showConfirm, uploadFile }) => {
     const [images, setImages] = useState([]);
     const [uploading, setUploading] = useState(false);
-
     useEffect(() => {
         const fetchImages = async () => {
             const { data } = await supabase.from('settings').select('value').eq('key', settingKey).maybeSingle();
@@ -69,7 +70,6 @@ const MultiImageSetting = ({ label, settingKey, showToast, showConfirm, uploadFi
         };
         fetchImages();
     }, [settingKey]);
-
     const handleUpload = async (e) => {
         try {
             setUploading(true);
@@ -79,33 +79,19 @@ const MultiImageSetting = ({ label, settingKey, showToast, showConfirm, uploadFi
             if (url) {
                 const newImages = [...images, url];
                 setImages(newImages);
-                const { error } = await supabase.from('settings').upsert(
-                    { key: settingKey, value: JSON.stringify(newImages) }, 
-                    { onConflict: 'key' }
-                );
-                if(error) throw error;
+                await supabase.from('settings').upsert({ key: settingKey, value: JSON.stringify(newImages) }, { onConflict: 'key' });
                 showToast('Yeni slayt görseli eklendi.', 'success');
             }
-        } catch (error) {
-            showToast('Yükleme hatası: ' + error.message, 'error');
-        } finally {
-            setUploading(false);
-            e.target.value = null;
-        }
+        } catch (error) { showToast('Yükleme hatası: ' + error.message, 'error'); } finally { setUploading(false); e.target.value = null; }
     };
-
     const removeImage = (indexToRemove) => {
         showConfirm('Bu görseli slayttan kaldırmak istediğinize emin misiniz?', async () => {
             const newImages = images.filter((_, index) => index !== indexToRemove);
             setImages(newImages);
-            await supabase.from('settings').upsert(
-                { key: settingKey, value: JSON.stringify(newImages) },
-                { onConflict: 'key' }
-            );
+            await supabase.from('settings').upsert({ key: settingKey, value: JSON.stringify(newImages) }, { onConflict: 'key' });
             showToast('Görsel slayttan kaldırıldı.', 'success');
         });
     };
-
     return (
         <div style={{background:'#fff', padding:'15px', borderRadius:'8px', border:'1px solid #eee', marginBottom:'15px'}}>
             <label style={{fontWeight:'bold', display:'block', marginBottom:'10px', color:'#333'}}>{label}</label>
@@ -113,9 +99,7 @@ const MultiImageSetting = ({ label, settingKey, showToast, showConfirm, uploadFi
                 {images.map((img, idx) => (
                     <div key={idx} style={{position:'relative', width:'100px', height:'100px', border:'1px solid #ddd', borderRadius:'4px', overflow:'hidden', boxShadow:'0 2px 5px rgba(0,0,0,0.1)'}}>
                         <img src={img} alt="slide" style={{width:'100%', height:'100%', objectFit:'cover'}} />
-                        <button onClick={() => removeImage(idx)} style={{position:'absolute', top:0, right:0, background:'rgba(231, 76, 60, 0.9)', color:'white', border:'none', width:'24px', height:'24px', cursor:'pointer', fontSize:'12px', display:'flex', alignItems:'center', justifyContent:'center'}}>
-                            <i className="fas fa-trash"></i>
-                        </button>
+                        <button onClick={() => removeImage(idx)} style={{position:'absolute', top:0, right:0, background:'rgba(231, 76, 60, 0.9)', color:'white', border:'none', width:'24px', height:'24px', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center'}}><i className="fas fa-trash"></i></button>
                         <span style={{position:'absolute', bottom:0, left:0, background:'rgba(0,0,0,0.6)', color:'white', fontSize:'10px', width:'100%', textAlign:'center', padding:'2px'}}>{idx + 1}</span>
                     </div>
                 ))}
@@ -144,7 +128,6 @@ export default function AdminPage() {
   const [messages, setMessages] = useState([]); 
 
   const [newsForm, setNewsForm] = useState({ id: null, title: '', summary: '', image_url: '', date: '' });
-  // flag_url eklendi
   const [partnerForm, setPartnerForm] = useState({ id: null, name: '', country: '', image_url: '', flag_url: '' }); 
   const [resultForm, setResultForm] = useState({ id: null, title: '', description: '', status: 'Planlanıyor', link: '', icon: 'file' });
   const [isEditing, setIsEditing] = useState(false);
@@ -191,7 +174,6 @@ export default function AdminPage() {
     setMessages(m.data || []);
   }
 
-  // --- DOSYA YÜKLEME ---
   async function uploadFile(file) {
     if (!file) return null;
     const fileExt = file.name.split('.').pop();
@@ -223,7 +205,6 @@ export default function AdminPage() {
             )}
             <input className="form-control" placeholder={placeholder} value={value || ''} onChange={(e) => onChange(e.target.value)} style={{flex:1, marginBottom:0, border:'none', padding:0}}/>
         </div>
-        
         <div style={{position:'relative', overflow:'hidden', display:'inline-block'}}>
             <button type="button" className="btn" style={{background: uploading ? '#ccc' : '#eef2f7', color:'#333', padding:'8px 15px', border:'1px solid #ddd', whiteSpace:'nowrap'}}>{uploading ? '...' : 'Seç'}</button>
             <input type="file" onChange={handleFileChange} disabled={uploading} style={{position:'absolute', left:0, top:0, opacity:0, width:'100%', height:'100%', cursor:'pointer'}} />
@@ -250,9 +231,7 @@ export default function AdminPage() {
                 ) : (
                     <input type="text" className="form-control" defaultValue={val} id={`s-${settingKey}`} style={{marginBottom:0, flex: 1}} />
                 )}
-                {type !== 'image' && <button onClick={() => updateSetting(settingKey, document.getElementById(`s-${settingKey}`).value)} className="btn btn-primary" style={{padding:'10px 20px', height:'auto'}}>
-                    <i className="fas fa-save"></i>
-                </button>}
+                {type !== 'image' && <button onClick={() => updateSetting(settingKey, document.getElementById(`s-${settingKey}`).value)} className="btn btn-primary" style={{padding:'10px 20px', height:'auto'}}><i className="fas fa-save"></i></button>}
             </div>
         </div>
     );
@@ -276,12 +255,9 @@ export default function AdminPage() {
     const { id, ...data } = form;
     if (id) await supabase.from(table).update(data).eq('id', id); else await supabase.from(table).insert([data]);
     setIsEditing(false);
-    
-    // Temizle
     if(table==='news') setNewsForm({ id: null, title: '', summary: '', image_url: '', date: '' });
     if(table==='partners') setPartnerForm({ id: null, name: '', country: '', image_url: '', flag_url: '' });
     if(table==='results') setResultForm({ id: null, title: '', description: '', status: 'Planlanıyor', link: '', icon: 'file' });
-    
     loadAllData();
     showToast(id ? 'Kayıt güncellendi.' : 'Yeni kayıt eklendi.', 'success');
   }
@@ -341,8 +317,6 @@ export default function AdminPage() {
         </div>
 
         <div style={{background:'#fcfcfc', padding:'40px', borderRadius:'12px', border:'1px solid #eee', boxShadow:'0 5px 20px rgba(0,0,0,0.03)'}}>
-            
-            {/* ... Mesajlar, Home, About, News Sekmeleri Aynı ... */}
             {activeTab === 'messages' && (
                 <div className="fade-in">
                     <h2 style={{marginBottom:'25px', color:'#003399'}}>Gelen Mesajlar</h2>
@@ -364,13 +338,53 @@ export default function AdminPage() {
             {activeTab === 'home' && (
                 <div className="fade-in">
                     <h2 style={{marginBottom:'25px', color:'#003399'}}>Ana Sayfa</h2>
-                    <SettingInput label="Hero Arka Plan" settingKey="hero_bg_image" type="image" />
+                    {/* GÜNCELLENEN ALAN: ETİKET DAHA AÇIK HALE GETİRİLDİ */}
+                    <SettingInput label="Ana Sayfa Kapak Resmi (En Üstteki Büyük Resim)" settingKey="hero_bg_image" type="image" />
                     <SettingInput label="Logo Metni" settingKey="header_logo_text" />
                     <SettingInput label="Başlık" settingKey="hero_title" />
                     <SettingInput label="Açıklama" settingKey="hero_desc" type="textarea" />
+                    <h4 style={{margin:'30px 0 15px', color:'#003399'}}>Hedef Kutucukları</h4>
+                    <SettingInput label="Hedef 1 Başlık" settingKey="home_goal_1_title" />
+                    <SettingInput label="Hedef 1 Açıklama" settingKey="home_goal_1_desc" type="textarea" />
+                    <SettingInput label="Hedef 2 Başlık" settingKey="home_goal_2_title" />
+                    <SettingInput label="Hedef 2 Açıklama" settingKey="home_goal_2_desc" type="textarea" />
                 </div>
             )}
 
+            {activeTab === 'partners' && (
+                <div className="fade-in">
+                     <h2 style={{marginBottom:'25px', color:'#003399'}}>Ortaklar & Kurumlar</h2>
+                     <div style={{background:'white', padding:'25px', borderRadius:'10px', marginBottom:'25px', border:'1px solid #ddd'}}>
+                        <h4 style={{marginBottom:'15px'}}>{isEditing ? 'Ortağı Düzenle' : 'Yeni Ortak Ekle'}</h4>
+                        <form onSubmit={(e) => saveItem(e, 'partners', partnerForm, setPartnerForm)} style={{display:'grid', gap:'15px'}}>
+                            <input className="form-control" placeholder="Kurum Adı" value={partnerForm.name} onChange={e=>setPartnerForm({...partnerForm, name:e.target.value})} required />
+                            <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:'15px'}}>
+                                <input className="form-control" placeholder="Ülke İsmi" value={partnerForm.country} onChange={e=>setPartnerForm({...partnerForm, country:e.target.value})} required />
+                                <FileInput value={partnerForm.flag_url} onChange={(url) => setPartnerForm({...partnerForm, flag_url: url})} placeholder="Bayrak Resmi" />
+                            </div>
+                            <FileInput value={partnerForm.image_url} onChange={(url) => setPartnerForm({...partnerForm, image_url: url})} placeholder="Kurum Logosu" />
+                            <div style={{display:'flex', gap:'10px', justifyContent:'flex-end'}}>
+                                {isEditing && <button type="button" onClick={()=>{setIsEditing(false); setPartnerForm({ id: null, name: '', country: '', image_url: '', flag_url: '' })}} className="btn" style={{background:'#eee', color:'#555'}}>İptal</button>}
+                                <button type="submit" className="btn btn-primary">{isEditing ? 'Güncelle' : 'Ekle'}</button>
+                            </div>
+                        </form>
+                     </div>
+                     {partners.map(item => (
+                        <div key={item.id} style={{background:'white', padding:'15px', marginBottom:'10px', borderRadius:'8px', display:'flex', justifyContent:'space-between', alignItems:'center', border:'1px solid #eee'}}>
+                            <div style={{display:'flex', gap:'15px', alignItems:'center'}}>
+                                {item.image_url && <img src={item.image_url} style={{width:'40px', height:'auto'}} />}
+                                <div><div style={{fontWeight:'bold'}}>{item.name}</div><div style={{fontSize:'0.8rem', color:'#666'}}>{item.country}</div></div>
+                            </div>
+                            <div style={{display:'flex', gap:'10px'}}>
+                                <button onClick={()=>startEdit(item, 'partners')} style={{color:'#003399', border:'none', background:'none'}}><i className="fas fa-pen"></i></button>
+                                <button onClick={()=>deleteItem('partners', item.id)} style={{color:'red', border:'none', background:'none'}}><i className="fas fa-trash"></i></button>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            )}
+
+            {/* Diğer sekmeler aynı kalıyor... */}
             {activeTab === 'about' && (
                 <div className="fade-in">
                     <h2 style={{marginBottom:'25px', color:'#003399'}}>Hakkında</h2>
@@ -393,10 +407,7 @@ export default function AdminPage() {
                     {news.map(item => (
                         <div key={item.id} style={{background:'white', padding:'15px', marginBottom:'10px', borderRadius:'8px', display:'flex', justifyContent:'space-between', border:'1px solid #eee'}}>
                             <span>{item.title}</span>
-                            <div style={{display:'flex', gap:'10px'}}>
-                                <button onClick={()=>startEdit(item, 'news')} style={{color:'#003399', border:'none', background:'none'}}><i className="fas fa-pen"></i></button>
-                                <button onClick={()=>deleteItem('news', item.id)} style={{color:'red', border:'none', background:'none'}}><i className="fas fa-trash"></i></button>
-                            </div>
+                            <button onClick={()=>deleteItem('news', item.id)} style={{color:'red'}}><i className="fas fa-trash"></i></button>
                         </div>
                     ))}
                 </div>
@@ -415,58 +426,7 @@ export default function AdminPage() {
                     {results.map(item => (
                         <div key={item.id} style={{background:'white', padding:'15px', marginBottom:'10px', borderRadius:'8px', display:'flex', justifyContent:'space-between', border:'1px solid #eee'}}>
                             <span>{item.title}</span>
-                            <div style={{display:'flex', gap:'10px'}}>
-                                <button onClick={()=>startEdit(item, 'results')} style={{color:'#003399', border:'none', background:'none'}}><i className="fas fa-pen"></i></button>
-                                <button onClick={()=>deleteItem('results', item.id)} style={{color:'red', border:'none', background:'none'}}><i className="fas fa-trash"></i></button>
-                            </div>
-                        </div>
-                    ))}
-                </div>
-            )}
-
-            {/* --- ORTAKLAR (Bayrak Eklendi) --- */}
-            {activeTab === 'partners' && (
-                <div className="fade-in">
-                     <h2 style={{marginBottom:'25px', color:'#003399'}}>Ortaklar & Kurumlar</h2>
-                     <div style={{background:'white', padding:'25px', borderRadius:'10px', marginBottom:'25px', border:'1px solid #ddd', boxShadow:'0 5px 15px rgba(0,0,0,0.03)'}}>
-                        <h4 style={{marginBottom:'15px'}}>{isEditing ? 'Ortağı Düzenle' : 'Yeni Ortak Ekle'}</h4>
-                        <form onSubmit={(e) => saveItem(e, 'partners', partnerForm, setPartnerForm)} style={{display:'grid', gap:'15px'}}>
-                            <input className="form-control" placeholder="Kurum Adı" value={partnerForm.name} onChange={e=>setPartnerForm({...partnerForm, name:e.target.value})} required />
-                            
-                            <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:'15px'}}>
-                                <input className="form-control" placeholder="Ülke İsmi" value={partnerForm.country} onChange={e=>setPartnerForm({...partnerForm, country:e.target.value})} required />
-                                <FileInput value={partnerForm.flag_url} onChange={(url) => setPartnerForm({...partnerForm, flag_url: url})} placeholder="Bayrak Resmi" />
-                            </div>
-
-                            <FileInput value={partnerForm.image_url} onChange={(url) => setPartnerForm({...partnerForm, image_url: url})} placeholder="Kurum Logosu" />
-                            
-                            <div style={{display:'flex', gap:'10px', justifyContent:'flex-end'}}>
-                                {isEditing && <button type="button" onClick={()=>{setIsEditing(false); setPartnerForm({ id: null, name: '', country: '', image_url: '', flag_url: '' })}} className="btn" style={{background:'#eee', color:'#555'}}>İptal</button>}
-                                <button type="submit" className="btn btn-primary">{isEditing ? 'Güncelle' : 'Ekle'}</button>
-                            </div>
-                        </form>
-                     </div>
-                     {partners.map(item => (
-                        <div key={item.id} style={{background:'white', padding:'15px', marginBottom:'10px', borderRadius:'8px', display:'flex', justifyContent:'space-between', alignItems:'center', border:'1px solid #eee', boxShadow:'0 2px 5px rgba(0,0,0,0.02)'}}>
-                            <div style={{display:'flex', gap:'15px', alignItems:'center'}}>
-                                {item.image_url && <img src={item.image_url} style={{width:'40px', height:'auto', maxHeight:'40px', objectFit:'contain'}} />}
-                                <div>
-                                    <div style={{fontWeight:'bold'}}>{item.name}</div>
-                                    <div style={{fontSize:'0.85rem', color:'#666', display:'flex', alignItems:'center', gap:'5px'}}>
-                                        {/* Bayrak varsa göster, yoksa dünya ikonu */}
-                                        {item.flag_url ? (
-                                            <img src={item.flag_url} alt="flag" style={{width:'20px', height:'15px', objectFit:'cover', borderRadius:'2px'}} />
-                                        ) : (
-                                            <i className="fas fa-globe" style={{color:'#999'}}></i>
-                                        )}
-                                        {item.country}
-                                    </div>
-                                </div>
-                            </div>
-                            <div style={{display:'flex', gap:'10px'}}>
-                                <button onClick={()=>startEdit(item, 'partners')} style={{color:'#003399', border:'none', background:'none', cursor:'pointer'}}><i className="fas fa-pen"></i></button>
-                                <button onClick={()=>deleteItem('partners', item.id)} style={{color:'#e74c3c', border:'none', background:'none', cursor:'pointer'}}><i className="fas fa-trash"></i></button>
-                            </div>
+                            <button onClick={()=>deleteItem('results', item.id)} style={{color:'red'}}><i className="fas fa-trash"></i></button>
                         </div>
                     ))}
                 </div>

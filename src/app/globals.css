@@ -1,159 +1,180 @@
-/* ... Önceki kodlarınızın altına ekleyin ... */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
-/* DROPDOWN MENU STİLLERİ */
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+}
+
+body {
+  color: var(--foreground);
+  background: var(--background);
+  font-family: Arial, Helvetica, sans-serif;
+  overflow-x: hidden; /* Yatay taşmayı engeller */
+}
+
+/* --- 1. DIGI-GREEN ÖZEL TASARIM (Glassmorphism & Harita) --- */
+
+/* Cam Efekti (Glassmorphism) */
+.glass-card {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.1);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+.glass-card:hover {
+  transform: translateY(-10px);
+  box-shadow: 0 15px 40px rgba(46, 125, 50, 0.2);
+  border-color: #2E7D32;
+}
+
+/* Harita Noktası (Pulse Efekti) */
+.map-dot {
+  width: 15px;
+  height: 15px;
+  background-color: #2E7D32;
+  border-radius: 50%;
+  position: absolute;
+  cursor: pointer;
+  z-index: 10;
+}
+.map-dot::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background-color: rgba(46, 125, 50, 0.6);
+  animation: mapPulse 2s infinite;
+}
+@keyframes mapPulse {
+  0% { width: 100%; height: 100%; opacity: 1; }
+  100% { width: 300%; height: 300%; opacity: 0; }
+}
+
+/* Arka Plan Deseni (Yeşil Ağ) */
+.bg-grid-green {
+  background-image: 
+    linear-gradient(rgba(46, 125, 50, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(46, 125, 50, 0.05) 1px, transparent 1px);
+  background-size: 40px 40px;
+}
+
+/* --- 2. ANİMASYONLAR --- */
+
+/* Alttan Yukarı Kayarak Gelme */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(30px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Soldan Sağa Kayarak Gelme */
+@keyframes slideInLeft {
+  from { opacity: 0; transform: translateX(-50px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+/* Sağdan Sola Kayarak Gelme */
+@keyframes slideInRight {
+  from { opacity: 0; transform: translateX(50px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+/* Süzülme / Yüzme Efekti */
+@keyframes float {
+  0% { transform: translateY(0px); }
+  50% { transform: translateY(-15px); }
+  100% { transform: translateY(0px); }
+}
+
+/* Nefes Alma / Büyüme Efekti */
+@keyframes breathe {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+  100% { transform: scale(1); }
+}
+
+/* İkon Zıplama Efekti */
+@keyframes bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
+/* --- KULLANILACAK ANİMASYON SINIFLARI --- */
+
+.anim-text { opacity: 0; animation: fadeInUp 0.8s ease-out forwards; }
+.anim-slide-left { opacity: 0; animation: slideInLeft 0.8s ease-out forwards; }
+.anim-slide-right { opacity: 0; animation: slideInRight 0.8s ease-out forwards; }
+.anim-float { animation: float 4s ease-in-out infinite; }
+.anim-breathe { animation: breathe 5s ease-in-out infinite; }
+.icon-bounce:hover { animation: bounce 1s infinite; }
+
+/* Gecikme Sınıfları */
+.delay-1 { animation-delay: 0.2s; }
+.delay-2 { animation-delay: 0.4s; }
+.delay-3 { animation-delay: 0.6s; }
+.delay-4 { animation-delay: 0.8s; }
+
+/* --- 3. DROPDOWN (AÇILIR MENÜ) STİLLERİ --- */
+
 .nav-item-with-dropdown {
-    position: relative; /* Alt menü buna göre konumlanacak */
-}
-
-/* Gizli Menü Kutusu */
-.dropdown-menu {
-    display: none; /* Başlangıçta gizli */
-    position: absolute;
-    top: 100%; /* Linkin hemen altında */
-    left: 0;
-    background: white;
-    min-width: 250px; /* Genişlik */
-    box-shadow: 0 8px 16px rgba(0,0,0,0.15);
-    border-radius: 8px;
-    z-index: 1000;
-    padding: 10px 0;
-    list-style: none;
-    border-top: 4px solid #003399; /* Üstte şık bir çizgi */
-}
-
-/* Hover olunca göster */
-.nav-item-with-dropdown:hover .dropdown-menu {
-    display: block;
-    animation: fadeIn 0.3s ease;
-}
-
-/* Dropdown Linkleri */
-.dropdown-menu li a {
-    display: block;
-    padding: 10px 20px;
-    color: #333;
-    text-decoration: none;
-    font-size: 0.9rem;
-    transition: 0.2s;
-    border-bottom: 1px solid #f0f0f0;
-}
-
-.dropdown-menu li:last-child a {
-    border-bottom: none;
-}
-
-.dropdown-menu li a:hover {
-    background-color: #f8f9fa;
-    color: #003399;
-    padding-left: 25px; /* Hafif sağa kayma efekti */
-}
-
-/* Animasyon */
-@keyframes fadeIn {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
-}
-/* --- AÇILIR MENÜ (DROPDOWN) STİLLERİ --- */
-.nav-item-with-dropdown {
-    position: relative;
-    height: 100%;
-    display: flex;
-    align-items: center;
-}
-
-.dropdown-menu {
-    display: none;
-    position: absolute;
-    top: 100%;
-    left: 0;
-    background: white;
-    min-width: 280px;
-    box-shadow: 0 8px 20px rgba(0,0,0,0.15);
-    border-radius: 0 0 8px 8px;
-    z-index: 1000;
-    padding: 10px 0;
-    list-style: none;
-    border-top: 4px solid #003399;
-}
-
-/* Fare üzerine gelince göster */
-.nav-item-with-dropdown:hover .dropdown-menu {
-    display: block;
-    animation: slideUp 0.3s ease;
-}
-
-.dropdown-menu li a {
-    display: block;
-    padding: 12px 20px;
-    color: #444;
-    text-decoration: none;
-    font-size: 0.9rem;
-    border-bottom: 1px solid #f0f0f0;
-    transition: 0.2s;
-}
-
-.dropdown-menu li:last-child a { border-bottom: none; }
-
-.dropdown-menu li a:hover {
-    background-color: #f0f4f8;
-    color: #003399;
-    padding-left: 25px; /* Kayma efekti */
-}
-
-@keyframes slideUp {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
-}
-/* --- DROPDOWN MENÜ STİLLERİ --- */
-.nav-item-with-dropdown {
-    position: relative;
-    height: 100%;
-    display: flex;
-    align-items: center;
+  position: relative;
+  height: 100%;
+  display: flex;
+  align-items: center;
 }
 
 /* Menü Kutusu */
 .dropdown-menu {
-    display: none; /* Gizli başlar */
-    position: absolute;
-    top: 100%;
-    left: 0;
-    background: white;
-    min-width: 260px;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-    border-radius: 0 0 8px 8px;
-    z-index: 1000;
-    padding: 10px 0;
-    list-style: none;
-    border-top: 4px solid #003399; /* Üst çizgi */
+  display: none; /* Gizli başlar */
+  position: absolute;
+  top: 100%; /* Linkin hemen altında */
+  left: 0;
+  background: white;
+  min-width: 260px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.15); /* Gölge efekti */
+  border-radius: 0 0 8px 8px;
+  z-index: 1000;
+  padding: 10px 0;
+  list-style: none;
+  border-top: 4px solid #003399; /* Üst çizgi rengi */
 }
 
 /* Hover olunca göster */
 .nav-item-with-dropdown:hover .dropdown-menu {
-    display: block;
-    animation: slideUp 0.3s ease;
+  display: block;
+  animation: slideUp 0.3s ease;
 }
 
-/* Linkler */
+/* Menü Linkleri */
 .dropdown-menu li a {
-    display: block;
-    padding: 12px 20px;
-    color: #444;
-    text-decoration: none;
-    font-size: 0.9rem;
-    border-bottom: 1px solid #f9f9f9;
-    transition: all 0.2s;
+  display: block;
+  padding: 12px 20px;
+  color: #444;
+  text-decoration: none;
+  font-size: 0.95rem;
+  font-weight: 500;
+  border-bottom: 1px solid #f5f5f5;
+  transition: all 0.2s;
 }
 
 .dropdown-menu li:last-child a { border-bottom: none; }
 
+/* Hover Durumu */
 .dropdown-menu li a:hover {
-    background-color: #f0f4f8;
-    color: #003399;
-    padding-left: 25px; /* Kayma efekti */
+  background-color: #f0f4f8;
+  color: #003399;
+  padding-left: 25px; /* Hafif sağa kayma efekti */
 }
 
+/* Açılma Animasyonu */
 @keyframes slideUp {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
 }

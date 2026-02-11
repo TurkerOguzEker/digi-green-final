@@ -30,19 +30,12 @@ export default function ContactPage() {
       setStatus(null);
 
       try {
-          // Veri Gönderimi
           const { error } = await supabase.from('contact_messages').insert([formData]);
-          
-          if (error) {
-              // Hata varsa detaylı göster
-              console.error('Supabase Hatası:', JSON.stringify(error, null, 2));
-              throw error;
-          }
-
+          if (error) throw error;
           setStatus('success');
           setFormData({ name: '', email: '', subject: '', message: '' }); // Formu temizle
       } catch (error) {
-          console.error('İşlem Hatası:', error);
+          console.error('Hata:', error);
           setStatus('error');
       } finally {
           setLoading(false);
@@ -158,9 +151,7 @@ export default function ContactPage() {
                               <label>Mesajınız</label>
                               <textarea name="message" className="form-control" rows="5" required value={formData.message} onChange={handleChange} placeholder="Mesajınızı buraya yazın..."></textarea>
                           </div>
-                          
-                          {/* SUBMIT BUTONU (AÇIK YEŞİL - SOSYAL İKONLARLA AYNI) */}
-                          <button type="submit" className="submit-btn" disabled={loading}>
+                          <button type="submit" className="btn btn-primary" disabled={loading} style={{width:'100%', padding:'12px', fontWeight:'bold'}}>
                               {loading ? 'Gönderiliyor...' : 'MESAJI GÖNDER'}
                           </button>
                       </form>
@@ -217,7 +208,7 @@ export default function ContactPage() {
                   border-color: #003399;
               }
               
-              /* SOSYAL MEDYA BUTONLARI (#27ae60) */
+              /* SOSYAL MEDYA BUTONLARI - GÜNCELLENDİ */
               .social-icon {
                   width: 45px;
                   height: 45px;
@@ -230,36 +221,12 @@ export default function ContactPage() {
                   transition: all 0.3s;
                   box-shadow: 0 4px 10px rgba(0,0,0,0.1);
                   text-decoration: none;
-                  background: #27ae60; 
+                  background: #155724; /* İstenilen Renk */
               }
               .social-icon:hover {
                   transform: translateY(-3px);
-                  box-shadow: 0 6px 15px rgba(39, 174, 96, 0.3);
-                  background: #2ecc71; /* Hover: Daha da açık yeşil */
-              }
-
-              /* SUBMIT BUTONU (#27ae60 - AYNI RENK) */
-              .submit-btn {
-                  width: 100%;
-                  padding: 12px;
-                  font-weight: bold;
-                  color: white;
-                  background: #27ae60; /* Sosyal ikonlarla aynı */
-                  border: none;
-                  border-radius: 5px;
-                  cursor: pointer;
-                  transition: background 0.3s;
-                  font-size: 1rem;
-                  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-              }
-              .submit-btn:hover {
-                  background: #2ecc71; /* Hover: Daha da açık yeşil */
-                  box-shadow: 0 6px 15px rgba(39, 174, 96, 0.3);
-              }
-              .submit-btn:disabled {
-                  background: #ccc;
-                  cursor: not-allowed;
-                  box-shadow: none;
+                  box-shadow: 0 6px 15px rgba(21, 87, 36, 0.3);
+                  background: #1e7e34; /* Hover durumunda hafif açılma */
               }
 
               @media (max-width: 768px) {
