@@ -7,6 +7,7 @@
   --secondary: #27ae60;
   --dark: #1a1a1a;
   --light: #f4f6f8;
+  --danger: #e74c3c;
 }
 
 body {
@@ -27,7 +28,6 @@ body {
 .reveal-right { transform: translateX(100px); }
 .reveal-up { transform: translateY(50px); }
 
-/* Gecikmeler */
 .delay-100.active { transition-delay: 0.1s; }
 .delay-200.active { transition-delay: 0.2s; }
 .delay-300.active { transition-delay: 0.3s; }
@@ -46,85 +46,148 @@ body {
 }
 
 /* =========================================
-   3. AĞAÇ / TİMELİNE TASARIMI (YENİ)
+   3. AĞAÇ / TIMELINE TASARIMI (SLIDER + EŞİT KUTULAR)
    ========================================= */
-.tree-container {
+.tree-wrapper {
   position: relative;
-  padding: 40px 0;
+  padding: 60px 0;
+  width: 100%;
+  overflow: hidden; /* Dışarı taşanları gizle */
 }
 
-/* Ortadaki Çizgi (Gövde) */
+/* Kaydırılabilir Alan (Slider) */
+.tree-scroll {
+  display: flex;
+  gap: 30px;
+  overflow-x: auto; /* Yatay kaydırmaya izin ver */
+  padding: 20px 20px 60px 20px; /* Gölgeler kesilmesin diye alt boşluk */
+  scroll-behavior: smooth;
+  align-items: stretch; /* Kartların boyunu eşitle */
+  
+  /* Scrollbar'ı gizle (Görsel temizlik için) */
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+
+.tree-scroll::-webkit-scrollbar {
+  display: none; /* Chrome, Safari */
+}
+
+/* Çizgi (Gövde) */
 .tree-line {
   position: absolute;
-  left: 50%;
-  top: 0;
-  bottom: 0;
-  width: 4px;
-  background: linear-gradient(to bottom, #27ae60, #003399);
-  transform: translateX(-50%);
+  background: linear-gradient(90deg, var(--secondary), var(--primary));
   border-radius: 4px;
+  z-index: 0;
 }
 
-/* Dallar (Kartlar) */
+/* Tekil Öğe (Item) */
 .tree-item {
   position: relative;
-  width: 50%;
-  padding: 20px 40px;
-  box-sizing: border-box;
+  z-index: 1;
+  /* Sabit genişlik veriyoruz ki sığmayınca kaydırsın */
+  flex: 0 0 320px; 
+  max-width: 320px;
+  display: flex;
+  flex-direction: column;
 }
 
-/* Sol ve Sağ Yerleşim */
-.tree-item.left { left: 0; text-align: right; }
-.tree-item.right { left: 50%; text-align: left; }
-
-/* Ortadaki Noktalar (Yaprak/Meyve) */
+/* Noktalar */
 .tree-dot {
   position: absolute;
-  top: 40px;
   width: 24px;
   height: 24px;
   background: white;
-  border: 4px solid #27ae60;
+  border: 4px solid var(--secondary);
   border-radius: 50%;
-  z-index: 10;
+  z-index: 2;
   transition: 0.3s;
+  left: 50%;
+  transform: translateX(-50%);
 }
-.tree-item.left .tree-dot { right: -12px; }
-.tree-item.right .tree-dot { left: -12px; }
 
 .tree-item:hover .tree-dot {
-  background: #27ae60;
-  transform: scale(1.3);
+  background: var(--secondary);
+  transform: translateX(-50%) scale(1.3);
   box-shadow: 0 0 15px rgba(39, 174, 96, 0.6);
-}
-
-/* Mobil Uyumluluk */
-@media (max-width: 768px) {
-  .tree-line { left: 20px; }
-  .tree-item { width: 100%; padding-left: 50px; padding-right: 20px; }
-  .tree-item.left, .tree-item.right { left: 0; text-align: left; }
-  .tree-item.left .tree-dot, .tree-item.right .tree-dot { left: 8px; right: auto; }
 }
 
 /* Kart Tasarımı */
 .tree-card {
   background: white;
   padding: 30px;
-  border-radius: 20px;
+  border-radius: 15px;
   box-shadow: 0 10px 30px rgba(0,0,0,0.05);
   border: 1px solid #eee;
   transition: 0.4s ease;
-  position: relative;
-  overflow: hidden;
+  height: 100%; /* Kapsayıcının (tree-item) boyunu doldur */
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
 }
+
 .tree-card:hover {
   transform: translateY(-5px);
   box-shadow: 0 20px 40px rgba(0, 51, 153, 0.1);
-  border-color: #27ae60;
+  border-color: var(--secondary);
+}
+
+/* --- MASAÜSTÜ GÖRÜNÜM (YATAY) --- */
+@media (min-width: 992px) {
+  .tree-line {
+    top: 32px;
+    left: 0;
+    width: 100%;
+    height: 4px;
+  }
+
+  .tree-item {
+    margin-top: 40px; /* Çizgiden aşağı it */
+  }
+
+  .tree-dot {
+    top: -52px; /* Çizginin üzerine oturt */
+  }
+}
+
+/* --- MOBİL GÖRÜNÜM (DİKEY) --- */
+@media (max-width: 991px) {
+  .tree-scroll {
+    flex-direction: column; /* Alt alta diz */
+    overflow-x: hidden; /* Yatay kaydırmayı kapat */
+    padding-left: 50px; /* Sol tarafta çizgi için yer aç */
+  }
+
+  .tree-item {
+    flex: 1 1 auto; /* Genişliği serbest bırak */
+    max-width: 100%;
+    margin-top: 0;
+    margin-bottom: 30px;
+  }
+
+  /* Dikey Çizgi */
+  .tree-line {
+    left: 30px;
+    top: 0;
+    bottom: 0;
+    width: 4px;
+    height: 100%;
+    background: linear-gradient(to bottom, var(--secondary), var(--primary));
+  }
+
+  .tree-dot {
+    left: -32px; /* Çizginin üzerine çek */
+    top: 50%;
+    transform: translateY(-50%);
+  }
+  
+  .tree-item:hover .tree-dot {
+    transform: translateY(-50%) scale(1.3);
+  }
 }
 
 /* =========================================
-   4. DİĞER KARTLAR
+   4. DİĞER KARTLAR (Glass Effect)
    ========================================= */
 .glass-card {
   background: rgba(255, 255, 255, 0.95);
@@ -144,7 +207,9 @@ body {
 /* =========================================
    5. YARDIMCI SINIFLAR
    ========================================= */
-.form-control { width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid #ddd; border-radius: 8px; }
+.form-control { width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid #ddd; border-radius: 8px; outline: none; }
+.form-control:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(0,51,153,0.1); }
+
 .btn { display: inline-flex; align-items: center; justify-content: center; padding: 10px 20px; border-radius: 5px; font-weight: 600; cursor: pointer; transition: 0.3s; gap:8px;}
 .btn-primary { background: var(--primary); color: white; }
 .btn-hero { padding: 15px 40px; background: var(--secondary); color: white; border-radius: 50px; font-weight: bold; font-size: 1.1rem; display: inline-block; transition: 0.3s; }

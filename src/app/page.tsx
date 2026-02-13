@@ -47,7 +47,7 @@ const Counter = ({ end, duration = 2000 }: CounterProps) => {
 
 export default function Home() {
   const [content, setContent] = useState<ContentState>({});
-  const [isLoading, setIsLoading] = useState(true); // YÜKLEME KONTROLÜ
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     async function fetchSettings() {
@@ -61,7 +61,7 @@ export default function Home() {
       } catch (error) {
         console.error("Veri hatası:", error);
       } finally {
-        setIsLoading(false); // Veri gelsin veya gelmesin yüklemeyi bitir
+        setIsLoading(false);
       }
     }
     fetchSettings();
@@ -69,7 +69,7 @@ export default function Home() {
 
   // Scroll Animasyon Tetikleyici
   useEffect(() => {
-    if (isLoading) return; // Yüklenirken animasyonları başlatma
+    if (isLoading) return;
     const handleScroll = () => {
       const reveals = document.querySelectorAll('.reveal');
       for (let i = 0; i < reveals.length; i++) {
@@ -83,7 +83,6 @@ export default function Home() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, [isLoading]);
 
-  // EĞER VERİLER GELMEDİYSE EKRAN BOŞ KALSIN (TİTREMEYİ ÖNLER)
   if (isLoading) {
     return (
       <div style={{height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#fff'}}>
@@ -104,7 +103,7 @@ export default function Home() {
                   {content.header_logo_text || 'DIGI-GREEN FUTURE'}
               </span>
               <h1 className="reveal reveal-up delay-100" style={{fontSize:'clamp(2.5rem, 5vw, 4.5rem)', fontWeight:'800', margin:'25px 0', textShadow:'0 10px 30px rgba(0,0,0,0.3)', lineHeight:1.1}}>
-                  {content.hero_title || 'Sürdürülebilir Gelecek İçin Dijital Dönüşüm'}
+                  {content.hero_title || 'Yerel Yeşil Gelecek İçin Dijital Dönüşüm'}
               </h1>
               <p className="reveal reveal-up delay-200" style={{fontSize:'1.25rem', maxWidth:'700px', margin:'0 auto 40px', opacity:0.95, lineHeight:1.6}}>
                   {content.hero_desc || 'Erasmus+ KA220-ADU kapsamında 3 ülkede sürdürülebilir ve dijital belediyecilik çözümleri geliştiriyoruz.'}
@@ -184,7 +183,7 @@ export default function Home() {
                       {title: content.home_target_2_title || 'Yerel Yönetimler', desc: content.home_target_2_desc || 'Veriye dayalı kararlar alarak, kaynakları verimli kullanın ve operasyonel maliyetleri düşürün.', icon: 'fa-building'},
                       {title: content.home_target_3_title || 'STK ve Akademik', desc: content.home_target_3_desc || 'Araştırma, eğitim ve toplumsal farkındalık çalışmalarında aktif rol alın.', icon: 'fa-tree'}
                   ].map((kitle, i) => (
-                      <div key={i} className="reveal reveal-up" style={{background:'white', padding:'30px', borderRadius:'15px', textAlign:'center', borderBottom:'4px solid #27ae60'}}>
+                      <div key={i} className="reveal reveal-up" style={{background:'white', padding:'30px', borderRadius:'15px', textAlign:'center', borderBottom:'4px solid #27ae60', boxShadow:'0 10px 30px rgba(0,0,0,0.05)'}}>
                           <div style={{width:'60px', height:'60px', background:'#e8f5e9', borderRadius:'50%', display:'flex', alignItems:'center', justifyContent:'center', margin:'0 auto 20px', color:'#27ae60', fontSize:'1.5rem'}}>
                               <i className={`fas ${kitle.icon}`}></i>
                           </div>
@@ -196,57 +195,82 @@ export default function Home() {
           </div>
       </section>
 
-      {/* 5️⃣ DİJİTAL EKOSİSTEM (AĞAÇ YAPISI) */}
+      {/* 5️⃣ DİJİTAL EKOSİSTEM (EŞİT KUTULAR & SLIDER) */}
       <section id="solutions" className="section-padding bg-grid-green" style={{backgroundColor:'#fff'}}>
           <div className="container">
-              <div className="reveal reveal-up" style={{textAlign:'center', marginBottom:'60px'}}>
+              <div className="reveal reveal-up" style={{textAlign:'center', marginBottom:'40px'}}>
                   <h2 style={{fontSize:'2.5rem', fontWeight:'800', color:'#1a1a1a', marginBottom:'15px'}}>
                       Dijital <span style={{color:'#27ae60'}}>Ekosistemimiz</span>
                   </h2>
                   <p style={{color:'#666', maxWidth:'600px', margin:'0 auto'}}>
-                      Teknolojiyi doğanın hizmetine sunan entegre çözüm ağımız.
+                      Teknolojiyi doğanın hizmetine sunan entegre çözüm ağımız. <br/>
+                      <span style={{fontSize:'0.9rem', color:'#999'}}>(Detaylar için kaydırın →)</span>
                   </p>
               </div>
 
-              <div className="tree-container">
-                  <div className="tree-line"></div>
-
-                  <div className="tree-item left reveal reveal-left">
-                      <div className="tree-dot"></div>
-                      <div className="tree-card">
-                          <div style={{color:'#003399', fontSize:'2rem', marginBottom:'15px'}}><i className="fas fa-mobile-screen"></i></div>
-                          <h3 style={{fontSize:'1.4rem', fontWeight:'bold', marginBottom:'10px'}}>{content.home_eco_1_title || 'Mobil Entegrasyon'}</h3>
-                          <p style={{color:'#666', lineHeight:1.6}}>{content.home_eco_1_desc || 'Vatandaşların belediye hizmetlerine tek tıkla ulaşmasını sağlayan entegre mobil çözüm.'}</p>
+              {/* Slider Kapsayıcı */}
+              <div className="tree-wrapper">
+                  <div className="tree-line"></div> {/* Çizgi arka planda */}
+                  
+                  <div className="tree-scroll">
+                      {/* KART 1 */}
+                      <div className="tree-item reveal reveal-up delay-100">
+                          <div className="tree-dot"></div>
+                          <div className="tree-card">
+                              <div style={{color:'#003399', fontSize:'2rem', marginBottom:'15px'}}><i className="fas fa-mobile-screen"></i></div>
+                              <h3 style={{fontSize:'1.2rem', fontWeight:'bold', marginBottom:'10px'}}>
+                                  {content.home_eco_1_title || 'Mobil Entegrasyon'}
+                              </h3>
+                              <p style={{color:'#666', fontSize:'0.9rem', lineHeight:1.5}}>
+                                  {content.home_eco_1_desc || 'Vatandaşların belediye hizmetlerine tek tıkla ulaşmasını sağlayan, anlık bildirimler içeren çözüm.'}
+                              </p>
+                          </div>
                       </div>
-                  </div>
 
-                  <div className="tree-item right reveal reveal-right">
-                      <div className="tree-dot"></div>
-                      <div className="tree-card">
-                          <div style={{color:'#27ae60', fontSize:'2rem', marginBottom:'15px'}}><i className="fas fa-recycle"></i></div>
-                          <h3 style={{fontSize:'1.4rem', fontWeight:'bold', marginBottom:'10px'}}>{content.home_eco_2_title || 'Yapay Zeka & Atık'}</h3>
-                          <p style={{color:'#666', lineHeight:1.6}}>{content.home_eco_2_desc || 'Yapay zeka destekli sensörler ile atık yönetimini optimize ediyor, doluluk oranlarına göre rota planlıyoruz.'}</p>
+                      {/* KART 2 */}
+                      <div className="tree-item reveal reveal-up delay-200">
+                          <div className="tree-dot"></div>
+                          <div className="tree-card">
+                              <div style={{color:'#27ae60', fontSize:'2rem', marginBottom:'15px'}}><i className="fas fa-recycle"></i></div>
+                              <h3 style={{fontSize:'1.2rem', fontWeight:'bold', marginBottom:'10px'}}>
+                                  {content.home_eco_2_title || 'Yapay Zeka & Atık'}
+                              </h3>
+                              <p style={{color:'#666', fontSize:'0.9rem', lineHeight:1.5}}>
+                                  {content.home_eco_2_desc || 'IoT sensörleri ile konteyner doluluk oranlarını izleyerek optimize edilmiş atık toplama rotaları.'}
+                              </p>
+                          </div>
                       </div>
-                  </div>
 
-                  <div className="tree-item left reveal reveal-left">
-                      <div className="tree-dot"></div>
-                      <div className="tree-card">
-                          <div style={{color:'#f39c12', fontSize:'2rem', marginBottom:'15px'}}><i className="fas fa-graduation-cap"></i></div>
-                          <h3 style={{fontSize:'1.4rem', fontWeight:'bold', marginBottom:'10px'}}>{content.home_eco_3_title || 'E-Öğrenme Platformu'}</h3>
-                          <p style={{color:'#666', lineHeight:1.6}}>{content.home_eco_3_desc || 'İklim değişikliği ve dijital okuryazarlık üzerine modüler çevrimiçi eğitimler.'}</p>
+                      {/* KART 3 */}
+                      <div className="tree-item reveal reveal-up delay-300">
+                          <div className="tree-dot"></div>
+                          <div className="tree-card">
+                              <div style={{color:'#f39c12', fontSize:'2rem', marginBottom:'15px'}}><i className="fas fa-graduation-cap"></i></div>
+                              <h3 style={{fontSize:'1.2rem', fontWeight:'bold', marginBottom:'10px'}}>
+                                  {content.home_eco_3_title || 'E-Öğrenme'}
+                              </h3>
+                              <p style={{color:'#666', fontSize:'0.9rem', lineHeight:1.5}}>
+                                  {content.home_eco_3_desc || 'İklim değişikliği ve dijital okuryazarlık üzerine modüler çevrimiçi eğitimler.'}
+                              </p>
+                          </div>
                       </div>
-                  </div>
 
-                  <div className="tree-item right reveal reveal-right">
-                      <div className="tree-dot"></div>
-                      <div className="tree-card">
-                          <div style={{color:'#00acc1', fontSize:'2rem', marginBottom:'15px'}}><i className="fas fa-leaf"></i></div>
-                          <h3 style={{fontSize:'1.4rem', fontWeight:'bold', marginBottom:'10px'}}>{content.home_eco_4_title || 'Sürdürülebilir Etki'}</h3>
-                          <p style={{color:'#666', lineHeight:1.6}}>{content.home_eco_4_desc || 'Karbon ayak izini azaltan ve kopyalanabilir dijital modeller.'}</p>
+                      {/* KART 4 */}
+                      <div className="tree-item reveal reveal-up delay-300">
+                          <div className="tree-dot"></div>
+                          <div className="tree-card">
+                              <div style={{color:'#00acc1', fontSize:'2rem', marginBottom:'15px'}}><i className="fas fa-leaf"></i></div>
+                              <h3 style={{fontSize:'1.2rem', fontWeight:'bold', marginBottom:'10px'}}>
+                                  {content.home_eco_4_title || 'Sürdürülebilir Etki'}
+                              </h3>
+                              <p style={{color:'#666', fontSize:'0.9rem', lineHeight:1.5}}>
+                                  {content.home_eco_4_desc || 'Karbon ayak izini azaltan ve kopyalanabilir dijital modeller.'}
+                              </p>
+                          </div>
                       </div>
+                      
+                      {/* Yeni kartlar eklendiğinde buraya gelecek ve sağa doğru kayacaktır */}
                   </div>
-
               </div>
           </div>
       </section>

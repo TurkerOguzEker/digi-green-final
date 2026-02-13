@@ -3,59 +3,52 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '../../lib/supabase';
 
-// --- VARSAYILAN DEĞERLER (Kutucuklar boş kalmasın diye) ---
+// --- VARSAYILAN DEĞERLER ---
 const DEFAULTS = {
-    // Hedef Kitle
-    home_target_1_title: "Vatandaşlar",
-    home_target_1_desc: "Mobil uygulamalar ile geri dönüşüme katılın, puan kazanın ve şehrinizi güzelleştirin.",
-    home_target_2_title: "Yerel Yönetimler",
-    home_target_2_desc: "Veriye dayalı kararlar alarak, kaynakları verimli kullanın ve operasyonel maliyetleri düşürün.",
-    home_target_3_title: "STK ve Akademik",
-    home_target_3_desc: "Araştırma, eğitim ve toplumsal farkındalık çalışmalarında aktif rol alın.",
-    
-    // Ağaç Yapısı (Dijital Ekosistem)
-    home_eco_1_title: "Mobil Entegrasyon",
-    home_eco_1_desc: "Vatandaşların belediye hizmetlerine tek tıkla ulaşmasını sağlayan entegre mobil çözüm.",
-    home_eco_2_title: "Yapay Zeka & Atık",
-    home_eco_2_desc: "Yapay zeka destekli sensörler ile atık konteynerlerini izleyerek optimize edilmiş rotalar.",
-    home_eco_3_title: "E-Öğrenme Platformu",
-    home_eco_3_desc: "İklim değişikliği ve dijital okuryazarlık üzerine modüler çevrimiçi eğitimler.",
-    home_eco_4_title: "Sürdürülebilir Etki",
-    home_eco_4_desc: "Karbon ayak izini azaltan ve kopyalanabilir dijital modeller.",
+    // Site Genel
+    header_logo_text: "DIGI-GREEN",
+    header_logo_highlight: "FUTURE",
+    footer_desc: "Kapaklı Belediyesi liderliğinde yürütülen sürdürülebilir kalkınma projesi.",
+    footer_column2_title: "Hızlı Menü",
+    footer_column3_title: "İletişim",
+    footer_eu_logo: "/assets/images/eu-flag.png",
+    footer_disclaimer: "Funded by the European Union. Views and opinions expressed are however those of the author(s) only and do not necessarily reflect those of the European Union.",
+    contact_email: "info@digigreen.eu",
+    contact_phone: "+90 282 717 10 10",
 
-    // Sayaçlar
-    home_counter_1_val: "250000",
-    home_counter_1_label: "Toplam Hibe (€)",
-    home_counter_2_val: "3",
-    home_counter_2_label: "Ortak Ülke",
-    home_counter_3_val: "5",
-    home_counter_3_label: "Proje Ortağı",
-    home_counter_4_val: "24",
-    home_counter_4_label: "Ay Süre",
-
-    // Hero & Hakkında
-    header_logo_text: "DIGI-GREEN FUTURE",
+    // Ana Sayfa Verileri
     hero_title: "Yerel Yeşil Gelecek İçin Dijital Dönüşüm",
     hero_desc: "Erasmus+ KA220-ADU kapsamında, iklim değişikliği ile mücadelede dijital araçları kullanmayı hedefleyen öncü proje.",
+    home_summary_1_val: "24 Ay", home_summary_1_label: "Proje Süresi",
+    home_summary_2_val: "250.000€", home_summary_2_label: "Toplam Hibe",
+    home_summary_3_val: "KA220-ADU", home_summary_3_label: "Program",
+    home_summary_4_val: "3 Ülke", home_summary_4_label: "Kapsam",
     home_about_title: "Teknoloji ve Doğanın Mükemmel Uyumu",
     home_about_text: "Projemiz, iklim kriziyle mücadelede yerel yönetimler ve vatandaşların aktif rol alması gerekliliğinden doğmuştur.",
     
-    // Özet Kartlar
-    home_summary_1_val: "24 Ay",
-    home_summary_1_label: "Proje Süresi",
-    home_summary_2_val: "250.000€",
-    home_summary_2_label: "Toplam Hibe",
-    home_summary_3_val: "KA220-ADU",
-    home_summary_3_label: "Program",
-    home_summary_4_val: "3 Ülke",
-    home_summary_4_label: "Kapsam",
+    // Hedef Kitle
+    home_target_1_title: "Vatandaşlar", home_target_1_desc: "Mobil uygulamalar ile geri dönüşüme katılın.",
+    home_target_2_title: "Yerel Yönetimler", home_target_2_desc: "Veriye dayalı kararlar alarak kaynakları verimli kullanın.",
+    home_target_3_title: "STK ve Akademik", home_target_3_desc: "Araştırma ve eğitim çalışmalarında aktif rol alın.",
+
+    // Dijital Ekosistem
+    home_eco_1_title: "Mobil Entegrasyon", home_eco_1_desc: "Vatandaşların belediye hizmetlerine tek tıkla ulaşmasını sağlayan çözüm.",
+    home_eco_2_title: "Yapay Zeka & Atık", home_eco_2_desc: "Sensörler ile atık yönetimini optimize eden sistem.",
+    home_eco_3_title: "E-Öğrenme Platformu", home_eco_3_desc: "Çevrimiçi eğitim modülleri.",
+    home_eco_4_title: "Sürdürülebilir Etki", home_eco_4_desc: "Karbon ayak izini azaltan modeller.",
+
+    // Sayaçlar
+    home_counter_1_val: "250000", home_counter_1_label: "Toplam Hibe (€)",
+    home_counter_2_val: "3", home_counter_2_label: "Ortak Ülke",
+    home_counter_3_val: "5", home_counter_3_label: "Proje Ortağı",
+    home_counter_4_val: "24", home_counter_4_label: "Ay Süre",
 
     // CTA
     home_cta_title: "Geleceği Birlikte Tasarlayalım",
-    home_cta_text: "DIGI-GREEN FUTURE projesi hakkında daha fazla bilgi almak için bize ulaşın."
+    home_cta_text: "Daha fazla bilgi almak için bize ulaşın."
 };
 
-// --- YARDIMCI BİLEŞENLER ---
+// --- YARDIMCI BİLEŞENLER (Dışarıda tanımlı - Odaklanma sorununu çözer) ---
 
 const ToastNotification = ({ message, type, onClose }) => {
   if (!message) return null;
@@ -87,11 +80,8 @@ const ConfirmModal = ({ isOpen, message, onConfirm, onCancel }) => {
   );
 };
 
-// --- AYAR GİRİŞ BİLEŞENİ ---
 const SettingInput = ({ label, settingKey, type="text", placeholder="", settings, handleSettingChange, updateSetting, uploadFile }) => {
-    // Veritabanından değeri bul
     const settingItem = settings.find(s => s.key === settingKey);
-    // Eğer veritabanında yoksa DEFAULTS listesinden al, o da yoksa boş string
     const val = settingItem ? settingItem.value : (DEFAULTS[settingKey] || ''); 
 
     return (
@@ -101,53 +91,23 @@ const SettingInput = ({ label, settingKey, type="text", placeholder="", settings
             </label>
             <div style={{display:'flex', gap:'10px', alignItems: 'flex-start'}}>
                 {type === 'textarea' ? (
-                    <textarea 
-                        className="form-control" 
-                        value={val} 
-                        onChange={(e) => handleSettingChange(settingKey, e.target.value)}
-                        placeholder={placeholder}
-                        rows="3" 
-                        style={{marginBottom:0, flex: 1, padding:'10px', border:'1px solid #ddd', borderRadius:'5px', width:'100%'}}
-                    ></textarea>
+                    <textarea className="form-control" value={val} onChange={(e) => handleSettingChange(settingKey, e.target.value)} placeholder={placeholder} rows="3" style={{marginBottom:0, flex: 1, padding:'10px', border:'1px solid #ddd', borderRadius:'5px', width:'100%'}}></textarea>
                 ) : type === 'image' ? (
                     <div style={{flex:1, display:'flex', gap:'10px', alignItems:'center'}}>
                         {val && <img src={val} style={{height:'40px', borderRadius:'4px', border:'1px solid #ddd'}} />}
-                        <input 
-                            className="form-control" 
-                            value={val} 
-                            onChange={(e) => handleSettingChange(settingKey, e.target.value)}
-                            placeholder="Resim URL'si veya Yükle" 
-                            style={{flex:1, marginBottom:0, padding:'10px', border:'1px solid #ddd', borderRadius:'5px'}} 
-                        />
+                        <input className="form-control" value={val} onChange={(e) => handleSettingChange(settingKey, e.target.value)} placeholder="Resim URL'si veya Yükle" style={{flex:1, marginBottom:0, padding:'10px', border:'1px solid #ddd', borderRadius:'5px'}} />
                         <label style={{background:'#eee', padding:'10px 15px', borderRadius:'5px', cursor:'pointer', fontSize:'0.9rem', whiteSpace:'nowrap'}}>
                             Yükle <input type="file" hidden onChange={async (e) => {
                                 const url = await uploadFile(e.target.files[0]);
-                                if(url) {
-                                    handleSettingChange(settingKey, url);
-                                    updateSetting(settingKey, url);
-                                }
+                                if(url) { handleSettingChange(settingKey, url); updateSetting(settingKey, url); }
                             }} />
                         </label>
                     </div>
                 ) : (
-                    <input 
-                        type="text" 
-                        className="form-control" 
-                        value={val} 
-                        onChange={(e) => handleSettingChange(settingKey, e.target.value)}
-                        placeholder={placeholder}
-                        style={{marginBottom:0, flex: 1, padding:'10px', border:'1px solid #ddd', borderRadius:'5px', width:'100%'}} 
-                    />
+                    <input type="text" className="form-control" value={val} onChange={(e) => handleSettingChange(settingKey, e.target.value)} placeholder={placeholder} style={{marginBottom:0, flex: 1, padding:'10px', border:'1px solid #ddd', borderRadius:'5px', width:'100%'}} />
                 )}
-                
-                {/* Kaydet Butonu */}
                 {type !== 'image' && (
-                    <button 
-                        onClick={() => updateSetting(settingKey, val)} 
-                        style={{padding:'10px 20px', height:'auto', background:'#003399', color:'white', border:'none', borderRadius:'5px', cursor:'pointer'}}
-                    >
-                        Kaydet
-                    </button>
+                    <button onClick={() => updateSetting(settingKey, val)} style={{padding:'10px 20px', height:'auto', background:'#003399', color:'white', border:'none', borderRadius:'5px', cursor:'pointer'}}>Kaydet</button>
                 )}
             </div>
         </div>
@@ -232,7 +192,6 @@ export default function AdminPage() {
     return publicUrl;
   }
 
-  // Local State Update
   const handleSettingChange = (key, newValue) => {
     setSettings(prev => {
         const exists = prev.find(item => item.key === key);
@@ -244,7 +203,6 @@ export default function AdminPage() {
     });
   };
 
-  // DB Update
   async function updateSetting(key, value) {
     const { error } = await supabase.from('settings').upsert({ key, value }, { onConflict: 'key' });
     if(error) showToast('Hata: ' + error.message, 'error'); 
@@ -297,8 +255,6 @@ export default function AdminPage() {
       </div>
 
       <div style={{display:'grid', gridTemplateColumns:'260px 1fr', gap:'30px'}}>
-        
-        {/* SOL MENÜ */}
         <div>
             <TabButton id="messages" label={`Mesajlar (${messages.length})`} icon="fas fa-envelope" />
             <TabButton id="home" label="Ana Sayfa" icon="fas fa-home" />
@@ -308,21 +264,16 @@ export default function AdminPage() {
             <TabButton id="results" label="Çıktılar" icon="fas fa-file-alt" />
             <TabButton id="contact" label="İletişim" icon="fas fa-phone" />
             <TabButton id="site" label="Site Ayarları (Header/Footer)" icon="fas fa-desktop" />
-            
         </div>
-        
 
-        {/* SAĞ İÇERİK ALANI */}
         <div style={{background:'#fcfcfc', padding:'40px', borderRadius:'12px', border:'1px solid #eee'}}>
             
-            {/* --- ANA SAYFA DÜZENLEME --- */}
             {activeTab === 'home' && (
                 <div className="fade-in">
                     <h2 style={{marginBottom:'25px', color:'#003399'}}>Ana Sayfa Düzenle</h2>
                     
                     <h4 style={{margin:'20px 0', color:'#555', borderLeft:'4px solid #003399', paddingLeft:'10px'}}>1. Hero (Kapak) Alanı</h4>
                     <SettingInput label="Kapak Resmi" settingKey="hero_bg_image" type="image" {...commonProps} />
-                    <SettingInput label="Logo Metni" settingKey="header_logo_text" {...commonProps} />
                     <SettingInput label="Büyük Başlık" settingKey="hero_title" {...commonProps} />
                     <SettingInput label="Açıklama Metni" settingKey="hero_desc" type="textarea" {...commonProps} />
 
@@ -404,14 +355,13 @@ export default function AdminPage() {
                 </div>
             )}
 
-            {/* --- DİĞER SEKMELER --- */}
             {activeTab === 'about' && (
                 <div className="fade-in">
                     <h2 style={{marginBottom:'25px', color:'#003399'}}>Hakkında Sayfası</h2>
-                    {/* ... (Hakkında sekmesi içeriği aynı kalır) ... */}
                     <div style={{display:'flex', gap:'10px', marginBottom:'20px'}}>
-                        <button onClick={()=>setAboutSubTab('general')} style={{padding:'5px 15px', borderRadius:'15px', border:'none', background:subTab==='general'?'#003399':'#eee', color:subTab==='general'?'white':'#555', cursor:'pointer'}}>Genel</button>
-                        <button onClick={()=>setAboutSubTab('strategy')} style={{padding:'5px 15px', borderRadius:'15px', border:'none', background:subTab==='strategy'?'#003399':'#eee', color:subTab==='strategy'?'white':'#555', cursor:'pointer'}}>Strateji</button>
+                        {['general','strategy','consortium','plan','impact','roadmap'].map(t => (
+                            <button key={t} onClick={()=>setAboutSubTab(t)} style={{padding:'5px 15px', borderRadius:'15px', border:'none', background:subTab===t?'#003399':'#eee', color:subTab===t?'white':'#555', cursor:'pointer', textTransform:'capitalize'}}>{t}</button>
+                        ))}
                     </div>
                     {subTab === 'general' && (
                         <>
@@ -430,11 +380,10 @@ export default function AdminPage() {
                             <SettingInput label="Bölüm B Metni" settingKey="strategy_text_b" type="textarea" {...commonProps} />
                         </>
                     )}
+                    {/* Diğer alt sekmeler buraya eklenebilir, Budget kaldırıldı */}
                 </div>
             )}
 
-            {/* ... Diğer sekmeler (Partners, News, Results, Contact, Messages) önceki kodla aynı kalır ... */}
-            {/* Ortaklar */}
             {activeTab === 'partners' && (
                 <div className="fade-in">
                      <h2 style={{marginBottom:'25px', color:'#003399'}}>Ortaklar & Kurumlar</h2>
@@ -462,7 +411,6 @@ export default function AdminPage() {
                 </div>
             )}
 
-            {/* Haberler */}
             {activeTab === 'news' && (
                 <div className="fade-in">
                     <h2 style={{marginBottom:'25px', color:'#003399'}}>Haberler</h2>
@@ -484,7 +432,6 @@ export default function AdminPage() {
                 </div>
             )}
 
-            {/* Çıktılar */}
             {activeTab === 'results' && (
                 <div className="fade-in">
                     <h2 style={{marginBottom:'25px', color:'#003399'}}>Çıktılar</h2>
@@ -506,7 +453,6 @@ export default function AdminPage() {
                 </div>
             )}
 
-            {/* İletişim */}
             {activeTab === 'contact' && (
                 <div className="fade-in">
                     <h2 style={{marginBottom:'25px', color:'#003399'}}>İletişim</h2>
@@ -522,7 +468,6 @@ export default function AdminPage() {
                 </div>
             )}
 
-            {/* Mesajlar */}
             {activeTab === 'messages' && (
                 <div className="fade-in">
                     <h2 style={{marginBottom:'25px', color:'#003399'}}>Mesajlar</h2>
@@ -537,19 +482,27 @@ export default function AdminPage() {
             )}
 
             {activeTab === 'site' && (
-    <div className="fade-in">
-        <h2 style={{marginBottom:'25px', color:'#003399'}}>Genel Site Ayarları</h2>
-        
-        <h4 style={{margin:'20px 0', color:'#555', borderLeft:'4px solid #003399', paddingLeft:'10px'}}>Üst Menü (Header)</h4>
-        <SettingInput label="Logo Yazısı" settingKey="header_logo_text" {...commonProps} />
+                <div className="fade-in">
+                    <h2 style={{marginBottom:'25px', color:'#003399'}}>Site Genel Ayarları</h2>
+                    
+                    <h4 style={{margin:'20px 0', color:'#555', borderLeft:'4px solid #003399', paddingLeft:'10px'}}>Üst Menü (Header)</h4>
+                    <SettingInput label="Logo Ana Metni" settingKey="header_logo_text" placeholder="DIGI-GREEN" {...commonProps} />
+                    <SettingInput label="Logo Vurgu Metni (Yeşil)" settingKey="header_logo_highlight" placeholder="FUTURE" {...commonProps} />
 
-        <h4 style={{margin:'40px 0 20px', color:'#555', borderLeft:'4px solid #003399', paddingLeft:'10px'}}>Alt Bilgi (Footer)</h4>
-        <SettingInput label="Footer Hakkında Metni" settingKey="footer_about_text" type="textarea" {...commonProps} />
-        <SettingInput label="Adres Bilgisi" settingKey="footer_address" {...commonProps} />
-        <SettingInput label="Telefon Bilgisi" settingKey="footer_phone" {...commonProps} />
-        <SettingInput label="Telif Hakkı (Copyright)" settingKey="footer_copyright" {...commonProps} />
-    </div>
-)}
+                    <h4 style={{margin:'40px 0 20px', color:'#555', borderLeft:'4px solid #003399', paddingLeft:'10px'}}>Alt Bilgi (Footer)</h4>
+                    
+                    <SettingInput label="AB Logosu (Duyuru Yanı)" settingKey="footer_eu_logo" type="image" {...commonProps} />
+
+                    <SettingInput label="Footer Hakkında Metni" settingKey="footer_desc" type="textarea" {...commonProps} />
+                    <SettingInput label="Footer 2. Kolon Başlığı" settingKey="footer_column2_title" {...commonProps} />
+                    <SettingInput label="Footer 3. Kolon Başlığı" settingKey="footer_column3_title" {...commonProps} />
+                    <SettingInput label="AB Bilgilendirme Metni" settingKey="footer_disclaimer" type="textarea" {...commonProps} />
+
+                    <h4 style={{margin:'40px 0 20px', color:'#555', borderLeft:'4px solid #003399', paddingLeft:'10px'}}>İletişim Bilgileri (Global)</h4>
+                    <SettingInput label="E-posta" settingKey="contact_email" {...commonProps} />
+                    <SettingInput label="Telefon" settingKey="contact_phone" {...commonProps} />
+                </div>
+            )}
 
         </div>
       </div>
