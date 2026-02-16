@@ -137,7 +137,8 @@ export default function AdminPage() {
   const [ecoItems, setEcoItems] = useState([]);
 
   const [newsForm, setNewsForm] = useState({ id: null, title: '', summary: '', image_url: '', date: '' });
-  // ✨ YENİ PARTNER FORM YAPISI: Açıklama, Rol ve Website Eklendi
+  
+  // ✨ YENİ: AÇIKLAMA, WEB SİTESİ VE ROL BURAYA GERİ EKLENDİ ✨
   const [partnerForm, setPartnerForm] = useState({ id: null, name: '', country: '', image_url: '', flag_url: '', website: '', description: '', role: 'Ortak' }); 
   const [resultForm, setResultForm] = useState({ id: null, title: '', description: '', status: 'Planlanıyor', link: '', icon: 'file' });
   const [isEditing, setIsEditing] = useState(false);
@@ -230,7 +231,19 @@ export default function AdminPage() {
   async function saveItem(e, table, form, setForm) {
     e.preventDefault();
     const { id, ...data } = form;
-    if (id) await supabase.from(table).update(data).eq('id', id); else await supabase.from(table).insert([data]);
+    
+    let result;
+    if (id) {
+        result = await supabase.from(table).update(data).eq('id', id);
+    } else {
+        result = await supabase.from(table).insert([data]);
+    }
+
+    if (result && result.error) {
+        showToast('Veritabanı Hatası: ' + result.error.message, 'error');
+        return; 
+    }
+
     setIsEditing(false); loadAllData(); showToast('Kaydedildi.', 'success');
     if(table==='news') setNewsForm({ id: null, title: '', summary: '', image_url: '', date: '' });
     if(table==='partners') setPartnerForm({ id: null, name: '', country: '', image_url: '', flag_url: '', website: '', description: '', role: 'Ortak' });
@@ -241,7 +254,11 @@ export default function AdminPage() {
     setIsEditing(true);
     if(type==='news') setNewsForm(item);
     if(type==='partners') setPartnerForm({
-        ...item,
+        id: item.id, 
+        name: item.name, 
+        country: item.country, 
+        image_url: item.image_url, 
+        flag_url: item.flag_url,
         website: item.website || '',
         description: item.description || '',
         role: item.role || 'Ortak'
@@ -285,26 +302,143 @@ export default function AdminPage() {
 
         <div style={{background:'#fcfcfc', padding:'40px', borderRadius:'12px', border:'1px solid #eee'}}>
             
-            {/* Diğer Tablar (home, about vs.) aynı şekilde kalıyor */}
             {activeTab === 'home' && (
                 <div className="fade-in">
-                    {/* ... Home içeriği aynen kalıyor ... */}
                     <h2 style={{marginBottom:'25px', color:'#003399'}}>Ana Sayfa Düzenle</h2>
+                    
+                    <h4 style={{margin:'20px 0', color:'#555', borderLeft:'4px solid #003399', paddingLeft:'10px'}}>1. Hero (Kapak) Alanı</h4>
                     <SettingInput label="Kapak Resmi" settingKey="hero_bg_image" type="image" {...commonProps} />
                     <SettingInput label="Büyük Başlık" settingKey="hero_title" {...commonProps} />
                     <SettingInput label="Açıklama Metni" settingKey="hero_desc" type="textarea" {...commonProps} />
-                    {/* ... (Diğer ana sayfa ayarları) ... */}
+
+                    <h4 style={{margin:'40px 0 20px', color:'#555', borderLeft:'4px solid #003399', paddingLeft:'10px'}}>2. Özet Kartlar (4 Adet)</h4>
+                    <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:'15px'}}>
+                        <div style={{border:'1px solid #ddd', padding:'15px', borderRadius:'8px', background:'white'}}>
+                            <strong style={{color:'#003399'}}>Kart 1 (Süre)</strong>
+                            <SettingInput label="Değer" settingKey="home_summary_1_val" {...commonProps} />
+                            <SettingInput label="Etiket" settingKey="home_summary_1_label" {...commonProps} />
+                        </div>
+                        <div style={{border:'1px solid #ddd', padding:'15px', borderRadius:'8px', background:'white'}}>
+                            <strong style={{color:'#003399'}}>Kart 2 (Bütçe)</strong>
+                            <SettingInput label="Değer" settingKey="home_summary_2_val" {...commonProps} />
+                            <SettingInput label="Etiket" settingKey="home_summary_2_label" {...commonProps} />
+                        </div>
+                        <div style={{border:'1px solid #ddd', padding:'15px', borderRadius:'8px', background:'white'}}>
+                            <strong style={{color:'#003399'}}>Kart 3 (Program)</strong>
+                            <SettingInput label="Değer" settingKey="home_summary_3_val" {...commonProps} />
+                            <SettingInput label="Etiket" settingKey="home_summary_3_label" {...commonProps} />
+                        </div>
+                        <div style={{border:'1px solid #ddd', padding:'15px', borderRadius:'8px', background:'white'}}>
+                            <strong style={{color:'#003399'}}>Kart 4 (Kapsam)</strong>
+                            <SettingInput label="Değer" settingKey="home_summary_4_val" {...commonProps} />
+                            <SettingInput label="Etiket" settingKey="home_summary_4_label" {...commonProps} />
+                        </div>
+                    </div>
+
+                    <h4 style={{margin:'40px 0 20px', color:'#555', borderLeft:'4px solid #003399', paddingLeft:'10px'}}>3. Hakkında Bölümü</h4>
+                    <SettingInput label="Sol Taraf Görseli" settingKey="home_about_image" type="image" {...commonProps} />
+                    <SettingInput label="Bölüm Başlığı" settingKey="home_about_title" {...commonProps} />
+                    <SettingInput label="Bölüm Metni" settingKey="home_about_text" type="textarea" {...commonProps} />
+
+                    <h4 style={{margin:'40px 0 20px', color:'#555', borderLeft:'4px solid #003399', paddingLeft:'10px'}}>4. Hedef Kitle Kartları</h4>
+                    <SettingInput label="Kart 1 Başlık" settingKey="home_target_1_title" {...commonProps} />
+                    <SettingInput label="Kart 1 Açıklama" settingKey="home_target_1_desc" type="textarea" {...commonProps} />
+                    <hr style={{margin:'15px 0', borderTop:'1px dashed #ddd'}}/>
+                    <SettingInput label="Kart 2 Başlık" settingKey="home_target_2_title" {...commonProps} />
+                    <SettingInput label="Kart 2 Açıklama" settingKey="home_target_2_desc" type="textarea" {...commonProps} />
+                    <hr style={{margin:'15px 0', borderTop:'1px dashed #ddd'}}/>
+                    <SettingInput label="Kart 3 Başlık" settingKey="home_target_3_title" {...commonProps} />
+                    <SettingInput label="Kart 3 Açıklama" settingKey="home_target_3_desc" type="textarea" {...commonProps} />
+
+                    <h4 style={{margin:'40px 0 20px', color:'#555', borderLeft:'4px solid #003399', paddingLeft:'10px'}}>5. Dijital Ekosistem (Ağaç Kutuları)</h4>
+                    
+                    {ecoItems.map((item, index) => (
+                        <div key={index} style={{background:'#fcfcfc', padding:'20px', borderRadius:'8px', border:'1px solid #ddd', marginBottom:'15px', position:'relative'}}>
+                            <button onClick={() => {
+                                const newItems = ecoItems.filter((_, i) => i !== index);
+                                saveEcoItems(newItems);
+                            }} style={{position:'absolute', top:'20px', right:'20px', background:'#e74c3c', color:'white', border:'none', padding:'5px 10px', borderRadius:'5px', cursor:'pointer', fontSize:'0.8rem'}}>Kutuyu Sil</button>
+                            
+                            <strong style={{color:'#003399', display:'block', marginBottom:'10px'}}>Ağaç Kutusu {index + 1}</strong>
+                            <div style={{display:'flex', gap:'10px'}}>
+                                <input className="form-control" value={item.title} onChange={e => handleEcoChange(index, 'title', e.target.value)} placeholder="Kart Başlığı" style={{flex:1, padding:'10px', border:'1px solid #ddd', borderRadius:'5px'}} />
+                                <input className="form-control" value={item.icon} onChange={e => handleEcoChange(index, 'icon', e.target.value)} placeholder="İkon (Örn: fa-star)" style={{width:'150px', padding:'10px', border:'1px solid #ddd', borderRadius:'5px'}} />
+                            </div>
+                            <textarea className="form-control" value={item.desc} onChange={e => handleEcoChange(index, 'desc', e.target.value)} placeholder="Kart Açıklaması" rows="2" style={{width:'100%', padding:'10px', border:'1px solid #ddd', borderRadius:'5px', marginTop:'10px', boxSizing:'border-box'}}></textarea>
+                            
+                            <button onClick={() => saveEcoItems(ecoItems)} style={{background:'#003399', color:'white', padding:'8px 15px', border:'none', borderRadius:'5px', cursor:'pointer', marginTop:'10px', fontSize:'0.9rem'}}>Değişikliği Kaydet</button>
+                        </div>
+                    ))}
+                    
+                    <button onClick={() => {
+                        const newItems = [...ecoItems, { title: 'Yeni Kutu', desc: 'Açıklama metnini buraya giriniz...', icon: 'fa-star' }];
+                        saveEcoItems(newItems);
+                    }} style={{background:'#27ae60', color:'white', padding:'10px 20px', border:'none', borderRadius:'5px', cursor:'pointer', fontWeight:'bold'}}>+ Yeni Kutu Ekle</button>
+
+                    <h4 style={{margin:'40px 0 20px', color:'#555', borderLeft:'4px solid #003399', paddingLeft:'10px'}}>6. Etki Sayaçları</h4>
+                    <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:'15px'}}>
+                        <div>
+                            <SettingInput label="Sayaç 1 Değer" settingKey="home_counter_1_val" {...commonProps} />
+                            <SettingInput label="Sayaç 1 Etiket" settingKey="home_counter_1_label" {...commonProps} />
+                        </div>
+                        <div>
+                            <SettingInput label="Sayaç 2 Değer" settingKey="home_counter_2_val" {...commonProps} />
+                            <SettingInput label="Sayaç 2 Etiket" settingKey="home_counter_2_label" {...commonProps} />
+                        </div>
+                        <div>
+                            <SettingInput label="Sayaç 3 Değer" settingKey="home_counter_3_val" {...commonProps} />
+                            <SettingInput label="Sayaç 3 Etiket" settingKey="home_counter_3_label" {...commonProps} />
+                        </div>
+                        <div>
+                            <SettingInput label="Sayaç 4 Değer" settingKey="home_counter_4_val" {...commonProps} />
+                            <SettingInput label="Sayaç 4 Etiket" settingKey="home_counter_4_label" {...commonProps} />
+                        </div>
+                    </div>
+
+                    <h4 style={{margin:'40px 0 20px', color:'#555', borderLeft:'4px solid #003399', paddingLeft:'10px'}}>7. Alt Kapanış (CTA)</h4>
+                    <SettingInput label="Kapanış Başlığı" settingKey="home_cta_title" {...commonProps} />
+                    <SettingInput label="Kapanış Metni" settingKey="home_cta_text" type="textarea" {...commonProps} />
+                </div>
+            )}
+
+            {activeTab === 'about' && (
+                <div className="fade-in">
+                    <h2 style={{marginBottom:'25px', color:'#003399'}}>Hakkında Sayfası</h2>
+                    <div style={{display:'flex', gap:'10px', marginBottom:'20px'}}>
+                        {['general','strategy','consortium','plan','impact','roadmap'].map(t => (
+                            <button key={t} onClick={()=>setAboutSubTab(t)} style={{padding:'5px 15px', borderRadius:'15px', border:'none', background:subTab===t?'#003399':'#eee', color:subTab===t?'white':'#555', cursor:'pointer', textTransform:'capitalize'}}>{t}</button>
+                        ))}
+                    </div>
+                    {subTab === 'general' && (
+                        <>
+                            <SettingInput label="Proje Adı" settingKey="about_project_name" {...commonProps} />
+                            <SettingInput label="Proje Kısaltması" settingKey="about_project_code" {...commonProps} />
+                            <SettingInput label="Program" settingKey="about_project_program" {...commonProps} />
+                            <SettingInput label="Süresi" settingKey="about_project_duration" {...commonProps} />
+                            <SettingInput label="Bütçe" settingKey="about_project_budget" {...commonProps} />
+                        </>
+                    )}
+                    {subTab === 'strategy' && (
+                        <>
+                            <SettingInput label="Sayfa Başlığı" settingKey="about_strategy_title" {...commonProps} />
+                            <SettingInput label="Alt Başlık" settingKey="about_strategy_desc" type="textarea" {...commonProps} />
+                            <SettingInput label="Bölüm A Metni" settingKey="strategy_text_a_1" type="textarea" {...commonProps} />
+                            <SettingInput label="Bölüm B Metni" settingKey="strategy_text_b" type="textarea" {...commonProps} />
+                        </>
+                    )}
                 </div>
             )}
 
             {activeTab === 'partners' && (
                 <div className="fade-in">
-                     <h2 style={{marginBottom:'25px', color:'#003399'}}>Ortaklar & Kurumlar (Geniş Tasarım)</h2>
+                     <h2 style={{marginBottom:'25px', color:'#003399'}}>Ortaklar & Kurumlar</h2>
                      <SettingInput label="Sayfa Başlığı" settingKey="partners_page_title" {...commonProps} />
                      <SettingInput label="Başlık Resmi" settingKey="partners_header_bg" type="image" {...commonProps} />
+                     
                      <div style={{background:'white', padding:'25px', marginBottom:'20px', border:'1px solid #ddd', borderRadius:'8px'}}>
                         <h4>{isEditing ? 'Düzenle' : 'Yeni Ekle'}</h4>
-                        {/* ✨ GÜNCELLENMİŞ PARTNER FORMU ✨ */}
+                        
+                        {/* ✨ AÇIKLAMA, WEB SİTESİ VE ROL ALANLARININ EKLENDİĞİ YENİ FORM ✨ */}
                         <form onSubmit={(e) => saveItem(e, 'partners', partnerForm, setPartnerForm)} style={{display:'grid', gap:'15px'}}>
                             <input className="form-control" placeholder="Kurum Adı" value={partnerForm.name} onChange={e=>setPartnerForm({...partnerForm, name:e.target.value})} required style={{padding:'10px', width:'100%', boxSizing:'border-box', border:'1px solid #ddd', borderRadius:'5px'}} />
                             
@@ -325,7 +459,9 @@ export default function AdminPage() {
                             
                             <button type="submit" style={{background:'#003399', color:'white', border:'none', padding:'12px', borderRadius:'5px', cursor:'pointer', fontWeight:'bold', marginTop:'10px'}}>{isEditing ? 'Ortak Bilgilerini Güncelle' : 'Yeni Ortak Ekle'}</button>
                         </form>
+
                      </div>
+                     
                      {partners.map(item => (
                         <div key={item.id} style={{background:'white', padding:'15px', margin:'10px 0', border:'1px solid #eee', display:'flex', justifyContent:'space-between', alignItems:'center', borderRadius:'8px'}}>
                             <div>
