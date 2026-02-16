@@ -2,11 +2,9 @@
 import { useEffect, useState, useRef } from 'react';
 import { supabase } from '../lib/supabase';
 
-// TypeScript Tipleri
 interface ContentState { [key: string]: string; }
 interface CounterProps { end: number; duration?: number; }
 
-// --- AKILLI SAYAÇ BİLEŞENİ ---
 const Counter = ({ end, duration = 2000 }: CounterProps) => {
   const [count, setCount] = useState(0);
   const [isVisible, setIsVisible] = useState(false);
@@ -48,8 +46,6 @@ const Counter = ({ end, duration = 2000 }: CounterProps) => {
 export default function Home() {
   const [content, setContent] = useState<ContentState>({});
   const [isLoading, setIsLoading] = useState(true);
-  
-  // SLIDER İÇİN REF (KAYDIRMA KONTROLÜ)
   const sliderRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -70,7 +66,6 @@ export default function Home() {
     fetchSettings();
   }, []);
 
-  // Scroll Animasyon Tetikleyici
   useEffect(() => {
     if (isLoading) return;
     const handleScroll = () => {
@@ -86,11 +81,10 @@ export default function Home() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, [isLoading]);
 
-  // --- KAYDIRMA FONKSİYONU ---
   const scrollSlider = (direction: 'left' | 'right') => {
     if (sliderRef.current) {
         const { current } = sliderRef;
-        const scrollAmount = 360; // Bir kart genişliği + boşluk kadar kaydır
+        const scrollAmount = 360; 
         if (direction === 'left') {
             current.scrollBy({ left: -scrollAmount, behavior: 'smooth' });
         } else {
@@ -105,6 +99,22 @@ export default function Home() {
           <div style={{color: '#003399', fontSize: '1.2rem', fontWeight: 'bold', fontFamily: 'sans-serif'}}>Yükleniyor...</div>
       </div>
     );
+  }
+
+  // ✨ YENİ: Veritabanından gelen dinamik listeyi hazırla
+  let ecoList: Array<{title: string, desc: string, icon: string}> = [];
+  if (content.home_eco_list) {
+      try { ecoList = JSON.parse(content.home_eco_list); } catch(e) { console.error(e); }
+  }
+  
+  // Eğer henüz Admin'den yeni formatta kaydedilmediyse, sitenizin bozulmaması için eskisini kullan
+  if (ecoList.length === 0) {
+      ecoList = [
+          { title: content.home_eco_1_title || 'Mobil Entegrasyon', desc: content.home_eco_1_desc || 'Vatandaşların belediye hizmetlerine tek tıkla ulaşmasını sağlayan entegre mobil çözüm.', icon: 'fa-mobile-screen' },
+          { title: content.home_eco_2_title || 'Yapay Zeka & Atık', desc: content.home_eco_2_desc || 'Yapay zeka destekli sensörler ile atık yönetimini optimize ediyor, doluluk oranlarına göre rota planlıyoruz.', icon: 'fa-recycle' },
+          { title: content.home_eco_3_title || 'E-Öğrenme', desc: content.home_eco_3_desc || 'İklim değişikliği ve dijital okuryazarlık üzerine modüler çevrimiçi eğitimler.', icon: 'fa-graduation-cap' },
+          { title: content.home_eco_4_title || 'Sürdürülebilir Etki', desc: content.home_eco_4_desc || 'Karbon ayak izini azaltan ve kopyalanabilir dijital modeller.', icon: 'fa-leaf' }
+      ];
   }
 
   return (
@@ -222,85 +232,47 @@ export default function Home() {
                       Teknolojiyi doğanın hizmetine sunan entegre çözüm ağımız. <br/>
                   </p>
               </div>
+          </div> 
 
-            {/* Slider Kapsayıcı */}
-              <div className="tree-wrapper">
-                  
-                  {/* ✨ EKLENEN ANA ÇİZGİ KODU BURADA ✨ */}
-                  <div className="tree-line"></div>
-                  
-                  {/* SOL BUTON */}
-                  <button className="slider-btn prev" onClick={() => scrollSlider('left')} aria-label="Sola Kaydır">
-                      <i className="fas fa-chevron-left"></i>
-                  </button>
-                  
-                  {/* KARTLAR LİSTESİ */}
-                  <div className="tree-scroll" ref={sliderRef}>
+          {/* Slider Kapsayıcı */}
+          <div className="tree-wrapper">
+              
+              <div className="tree-line"></div>
+              
+              <button className="slider-btn prev" onClick={() => scrollSlider('left')} aria-label="Sola Kaydır" style={{left: '30px', zIndex: 50}}>
+                  <i className="fas fa-chevron-left"></i>
+              </button>
+              
+              {/* ✨ YENİ: DİNAMİK LİSTE (Admin panelinde kaç kutu varsa otomatik çeker ve renkleri döngüyle atar) */}
+              <div className="tree-scroll" ref={sliderRef}>
+                  {ecoList.map((item, index) => {
+                      // Kutu renklerini otomatik sırayla atamak için dizi:
+                      const colors = ['#003399', '#27ae60', '#f39c12', '#00acc1', '#8e44ad', '#e74c3c'];
+                      const color = colors[index % colors.length];
                       
-                      {/* 1. KART (ÜSTTE) */}
-                      <div className="tree-item reveal reveal-up delay-100">
-                          <div className="tree-dot"></div>
-                          <div className="tree-card">
-                              <div style={{color:'#003399', fontSize:'2rem', marginBottom:'15px'}}><i className="fas fa-mobile-screen"></i></div>
-                              <h3 style={{fontSize:'1.2rem', fontWeight:'bold', marginBottom:'10px'}}>
-                                  {content.home_eco_1_title || 'Mobil Entegrasyon'}
-                              </h3>
-                              <p style={{color:'#666', fontSize:'0.9rem', lineHeight:1.5}}>
-                                  {content.home_eco_1_desc || 'Vatandaşların belediye hizmetlerine tek tıkla ulaşmasını sağlayan entegre mobil çözüm.'}
-                              </p>
+                      return (
+                          <div key={index} className={`tree-item reveal reveal-up delay-${((index % 3) + 1) * 100}`}>
+                              <div className="tree-dot"></div>
+                              <div className="tree-card">
+                                  <div style={{color: color, fontSize:'2rem', marginBottom:'15px'}}>
+                                      <i className={`fas ${item.icon}`}></i>
+                                  </div>
+                                  <h3 style={{fontSize:'1.2rem', fontWeight:'bold', marginBottom:'10px'}}>
+                                      {item.title}
+                                  </h3>
+                                  <p style={{color:'#666', fontSize:'0.9rem', lineHeight:1.5}}>
+                                      {item.desc}
+                                  </p>
+                              </div>
                           </div>
-                      </div>
-
-                      {/* 2. KART (ALTTA) */}
-                      <div className="tree-item reveal reveal-up delay-200">
-                          <div className="tree-dot"></div>
-                          <div className="tree-card">
-                              <div style={{color:'#27ae60', fontSize:'2rem', marginBottom:'15px'}}><i className="fas fa-recycle"></i></div>
-                              <h3 style={{fontSize:'1.2rem', fontWeight:'bold', marginBottom:'10px'}}>
-                                  {content.home_eco_2_title || 'Yapay Zeka & Atık'}
-                              </h3>
-                              <p style={{color:'#666', fontSize:'0.9rem', lineHeight:1.5}}>
-                                  {content.home_eco_2_desc || 'Yapay zeka destekli sensörler ile atık yönetimini optimize ediyor, doluluk oranlarına göre rota planlıyoruz.'}
-                              </p>
-                          </div>
-                      </div>
-
-                      {/* 3. KART (ÜSTTE) */}
-                      <div className="tree-item reveal reveal-up delay-300">
-                          <div className="tree-dot"></div>
-                          <div className="tree-card">
-                              <div style={{color:'#f39c12', fontSize:'2rem', marginBottom:'15px'}}><i className="fas fa-graduation-cap"></i></div>
-                              <h3 style={{fontSize:'1.2rem', fontWeight:'bold', marginBottom:'10px'}}>
-                                  {content.home_eco_3_title || 'E-Öğrenme'}
-                              </h3>
-                              <p style={{color:'#666', fontSize:'0.9rem', lineHeight:1.5}}>
-                                  {content.home_eco_3_desc || 'İklim değişikliği ve dijital okuryazarlık üzerine modüler çevrimiçi eğitimler.'}
-                              </p>
-                          </div>
-                      </div>
-
-                      {/* 4. KART (ALTTA) */}
-                      <div className="tree-item reveal reveal-up delay-400">
-                          <div className="tree-dot"></div>
-                          <div className="tree-card">
-                              <div style={{color:'#00acc1', fontSize:'2rem', marginBottom:'15px'}}><i className="fas fa-leaf"></i></div>
-                              <h3 style={{fontSize:'1.2rem', fontWeight:'bold', marginBottom:'10px'}}>
-                                  {content.home_eco_4_title || 'Sürdürülebilir Etki'}
-                              </h3>
-                              <p style={{color:'#666', fontSize:'0.9rem', lineHeight:1.5}}>
-                                  {content.home_eco_4_desc || 'Karbon ayak izini azaltan ve kopyalanabilir dijital modeller.'}
-                              </p>
-                          </div>
-                      </div>
-
-                  </div>
-
-                  {/* SAĞ BUTON */}
-                  <button className="slider-btn next" onClick={() => scrollSlider('right')} aria-label="Sağa Kaydır">
-                      <i className="fas fa-chevron-right"></i>
-                  </button>
-
+                      );
+                  })}
               </div>
+
+              <button className="slider-btn next" onClick={() => scrollSlider('right')} aria-label="Sağa Kaydır" style={{right: '30px', zIndex: 50}}>
+                  <i className="fas fa-chevron-right"></i>
+              </button>
+
           </div>
       </section>
 

@@ -46,24 +46,24 @@ body {
 }
 
 /* =========================================
-   3. AĞAÇ / TIMELINE TASARIMI (SABİT ÇİZGİLİ ZİG-ZAG)
+   3. AĞAÇ / TIMELINE TASARIMI (KUSURSUZ DİNAMİK YAPI)
    ========================================= */
 .tree-wrapper {
   position: relative;
-  padding: 40px 0;
+  padding: 60px 0; /* Dikeyde çarpışmaları önlemek için boşluğu artırdık */
   width: 100%;
-  overflow: hidden; 
+  overflow: visible; /* Çizgi dışarı taşabilsin */
 }
 
-/* KRİTİK ÇÖZÜM: BAĞIMSIZ, KESİNTİSİZ ÇİZGİ */
+/* EKRANI UÇTAN UCA KAPLAYAN ANA ÇİZGİ */
 .tree-line {
   position: absolute;
   top: 50%;
-  left: 0;
-  width: 100%; /* Ekran genişliği kadar sabit uzar */
+  left: 50%;
+  width: 100vw; 
   height: 4px;
   background: linear-gradient(90deg, var(--secondary), var(--primary));
-  transform: translateY(-50%);
+  transform: translate(-50%, -50%); 
   z-index: 0;
   border-radius: 4px;
 }
@@ -81,7 +81,7 @@ body {
 }
 .tree-scroll::-webkit-scrollbar { display: none; }
 
-/* Tekil Öğe */
+/* Tekil Öğe Kapsayıcısı */
 .tree-item {
   position: relative;
   z-index: 1;
@@ -91,7 +91,7 @@ body {
   flex-direction: column;
 }
 
-/* Kart Tasarımı */
+/* ✨ KART TASARIMI - SABİT YÜKSEKLİK & İÇ KAYDIRMA (KAYMAYI ÖNLER) ✨ */
 .tree-card {
   background: white;
   padding: 30px;
@@ -102,7 +102,17 @@ body {
   display: flex;
   flex-direction: column;
   justify-content: flex-start;
+  height: 280px; /* Tüm kartları tek bir standart boya kilitledik */
+  overflow-y: auto; /* Yazı uzunsa dışarı taşmaz, kartın içinde kayar! */
+  position: relative;
+  z-index: 2; 
 }
+
+/* Kartın İçindeki Gizli ve Zarif Kaydırma Çubuğu */
+.tree-card::-webkit-scrollbar { width: 4px; }
+.tree-card::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+.tree-card:hover::-webkit-scrollbar-thumb { background: var(--secondary); }
+
 .tree-card:hover {
   transform: translateY(-5px);
   box-shadow: 0 20px 40px rgba(0, 51, 153, 0.1);
@@ -121,39 +131,48 @@ body {
   transition: 0.3s;
 }
 
-/* --- MASAÜSTÜ ZİG-ZAG GÖRÜNÜM --- */
+/* --- MASAÜSTÜ ZİG-ZAG GÖRÜNÜM (MATEMATİKSEL KUSURSUZ HİZALAMA) --- */
 @media (min-width: 992px) {
   .tree-scroll {
     align-items: center; 
-    min-height: 500px; 
+    min-height: 650px; /* Kaymaları önlemek için dikey esneme alanı */
   }
 
-  .tree-item { height: 250px; }
-  .tree-card { height: 100%; }
-
-  .tree-item:nth-child(odd) { transform: translateY(-140px); }
+  /* 1. ÜSTTEKİ KARTLAR (160px YUKARI) */
+  .tree-item:nth-child(odd) { transform: translateY(-160px); }
+  
+  /* Çizgi artık kartın altından değil, tam MERKEZİNDEN (top: 50%) çıkıyor */
   .tree-item:nth-child(odd)::after {
-    content: ''; position: absolute; bottom: -20px; left: 50%;
-    width: 3px; height: 20px; background: var(--secondary);
+    content: ''; position: absolute; 
+    top: 50%; left: 50%;
+    width: 3px; height: 160px; /* Çizgi boyu tam itme miktarı kadar */
+    background: var(--secondary);
     transform: translateX(-50%); z-index: 0;
   }
+  
+  /* Nokta her zaman merkezden 160px aşağıda durur, hedefi asla ıskalamaz */
   .tree-item:nth-child(odd) .tree-dot {
-    bottom: -32px; left: 50%; transform: translateX(-50%); top: auto;
+    top: calc(50% + 160px); left: 50%; transform: translate(-50%, -50%); 
   }
 
-  .tree-item:nth-child(even) { transform: translateY(140px); }
+  /* 2. ALTTAKİ KARTLAR (160px AŞAĞI) */
+  .tree-item:nth-child(even) { transform: translateY(160px); }
+  
   .tree-item:nth-child(even)::after {
-    content: ''; position: absolute; top: -20px; left: 50%;
-    width: 3px; height: 20px; background: var(--secondary);
+    content: ''; position: absolute; 
+    bottom: 50%; left: 50%;
+    width: 3px; height: 160px; 
+    background: var(--secondary);
     transform: translateX(-50%); z-index: 0;
   }
+  
   .tree-item:nth-child(even) .tree-dot {
-    top: -32px; left: 50%; transform: translateX(-50%); bottom: auto;
+    top: calc(50% - 160px); left: 50%; transform: translate(-50%, -50%); 
   }
 
   .tree-item:hover .tree-dot {
     background: var(--secondary);
-    transform: translateX(-50%) scale(1.3);
+    transform: translate(-50%, -50%) scale(1.3);
     box-shadow: 0 0 15px rgba(39, 174, 96, 0.6);
   }
 }
@@ -162,7 +181,6 @@ body {
 @media (max-width: 991px) {
   .tree-scroll { flex-direction: column; padding: 20px 20px 20px 50px; }
   
-  /* Mobilde arka plan çizgisini dikey yap */
   .tree-line {
     width: 4px; height: 100%; 
     left: 30px; top: 0; bottom: 0;
@@ -171,7 +189,7 @@ body {
   }
   
   .tree-item { max-width: 100%; height: auto; margin-bottom: 30px; transform: none !important; }
-  .tree-card { height: auto; }
+  .tree-card { height: auto; overflow-y: visible; }
   .tree-item::after { display: none; } 
   
   .tree-item:nth-child(odd) .tree-dot, .tree-item:nth-child(even) .tree-dot { 
@@ -256,3 +274,124 @@ body {
 .section-padding { padding: 80px 0; }
 .fade-in { animation: fadeInPage 0.5s ease-out; }
 @keyframes fadeInPage { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+/* =========================================
+   7. HEADER DROPDOWN (MODERN TASARIM)
+   ========================================= */
+.dropdown-menu {
+  position: absolute;
+  top: calc(100% + 15px); 
+  left: 50%; 
+  transform: translateX(-50%); 
+  background: #ffffff;
+  box-shadow: 0 15px 40px rgba(0, 51, 153, 0.1); 
+  border-radius: 12px; 
+  min-width: 270px;
+  display: none;
+  flex-direction: column;
+  list-style: none;
+  padding: 12px; 
+  margin: 0;
+  z-index: 1001;
+  border: 1px solid rgba(0, 51, 153, 0.05);
+}
+
+.dropdown-menu::before {
+  content: '';
+  position: absolute;
+  top: -6px;
+  left: 50%;
+  transform: translateX(-50%) rotate(45deg);
+  width: 12px;
+  height: 12px;
+  background: #ffffff;
+  border-left: 1px solid rgba(0, 51, 153, 0.05);
+  border-top: 1px solid rgba(0, 51, 153, 0.05);
+  z-index: -1;
+}
+
+.dropdown-menu::after {
+  content: '';
+  position: absolute;
+  top: -15px;
+  left: 0;
+  width: 100%;
+  height: 15px;
+  background: transparent;
+}
+
+.nav-item-with-dropdown:hover .dropdown-menu {
+  display: flex;
+  animation: slideUpFade 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes slideUpFade {
+  from { opacity: 0; transform: translate(-50%, 15px); }
+  to { opacity: 1; transform: translate(-50%, 0); }
+}
+
+.dropdown-menu li { 
+  width: 100%; 
+  margin-bottom: 4px; 
+}
+.dropdown-menu li:last-child {
+  margin-bottom: 0;
+}
+
+.nav-item-with-dropdown .dropdown-menu .dropdown-link {
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.95rem;
+  color: #555555 !important;
+  font-weight: 500;
+  text-decoration: none;
+  transition: all 0.3s ease;
+  background: #ffffff;
+  border-radius: 8px; 
+  width: 100%;
+  border-left: none;
+}
+
+.nav-item-with-dropdown .dropdown-menu .dropdown-link::after {
+  content: '\f105'; 
+  font-family: 'Font Awesome 5 Free';
+  font-weight: 900;
+  font-size: 0.9rem;
+  color: var(--secondary);
+  opacity: 0;
+  transform: translateX(-10px);
+  transition: all 0.3s ease;
+}
+
+.nav-item-with-dropdown .dropdown-menu .dropdown-link:hover {
+  background: var(--light) !important; 
+  color: var(--primary) !important;
+  padding-left: 20px; 
+}
+
+.nav-item-with-dropdown .dropdown-menu .dropdown-link:hover::after {
+  opacity: 1;
+  transform: translateX(0); 
+}
+
+@media (max-width: 992px) {
+  .dropdown-menu { 
+      position: static; box-shadow: none; padding: 5px 0; background: #fcfcfc; 
+      display: block; width: 100%; transform: none !important; border: none; border-radius: 0;
+  }
+  .dropdown-menu::before, .dropdown-menu::after { display: none; }
+  
+  .nav-item-with-dropdown .dropdown-menu .dropdown-link { 
+      padding: 12px 20px 12px 40px; 
+      background: transparent;
+      border-radius: 0;
+  }
+  .nav-item-with-dropdown .dropdown-menu .dropdown-link::after { display: none; }
+  
+  .nav-item-with-dropdown .dropdown-menu .dropdown-link:hover { 
+      background: #f1f1f1 !important; 
+      padding-left: 45px; 
+  }
+}
