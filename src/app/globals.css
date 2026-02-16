@@ -46,12 +46,26 @@ body {
 }
 
 /* =========================================
-   3. AĞAÇ / TIMELINE TASARIMI (ZİG-ZAG SLIDER)
+   3. AĞAÇ / TIMELINE TASARIMI (SABİT ÇİZGİLİ ZİG-ZAG)
    ========================================= */
 .tree-wrapper {
   position: relative;
-  padding: 20px 0;
+  padding: 40px 0;
   width: 100%;
+  overflow: hidden; 
+}
+
+/* KRİTİK ÇÖZÜM: BAĞIMSIZ, KESİNTİSİZ ÇİZGİ */
+.tree-line {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  width: 100%; /* Ekran genişliği kadar sabit uzar */
+  height: 4px;
+  background: linear-gradient(90deg, var(--secondary), var(--primary));
+  transform: translateY(-50%);
+  z-index: 0;
+  border-radius: 4px;
 }
 
 /* Kaydırılabilir Alan */
@@ -59,7 +73,7 @@ body {
   display: flex;
   gap: 40px;
   overflow-x: auto; 
-  padding: 0 80px; /* Butonlar için kenar boşlukları */
+  padding: 0 80px; 
   scroll-behavior: smooth;
   -ms-overflow-style: none;
   scrollbar-width: none;
@@ -71,7 +85,7 @@ body {
 .tree-item {
   position: relative;
   z-index: 1;
-  flex: 0 0 320px; /* Sabit kart genişliği */
+  flex: 0 0 320px; 
   max-width: 320px;
   display: flex;
   flex-direction: column;
@@ -95,7 +109,7 @@ body {
   border-color: var(--secondary);
 }
 
-/* Noktalar */
+/* Noktalar (Ağaç Gövdesine Bağlanan Kısımlar) */
 .tree-dot {
   position: absolute;
   width: 24px;
@@ -110,74 +124,33 @@ body {
 /* --- MASAÜSTÜ ZİG-ZAG GÖRÜNÜM --- */
 @media (min-width: 992px) {
   .tree-scroll {
-    align-items: center; /* Ortaya hizala */
-    min-height: 750px; /* Kartların alt/üst taşmasını engellemek için yükseklik */
+    align-items: center; 
+    min-height: 500px; 
   }
 
-  /* Ana Yatay Çizgi */
-  .tree-line {
-    position: absolute;
-    top: 50%;
-    left: 0;
-    width: 100%;
-    height: 4px;
-    background: linear-gradient(90deg, var(--secondary), var(--primary));
-    transform: translateY(-50%);
-    z-index: 0;
-  }
-
-  .tree-item {
-    height: 300px; /* Sabit yükseklik, hesaplamayı kusursuz yapar */
-  }
+  .tree-item { height: 250px; }
   .tree-card { height: 100%; }
 
-  /* 1. ÜSTTEKİ KARTLAR (TEK SAYILAR) */
-  .tree-item:nth-child(odd) {
-    transform: translateY(-170px); /* Yukarı kaydır */
-  }
+  .tree-item:nth-child(odd) { transform: translateY(-140px); }
   .tree-item:nth-child(odd)::after {
-    /* Karttan çizgiye inen dikey bağ */
-    content: '';
-    position: absolute;
-    bottom: -20px;
-    left: 50%;
-    width: 3px;
-    height: 20px;
-    background: var(--secondary);
-    transform: translateX(-50%);
-    z-index: 0;
+    content: ''; position: absolute; bottom: -20px; left: 50%;
+    width: 3px; height: 20px; background: var(--secondary);
+    transform: translateX(-50%); z-index: 0;
   }
   .tree-item:nth-child(odd) .tree-dot {
-    bottom: -32px; /* Çizginin üzerine oturur */
-    left: 50%;
-    transform: translateX(-50%);
-    top: auto;
+    bottom: -32px; left: 50%; transform: translateX(-50%); top: auto;
   }
 
-  /* 2. ALTTAKİ KARTLAR (ÇİFT SAYILAR) */
-  .tree-item:nth-child(even) {
-    transform: translateY(170px); /* Aşağı kaydır */
-  }
+  .tree-item:nth-child(even) { transform: translateY(140px); }
   .tree-item:nth-child(even)::after {
-    /* Karttan çizgiye çıkan dikey bağ */
-    content: '';
-    position: absolute;
-    top: -20px;
-    left: 50%;
-    width: 3px;
-    height: 20px;
-    background: var(--secondary);
-    transform: translateX(-50%);
-    z-index: 0;
+    content: ''; position: absolute; top: -20px; left: 50%;
+    width: 3px; height: 20px; background: var(--secondary);
+    transform: translateX(-50%); z-index: 0;
   }
   .tree-item:nth-child(even) .tree-dot {
-    top: -32px; /* Çizginin üzerine oturur */
-    left: 50%;
-    transform: translateX(-50%);
-    bottom: auto;
+    top: -32px; left: 50%; transform: translateX(-50%); bottom: auto;
   }
 
-  /* Hover efekti (Dot) */
   .tree-item:hover .tree-dot {
     background: var(--secondary);
     transform: translateX(-50%) scale(1.3);
@@ -185,34 +158,24 @@ body {
   }
 }
 
-/* --- MOBİL GÖRÜNÜM (DİKEY DÜZ) --- */
+/* --- MOBİL GÖRÜNÜM --- */
 @media (max-width: 991px) {
-  .tree-scroll {
-    flex-direction: column; 
-    padding: 20px 20px 20px 50px; /* Soldan çizgi payı */
-  }
-  .tree-line {
-    position: absolute;
-    left: 30px;
-    top: 0;
-    bottom: 0;
-    width: 4px;
-    height: 100%;
-    background: linear-gradient(to bottom, var(--secondary), var(--primary));
-    z-index: 0;
-  }
-  .tree-item {
-    max-width: 100%;
-    height: auto;
-    margin-bottom: 30px;
-  }
-  .tree-card { height: auto; }
-  .tree-item::after { display: none; } /* Mobilde dikey bağlara gerek yok */
+  .tree-scroll { flex-direction: column; padding: 20px 20px 20px 50px; }
   
-  .tree-dot {
-    left: -32px; 
-    top: 50%;
-    transform: translateY(-50%);
+  /* Mobilde arka plan çizgisini dikey yap */
+  .tree-line {
+    width: 4px; height: 100%; 
+    left: 30px; top: 0; bottom: 0;
+    transform: none; 
+    background: linear-gradient(to bottom, var(--secondary), var(--primary));
+  }
+  
+  .tree-item { max-width: 100%; height: auto; margin-bottom: 30px; transform: none !important; }
+  .tree-card { height: auto; }
+  .tree-item::after { display: none; } 
+  
+  .tree-item:nth-child(odd) .tree-dot, .tree-item:nth-child(even) .tree-dot { 
+      left: -32px; top: 50%; transform: translateY(-50%); bottom: auto;
   }
   .tree-item:hover .tree-dot {
     background: var(--secondary);
@@ -225,7 +188,7 @@ body {
    ========================================= */
 .slider-btn {
   position: absolute;
-  top: 50%; /* Tam orta çizgiye hizalar */
+  top: 50%; 
   transform: translateY(-50%);
   width: 50px;
   height: 50px;
@@ -251,11 +214,9 @@ body {
 }
 .slider-btn:active { transform: translateY(-50%) scale(0.95); }
 
-/* Buton boşlukları */
 .slider-btn.prev { left: 15px; }
 .slider-btn.next { right: 15px; }
 
-/* Mobilde okları gizle (parmakla kaydırılır) */
 @media (max-width: 991px) { .slider-btn { display: none; } }
 
 /* =========================================

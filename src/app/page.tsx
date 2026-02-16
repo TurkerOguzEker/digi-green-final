@@ -223,15 +223,16 @@ export default function Home() {
                   </p>
               </div>
 
-              {/* Slider Kapsayıcı */}
+            {/* Slider Kapsayıcı */}
               <div className="tree-wrapper">
+                  
+                  {/* ✨ EKLENEN ANA ÇİZGİ KODU BURADA ✨ */}
+                  <div className="tree-line"></div>
                   
                   {/* SOL BUTON */}
                   <button className="slider-btn prev" onClick={() => scrollSlider('left')} aria-label="Sola Kaydır">
                       <i className="fas fa-chevron-left"></i>
                   </button>
-
-                  <div className="tree-line"></div> {/* Orta Çizgi */}
                   
                   {/* KARTLAR LİSTESİ */}
                   <div className="tree-scroll" ref={sliderRef}>
@@ -291,8 +292,6 @@ export default function Home() {
                               </p>
                           </div>
                       </div>
-
-                      {/* İhtiyaç halinde eklenecek yeni kartlar otomatik olarak üst/alt sırasını takip edecektir */}
 
                   </div>
 
