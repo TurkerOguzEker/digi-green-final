@@ -64,12 +64,16 @@ export default function Header() {
                                 {item.subItems && <i className="fas fa-chevron-down" style={{fontSize:'0.7rem', marginLeft:'6px', opacity:0.6, marginTop:'2px'}}></i>}
                             </Link>
 
-                            {/* DROPDOWN MENU */}
+                            {/* KLASİK VE TEMİZ DROPDOWN MENU */}
                             {item.subItems && (
                                 <ul className="dropdown-menu">
                                     {item.subItems.map((subItem, index) => (
                                         <li key={index}>
-                                            <Link href={subItem.path} onClick={() => setMobileMenuOpen(false)}>
+                                            <Link 
+                                                href={subItem.path} 
+                                                className="dropdown-link" 
+                                                onClick={() => setMobileMenuOpen(false)}
+                                            >
                                                 {subItem.name}
                                             </Link>
                                         </li>
@@ -82,7 +86,7 @@ export default function Header() {
             </nav>
 
             {/* MOBİL BUTON */}
-            <div className="mobile-menu-toggle" onClick={() => setMobileMenuOpen(!mobileMenuOpen)} style={{display:'none'}}>
+            <div className="mobile-menu-toggle" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
                 <i className={`fas ${mobileMenuOpen ? 'fa-times' : 'fa-bars'}`}></i>
             </div>
         </div>
@@ -120,7 +124,7 @@ export default function Header() {
             /* NAV LİSTESİ */
             .nav-list {
                 display: flex;
-                gap: 25px; /* Menü öğeleri arasındaki boşluk */
+                gap: 25px; 
                 list-style: none;
                 margin: 0;
                 padding: 0;
@@ -128,8 +132,6 @@ export default function Header() {
                 align-items: center;
             }
 
-            /* MENÜ ÖĞESİ (LI) */
-            /* height: 100% sayesinde header boyunca uzanır, böylece hover kopmaz */
             .nav-item, .nav-item-with-dropdown {
                 height: 100%; 
                 display: flex;
@@ -137,24 +139,20 @@ export default function Header() {
                 position: relative;
             }
 
-            /* MENÜ LİNKİ (A) */
             .nav-link {
                 color: #444;
                 text-decoration: none;
                 font-weight: 600;
                 font-size: 0.95rem;
-                padding: 0 5px; /* Sadece yatayda hafif iç boşluk */
-                height: 100%; /* Link tüm yüksekliği kaplasın */
+                padding: 0 5px; 
+                height: 100%; 
                 display: flex;
                 align-items: center;
                 transition: color 0.3s;
                 position: relative;
             }
 
-            /* Hover Durumu - Alt Çizgi Efekti */
-            .nav-link:hover, .active-nav-link {
-                color: #003399 !important;
-            }
+            .nav-link:hover, .active-nav-link { color: #003399 !important; }
             .active-nav-link::after, .nav-link:hover::after {
                 content: '';
                 position: absolute;
@@ -166,11 +164,13 @@ export default function Header() {
                 border-radius: 3px 3px 0 0;
             }
 
-            /* --- DROPDOWN AYARLARI --- */
+            /* =====================================
+               ✨ İLK YAPTIĞIMIZ KLASİK DROPDOWN 
+               ===================================== */
             .dropdown-menu {
                 position: absolute;
                 top: 100%; /* Tam header'ın bittiği yer */
-                left: -20px; /* Biraz sola kaydırarak ortala */
+                left: -20px; 
                 background: white;
                 box-shadow: 0 10px 30px rgba(0,0,0,0.1);
                 border-radius: 0 0 8px 8px;
@@ -184,7 +184,6 @@ export default function Header() {
                 border-top: 3px solid #27ae60;
             }
 
-            /* Hover olunca göster */
             .nav-item-with-dropdown:hover .dropdown-menu {
                 display: flex;
                 animation: slideUp 0.2s ease-out forwards;
@@ -197,10 +196,11 @@ export default function Header() {
 
             .dropdown-menu li { width: 100%; }
 
-            .dropdown-menu li a {
+            /* --- DROPDOWN LİNKLERİ --- */
+            .dropdown-link {
                 padding: 12px 25px;
                 display: block;
-                font-size: 0.9rem;
+                font-size: 0.95rem;
                 color: #555;
                 font-weight: 500;
                 text-decoration: none;
@@ -208,11 +208,11 @@ export default function Header() {
                 border-left: 3px solid transparent;
             }
 
-            .dropdown-menu li a:hover {
+            .dropdown-link:hover {
                 background: #f9f9f9;
                 color: #003399;
                 border-left: 3px solid #27ae60;
-                padding-left: 30px; /* Kayma efekti */
+                padding-left: 30px; /* Sola yeşil çizgi ve sağa kayma efekti */
             }
 
             /* --- MOBİL RESPONSIVE --- */
@@ -232,44 +232,27 @@ export default function Header() {
                 }
                 .main-nav.active { display: block; }
                 
-                .nav-list { 
-                    flex-direction: column; 
-                    padding: 0; 
-                    align-items: flex-start; 
-                    gap: 0; 
-                    height: auto; 
-                }
+                .nav-list { flex-direction: column; padding: 0; align-items: flex-start; gap: 0; height: auto; }
                 
-                /* Mobilde yükseklikleri sıfırla */
                 .nav-item, .nav-item-with-dropdown {
-                    width: 100%;
-                    height: auto;
-                    display: block;
-                    border-bottom: 1px solid #f5f5f5;
+                    width: 100%; height: auto; display: block; border-bottom: 1px solid #f5f5f5;
                 }
-                .nav-link {
-                    width: 100%;
-                    height: 55px;
-                    padding: 0 20px;
-                    justify-content: space-between;
-                }
-                /* Mobilde alt çizgi yerine arka plan rengi */
+                .nav-link { width: 100%; height: 55px; padding: 0 20px; justify-content: space-between; }
                 .active-nav-link::after, .nav-link:hover::after { display: none; }
                 .active-nav-link { background: #f0f4f8; color: #003399; }
 
                 .dropdown-menu { 
-                    position: static; 
-                    box-shadow: none; 
-                    padding: 0; 
-                    background: #fcfcfc; 
-                    display: block; /* Mobilde hep açık kalsın */
-                    width: 100%; 
-                    animation: none;
-                    border-top: none;
+                    position: static; box-shadow: none; padding: 5px 0; background: #fcfcfc; 
+                    display: block; width: 100%; animation: none; border: none; border-radius: 0;
                 }
-                .dropdown-menu li a {
-                    padding-left: 40px;
-                    font-size: 0.85rem;
+                
+                .dropdown-link { 
+                    padding: 12px 20px 12px 40px; 
+                    border-left: none;
+                }
+                .dropdown-link:hover { 
+                    background: #f1f1f1; 
+                    padding-left: 45px; 
                     border-left: none;
                 }
             }

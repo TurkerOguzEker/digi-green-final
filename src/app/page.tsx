@@ -48,6 +48,9 @@ const Counter = ({ end, duration = 2000 }: CounterProps) => {
 export default function Home() {
   const [content, setContent] = useState<ContentState>({});
   const [isLoading, setIsLoading] = useState(true);
+  
+  // SLIDER İÇİN REF (KAYDIRMA KONTROLÜ)
+  const sliderRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     async function fetchSettings() {
@@ -82,6 +85,19 @@ export default function Home() {
     handleScroll();
     return () => window.removeEventListener('scroll', handleScroll);
   }, [isLoading]);
+
+  // --- KAYDIRMA FONKSİYONU ---
+  const scrollSlider = (direction: 'left' | 'right') => {
+    if (sliderRef.current) {
+        const { current } = sliderRef;
+        const scrollAmount = 360; // Bir kart genişliği + boşluk kadar kaydır
+        if (direction === 'left') {
+            current.scrollBy({ left: -scrollAmount, behavior: 'smooth' });
+        } else {
+            current.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+        }
+    }
+  };
 
   if (isLoading) {
     return (
@@ -195,7 +211,7 @@ export default function Home() {
           </div>
       </section>
 
-      {/* 5️⃣ DİJİTAL EKOSİSTEM (EŞİT KUTULAR & SLIDER) */}
+      {/* 5️⃣ DİJİTAL EKOSİSTEM (ZİG-ZAG & SLIDER) */}
       <section id="solutions" className="section-padding bg-grid-green" style={{backgroundColor:'#fff'}}>
           <div className="container">
               <div className="reveal reveal-up" style={{textAlign:'center', marginBottom:'40px'}}>
@@ -204,16 +220,23 @@ export default function Home() {
                   </h2>
                   <p style={{color:'#666', maxWidth:'600px', margin:'0 auto'}}>
                       Teknolojiyi doğanın hizmetine sunan entegre çözüm ağımız. <br/>
-                      <span style={{fontSize:'0.9rem', color:'#999'}}>(Detaylar için kaydırın →)</span>
                   </p>
               </div>
 
               {/* Slider Kapsayıcı */}
               <div className="tree-wrapper">
-                  <div className="tree-line"></div> {/* Çizgi arka planda */}
                   
-                  <div className="tree-scroll">
-                      {/* KART 1 */}
+                  {/* SOL BUTON */}
+                  <button className="slider-btn prev" onClick={() => scrollSlider('left')} aria-label="Sola Kaydır">
+                      <i className="fas fa-chevron-left"></i>
+                  </button>
+
+                  <div className="tree-line"></div> {/* Orta Çizgi */}
+                  
+                  {/* KARTLAR LİSTESİ */}
+                  <div className="tree-scroll" ref={sliderRef}>
+                      
+                      {/* 1. KART (ÜSTTE) */}
                       <div className="tree-item reveal reveal-up delay-100">
                           <div className="tree-dot"></div>
                           <div className="tree-card">
@@ -222,12 +245,12 @@ export default function Home() {
                                   {content.home_eco_1_title || 'Mobil Entegrasyon'}
                               </h3>
                               <p style={{color:'#666', fontSize:'0.9rem', lineHeight:1.5}}>
-                                  {content.home_eco_1_desc || 'Vatandaşların belediye hizmetlerine tek tıkla ulaşmasını sağlayan, anlık bildirimler içeren çözüm.'}
+                                  {content.home_eco_1_desc || 'Vatandaşların belediye hizmetlerine tek tıkla ulaşmasını sağlayan entegre mobil çözüm.'}
                               </p>
                           </div>
                       </div>
 
-                      {/* KART 2 */}
+                      {/* 2. KART (ALTTA) */}
                       <div className="tree-item reveal reveal-up delay-200">
                           <div className="tree-dot"></div>
                           <div className="tree-card">
@@ -236,12 +259,12 @@ export default function Home() {
                                   {content.home_eco_2_title || 'Yapay Zeka & Atık'}
                               </h3>
                               <p style={{color:'#666', fontSize:'0.9rem', lineHeight:1.5}}>
-                                  {content.home_eco_2_desc || 'IoT sensörleri ile konteyner doluluk oranlarını izleyerek optimize edilmiş atık toplama rotaları.'}
+                                  {content.home_eco_2_desc || 'Yapay zeka destekli sensörler ile atık yönetimini optimize ediyor, doluluk oranlarına göre rota planlıyoruz.'}
                               </p>
                           </div>
                       </div>
 
-                      {/* KART 3 */}
+                      {/* 3. KART (ÜSTTE) */}
                       <div className="tree-item reveal reveal-up delay-300">
                           <div className="tree-dot"></div>
                           <div className="tree-card">
@@ -255,8 +278,8 @@ export default function Home() {
                           </div>
                       </div>
 
-                      {/* KART 4 */}
-                      <div className="tree-item reveal reveal-up delay-300">
+                      {/* 4. KART (ALTTA) */}
+                      <div className="tree-item reveal reveal-up delay-400">
                           <div className="tree-dot"></div>
                           <div className="tree-card">
                               <div style={{color:'#00acc1', fontSize:'2rem', marginBottom:'15px'}}><i className="fas fa-leaf"></i></div>
@@ -268,9 +291,16 @@ export default function Home() {
                               </p>
                           </div>
                       </div>
-                      
-                      {/* Yeni kartlar eklendiğinde buraya gelecek ve sağa doğru kayacaktır */}
+
+                      {/* İhtiyaç halinde eklenecek yeni kartlar otomatik olarak üst/alt sırasını takip edecektir */}
+
                   </div>
+
+                  {/* SAĞ BUTON */}
+                  <button className="slider-btn next" onClick={() => scrollSlider('right')} aria-label="Sağa Kaydır">
+                      <i className="fas fa-chevron-right"></i>
+                  </button>
+
               </div>
           </div>
       </section>
