@@ -70,7 +70,14 @@ export default function Footer() {
           
           <div className="eu-disclaimer-bar">
               <div className="container disclaimer-content">
-                  <img src="/assets/images/eu-flag.png" alt="EU Flag" width="45" style={{marginRight:'15px'}} onError={(e)=>e.target.style.display='none'} />
+                  {/* ✨ LOGO ARTIK DİNAMİK: Admin panelden yüklenen resim gösterilecek, yüklenmediyse varsayılan çıkacak ✨ */}
+                  <img 
+                      src={content.footer_eu_logo || "/assets/images/eu-flag.png"} 
+                      alt="EU Flag" 
+                      width="50" 
+                      style={{marginRight:'15px', objectFit: 'contain'}} 
+                      onError={(e)=>e.target.style.display='none'} 
+                  />
                   <p>{content.footer_disclaimer || 'Co-funded by the European Union.'}</p>
               </div>
           </div>

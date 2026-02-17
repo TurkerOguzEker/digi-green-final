@@ -547,8 +547,25 @@ export default function AdminPage() {
             {activeTab === 'site' && (
                 <div className="fade-in">
                     <h2 style={{marginBottom:'25px', color:'#003399'}}>Site Genel Ayarları</h2>
+                    
+                    <h4 style={{margin:'20px 0', color:'#555', borderLeft:'4px solid #003399', paddingLeft:'10px'}}>Üst Menü (Header)</h4>
                     <SettingInput label="Logo Ana Metni" settingKey="header_logo_text" placeholder="DIGI-GREEN" {...commonProps} />
-                    <SettingInput label="Logo Vurgu Metni" settingKey="header_logo_highlight" placeholder="FUTURE" {...commonProps} />
+                    <SettingInput label="Logo Vurgu Metni (Yeşil)" settingKey="header_logo_highlight" placeholder="FUTURE" {...commonProps} />
+
+                    <h4 style={{margin:'40px 0 20px', color:'#555', borderLeft:'4px solid #003399', paddingLeft:'10px'}}>Alt Bilgi (Footer)</h4>
+                    
+                    {/* ✨ İŞTE BURASI: AB LOGOSU YÜKLEME ALANI ✨ */}
+                    <SettingInput label="AB Logosu (Bayrak/Duyuru)" settingKey="footer_eu_logo" type="image" {...commonProps} />
+                    
+                    <SettingInput label="Footer Hakkında Metni" settingKey="footer_desc" type="textarea" {...commonProps} />
+                    <SettingInput label="Footer 2. Kolon Başlığı" settingKey="footer_column2_title" {...commonProps} />
+                    <SettingInput label="Footer 3. Kolon Başlığı" settingKey="footer_column3_title" {...commonProps} />
+                    <SettingInput label="AB Bilgilendirme Metni" settingKey="footer_disclaimer" type="textarea" {...commonProps} />
+
+                    <h4 style={{margin:'40px 0 20px', color:'#555', borderLeft:'4px solid #003399', paddingLeft:'10px'}}>Sosyal Medya Linkleri</h4>
+                    <SettingInput label="Facebook" settingKey="social_facebook" placeholder="https://facebook.com/..." {...commonProps} />
+                    <SettingInput label="Twitter (X)" settingKey="social_twitter" placeholder="https://twitter.com/..." {...commonProps} />
+                    <SettingInput label="Instagram" settingKey="social_instagram" placeholder="https://instagram.com/..." {...commonProps} />
                 </div>
             )}
         </div>
