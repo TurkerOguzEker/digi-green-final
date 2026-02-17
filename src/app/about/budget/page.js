@@ -162,7 +162,7 @@ export default function BudgetPage() {
                 </a>
             </div>
         )}
-
+    <ScrollToTop />
         <style jsx>{`
             .slider-btn {
                 position: absolute;

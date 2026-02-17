@@ -13,6 +13,32 @@ export default function RoadmapPage() {
     });
   }, []);
 
+  // ✨ YENİ: Yüzlerce satırlık HTML karmaşası ve yorum hatası (Hydration Error) yerine, 
+  // tüm veriyi modern bir Array (Dizi) yapısına çevirdik. 
+  const roadmapData = [
+    { id: 1, name: "1. Proje Planlama ve Hazırlık Çalışmaları", active: [1] },
+    { id: 2, name: "2. Proje Başlangıç Toplantısı", active: [2] },
+    { id: 3, name: "3. Liepaja'ya Teknik Ziyaret", active: [5, 6] },
+    { id: 4, name: "4. Cascais'e Teknik Ziyaret", active: [8, 9] },
+    { id: 5, name: "5. İyi Uygulama Raporlarının Hazırlanması", active: [7, 10] },
+    { id: 6, name: "6. Ara Raporların Hazırlanması ve Değerlendirme Toplantıları", active: [6, 9, 12, 15, 18, 21] },
+    { id: 7, name: "7. Kapaklı Belediyesi SECAP Atölye Çalışması ve Hazırlık", active: [5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17] },
+    { id: 8, name: "8. Kapaklı Belediyesi SECAP Bilgilendirme Toplantıları", active: [17, 24] },
+    { id: 9, name: "9. NKÜ Hava Kirliliği Cihazı Temini, Montajı ve Ölçümü", active: [3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24] },
+    { id: 10, name: "10. İyi Uygulama Verilerinin İncelenmesi ve E-Öğrenme Modülü", active: [5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20] },
+    { id: 11, name: "11. Kapaklı Mobil Uygulamasının Hazırlanması ve Entegrasyonu", active: [3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20] },
+    { id: 12, name: "12. Liepaja Belediyesi Akıllı Atık Kutuları Temini", active: [4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24] },
+    { id: 13, name: "13. Liepaja Mobil Uygulama Modülü Geliştirme", active: [5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20] },
+    { id: 14, name: "14. Kapaklı Belediyesi Geri Dönüşüm İade Makineleri Kurulumu", active: [5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20] },
+    { id: 15, name: "15. Liepaja Belediyesi E-Öğrenme Kursunun Oluşturulması", active: [5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20] },
+    { id: 16, name: "16. Vatandaşlara Yönelik Farkındalık Artırma Çalışmaları", active: [15, 16, 17, 18, 19, 20, 21, 22, 23, 24] },
+    { id: 17, name: "17. Belediye Personeline Yönelik Farkındalık Artırma (Türkiye)", active: [19, 20, 21, 22, 23, 24] },
+    { id: 18, name: "18. Bilgilendirici Materyallerin Hazırlanması", active: [19, 20, 21, 22, 23, 24] },
+    { id: 19, name: "19. Belediye Saha Personeli İçin Eğitim Seminerleri", active: [19, 20, 21, 22, 23, 24] },
+    { id: 20, name: "20. Vatandaş Etkinlikleri ve Uygulama Teşviki", active: [19, 20, 21, 22, 23, 24] },
+    { id: 21, name: "21. Son Değerlendirme ve Kapanış Toplantısı", active: [24] }
+  ];
+
   return (
     <div className="container-fluid" style={{ padding: '40px 20px', backgroundColor: '#fdfdfd' }}>
         
@@ -29,624 +55,28 @@ export default function RoadmapPage() {
                 <thead>
                     <tr>
                         <th className="task-header">FAALİYET / AY</th>
-                        {/* Sütun Başlıkları 1-24 */}
-                        <th>1</th><th>2</th><th>3</th><th>4</th><th>5</th><th>6</th>
-                        <th>7</th><th>8</th><th>9</th><th>10</th><th>11</th><th>12</th>
-                        <th>13</th><th>14</th><th>15</th><th>16</th><th>17</th><th>18</th>
-                        <th>19</th><th>20</th><th>21</th><th>22</th><th>23</th><th>24</th>
+                        {/* 1'den 24'e kadar otomatik sütun başlığı oluşturur */}
+                        {[...Array(24)].map((_, i) => (
+                            <th key={i + 1}>{i + 1}</th>
+                        ))}
                     </tr>
                 </thead>
                 <tbody>
-                    
-                    {/* 1. Satır: Proje Planlama */}
-                    <tr>
-                        <td className="task-name">1. Proje Planlama ve Hazırlık Çalışmaları</td>
-                        <td className="active"></td> {/* 1. Ay */}
-                        <td ></td> {/* 2. Ay */}
-                        <td></td> {/* 3. Ay */}
-                        <td></td> {/* 4. Ay */}
-                        <td></td> {/* 5. Ay */}
-                        <td></td> {/* 6. Ay */}
-                        <td></td> {/* 7. Ay */}
-                        <td></td> {/* 8. Ay */}
-                        <td></td> {/* 9. Ay */}
-                        <td></td> {/* 10. Ay */}
-                        <td></td> {/* 11. Ay */}
-                        <td></td> {/* 12. Ay */}
-                        <td></td> {/* 13. Ay */}
-                        <td></td> {/* 14. Ay */}
-                        <td></td> {/* 15. Ay */}
-                        <td></td> {/* 16. Ay */}
-                        <td></td> {/* 17. Ay */}
-                        <td></td> {/* 18. Ay */}
-                        <td></td> {/* 19. Ay */}
-                        <td></td> {/* 20. Ay */}
-                        <td></td> {/* 21. Ay */}
-                        <td></td> {/* 22. Ay */}
-                        <td></td> {/* 23. Ay */}
-                        <td></td> {/* 24. Ay */}
-                    </tr>
-
-                    {/* 2. Satır: Başlangıç Toplantısı */}
-                    <tr>
-                        <td className="task-name">2. Proje Başlangıç Toplantısı</td>
-                        <td></td> {/* 1. Ay */}
-                        <td className="active"></td> {/* 2. Ay */}
-                        <td></td> {/* 3. Ay */}
-                        <td></td> {/* 4. Ay */}
-                        <td></td> {/* 5. Ay */}
-                        <td></td> {/* 6. Ay */}
-                        <td></td> {/* 7. Ay */}
-                        <td></td> {/* 8. Ay */}
-                        <td></td> {/* 9. Ay */}
-                        <td></td> {/* 10. Ay */}
-                        <td></td> {/* 11. Ay */}
-                        <td></td> {/* 12. Ay */}
-                        <td></td> {/* 13. Ay */}
-                        <td></td> {/* 14. Ay */}
-                        <td></td> {/* 15. Ay */}
-                        <td></td> {/* 16. Ay */}
-                        <td></td> {/* 17. Ay */}
-                        <td></td> {/* 18. Ay */}
-                        <td></td> {/* 19. Ay */}
-                        <td></td> {/* 20. Ay */}
-                        <td></td> {/* 21. Ay */}
-                        <td></td> {/* 22. Ay */}
-                        <td></td> {/* 23. Ay */}
-                        <td></td> {/* 24. Ay */}
-                    </tr>
-
-                    {/* 3. Satır: Liepaja Ziyaret */}
-                    <tr>
-                        <td className="task-name">3. Liepaja'ya Teknik Ziyaret</td>
-                        <td></td> {/* 1. Ay */}
-                        <td></td> {/* 2. Ay */}
-                        <td ></td> {/* 3. Ay */}
-                        <td></td> {/* 4. Ay */}
-                        <td className="active"></td> {/* 5. Ay */}
-                        <td className="active"></td> {/* 6. Ay */}
-                        <td></td> {/* 7. Ay */}
-                        <td></td> {/* 8. Ay */}
-                        <td></td> {/* 9. Ay */}
-                        <td></td> {/* 10. Ay */}
-                        <td></td> {/* 11. Ay */}
-                        <td></td> {/* 12. Ay */}
-                        <td></td> {/* 13. Ay */}
-                        <td></td> {/* 14. Ay */}
-                        <td></td> {/* 15. Ay */}
-                        <td></td> {/* 16. Ay */}
-                        <td></td> {/* 17. Ay */}
-                        <td></td> {/* 18. Ay */}
-                        <td></td> {/* 19. Ay */}
-                        <td></td> {/* 20. Ay */}
-                        <td></td> {/* 21. Ay */}
-                        <td></td> {/* 22. Ay */}
-                        <td></td> {/* 23. Ay */}
-                        <td></td> {/* 24. Ay */}
-                    </tr>
-
-                    {/* 4. Satır: Cascais Ziyaret */}
-                    <tr>
-                        <td className="task-name">4. Cascais'e Teknik Ziyaret</td>
-                        <td></td> {/* 1. Ay */}
-                        <td></td> {/* 2. Ay */}
-                        <td></td> {/* 3. Ay */}
-                        <td></td> {/* 4. Ay */}
-                        <td></td> {/* 5. Ay */}
-                        <td></td> {/* 6. Ay */}
-                        <td></td> {/* 7. Ay */}
-                        <td  className="active"></td> {/* 8. Ay */}
-                        <td  className="active"></td> {/* 9. Ay */}
-                        <td></td> {/* 10. Ay */}
-                        <td></td> {/* 11. Ay */}
-                        <td></td> {/* 12. Ay */}
-                        <td></td> {/* 13. Ay */}
-                        <td></td> {/* 14. Ay */}
-                        <td></td> {/* 15. Ay */}
-                        <td></td> {/* 16. Ay */}
-                        <td></td> {/* 17. Ay */}
-                        <td></td> {/* 18. Ay */}
-                        <td></td> {/* 19. Ay */}
-                        <td></td> {/* 20. Ay */}
-                        <td></td> {/* 21. Ay */}
-                        <td></td> {/* 22. Ay */}
-                        <td></td> {/* 23. Ay */}
-                        <td></td> {/* 24. Ay */}
-                    </tr>
-
-                    {/* 5. Satır: İyi Uygulama Raporları */}
-                    <tr>
-                        <td className="task-name">5. İyi Uygulama Raporlarının Hazırlanması</td>
-                        <td></td> {/* 1. Ay */}
-                        <td></td> {/* 2. Ay */}
-                        <td></td> {/* 3. Ay */}
-                        <td></td> {/* 4. Ay */}
-                        <td ></td> {/* 5. Ay */}
-                        <td></td> {/* 6. Ay */}
-                        <td className="active"></td> {/* 7. Ay */}
-                        <td></td> {/* 8. Ay */}
-                        <td></td> {/* 9. Ay */}
-                        <td className="active"></td> {/* 10. Ay */}
-                        <td></td> {/* 11. Ay */}
-                        <td></td> {/* 12. Ay */}
-                        <td></td> {/* 13. Ay */}
-                        <td></td> {/* 14. Ay */}
-                        <td></td> {/* 15. Ay */}
-                        <td></td> {/* 16. Ay */}
-                        <td></td> {/* 17. Ay */}
-                        <td></td> {/* 18. Ay */}
-                        <td></td> {/* 19. Ay */}
-                        <td></td> {/* 20. Ay */}
-                        <td></td> {/* 21. Ay */}
-                        <td></td> {/* 22. Ay */}
-                        <td></td> {/* 23. Ay */}
-                        <td></td> {/* 24. Ay */}
-                    </tr>
-
-                    {/* 6. Satır: Ara Raporlar */}
-                    <tr>
-                        <td className="task-name">6. Ara Raporların Hazırlanması ve Değerlendirme Toplantıları</td>
-                        <td></td> {/* 1. Ay */}
-                        <td></td> {/* 2. Ay */}
-                        <td></td> {/* 3. Ay */}
-                        <td></td> {/* 4. Ay */}
-                        <td></td> {/* 5. Ay */}
-                        <td className="active"></td> {/* 6. Ay */}
-                        <td></td> {/* 7. Ay */}
-                        <td></td> {/* 8. Ay */}
-                        <td className="active"></td> {/* 9. Ay */}
-                        <td></td> {/* 10. Ay */}
-                        <td></td> {/* 11. Ay */}
-                        <td className="active"></td> {/* 12. Ay */}
-                        <td></td> {/* 13. Ay */}
-                        <td></td> {/* 14. Ay */}
-                        <td className="active"></td> {/* 15. Ay */}
-                        <td></td> {/* 16. Ay */}
-                        <td></td> {/* 17. Ay */}
-                        <td className="active"></td> {/* 18. Ay */}
-                        <td></td> {/* 19. Ay */}
-                        <td></td> {/* 20. Ay */}
-                        <td className="active"  ></td> {/* 21. Ay */}
-                        <td></td> {/* 22. Ay */}
-                        <td></td> {/* 23. Ay */}
-                        <td></td> {/* 24. Ay */}
-                    </tr>
-
-                    {/* 7. Satır: SECAP Atölye */}
-                    <tr>
-                        <td className="task-name">7. Kapaklı Belediyesi SECAP Atölye Çalışması ve Hazırlık</td>
-                        <td></td> {/* 1. Ay */}
-                        <td></td> {/* 2. Ay */}
-                        <td></td> {/* 3. Ay */}
-                        <td></td> {/* 4. Ay */}
-                       <td className="active"></td> {/* 5. Ay */}
-                        <td className="active"></td> {/* 6. Ay */}
-                        <td className="active"></td> {/* 7. Ay */}
-                        <td className="active"></td> {/* 8. Ay */}
-                        <td className="active"></td> {/* 9. Ay */}
-                        <td className="active"></td> {/* 10. Ay */}
-                        <td className="active"></td> {/* 11. Ay */}
-                        <td className="active"></td> {/* 12. Ay */}
-                        <td className="active"></td> {/* 13. Ay */}
-                        <td className="active"></td> {/* 14. Ay */}
-                        <td className="active"></td> {/* 15. Ay */}
-                        <td className="active"></td> {/* 16. Ay */}
-                        <td className="active"></td> {/* 17. Ay */}
-                        <td></td> {/* 18. Ay */}
-                        <td></td> {/* 19. Ay */}
-                        <td></td> {/* 20. Ay */}
-                        <td></td> {/* 21. Ay */}
-                        <td></td> {/* 22. Ay */}
-                        <td></td> {/* 23. Ay */}
-                        <td></td> {/* 24. Ay */}
-                    </tr>
-
-                    {/* 8. Satır: SECAP Bilgilendirme */}
-                    <tr>
-                        <td className="task-name">8. Kapaklı Belediyesi SECAP Bilgilendirme Toplantıları</td>
-                        <td></td> {/* 1. Ay */}
-                        <td></td> {/* 2. Ay */}
-                        <td></td> {/* 3. Ay */}
-                        <td></td> {/* 4. Ay */}
-                        <td></td> {/* 5. Ay */}
-                        <td></td> {/* 6. Ay */}
-                        <td></td> {/* 7. Ay */}
-                        <td></td> {/* 8. Ay */}
-                        <td></td> {/* 9. Ay */}
-                        <td></td> {/* 10. Ay */}
-                        <td ></td> {/* 11. Ay */}
-                        <td ></td> {/* 12. Ay */}
-                        <td ></td> {/* 13. Ay */}
-                        <td></td> {/* 14. Ay */}
-                        <td></td> {/* 15. Ay */}
-                        <td></td> {/* 16. Ay */}
-                        <td className="active"></td> {/* 17. Ay */}
-                        <td></td> {/* 18. Ay */}
-                        <td></td> {/* 19. Ay */}
-                        <td></td> {/* 20. Ay */}
-                        <td></td> {/* 21. Ay */}
-                        <td></td> {/* 22. Ay */}
-                        <td></td> {/* 23. Ay */}
-                        <td className="active"></td> {/* 24. Ay */}
-                    </tr>
-
-                    {/* 9. Satır: NKÜ Hava Cihazı */}
-                    <tr>
-                        <td className="task-name">9. NKÜ Hava Kirliliği Cihazı Temini, Montajı ve Ölçümü</td>
-                        <td></td> {/* 1. Ay */}
-                        <td></td> {/* 2. Ay */}
-                        <td className="active"></td> {/* 3. Ay */}
-                        <td className="active"></td> {/* 4. Ay */}
-                        <td className="active"></td> {/* 5. Ay */}
-                        <td className="active"></td> {/* 6. Ay */}
-                        <td className="active"></td> {/* 7. Ay */}
-                        <td className="active"></td> {/* 8. Ay */}
-                        <td className="active"></td> {/* 9. Ay */}
-                        <td className="active"></td> {/* 10. Ay */}
-                        <td className="active"></td> {/* 11. Ay */}
-                        <td className="active"></td> {/* 12. Ay */}
-                        <td className="active"></td> {/* 13. Ay */}
-                        <td className="active"></td> {/* 14. Ay */}
-                        <td className="active"></td> {/* 15. Ay */}
-                        <td className="active"></td> {/* 16. Ay */}
-                        <td className="active"></td> {/* 17. Ay */}
-                        <td className="active"></td> {/* 18. Ay */}
-                        <td className="active"></td> {/* 19. Ay */}
-                        <td className="active"></td> {/* 20. Ay */}
-                        <td className="active"></td> {/* 21. Ay */}
-                        <td className="active"></td> {/* 22. Ay */}
-                        <td className="active"></td> {/* 23. Ay */}
-                        <td className="active"></td> {/* 24. Ay */}
-                    </tr>
-
-                    {/* 10. Satır: Veri İnceleme & E-Öğrenme */}
-                    <tr>
-                        <td className="task-name">10. İyi Uygulama Verilerinin İncelenmesi ve E-Öğrenme Modülü</td>
-                        <td></td> {/* 1. Ay */}
-                        <td></td> {/* 2. Ay */}
-                        <td></td> {/* 3. Ay */}
-                        <td></td> {/* 4. Ay */}
-                        <td className="active"></td> {/* 5. Ay */}
-                        <td className="active"></td> {/* 6. Ay */}
-                        <td className="active"></td> {/* 7. Ay */}
-                        <td className="active"></td> {/* 8. Ay */}
-                        <td className="active"></td> {/* 9. Ay */}
-                        <td className="active"></td> {/* 10. Ay */}
-                        <td className="active"></td> {/* 11. Ay */}
-                        <td className="active"></td> {/* 12. Ay */}
-                        <td className="active"></td> {/* 13. Ay */}
-                        <td className="active"></td> {/* 14. Ay */}
-                        <td className="active"></td> {/* 15. Ay */}
-                        <td className="active"></td> {/* 16. Ay */}
-                        <td className="active"></td> {/* 17. Ay */}
-                        <td className="active"></td> {/* 18. Ay */}
-                        <td className="active"></td> {/* 19. Ay */}
-                        <td className="active"></td> {/* 20. Ay */}
-                        <td></td> {/* 21. Ay */}
-                        <td></td> {/* 22. Ay */}
-                        <td></td> {/* 23. Ay */}
-                        <td></td> {/* 24. Ay */}
-                    </tr>
-
-                    {/* 11. Satır: Kapaklı Mobil Uygulama */}
-                    <tr>
-                        <td className="task-name">11. Kapaklı Mobil Uygulamasının Hazırlanması ve Entegrasyonu</td>
-                        <td></td> {/* 1. Ay */}
-                        <td></td> {/* 2. Ay */}
-                        <td className="active"></td> {/* 3. Ay */}
-                        <td className="active"></td> {/* 4. Ay */}
-                        <td className="active"></td> {/* 5. Ay */}
-                        <td className="active"></td> {/* 6. Ay */}
-                        <td className="active"></td> {/* 7. Ay */}
-                        <td className="active"></td> {/* 8. Ay */}
-                        <td className="active"></td> {/* 9. Ay */}
-                        <td className="active"></td> {/* 10. Ay */}
-                        <td className="active"></td> {/* 11. Ay */}
-                        <td className="active"></td> {/* 12. Ay */}
-                        <td className="active"></td> {/* 13. Ay */}
-                        <td className="active"></td> {/* 14. Ay */}
-                        <td className="active"></td> {/* 15. Ay */}
-                        <td className="active"></td> {/* 16. Ay */}
-                        <td className="active"></td> {/* 17. Ay */}
-                        <td className="active"></td> {/* 18. Ay */}
-                        <td className="active"></td> {/* 19. Ay */}
-                        <td className="active"></td> {/* 20. Ay */}
-                        <td></td> {/* 21. Ay */}
-                        <td></td> {/* 22. Ay */}
-                        <td></td> {/* 23. Ay */}
-                        <td></td> {/* 24. Ay */}
-                    </tr>
-
-                    {/* 12. Satır: Liepaja Akıllı Kutu */}
-                    <tr>
-                        <td className="task-name">12. Liepaja Belediyesi Akıllı Atık Kutuları Temini</td>
-                        <td></td> {/* 1. Ay */}
-                        <td></td> {/* 2. Ay */}
-                        <td></td> {/* 3. Ay */}
-                         <td className="active"></td> {/* 4. Ay */}
-                        <td className="active"></td> {/* 5. Ay */}
-                        <td className="active"></td> {/* 6. Ay */}
-                        <td className="active"></td> {/* 7. Ay */}
-                        <td className="active"></td> {/* 8. Ay */}
-                        <td className="active"></td> {/* 9. Ay */}
-                        <td className="active"></td> {/* 10. Ay */}
-                        <td className="active"></td> {/* 11. Ay */}
-                        <td className="active"></td> {/* 12. Ay */}
-                        <td className="active"></td> {/* 13. Ay */}
-                        <td className="active"></td> {/* 14. Ay */}
-                        <td className="active"></td> {/* 15. Ay */}
-                        <td className="active"></td> {/* 16. Ay */}
-                        <td className="active"></td> {/* 17. Ay */}
-                        <td className="active"></td> {/* 18. Ay */}
-                        <td className="active"></td> {/* 19. Ay */}
-                        <td className="active"></td> {/* 20. Ay */}
-                        <td className="active"></td> {/* 21. Ay */}
-                        <td className="active"></td> {/* 22. Ay */}
-                        <td className="active"></td> {/* 23. Ay */}
-                        <td className="active"></td> {/* 24. Ay */}
-                    </tr>
-
-                    {/* 13. Satır: Liepaja Mobil Modül */}
-                    <tr>
-                        <td className="task-name">13. Liepaja Mobil Uygulama Modülü Geliştirme</td>
-                        <td></td> {/* 1. Ay */}
-                        <td></td> {/* 2. Ay */}
-                        <td></td> {/* 3. Ay */}
-                        <td></td> {/* 4. Ay */}
-                       <td className="active"></td> {/* 5. Ay */}
-                        <td className="active"></td> {/* 6. Ay */}
-                        <td className="active"></td> {/* 7. Ay */}
-                        <td className="active"></td> {/* 8. Ay */}
-                        <td className="active"></td> {/* 9. Ay */}
-                        <td className="active"></td> {/* 10. Ay */}
-                        <td className="active"></td> {/* 11. Ay */}
-                        <td className="active"></td> {/* 12. Ay */}
-                        <td className="active"></td> {/* 13. Ay */}
-                        <td className="active"></td> {/* 14. Ay */}
-                        <td className="active"></td> {/* 15. Ay */}
-                        <td className="active"></td> {/* 16. Ay */}
-                        <td className="active"></td> {/* 17. Ay */}
-                        <td className="active"></td> {/* 18. Ay */}
-                        <td className="active"></td> {/* 19. Ay */}
-                        <td className="active"></td> {/* 20. Ay */}
-                        <td></td> {/* 21. Ay */}
-                        <td></td> {/* 22. Ay */}
-                        <td></td> {/* 23. Ay */}
-                        <td></td> {/* 24. Ay */}
-                    </tr>
-
-                    {/* 14. Satır: Geri Dönüşüm Makineleri */}
-                    <tr>
-                        <td className="task-name">14. Kapaklı Belediyesi Geri Dönüşüm İade Makineleri Kurulumu</td>
-                        <td></td> {/* 1. Ay */}
-                        <td></td> {/* 2. Ay */}
-                        <td></td> {/* 3. Ay */}
-                        <td></td> {/* 4. Ay */}
-                       <td className="active"></td> {/* 5. Ay */}
-                        <td className="active"></td> {/* 6. Ay */}
-                        <td className="active"></td> {/* 7. Ay */}
-                        <td className="active"></td> {/* 8. Ay */}
-                        <td className="active"></td> {/* 9. Ay */}
-                        <td className="active"></td> {/* 10. Ay */}
-                        <td className="active"></td> {/* 11. Ay */}
-                        <td className="active"></td> {/* 12. Ay */}
-                        <td className="active"></td> {/* 13. Ay */}
-                        <td className="active"></td> {/* 14. Ay */}
-                        <td className="active"></td> {/* 15. Ay */}
-                        <td className="active"></td> {/* 16. Ay */}
-                        <td className="active"></td> {/* 17. Ay */}
-                        <td className="active"></td> {/* 18. Ay */}
-                        <td className="active"></td> {/* 19. Ay */}
-                        <td className="active"></td> {/* 20. Ay */}
-                        <td></td> {/* 21. Ay */}
-                        <td></td> {/* 22. Ay */}
-                        <td></td> {/* 23. Ay */}
-                        <td></td> {/* 24. Ay */}
-                    </tr>
-
-                    {/* 15. Satır: E-Öğrenme Kursu */}
-                    <tr>
-                        <td className="task-name">15. Liepaja Belediyesi E-Öğrenme Kursunun Oluşturulması</td>
-                        <td></td> {/* 1. Ay */}
-                        <td></td> {/* 2. Ay */}
-                        <td></td> {/* 3. Ay */}
-                        <td></td> {/* 4. Ay */}
-                       <td className="active"></td> {/* 5. Ay */}
-                        <td className="active"></td> {/* 6. Ay */}
-                        <td className="active"></td> {/* 7. Ay */}
-                        <td className="active"></td> {/* 8. Ay */}
-                        <td className="active"></td> {/* 9. Ay */}
-                        <td className="active"></td> {/* 10. Ay */}
-                        <td className="active"></td> {/* 11. Ay */}
-                        <td className="active"></td> {/* 12. Ay */}
-                        <td className="active"></td> {/* 13. Ay */}
-                        <td className="active"></td> {/* 14. Ay */}
-                        <td className="active"></td> {/* 15. Ay */}
-                        <td className="active"></td> {/* 16. Ay */}
-                        <td className="active"></td> {/* 17. Ay */}
-                        <td className="active"></td> {/* 18. Ay */}
-                        <td className="active"></td> {/* 19. Ay */}
-                        <td className="active"></td> {/* 20. Ay */}
-                        <td></td> {/* 21. Ay */}
-                        <td></td> {/* 22. Ay */}
-                        <td></td> {/* 23. Ay */}
-                        <td></td> {/* 24. Ay */}
-                    </tr>
-
-                    {/* 16. Satır: Vatandaş Farkındalık */}
-                    <tr>
-                        <td className="task-name">16. Vatandaşlara Yönelik Farkındalık Artırma Çalışmaları</td>
-                        <td></td> {/* 1. Ay */}
-                        <td></td> {/* 2. Ay */}
-                        <td></td> {/* 3. Ay */}
-                        <td></td> {/* 4. Ay */}
-                        <td></td> {/* 5. Ay */}
-                        <td></td> {/* 6. Ay */}
-                        <td></td> {/* 7. Ay */}
-                        <td></td> {/* 8. Ay */}
-                        <td></td> {/* 9. Ay */}
-                        <td></td> {/* 10. Ay */}
-                        <td></td> {/* 11. Ay */}
-                        <td></td> {/* 12. Ay */}
-                        <td></td> {/* 13. Ay */}
-                        <td></td> {/* 14. Ay */}
-                        <td className="active"></td> {/* 15. Ay */}
-                        <td className="active"></td> {/* 16. Ay */}
-                        <td className="active"></td> {/* 17. Ay */}
-                        <td className="active"></td> {/* 18. Ay */}
-                        <td className="active"></td> {/* 19. Ay */}
-                        <td className="active"></td> {/* 20. Ay */}
-                        <td className="active"></td> {/* 21. Ay */}
-                        <td className="active"></td> {/* 22. Ay */}
-                        <td className="active"></td> {/* 23. Ay */}
-                        <td className="active"></td> {/* 24. Ay */}
-                    </tr>
-
-                    {/* 17. Satır: Personel Farkındalık */}
-                    <tr>
-                        <td className="task-name">17. Belediye Personeline Yönelik Farkındalık Artırma (Türkiye)</td>
-                        <td></td> {/* 1. Ay */}
-                        <td></td> {/* 2. Ay */}
-                        <td></td> {/* 3. Ay */}
-                        <td></td> {/* 4. Ay */}
-                        <td></td> {/* 5. Ay */}
-                        <td></td> {/* 6. Ay */}
-                        <td></td> {/* 7. Ay */}
-                        <td></td> {/* 8. Ay */}
-                        <td></td> {/* 9. Ay */}
-                        <td></td> {/* 10. Ay */}
-                        <td></td> {/* 11. Ay */}
-                        <td></td> {/* 12. Ay */}
-                        <td></td> {/* 13. Ay */}
-                        <td></td> {/* 14. Ay */}
-                        <td></td> {/* 15. Ay */}
-                        <td></td> {/* 16. Ay */}
-                        <td></td> {/* 17. Ay */}
-                        <td></td> {/* 18. Ay */}
-                         <td className="active"></td> {/* 19. Ay */}
-                        <td className="active"></td> {/* 20. Ay */}
-                        <td className="active"></td> {/* 21. Ay */}
-                        <td className="active"></td> {/* 22. Ay */}
-                        <td className="active"></td> {/* 23. Ay */}
-                        <td className="active"></td> {/* 24. Ay */}
-                    </tr>
-
-                    {/* 18. Satır: Materyal Hazırlama */}
-                    <tr>
-                        <td className="task-name">18. Bilgilendirici Materyallerin Hazırlanması</td>
-                        <td></td> {/* 1. Ay */}
-                        <td></td> {/* 2. Ay */}
-                        <td></td> {/* 3. Ay */}
-                        <td></td> {/* 4. Ay */}
-                        <td></td> {/* 5. Ay */}
-                        <td ></td> {/* 6. Ay */}
-                        <td></td> {/* 7. Ay */}
-                        <td ></td> {/* 8. Ay */}
-                        <td></td> {/* 9. Ay */}
-                        <td ></td> {/* 10. Ay */}
-                        <td></td> {/* 11. Ay */}
-                        <td ></td> {/* 12. Ay */}
-                        <td></td> {/* 13. Ay */}
-                        <td ></td> {/* 14. Ay */}
-                        <td></td> {/* 15. Ay */}
-                        <td ></td> {/* 16. Ay */}
-                        <td></td> {/* 17. Ay */}
-                        <td></td> {/* 18. Ay */}
-                         <td className="active"></td> {/* 19. Ay */}
-                        <td className="active"></td> {/* 20. Ay */}
-                        <td className="active"></td> {/* 21. Ay */}
-                        <td className="active"></td> {/* 22. Ay */}
-                        <td className="active"></td> {/* 23. Ay */}
-                        <td className="active"></td> {/* 24. Ay */}
-                    </tr>
-
-                    {/* 19. Satır: Saha Personeli Eğitim */}
-                    <tr>
-                        <td className="task-name">19. Belediye Saha Personeli İçin Eğitim Seminerleri</td>
-                        <td></td> {/* 1. Ay */}
-                        <td></td> {/* 2. Ay */}
-                        <td></td> {/* 3. Ay */}
-                        <td></td> {/* 4. Ay */}
-                        <td></td> {/* 5. Ay */}
-                        <td></td> {/* 6. Ay */}
-                        <td></td> {/* 7. Ay */}
-                        <td></td> {/* 8. Ay */}
-                        <td></td> {/* 9. Ay */}
-                        <td></td> {/* 10. Ay */}
-                        <td></td> {/* 11. Ay */}
-                        <td></td> {/* 12. Ay */}
-                        <td></td> {/* 13. Ay */}
-                        <td></td> {/* 14. Ay */}
-                        <td></td> {/* 15. Ay */}
-                        <td></td> {/* 16. Ay */}
-                        <td></td> {/* 17. Ay */}
-                        <td></td> {/* 18. Ay */}
-                        <td className="active"></td> {/* 19. Ay */}
-                        <td className="active"></td> {/* 20. Ay */}
-                        <td className="active"></td> {/* 21. Ay */}
-                        <td className="active"></td> {/* 22. Ay */}
-                        <td className="active"></td> {/* 23. Ay */}
-                        <td className="active"></td> {/* 24. Ay */}
-                    </tr>
-
-                    {/* 20. Satır: Teşvik Faaliyetleri */}
-                    <tr>
-                        <td className="task-name">20. Vatandaş Etkinlikleri ve Uygulama Teşviki</td>
-                        <td></td> {/* 1. Ay */}
-                        <td></td> {/* 2. Ay */}
-                        <td></td> {/* 3. Ay */}
-                        <td></td> {/* 4. Ay */}
-                        <td></td> {/* 5. Ay */}
-                        <td></td> {/* 6. Ay */}
-                        <td></td> {/* 7. Ay */}
-                        <td></td> {/* 8. Ay */}
-                        <td></td> {/* 9. Ay */}
-                        <td></td> {/* 10. Ay */}
-                        <td></td> {/* 11. Ay */}
-                        <td></td> {/* 12. Ay */}
-                        <td></td> {/* 13. Ay */}
-                        <td></td> {/* 14. Ay */}
-                        <td></td> {/* 15. Ay */}
-                        <td></td> {/* 16. Ay */}
-                        <td></td> {/* 17. Ay */}
-                        <td></td> {/* 18. Ay */}
-                         <td className="active"></td> {/* 19. Ay */}
-                        <td className="active"></td> {/* 20. Ay */}
-                        <td className="active"></td> {/* 21. Ay */}
-                        <td className="active"></td> {/* 22. Ay */}
-                        <td className="active"></td> {/* 23. Ay */}
-                        <td className="active"></td> {/* 24. Ay */}
-                    </tr>
-
-                    {/* 21. Satır: Kapanış */}
-                    <tr>
-                        <td className="task-name">21. Son Değerlendirme ve Kapanış Toplantısı</td>
-                        <td></td> {/* 1. Ay */}
-                        <td></td> {/* 2. Ay */}
-                        <td></td> {/* 3. Ay */}
-                        <td></td> {/* 4. Ay */}
-                        <td></td> {/* 5. Ay */}
-                        <td></td> {/* 6. Ay */}
-                        <td></td> {/* 7. Ay */}
-                        <td></td> {/* 8. Ay */}
-                        <td></td> {/* 9. Ay */}
-                        <td></td> {/* 10. Ay */}
-                        <td></td> {/* 11. Ay */}
-                        <td></td> {/* 12. Ay */}
-                        <td></td> {/* 13. Ay */}
-                        <td></td> {/* 14. Ay */}
-                        <td></td> {/* 15. Ay */}
-                        <td></td> {/* 16. Ay */}
-                        <td></td> {/* 17. Ay */}
-                        <td></td> {/* 18. Ay */}
-                        <td></td> {/* 19. Ay */}
-                        <td></td> {/* 20. Ay */}
-                        <td></td> {/* 21. Ay */}
-                        <td></td> {/* 22. Ay */}
-                        <td></td> {/* 23. Ay */}
-                        <td className="active"></td> {/* 24. Ay */}
-                    </tr>
-
+                    {/* Verileri otomatik olarak satırlara döküyoruz */}
+                    {roadmapData.map((task) => (
+                        <tr key={task.id}>
+                            <td className="task-name">{task.name}</td>
+                            
+                            {/* 24 ayı kontrol edip, aktif ay ise yeşil sınıfı veriyor */}
+                            {[...Array(24)].map((_, i) => {
+                                const month = i + 1;
+                                const isActive = task.active.includes(month);
+                                return (
+                                    <td key={month} className={isActive ? "active" : ""}></td>
+                                );
+                            })}
+                        </tr>
+                    ))}
                 </tbody>
             </table>
         </div>
@@ -715,7 +145,7 @@ export default function RoadmapPage() {
                 position: relative;
             }
 
-            /* Aktif kutucukların içine check işareti (isteğe bağlı, şıklık katar) */
+            /* Aktif kutucukların içine check işareti */
             .plan-table td.active::after {
                 content: '';
                 display: block;

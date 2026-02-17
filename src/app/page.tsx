@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useState, useRef } from 'react';
 import { supabase } from '../lib/supabase';
+import ScrollToTop from '../components/ScrollToTop';
 
 interface ContentState { [key: string]: string; }
 interface CounterProps { end: number; duration?: number; }
@@ -314,6 +315,9 @@ export default function Home() {
               </a>
           </div>
       </section>
+
+      {/* ✨ YUKARI ÇIK BUTONU EKLENDİ ✨ */}
+      <ScrollToTop />
 
     </main>
   );
