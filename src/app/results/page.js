@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useState, useRef } from 'react';
 import { supabase } from '../../lib/supabase';
-import ScrollToTop from '../../../../components/ScrollToTop';
+
 
 // ─── SAYFA GENELİ ARKA PLAN ───────────────────────────────────────────────────
 const NetworkBackground = () => {
@@ -358,7 +358,7 @@ export default function ResultsPage() {
           </section>
         </>
       )}
-<ScrollToTop />
+
       <style jsx>{`
         /* Fontlar globals.css ile uyumlu — Inter */
 

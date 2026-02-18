@@ -1,7 +1,6 @@
 'use client';
 import { useEffect, useState, useRef } from 'react';
 import { supabase } from '../lib/supabase';
-import ScrollToTop from '../components/ScrollToTop';
 
 interface ContentState { [key: string]: string; }
 interface CounterProps { end: number; duration?: number; }
@@ -119,7 +118,7 @@ export default function Home() {
   }
 
   return (
-    <main className="overflow-hidden">
+    <main style={{ overflowX: 'hidden' }}>
       
       {/* 1️⃣ HERO ALANI */}
       <section style={{position:'relative', height:'100vh', minHeight:'600px', display:'flex', alignItems:'center', justifyContent:'center', textAlign:'center', color:'white', overflow:'hidden'}}>
@@ -315,9 +314,6 @@ export default function Home() {
               </a>
           </div>
       </section>
-
-      {/* ✨ YUKARI ÇIK BUTONU EKLENDİ ✨ */}
-      <ScrollToTop />
 
     </main>
   );

@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { supabase } from '../../../lib/supabase';
-import ScrollToTop from '../../components/ScrollToTop';
+
 export default function ConsortiumPage() {
   const [content, setContent] = useState({});
 
@@ -71,4 +71,5 @@ export default function ConsortiumPage() {
         </div>
     </div>
   );
-}
+  
+} 
