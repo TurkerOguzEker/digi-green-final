@@ -1,6 +1,7 @@
 import './globals.css';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
+import ScrollToTop from '../components/ScrollToTop'; // ✨ 1. YUKARI ÇIK BUTONU BURADA İÇE AKTARILDI
 
 export const metadata = {
   title: 'DIGI-GREEN FUTURE | Kapaklı Belediyesi',
@@ -29,6 +30,9 @@ export default function RootLayout({
             {children}
         </main>
         <Footer />
+
+        {/* ✨ 2. YUKARI ÇIK BUTONU BURAYA EKLENDİ ✨ */}
+        <ScrollToTop />
       </body>
     </html>
   )

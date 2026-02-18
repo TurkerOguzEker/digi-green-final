@@ -5,93 +5,95 @@ import { usePathname } from 'next/navigation';
 import { supabase } from '../lib/supabase';
 
 export default function Header() {
-  const pathname = usePathname();
-  const [content, setContent] = useState({});
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+    const pathname = usePathname();
+    const [content, setContent] = useState({});
+    const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  useEffect(() => {
-    async function fetchData() {
-      const { data } = await supabase.from('settings').select('*');
-      if (data) {
-        const map = {};
-        data.forEach(item => map[item.key] = item.value);
-        setContent(map);
-      }
-    }
-    fetchData();
-  }, []);
+    useEffect(() => {
+        async function fetchData() {
+            const { data } = await supabase.from('settings').select('*');
+            if (data) {
+                const map = {};
+                data.forEach(item => map[item.key] = item.value);
+                setContent(map);
+            }
+        }
+        fetchData();
+    }, []);
 
-  const navItems = [
-    { name: 'Ana Sayfa', path: '/' },
-    { 
-      name: 'Hakkında', 
-      path: '/about', 
-      subItems: [
-        { name: 'Stratejik Genel Bakış', path: '/about/strategy' },
-        { name: 'Konsorsiyum Ortaklıkları', path: '/about/consortium' },
-        { name: 'Proje Planı', path: '/about/plan' },
-        { name: 'Etki ve Sürdürülebilirlik', path: '/about/impact' },
-        { name: 'Proje Yol Haritası', path: '/about/roadmap' }
-      ]
-    },
-    { name: 'Ortaklar', path: '/partners' },
-    { name: 'Dosyalar', path: '/results' },
-    { name: 'Haberler', path: '/news' },
-    { name: 'İletişim', path: '/contact' },
-  ];
+    const navItems = [
+        { name: 'Ana Sayfa', path: '/' },
+        {
+            name: 'Hakkında',
+            path: '/about',
+            subItems: [
+                // ✨ UX İYİLEŞTİRMESİ: Ana sayfayı menünün en üstüne de koyduk, tıklaması çok daha kolay!
+                { name: 'Genel Bakış (Hakkında)', path: '/about' },
+                { name: 'Stratejik Genel Bakış', path: '/about/strategy' },
+                { name: 'Konsorsiyum Ortaklıkları', path: '/about/consortium' },
+                { name: 'Proje Planı', path: '/about/plan' },
+                { name: 'Etki ve Sürdürülebilirlik', path: '/about/impact' },
+                { name: 'Proje Yol Haritası', path: '/about/roadmap' }
+            ]
+        },
+        { name: 'Ortaklar', path: '/partners' },
+        { name: 'Dosyalar', path: '/results' },
+        { name: 'Haberler', path: '/news' },
+        { name: 'İletişim', path: '/contact' },
+    ];
 
-  return (
-    <header className="site-header">
-        <div className="container header-container">
-            {/* LOGO */}
-            <Link href="/" className="logo-area">
-                <span className="logo-text">
-                    {content.header_logo_text || 'DIGI-GREEN'} <span className="highlight-green">{content.header_logo_highlight || 'FUTURE'}</span>
-                </span>
-            </Link>
-            
-            {/* NAVİGASYON */}
-            <nav className={`main-nav ${mobileMenuOpen ? 'active' : ''}`}>
-                <ul className="nav-list">
-                    {navItems.map((item) => (
-                        <li key={item.path} className={item.subItems ? "nav-item-with-dropdown" : "nav-item"}>
-                            <Link 
-                                href={item.path} 
-                                className={`nav-link ${pathname === item.path ? 'active-nav-link' : ''}`}
-                                onClick={() => !item.subItems && setMobileMenuOpen(false)}
-                            >
-                                {item.name}
-                                {item.subItems && <i className="fas fa-chevron-down" style={{fontSize:'0.7rem', marginLeft:'6px', opacity:0.6, marginTop:'2px'}}></i>}
-                            </Link>
+    return (
+        <header className="site-header">
+            <div className="container header-container">
+                {/* LOGO */}
+                <Link href="/" className="logo-area">
+                    <span className="logo-text">
+                        {content.header_logo_text || 'DIGI-GREEN'} <span className="highlight-green">{content.header_logo_highlight || 'FUTURE'}</span>
+                    </span>
+                </Link>
 
-                            {/* ✨ YENİ MODERN DROPDOWN YAPI ✨ */}
-                            {item.subItems && (
-                                <ul className="modern-dropdown-menu">
-                                    {item.subItems.map((subItem, index) => (
-                                        <li key={index} className="dropdown-list-item">
-                                            <Link 
-                                                href={subItem.path} 
-                                                className="modern-dropdown-link" 
-                                                onClick={() => setMobileMenuOpen(false)}
-                                            >
-                                                {subItem.name}
-                                            </Link>
-                                        </li>
-                                    ))}
-                                </ul>
-                            )}
-                        </li>
-                    ))}
-                </ul>
-            </nav>
+                {/* NAVİGASYON */}
+                <nav className={`main-nav ${mobileMenuOpen ? 'active' : ''}`}>
+                    <ul className="nav-list">
+                        {navItems.map((item) => (
+                            <li key={item.path} className={item.subItems ? "nav-item-with-dropdown" : "nav-item"}>
+                                <Link
+                                    href={item.path}
+                                    className={`nav-link ${pathname === item.path ? 'active-nav-link' : ''}`}
+                                    onClick={() => !item.subItems && setMobileMenuOpen(false)}
+                                >
+                                    {item.name}
+                                    {item.subItems && <i className="fas fa-chevron-down" style={{ fontSize: '0.7rem', marginLeft: '6px', opacity: 0.6, marginTop: '2px' }}></i>}
+                                </Link>
 
-            {/* MOBİL BUTON */}
-            <div className="mobile-menu-toggle" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
-                <i className={`fas ${mobileMenuOpen ? 'fa-times' : 'fa-bars'}`}></i>
+                                {/* MODERN DROPDOWN YAPI */}
+                                {item.subItems && (
+                                    <ul className="modern-dropdown-menu">
+                                        {item.subItems.map((subItem, index) => (
+                                            <li key={index} className="dropdown-list-item">
+                                                <Link
+                                                    href={subItem.path}
+                                                    className="modern-dropdown-link"
+                                                    onClick={() => setMobileMenuOpen(false)}
+                                                >
+                                                    {subItem.name}
+                                                </Link>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                )}
+                            </li>
+                        ))}
+                    </ul>
+                </nav>
+
+                {/* MOBİL BUTON */}
+                <div className="mobile-menu-toggle" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
+                    <i className={`fas ${mobileMenuOpen ? 'fa-times' : 'fa-bars'}`}></i>
+                </div>
             </div>
-        </div>
 
-        <style jsx>{`
+            <style jsx>{`
             /* HEADER GENEL */
             .site-header {
                 position: fixed;
@@ -183,16 +185,7 @@ export default function Header() {
                 border: 1px solid rgba(0, 51, 153, 0.05) !important;
             }
 
-            /* Görünmez Köprü: Fare Hakkında'dan menüye giderken menü kapanmasın diye */
-            .modern-dropdown-menu::after {
-                content: '';
-                position: absolute;
-                top: -20px;
-                left: 0;
-                width: 100%;
-                height: 20px;
-                background: transparent;
-            }
+            /* Tıklamayı Engelleyen Görünmez Köprüyü Tamamen Kaldırdık! */
 
             /* HOVER ANİMASYONU */
             .nav-item-with-dropdown:hover .modern-dropdown-menu {
@@ -297,6 +290,6 @@ export default function Header() {
                 }
             }
         `}</style>
-    </header>
-  );
+        </header>
+    );
 }
