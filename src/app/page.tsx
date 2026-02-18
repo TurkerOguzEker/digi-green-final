@@ -118,7 +118,7 @@ export default function Home() {
   }
 
   return (
-    <main style={{ overflowX: 'hidden' }}>
+    <main>
       
       {/* 1️⃣ HERO ALANI */}
       <section style={{position:'relative', height:'100vh', minHeight:'600px', display:'flex', alignItems:'center', justifyContent:'center', textAlign:'center', color:'white', overflow:'hidden'}}>
