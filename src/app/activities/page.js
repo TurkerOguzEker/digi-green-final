@@ -1,7 +1,8 @@
 'use client';
 import { useEffect, useState, useRef } from 'react';
-// import { supabase } from '../../lib/supabase'; // İleride veritabanına bağlamak istersen aktif edebilirsin
+import { supabase } from '../../lib/supabase';
 import ScrollToTop from '../../components/ScrollToTop';
+import Link from 'next/link';
 
 // ─── SAYFA GENELİ ARKA PLAN AĞI ───────────────────────────────────────────────
 const NetworkBackground = () => {
@@ -208,43 +209,13 @@ export default function ActivitiesPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Şimdilik statik veriler, ileride Supabase'den çekebiliriz.
-    const fetchActivities = () => {
-      const mockData = [
-        {
-            id: 1,
-            type: 'Toplantı (TPM)',
-            date: 'Ekim 2025',
-            title: '1. Ulusötesi Proje Toplantısı (Kick-off)',
-            location: 'Kapaklı, Türkiye',
-            summary: 'Projenin başlangıç toplantısı Kapaklı Belediyesi ev sahipliğinde gerçekleştirildi. Konsorsiyum üyeleri proje yol haritasını ve görev dağılımlarını belirledi.',
-            image_url: 'https://images.unsplash.com/photo-1515162816999-a0c47dc192f7?auto=format&fit=crop&q=80&w=800'
-        },
-        {
-            id: 2,
-            type: 'Eğitim (LTT)',
-            date: 'Aralık 2025',
-            title: 'Dijital Yeşil Araçlar Çalıştayı',
-            location: 'Çevrimiçi',
-            summary: 'Ortak kurumların personellerine yönelik sürdürülebilirlik ve dijitalleşme entegrasyonu üzerine kapasite geliştirme eğitimi düzenlendi.',
-            image_url: 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&q=80&w=800'
-        },
-        {
-            id: 3,
-            type: 'Saha Çalışması',
-            date: 'Şubat 2026',
-            title: 'Yerel İhtiyaç Analizi Raporlaması',
-            location: 'Tüm Ortak Ülkeler',
-            summary: 'Vatandaşların ve yerel yönetimlerin geri dönüşüm farkındalığını ölçmek için geniş çaplı anket ve saha çalışmaları tamamlandı.',
-            image_url: 'https://images.unsplash.com/photo-1531844251246-9a1bfaae09fc?auto=format&fit=crop&q=80&w=800'
-        }
-      ];
-      setActivities(mockData);
+    async function fetchData() {
+      // Supabase'den verileri çekiyoruz
+      const { data: actsData } = await supabase.from('activities').select('*').order('id', {ascending: false});
+      if (actsData) setActivities(actsData);
       setLoading(false);
-    };
-
-    // Yükleniyor animasyonunu görmek için ufak bir gecikme ekliyoruz
-    setTimeout(fetchActivities, 600);
+    }
+    fetchData();
   }, []);
 
   useEffect(() => {
@@ -265,7 +236,7 @@ export default function ActivitiesPage() {
           <div className="loader-ring">
             <div></div><div></div><div></div><div></div>
           </div>
-          <span className="loader-text">Faaliyetler Hazırlanıyor…</span>
+          <span className="loader-text">Faaliyetler Yükleniyor…</span>
         </div>
       ) : (
         <>
@@ -360,8 +331,11 @@ export default function ActivitiesPage() {
                           <h3 className="activity-title">{item.title}</h3>
                           <p className="activity-desc">{item.summary}</p>
                           
+                          {/* ✨ DİNAMİK LİNK YÖNLENDİRMESİ ✨ */}
                           <div className="activity-footer">
-                              <span className="read-more">Detayları İncele <i className="fas fa-arrow-right"></i></span>
+                              <Link href={`/activities/${item.id}`} className="read-more" style={{textDecoration:'none'}}>
+                                  Detayları İncele <i className="fas fa-arrow-right"></i>
+                              </Link>
                           </div>
                         </div>
                       </article>

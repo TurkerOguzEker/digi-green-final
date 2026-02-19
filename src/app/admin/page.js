@@ -130,6 +130,7 @@ export default function AdminPage() {
   
   const [settings, setSettings] = useState([]);
   const [news, setNews] = useState([]);
+  const [activities, setActivities] = useState([]); // ✨ YENİ FAALİYETLER STATE'İ
   const [partners, setPartners] = useState([]);
   const [results, setResults] = useState([]);
   const [messages, setMessages] = useState([]); 
@@ -138,7 +139,9 @@ export default function AdminPage() {
 
   const [newsForm, setNewsForm] = useState({ id: null, title: '', summary: '', image_url: '', date: '' });
   
-  // ✨ YENİ: AÇIKLAMA, WEB SİTESİ VE ROL BURAYA GERİ EKLENDİ ✨
+  // ✨ YENİ FAALİYET FORMU (Detay yazısı için description dahil)
+  const [activityForm, setActivityForm] = useState({ id: null, title: '', type: 'Toplantı (TPM)', location: '', date: '', summary: '', description: '', image_url: '' });
+  
   const [partnerForm, setPartnerForm] = useState({ id: null, name: '', country: '', image_url: '', flag_url: '', website: '', description: '', role: 'Ortak' }); 
   const [resultForm, setResultForm] = useState({ id: null, title: '', description: '', status: 'Planlanıyor', link: '', icon: 'file' });
   const [isEditing, setIsEditing] = useState(false);
@@ -163,11 +166,17 @@ export default function AdminPage() {
   async function loadAllData() {
     const s = await supabase.from('settings').select('*').order('id');
     const n = await supabase.from('news').select('*').order('date', {ascending:false});
+    const a = await supabase.from('activities').select('*').order('id', {ascending:false}); // ✨ FAALİYETLERİ ÇEKİYORUZ
     const p = await supabase.from('partners').select('*').order('id');
     const r = await supabase.from('results').select('*').order('id');
     const m = await supabase.from('contact_messages').select('*').order('created_at', {ascending:false}); 
     
-    setSettings(s.data || []); setNews(n.data || []); setPartners(p.data || []); setResults(r.data || []); setMessages(m.data || []);
+    setSettings(s.data || []); 
+    setNews(n.data || []); 
+    setActivities(a.data || []); 
+    setPartners(p.data || []); 
+    setResults(r.data || []); 
+    setMessages(m.data || []);
 
     const ecoStr = s.data?.find(x => x.key === 'home_eco_list')?.value;
     if (ecoStr) {
@@ -246,6 +255,7 @@ export default function AdminPage() {
 
     setIsEditing(false); loadAllData(); showToast('Kaydedildi.', 'success');
     if(table==='news') setNewsForm({ id: null, title: '', summary: '', image_url: '', date: '' });
+    if(table==='activities') setActivityForm({ id: null, title: '', type: 'Toplantı (TPM)', location: '', date: '', summary: '', description: '', image_url: '' });
     if(table==='partners') setPartnerForm({ id: null, name: '', country: '', image_url: '', flag_url: '', website: '', description: '', role: 'Ortak' });
     if(table==='results') setResultForm({ id: null, title: '', description: '', status: 'Planlanıyor', link: '', icon: 'file' });
   }
@@ -253,6 +263,16 @@ export default function AdminPage() {
   function startEdit(item, type) {
     setIsEditing(true);
     if(type==='news') setNewsForm(item);
+    if(type==='activities') setActivityForm({
+        id: item.id,
+        title: item.title,
+        type: item.type || 'Toplantı (TPM)',
+        location: item.location || '',
+        date: item.date || '',
+        summary: item.summary || '',
+        description: item.description || '',
+        image_url: item.image_url || ''
+    });
     if(type==='partners') setPartnerForm({
         id: item.id, 
         name: item.name, 
@@ -294,6 +314,10 @@ export default function AdminPage() {
             <TabButton id="home" label="Ana Sayfa" icon="fas fa-home" />
             <TabButton id="about" label="Hakkında" icon="fas fa-info-circle" />
             <TabButton id="news" label="Haberler" icon="fas fa-newspaper" />
+            
+            {/* ✨ FAALİYETLER TAB'I BURADA */}
+            <TabButton id="activities" label="Faaliyetler" icon="fas fa-calendar-check" /> 
+            
             <TabButton id="partners" label="Ortaklar" icon="fas fa-handshake" />
             <TabButton id="results" label="Çıktılar" icon="fas fa-file-alt" />
             <TabButton id="contact" label="İletişim" icon="fas fa-phone" />
@@ -429,6 +453,61 @@ export default function AdminPage() {
                 </div>
             )}
 
+            {/* ✨ FAALİYETLER SEKMESİ İÇERİĞİ ✨ */}
+           {/* ✨ FAALİYETLER SEKMESİ İÇERİĞİ ✨ */}
+{activeTab === 'activities' && (
+    <div className="fade-in">
+        <h2 style={{marginBottom:'25px', color:'#003399'}}>Faaliyetler (Etkinlikler)</h2>
+        <SettingInput label="Sayfa Başlık Resmi" settingKey="activities_header_bg" type="image" {...commonProps} />
+        
+        <div style={{background:'white', padding:'25px', margin:'20px 0', border:'1px solid #ddd', borderRadius:'8px'}}>
+            <h4>{isEditing ? 'Faaliyeti Düzenle' : 'Yeni Faaliyet Ekle'}</h4>
+            <form onSubmit={(e) => saveItem(e, 'activities', activityForm, setActivityForm)} style={{display:'grid', gap:'15px'}}>
+                
+                <input className="form-control" placeholder="Faaliyet Başlığı" value={activityForm.title} onChange={e=>setActivityForm({...activityForm, title:e.target.value})} required style={{padding:'10px', width:'100%', boxSizing:'border-box', border:'1px solid #ddd', borderRadius:'5px'}} />
+                
+                <div style={{display:'flex', gap:'10px'}}>
+                    <input className="form-control" placeholder="Türü (Örn: Eğitim, Toplantı)" value={activityForm.type} onChange={e=>setActivityForm({...activityForm, type:e.target.value})} style={{padding:'10px', flex:1, border:'1px solid #ddd', borderRadius:'5px'}} />
+                    
+                    {/* ✨ TARİH SEÇİCİ (DATE PICKER) EKLENDİ ✨ */}
+                    <input 
+                        type="date" 
+                        className="form-control" 
+                        title="Tarih Seçiniz"
+                        value={activityForm.date} 
+                        onChange={e=>setActivityForm({...activityForm, date:e.target.value})} 
+                        style={{padding:'10px', flex:1, border:'1px solid #ddd', borderRadius:'5px', color: activityForm.date ? '#333' : '#999', fontFamily: 'inherit'}} 
+                    />
+
+                    <input className="form-control" placeholder="Konum (Örn: Çevrimiçi)" value={activityForm.location} onChange={e=>setActivityForm({...activityForm, location:e.target.value})} style={{padding:'10px', flex:1, border:'1px solid #ddd', borderRadius:'5px'}} />
+                </div>
+
+                <FileInput value={activityForm.image_url} onChange={url=>setActivityForm({...activityForm, image_url:url})} placeholder="Faaliyet Görseli (Tercihen Yatay)" uploadFile={uploadFile} showToast={showToast} />
+                
+                <textarea placeholder="Kısa Özet (Kartlarda görünecek, max 2-3 cümle)" value={activityForm.summary} onChange={e=>setActivityForm({...activityForm, summary:e.target.value})} rows="2" style={{padding:'10px', width:'100%', boxSizing:'border-box', border:'1px solid #ddd', borderRadius:'5px'}} />
+                
+                <textarea placeholder="Detaylı Açıklama (Faaliyetin kendi sayfasında görünecek uzun, detaylı metin)" value={activityForm.description} onChange={e=>setActivityForm({...activityForm, description:e.target.value})} rows="8" style={{padding:'10px', width:'100%', boxSizing:'border-box', border:'1px solid #ddd', borderRadius:'5px'}} />
+                
+                <button type="submit" style={{background:'#003399', color:'white', border:'none', padding:'12px', borderRadius:'5px', cursor:'pointer', fontWeight:'bold'}}>{isEditing?'Değişiklikleri Kaydet':'Faaliyeti Ekle'}</button>
+            </form>
+        </div>
+
+        <h4 style={{marginTop:'30px'}}>Mevcut Faaliyetler</h4>
+        {activities.map(item => (
+            <div key={item.id} style={{background:'white', padding:'15px', margin:'10px 0', border:'1px solid #eee', display:'flex', justifyContent:'space-between', alignItems:'center', borderRadius:'8px'}}>
+                <div>
+                    <strong style={{display:'block', color:'#333'}}>{item.title}</strong>
+                    <span style={{fontSize:'0.85rem', color:'#666'}}>{item.date} - {item.type}</span>
+                </div>
+                <div>
+                    <button onClick={()=>startEdit(item, 'activities')} style={{marginRight:'15px', border:'none', background:'none', color:'#003399', cursor:'pointer', fontWeight:'bold'}}>Düzenle</button>
+                    <button onClick={()=>deleteItem('activities', item.id)} style={{border:'none', background:'none', color:'#e74c3c', cursor:'pointer', fontWeight:'bold'}}>Sil</button>
+                </div>
+            </div>
+        ))}
+    </div>
+)}
+
             {activeTab === 'partners' && (
                 <div className="fade-in">
                      <h2 style={{marginBottom:'25px', color:'#003399'}}>Ortaklar & Kurumlar</h2>
@@ -438,7 +517,6 @@ export default function AdminPage() {
                      <div style={{background:'white', padding:'25px', marginBottom:'20px', border:'1px solid #ddd', borderRadius:'8px'}}>
                         <h4>{isEditing ? 'Düzenle' : 'Yeni Ekle'}</h4>
                         
-                        {/* ✨ AÇIKLAMA, WEB SİTESİ VE ROL ALANLARININ EKLENDİĞİ YENİ FORM ✨ */}
                         <form onSubmit={(e) => saveItem(e, 'partners', partnerForm, setPartnerForm)} style={{display:'grid', gap:'15px'}}>
                             <input className="form-control" placeholder="Kurum Adı" value={partnerForm.name} onChange={e=>setPartnerForm({...partnerForm, name:e.target.value})} required style={{padding:'10px', width:'100%', boxSizing:'border-box', border:'1px solid #ddd', borderRadius:'5px'}} />
                             
@@ -477,26 +555,57 @@ export default function AdminPage() {
                 </div>
             )}
 
-            {activeTab === 'news' && (
-                <div className="fade-in">
-                    <h2 style={{marginBottom:'25px', color:'#003399'}}>Haberler</h2>
-                    <SettingInput label="Başlık Resmi" settingKey="news_header_bg" type="image" {...commonProps} />
-                    <div style={{background:'white', padding:'25px', margin:'20px 0', border:'1px solid #ddd', borderRadius:'8px'}}>
-                        <form onSubmit={(e) => saveItem(e, 'news', newsForm, setNewsForm)} style={{display:'grid', gap:'10px'}}>
-                            <input placeholder="Başlık" value={newsForm.title} onChange={e=>setNewsForm({...newsForm, title:e.target.value})} required style={{padding:'10px', width:'100%', boxSizing:'border-box', border:'1px solid #ddd', borderRadius:'5px'}} />
-                            <FileInput value={newsForm.image_url} onChange={url=>setNewsForm({...newsForm, image_url:url})} placeholder="Resim" uploadFile={uploadFile} showToast={showToast} />
-                            <textarea placeholder="Özet" value={newsForm.summary} onChange={e=>setNewsForm({...newsForm, summary:e.target.value})} style={{padding:'10px', width:'100%', boxSizing:'border-box', border:'1px solid #ddd', borderRadius:'5px'}} />
-                            <button type="submit" style={{background:'#003399', color:'white', border:'none', padding:'10px', borderRadius:'5px', cursor:'pointer'}}>{isEditing?'Güncelle':'Ekle'}</button>
-                        </form>
-                    </div>
-                    {news.map(item => (
-                        <div key={item.id} style={{background:'white', padding:'10px', margin:'5px 0', border:'1px solid #eee', display:'flex', justifyContent:'space-between'}}>
-                            {item.title}
-                            <button onClick={()=>deleteItem('news', item.id)} style={{border:'none', background:'none', color:'red', cursor:'pointer'}}>Sil</button>
-                        </div>
-                    ))}
+           {activeTab === 'news' && (
+    <div className="fade-in">
+        <h2 style={{marginBottom:'25px', color:'#003399'}}>Haberler & Duyurular</h2>
+        <SettingInput label="Sayfa Başlık Resmi" settingKey="news_header_bg" type="image" {...commonProps} />
+        
+        <div style={{background:'white', padding:'25px', margin:'20px 0', border:'1px solid #ddd', borderRadius:'8px'}}>
+            <h4>{isEditing ? 'Haberi Düzenle' : 'Yeni Haber Ekle'}</h4>
+            <form onSubmit={(e) => saveItem(e, 'news', newsForm, setNewsForm)} style={{display:'grid', gap:'15px'}}>
+                
+                <div style={{display:'flex', gap:'10px'}}>
+                    <input className="form-control" placeholder="Haber Başlığı" value={newsForm.title} onChange={e=>setNewsForm({...newsForm, title:e.target.value})} required style={{padding:'10px', flex:2, boxSizing:'border-box', border:'1px solid #ddd', borderRadius:'5px'}} />
+                    
+                    {/* ✨ TARİH SEÇİCİ (DATE PICKER) ✨ */}
+                    <input 
+                        type="date" 
+                        className="form-control" 
+                        title="Haber Tarihi Seçiniz"
+                        value={newsForm.date || ''} 
+                        onChange={e=>setNewsForm({...newsForm, date:e.target.value})} 
+                        style={{padding:'10px', flex:1, border:'1px solid #ddd', borderRadius:'5px', color: newsForm.date ? '#333' : '#999', fontFamily: 'inherit'}} 
+                    />
                 </div>
-            )}
+
+                <FileInput value={newsForm.image_url} onChange={url=>setNewsForm({...newsForm, image_url:url})} placeholder="Haber Görseli (Tercihen Yatay)" uploadFile={uploadFile} showToast={showToast} />
+                
+                <textarea placeholder="Kısa Özet (Ana sayfada ve kartlarda görünecek 2-3 cümle)" value={newsForm.summary} onChange={e=>setNewsForm({...newsForm, summary:e.target.value})} rows="2" style={{padding:'10px', width:'100%', boxSizing:'border-box', border:'1px solid #ddd', borderRadius:'5px'}} />
+                
+                {/* ✨ YENİ: HABER DETAY YAZISI ALANI ✨ */}
+                <textarea placeholder="Detaylı Haber İçeriği (Haberin kendi sayfasında okunacak uzun metin)" value={newsForm.description} onChange={e=>setNewsForm({...newsForm, description:e.target.value})} rows="8" style={{padding:'10px', width:'100%', boxSizing:'border-box', border:'1px solid #ddd', borderRadius:'5px'}} />
+                
+                <button type="submit" style={{background:'#003399', color:'white', border:'none', padding:'12px', borderRadius:'5px', cursor:'pointer', fontWeight:'bold'}}>
+                    {isEditing ? 'Değişiklikleri Kaydet' : 'Haberi Ekle'}
+                </button>
+            </form>
+        </div>
+
+        <h4 style={{marginTop:'30px'}}>Mevcut Haberler</h4>
+        {news.map(item => (
+            <div key={item.id} style={{background:'white', padding:'15px', margin:'10px 0', border:'1px solid #eee', display:'flex', justifyContent:'space-between', alignItems:'center', borderRadius:'8px'}}>
+                <div>
+                    <strong style={{display:'block', color:'#333'}}>{item.title}</strong>
+                    {item.date && <span style={{fontSize:'0.85rem', color:'#666'}}><i className="far fa-calendar-alt"></i> {item.date}</span>}
+                </div>
+                <div>
+                    <button onClick={()=>startEdit(item, 'news')} style={{marginRight:'15px', border:'none', background:'none', color:'#003399', cursor:'pointer', fontWeight:'bold'}}>Düzenle</button>
+                    <button onClick={()=>deleteItem('news', item.id)} style={{border:'none', background:'none', color:'#e74c3c', cursor:'pointer', fontWeight:'bold'}}>Sil</button>
+                </div>
+            </div>
+        ))}
+    </div>
+)}
 
             {activeTab === 'results' && (
                 <div className="fade-in">
@@ -553,10 +662,7 @@ export default function AdminPage() {
                     <SettingInput label="Logo Vurgu Metni (Yeşil)" settingKey="header_logo_highlight" placeholder="FUTURE" {...commonProps} />
 
                     <h4 style={{margin:'40px 0 20px', color:'#555', borderLeft:'4px solid #003399', paddingLeft:'10px'}}>Alt Bilgi (Footer)</h4>
-                    
-                    {/* ✨ İŞTE BURASI: AB LOGOSU YÜKLEME ALANI ✨ */}
                     <SettingInput label="AB Logosu (Bayrak/Duyuru)" settingKey="footer_eu_logo" type="image" {...commonProps} />
-                    
                     <SettingInput label="Footer Hakkında Metni" settingKey="footer_desc" type="textarea" {...commonProps} />
                     <SettingInput label="Footer 2. Kolon Başlığı" settingKey="footer_column2_title" {...commonProps} />
                     <SettingInput label="Footer 3. Kolon Başlığı" settingKey="footer_column3_title" {...commonProps} />
