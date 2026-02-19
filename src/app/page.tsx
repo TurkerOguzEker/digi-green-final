@@ -128,7 +128,7 @@ export default function Home() {
               <span className="reveal reveal-up" style={{background:'rgba(255,255,255,0.15)', backdropFilter:'blur(5px)', padding:'10px 25px', borderRadius:'50px', border:'1px solid rgba(255,255,255,0.3)', fontWeight:'bold', letterSpacing:'2px', textTransform:'uppercase', fontSize:'0.9rem'}}>
                   {content.header_logo_text || 'DIGI-GREEN FUTURE'}
               </span>
-              <h1 className="reveal reveal-up delay-100" style={{fontSize:'clamp(2.5rem, 5vw, 4.5rem)', fontWeight:'800', margin:'25px 0', textShadow:'0 10px 30px rgba(0,0,0,0.3)', lineHeight:1.1}}>
+              <h1 className="reveal reveal-up delay-100" style={{fontSize:'clamp(2.5rem, 5vw, 4.5rem)', fontWeight:'800', margin:'25px 0', color: 'white', textShadow:'0 10px 30px rgba(0,0,0,0.3)', lineHeight:1.1}}>
                   {content.hero_title || 'Yerel Yeşil Gelecek İçin Dijital Dönüşüm'}
               </h1>
               <p className="reveal reveal-up delay-200" style={{fontSize:'1.25rem', maxWidth:'700px', margin:'0 auto 40px', opacity:0.95, lineHeight:1.6}}>
@@ -200,7 +200,7 @@ export default function Home() {
       <section className="section-padding" style={{background:'#f0f4f8'}}>
           <div className="container">
               <div className="reveal reveal-up" style={{textAlign:'center', marginBottom:'50px'}}>
-                  <h2 style={{fontSize:'2.2rem', fontWeight:'800', color:'#333'}}>Projemiz Kimler İçin?</h2>
+                  <h2 style={{fontSize:'2.5rem', fontWeight:'800', color:'#333'}}>Projemiz Kimler İçin?</h2>
                   <p style={{color:'#666'}}>Toplumun her kesimine dokunan çözümler.</p>
               </div>
               <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(300px, 1fr))', gap:'30px'}}>

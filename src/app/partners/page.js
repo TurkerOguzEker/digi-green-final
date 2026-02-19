@@ -2,6 +2,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { supabase } from '../../lib/supabase';
 import ScrollToTop from '../../components/ScrollToTop';
+
 // ─── SAYFA GENELİ ARKA PLAN AĞI ───────────────────────────────────────────────
 const NetworkBackground = () => {
   const canvasRef = useRef(null);
@@ -225,16 +226,26 @@ export default function PartnersPage() {
 
                         <div className="partner-content-side">
                           <div className="content-inner">
-                            <h4 className="about-title">Kurum Hakkında</h4>
+                            <h4 className="about-title">Hakkında</h4>
                             {partner.description
                               ? <p className="partner-desc">{partner.description}</p>
                               : <p className="partner-desc empty-desc">Bu kurum için henüz bir açıklama eklenmemiştir.</p>}
-                            {partner.website && (
-                              <a href={partner.website} target="_blank" rel="noopener noreferrer" className="action-btn">
-                                <span>Web Sitesini Ziyaret Et</span>
-                                <span className="btn-icon"><i className="fas fa-arrow-right"></i></span>
+                            
+                            {/* DÜZELTME: Buton grubu ortalandı (justifyContent: center) */}
+                            <div className="button-group" style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', marginTop: '16px', justifyContent: 'center', width: '100%' }}>
+                              
+                              <a href={`/ortaklar/${partner.id}`} className="action-btn detail-btn">
+                                <span>Detayları İncele</span>
+                                <span className="btn-icon"><i className="fas fa-link"></i></span>
                               </a>
-                            )}
+
+                              {partner.website && (
+                                <a href={partner.website} target="_blank" rel="noopener noreferrer" className="action-btn">
+                                  <span>Web Sitesini Ziyaret Et</span>
+                                  <span className="btn-icon"><i className="fas fa-arrow-right"></i></span>
+                                </a>
+                              )}
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -369,6 +380,7 @@ export default function PartnersPage() {
         .partner-desc { color:var(--text-soft); font-size:1rem; line-height:1.75; margin-bottom:24px; white-space:pre-wrap; }
         .empty-desc { font-style:italic; color:#999; }
 
+        /* BUTON GRUBU VE BUTONLAR */
         .action-btn { display:inline-flex; align-items:center; gap:0; border-radius:10px; overflow:hidden; text-decoration:none; font-size:0.88rem; font-weight:600; color:white; border:none; cursor:pointer; width:fit-content; }
         .action-btn span:first-child { padding:9px 16px; background:var(--green-deep); transition:background 0.25s; }
         .btn-icon { padding:9px 13px; background:var(--green-mid); transition:background 0.25s,transform 0.3s; display:flex; align-items:center; }
@@ -376,6 +388,14 @@ export default function PartnersPage() {
         .action-btn:hover span:first-child { background:#0f3320; }
         .action-btn:hover .btn-icon { background:var(--green-deep); }
         .action-btn:hover .btn-icon i { transform:translateX(4px); }
+
+        /* DÜZELTME: Butonları yeşil yapıyoruz */
+        .detail-btn span:first-child { background: var(--green-mid); }
+        .detail-btn .btn-icon { background: var(--green-deep); }
+        
+        .detail-btn:hover span:first-child { background: var(--green-deep); }
+        .detail-btn:hover .btn-icon { background: var(--green-mid); }
+        .detail-btn:hover .btn-icon i { transform: scale(1.1); }
 
         .empty-state { text-align:center; padding:60px 40px; color:var(--text-soft); }
         .empty-state i { font-size:3rem; opacity:0.4; margin-bottom:16px; display:block; }

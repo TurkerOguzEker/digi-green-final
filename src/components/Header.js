@@ -37,6 +37,8 @@ export default function Header() {
             ]
         },
         { name: 'Ortaklar', path: '/partners' },
+        /* YENİ EKLENEN FAALİYETLER LİNKİ */
+        { name: 'Faaliyetler', path: '/activities' }, 
         { name: 'Dosyalar', path: '/results' },
         { name: 'Haberler', path: '/news' },
         { name: 'İletişim', path: '/contact' },
