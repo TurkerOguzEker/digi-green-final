@@ -1,11 +1,29 @@
 import './globals.css';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
-import ScrollToTop from '../components/ScrollToTop'; // ✨ 1. YUKARI ÇIK BUTONU BURADA İÇE AKTARILDI
+import ScrollToTop from '../components/ScrollToTop';
+import { supabase } from '../lib/supabase'; 
 
-export const metadata = {
-  title: 'DIGI-GREEN FUTURE | Kapaklı Belediyesi',
-  description: 'Vatandaş Odaklı Yerel Yeşil Gelecek için Dijital Dönüşüm - Erasmus+ Projesi',
+// ✨ STATİK YERİNE DİNAMİK METADATA EKLENDİ (Favicon için) ✨
+export async function generateMetadata() {
+  // Veritabanından ayarları çekiyoruz
+  const { data } = await supabase.from('settings').select('*');
+  const settings: Record<string, string> = {};
+  
+  if (data) {
+    data.forEach(item => {
+      settings[item.key] = item.value;
+    });
+  }
+
+  return {
+    title: 'DIGI-GREEN FUTURE | Kapaklı Belediyesi',
+    description: 'Vatandaş Odaklı Yerel Yeşil Gelecek için Dijital Dönüşüm - Erasmus+ Projesi',
+    icons: {
+      // ✨ DEĞİŞİKLİK BURADA: Artık sekme logosu olarak doğrudan Header Logosu kullanılıyor ✨
+      icon: settings['header_logo_image'] || '/favicon.ico',
+    },
+  }
 }
 
 export default function RootLayout({
@@ -14,7 +32,7 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    // 1. suppressHydrationWarning buraya eklendi (HTML seviyesi eklentiler için)
+    // suppressHydrationWarning buraya eklendi (HTML seviyesi eklentiler için)
     <html lang="tr" suppressHydrationWarning>
       <head>
         {/* Google Fonts ve Font Awesome */}
@@ -23,7 +41,7 @@ export default function RootLayout({
         {/* Proje CSS dosyası */}
         <link rel="stylesheet" href="/assets/css/main.css" />
       </head>
-      {/* 2. suppressHydrationWarning buraya da eklendi (Body seviyesi eklentiler için - Örn: Grammarly) */}
+      {/* suppressHydrationWarning buraya da eklendi (Body seviyesi eklentiler için) */}
       <body suppressHydrationWarning>
         <Header />
         <main style={{ minHeight: '80vh' }}>
@@ -31,7 +49,7 @@ export default function RootLayout({
         </main>
         <Footer />
 
-        {/* ✨ 2. YUKARI ÇIK BUTONU BURAYA EKLENDİ ✨ */}
+        {/* YUKARI ÇIK BUTONU */}
         <ScrollToTop />
       </body>
     </html>

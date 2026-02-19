@@ -2,6 +2,8 @@
 import { useEffect, useState, useRef } from 'react';
 import { supabase } from '../../lib/supabase';
 import ScrollToTop from '../../components/ScrollToTop';
+import Link from 'next/link'; // ✨ EKLENDİ: Sayfalar arası geçiş için Link bileşeni
+
 // ─── SAYFA GENELİ ARKA PLAN AĞI ───────────────────────────────────────────────
 const NetworkBackground = () => {
   const canvasRef = useRef(null);
@@ -328,9 +330,11 @@ export default function NewsPage() {
                           <h3 className="news-title">{item.title}</h3>
                           <p className="news-desc">{item.summary}</p>
                           
-                          {/* İleride bir haber detayı linki olursa diye ok işareti alanı (opsiyonel görsel bütünlük) */}
+                          {/* ✨ EKLENDİ: Artık tıklanabilir! */}
                           <div className="news-footer">
-                              <span className="read-more">Devamını Oku <i className="fas fa-arrow-right"></i></span>
+                              <Link href={`/news/${item.id}`} className="read-more" style={{ textDecoration: 'none' }}>
+                                  Devamını Oku <i className="fas fa-arrow-right"></i>
+                              </Link>
                           </div>
                         </div>
                       </article>

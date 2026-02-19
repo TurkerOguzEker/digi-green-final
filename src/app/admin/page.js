@@ -1,681 +1,599 @@
 'use client';
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { supabase } from '../../lib/supabase';
-
-// --- VARSAYILAN DEĞERLER ---
-const DEFAULTS = {
-    header_logo_text: "DIGI-GREEN",
-    header_logo_highlight: "FUTURE",
-    footer_desc: "Kapaklı Belediyesi liderliğinde yürütülen sürdürülebilir kalkınma projesi.",
-    footer_column2_title: "Hızlı Menü",
-    footer_column3_title: "İletişim",
-    footer_eu_logo: "/assets/images/eu-flag.png",
-    footer_disclaimer: "Funded by the European Union. Views and opinions expressed are however those of the author(s) only and do not necessarily reflect those of the European Union.",
-    contact_email: "info@digigreen.eu",
-    contact_phone: "+90 282 717 10 10",
-    hero_title: "Yerel Yeşil Gelecek İçin Dijital Dönüşüm",
-    hero_desc: "Erasmus+ KA220-ADU kapsamında, iklim değişikliği ile mücadelede dijital araçları kullanmayı hedefleyen öncü proje.",
-    home_summary_1_val: "24 Ay", home_summary_1_label: "Proje Süresi",
-    home_summary_2_val: "250.000€", home_summary_2_label: "Toplam Hibe",
-    home_summary_3_val: "KA220-ADU", home_summary_3_label: "Program",
-    home_summary_4_val: "3 Ülke", home_summary_4_label: "Kapsam",
-    home_about_title: "Teknoloji ve Doğanın Mükemmel Uyumu",
-    home_about_text: "Projemiz, iklim kriziyle mücadelede yerel yönetimler ve vatandaşların aktif rol alması gerekliliğinden doğmuştur.",
-    home_target_1_title: "Vatandaşlar", home_target_1_desc: "Mobil uygulamalar ile geri dönüşüme katılın.",
-    home_target_2_title: "Yerel Yönetimler", home_target_2_desc: "Veriye dayalı kararlar alarak kaynakları verimli kullanın.",
-    home_target_3_title: "STK ve Akademik", home_target_3_desc: "Araştırma ve eğitim çalışmalarında aktif rol alın.",
-    home_counter_1_val: "250000", home_counter_1_label: "Toplam Hibe (€)",
-    home_counter_2_val: "3", home_counter_2_label: "Ortak Ülke",
-    home_counter_3_val: "5", home_counter_3_label: "Proje Ortağı",
-    home_counter_4_val: "24", home_counter_4_label: "Ay Süre",
-    home_cta_title: "Geleceği Birlikte Tasarlayalım",
-    home_cta_text: "Daha fazla bilgi almak için bize ulaşın."
-};
-
-const ToastNotification = ({ message, type, onClose }) => {
-  if (!message) return null;
-  const bgColor = type === 'error' ? '#e74c3c' : '#27ae60';
-  return (
-    <div style={{position: 'fixed', top: '20px', right: '20px', zIndex: 9999, background: 'white', borderRadius: '8px', padding: '15px 20px', boxShadow: '0 5px 20px rgba(0,0,0,0.2)', borderLeft: `5px solid ${bgColor}`, display: 'flex', alignItems: 'center', gap: '15px', minWidth: '300px'}}>
-        <div style={{flex:1}}>
-            <h5 style={{margin:0, fontSize:'0.95rem', color:'#333'}}>{type === 'error' ? 'Hata' : 'Başarılı'}</h5>
-            <p style={{margin:0, fontSize:'0.85rem', color:'#666'}}>{message}</p>
-        </div>
-        <button onClick={onClose} style={{background:'none', border:'none', color:'#999', cursor:'pointer', fontSize:'1.2rem'}}>&times;</button>
-    </div>
-  );
-};
-
-const ConfirmModal = ({ isOpen, message, onConfirm, onCancel }) => {
-  if (!isOpen) return null;
-  return (
-    <div style={{position:'fixed', top:0, left:0, width:'100%', height:'100%', background:'rgba(0,0,0,0.5)', zIndex:10000, display:'flex', alignItems:'center', justifyContent:'center', backdropFilter: 'blur(3px)'}}>
-        <div style={{background:'white', borderRadius:'12px', padding:'30px', width:'400px', maxWidth:'90%', textAlign:'center', boxShadow:'0 10px 40px rgba(0,0,0,0.3)'}}>
-            <h3 style={{margin:'0 0 10px', color:'#333'}}>Emin misiniz?</h3>
-            <p style={{color:'#666', marginBottom:'25px', lineHeight:'1.5'}}>{message}</p>
-            <div style={{display:'flex', gap:'10px', justifyContent:'center'}}>
-                <button onClick={onCancel} className="btn" style={{background:'#f1f1f1', color:'#555', padding:'10px 25px', borderRadius:'30px', fontWeight:'600', border:'none', cursor:'pointer'}}>Vazgeç</button>
-                <button onClick={onConfirm} className="btn" style={{background:'#e74c3c', color:'white', padding:'10px 25px', borderRadius:'30px', fontWeight:'600', border:'none', cursor:'pointer'}}>Evet, Sil</button>
-            </div>
-        </div>
-    </div>
-  );
-};
-
-const SettingInput = ({ label, settingKey, type="text", placeholder="", settings, handleSettingChange, updateSetting, uploadFile }) => {
-    const settingItem = settings.find(s => s.key === settingKey);
-    const val = settingItem ? settingItem.value : (DEFAULTS[settingKey] || ''); 
-
-    return (
-        <div style={{background:'#fff', padding:'15px', borderRadius:'8px', border:'1px solid #eee', marginBottom:'15px'}}>
-            <label style={{fontWeight:'bold', display:'block', marginBottom:'8px', color:'#333', fontSize:'0.9rem'}}>
-                {label} <span style={{color:'#ccc', fontWeight:'normal', fontSize:'0.75rem', float:'right'}}>{settingKey}</span>
-            </label>
-            <div style={{display:'flex', gap:'10px', alignItems: 'flex-start'}}>
-                {type === 'textarea' ? (
-                    <textarea className="form-control" value={val} onChange={(e) => handleSettingChange(settingKey, e.target.value)} placeholder={placeholder} rows="3" style={{marginBottom:0, flex: 1, padding:'10px', border:'1px solid #ddd', borderRadius:'5px', width:'100%'}}></textarea>
-                ) : type === 'image' ? (
-                    <div style={{flex:1, display:'flex', gap:'10px', alignItems:'center'}}>
-                        {val && <img src={val} style={{height:'40px', borderRadius:'4px', border:'1px solid #ddd'}} />}
-                        <input className="form-control" value={val} onChange={(e) => handleSettingChange(settingKey, e.target.value)} placeholder="Resim URL'si veya Yükle" style={{flex:1, marginBottom:0, padding:'10px', border:'1px solid #ddd', borderRadius:'5px'}} />
-                        <label style={{background:'#eee', padding:'10px 15px', borderRadius:'5px', cursor:'pointer', fontSize:'0.9rem', whiteSpace:'nowrap'}}>
-                            Yükle <input type="file" hidden onChange={async (e) => {
-                                const url = await uploadFile(e.target.files[0]);
-                                if(url) { handleSettingChange(settingKey, url); updateSetting(settingKey, url); }
-                            }} />
-                        </label>
-                    </div>
-                ) : (
-                    <input type="text" className="form-control" value={val} onChange={(e) => handleSettingChange(settingKey, e.target.value)} placeholder={placeholder} style={{marginBottom:0, flex: 1, padding:'10px', border:'1px solid #ddd', borderRadius:'5px', width:'100%'}} />
-                )}
-                {type !== 'image' && (
-                    <button onClick={() => updateSetting(settingKey, val)} style={{padding:'10px 20px', height:'auto', background:'#003399', color:'white', border:'none', borderRadius:'5px', cursor:'pointer'}}>Kaydet</button>
-                )}
-            </div>
-        </div>
-    );
-};
-
-const FileInput = ({ value, onChange, placeholder, uploadFile, showToast }) => {
-    const [uploading, setUploading] = useState(false);
-    const handleFileChange = async (e) => {
-      try {
-        setUploading(true);
-        const file = e.target.files[0];
-        if (!file) return;
-        const url = await uploadFile(file);
-        if (url) { onChange(url); if(showToast) showToast('Dosya yüklendi.', 'success'); }
-      } catch (error) { if(showToast) showToast('Hata oluştu', 'error'); } finally { setUploading(false); }
+    import { useEffect, useState } from 'react';
+    import { useRouter } from 'next/navigation';
+    import { supabase } from '../../lib/supabase';
+    // --- VARSAYILAN DEĞERLER ---
+    const DEFAULTS = {
+        header_logo_text: "DIGI-GREEN",
+        header_logo_highlight: "FUTURE",
+        footer_desc: "Kapaklı Belediyesi liderliğinde yürütülen sürdürülebilir kalkınma projesi.",
+        footer_column2_title: "Hızlı Menü",
+        footer_column3_title: "İletişim",
+        footer_eu_logo: "/assets/images/eu-flag.png",
+        footer_disclaimer: "Funded by the European Union. Views and opinions expressed are however those of the author(s) only and do not necessarily reflect those of the European Union.",
+        contact_email: "info@digigreen.eu",
+        contact_phone: "+90 282 717 10 10",
+        hero_title: "Yerel Yeşil Gelecek İçin Dijital Dönüşüm",
+        hero_desc: "Erasmus+ KA220-ADU kapsamında, iklim değişikliği ile mücadelede dijital araçları kullanmayı hedefleyen öncü proje.",
+        home_summary_1_val: "24 Ay", home_summary_1_label: "Proje Süresi",
+        home_summary_2_val: "250.000€", home_summary_2_label: "Toplam Hibe",
+        home_summary_3_val: "KA220-ADU", home_summary_3_label: "Program",
+        home_summary_4_val: "3 Ülke", home_summary_4_label: "Kapsam",
+        home_about_title: "Teknoloji ve Doğanın Mükemmel Uyumu",
+        home_about_text: "Projemiz, iklim kriziyle mücadelede yerel yönetimler ve vatandaşların aktif rol alması gerekliliğinden doğmuştur.",
+        home_target_1_title: "Vatandaşlar", home_target_1_desc: "Mobil uygulamalar ile geri dönüşüme katılın.",
+        home_target_2_title: "Yerel Yönetimler", home_target_2_desc: "Veriye dayalı kararlar alarak kaynakları verimli kullanın.",
+        home_target_3_title: "STK ve Akademik", home_target_3_desc: "Araştırma ve eğitim çalışmalarında aktif rol alın.",
+        home_counter_1_val: "250000", home_counter_1_label: "Toplam Hibe (€)",
+        home_counter_2_val: "3", home_counter_2_label: "Ortak Ülke",
+        home_counter_3_val: "5", home_counter_3_label: "Proje Ortağı",
+        home_counter_4_val: "24", home_counter_4_label: "Ay Süre",
+        home_cta_title: "Geleceği Birlikte Tasarlayalım",
+        home_cta_text: "Daha fazla bilgi almak için bize ulaşın."
     };
+    const ToastNotification = ({ message, type, onClose }) => {
+    if (!message) return null;
+    const bgColor = type === 'error' ? '#e74c3c' : '#27ae60';
     return (
-      <div style={{display:'flex', gap:'10px', alignItems:'center', width:'100%'}}>
-        <div style={{flex:1, display:'flex', alignItems:'center', background:'white', border:'1px solid #ddd', borderRadius:'5px', padding:'5px 10px', gap:'10px'}}>
-            {value ? <img src={value} alt="preview" style={{width:'30px', height:'30px', objectFit:'cover', borderRadius:'4px'}} /> : <i className="fas fa-image" style={{color:'#ccc'}}></i>}
-            <input className="form-control" placeholder={placeholder} value={value || ''} onChange={(e) => onChange(e.target.value)} style={{flex:1, marginBottom:0, border:'none', padding:0}}/>
+        <div style={{position: 'fixed', top: '20px', right: '20px', zIndex: 9999, background: 'white', borderRadius: '8px', padding: '15px 20px', boxShadow: '0 5px 20px rgba(0,0,0,0.2)', borderLeft: `5px solid ${bgColor}`, display: 'flex', alignItems: 'center', gap: '15px', minWidth: '300px'}}>
+            <div style={{flex:1}}>
+                <h5 style={{margin:0, fontSize:'0.95rem', color:'#333'}}>{type === 'error' ? 'Hata' : 'Başarılı'}</h5>
+                <p style={{margin:0, fontSize:'0.85rem', color:'#666'}}>{message}</p>
+            </div>
+            <button onClick={onClose} style={{background:'none', border:'none', color:'#999', cursor:'pointer', fontSize:'1.2rem'}}>&times;</button>
         </div>
-        <div style={{position:'relative', overflow:'hidden', display:'inline-block'}}>
-            <button type="button" className="btn" style={{background: uploading ? '#ccc' : '#eef2f7', color:'#333', padding:'8px 15px', border:'1px solid #ddd', cursor:'pointer'}}>{uploading ? '...' : 'Seç'}</button>
-            <input type="file" onChange={handleFileChange} disabled={uploading} style={{position:'absolute', left:0, top:0, opacity:0, width:'100%', height:'100%', cursor:'pointer'}} />
-        </div>
-      </div>
     );
-};
-
-export default function AdminPage() {
-  const router = useRouter();
-  const [activeTab, setActiveTab] = useState('home');
-  const [subTab, setAboutSubTab] = useState('general');
-  const [loading, setLoading] = useState(true);
-  
-  const [settings, setSettings] = useState([]);
-  const [news, setNews] = useState([]);
-  const [activities, setActivities] = useState([]); // ✨ YENİ FAALİYETLER STATE'İ
-  const [partners, setPartners] = useState([]);
-  const [results, setResults] = useState([]);
-  const [messages, setMessages] = useState([]); 
-
-  const [ecoItems, setEcoItems] = useState([]);
-
-  const [newsForm, setNewsForm] = useState({ id: null, title: '', summary: '', image_url: '', date: '' });
-  
-  // ✨ YENİ FAALİYET FORMU (Detay yazısı için description dahil)
-  const [activityForm, setActivityForm] = useState({ id: null, title: '', type: 'Toplantı (TPM)', location: '', date: '', summary: '', description: '', image_url: '' });
-  
-  const [partnerForm, setPartnerForm] = useState({ id: null, name: '', country: '', image_url: '', flag_url: '', website: '', description: '', role: 'Ortak' }); 
-  const [resultForm, setResultForm] = useState({ id: null, title: '', description: '', status: 'Planlanıyor', link: '', icon: 'file' });
-  const [isEditing, setIsEditing] = useState(false);
-
-  const [toast, setToast] = useState(null); 
-  const [modal, setModal] = useState({ isOpen: false, message: '', onConfirm: null });
-
-  const showToast = (message, type = 'success') => { setToast({ message, type }); setTimeout(() => setToast(null), 3000); };
-  const showConfirm = (message, onConfirm) => { setModal({ isOpen: true, message, onConfirm }); };
-  const closeConfirm = () => { setModal({ ...modal, isOpen: false }); };
-  const handleConfirmAction = () => { if (modal.onConfirm) modal.onConfirm(); closeConfirm(); };
-
-  useEffect(() => { checkSessionAndLoad(); }, []);
-
-  async function checkSessionAndLoad() {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) { router.push('/login'); return; }
-    await loadAllData();
-    setLoading(false);
-  }
-
-  async function loadAllData() {
-    const s = await supabase.from('settings').select('*').order('id');
-    const n = await supabase.from('news').select('*').order('date', {ascending:false});
-    const a = await supabase.from('activities').select('*').order('id', {ascending:false}); // ✨ FAALİYETLERİ ÇEKİYORUZ
-    const p = await supabase.from('partners').select('*').order('id');
-    const r = await supabase.from('results').select('*').order('id');
-    const m = await supabase.from('contact_messages').select('*').order('created_at', {ascending:false}); 
-    
-    setSettings(s.data || []); 
-    setNews(n.data || []); 
-    setActivities(a.data || []); 
-    setPartners(p.data || []); 
-    setResults(r.data || []); 
-    setMessages(m.data || []);
-
-    const ecoStr = s.data?.find(x => x.key === 'home_eco_list')?.value;
-    if (ecoStr) {
-        try { setEcoItems(JSON.parse(ecoStr)); } catch(e) { console.error(e); }
-    } else {
-        const defaultEco = [
-            { title: s.data?.find(x => x.key==='home_eco_1_title')?.value || DEFAULTS.home_eco_1_title, desc: s.data?.find(x => x.key==='home_eco_1_desc')?.value || DEFAULTS.home_eco_1_desc, icon: 'fa-mobile-screen' },
-            { title: s.data?.find(x => x.key==='home_eco_2_title')?.value || DEFAULTS.home_eco_2_title, desc: s.data?.find(x => x.key==='home_eco_2_desc')?.value || DEFAULTS.home_eco_2_desc, icon: 'fa-recycle' },
-            { title: s.data?.find(x => x.key==='home_eco_3_title')?.value || DEFAULTS.home_eco_3_title, desc: s.data?.find(x => x.key==='home_eco_3_desc')?.value || DEFAULTS.home_eco_3_desc, icon: 'fa-graduation-cap' },
-            { title: s.data?.find(x => x.key==='home_eco_4_title')?.value || DEFAULTS.home_eco_4_title, desc: s.data?.find(x => x.key==='home_eco_4_desc')?.value || DEFAULTS.home_eco_4_desc, icon: 'fa-leaf' }
-        ];
-        setEcoItems(defaultEco);
-    }
-  }
-
-  const handleEcoChange = (index, field, value) => {
-    const newItems = [...ecoItems];
-    newItems[index][field] = value;
-    setEcoItems(newItems);
-  };
-
-  const saveEcoItems = async (itemsToSave) => {
-    setEcoItems(itemsToSave);
-    const { error } = await supabase.from('settings').upsert({ key: 'home_eco_list', value: JSON.stringify(itemsToSave) }, { onConflict: 'key' });
-    if(error) showToast('Hata: ' + error.message, 'error'); 
-    else showToast('Ağaç kutuları güncellendi.', 'success');
-  };
-
-  async function uploadFile(file) {
-    if (!file) return null;
-    const fileName = `${Date.now()}_${Math.random().toString(36).substring(2)}.${file.name.split('.').pop()}`;
-    const { error } = await supabase.storage.from('images').upload(fileName, file);
-    if (error) { showToast('Yükleme Hatası: ' + error.message, 'error'); return null; }
-    const { data: { publicUrl } } = supabase.storage.from('images').getPublicUrl(fileName);
-    return publicUrl;
-  }
-
-  const handleSettingChange = (key, newValue) => {
-    setSettings(prev => {
-        const exists = prev.find(item => item.key === key);
-        if (exists) {
-            return prev.map(item => item.key === key ? { ...item, value: newValue } : item);
-        } else {
-            return [...prev, { key: key, value: newValue }];
-        }
-    });
-  };
-
-  async function updateSetting(key, value) {
-    const { error } = await supabase.from('settings').upsert({ key, value }, { onConflict: 'key' });
-    if(error) showToast('Hata: ' + error.message, 'error'); 
-    else showToast('Güncellendi.', 'success');
-  }
-
-  async function deleteItem(table, id) {
-    showConfirm('Silmek istediğinize emin misiniz?', async () => {
-        await supabase.from(table).delete().eq('id', id); loadAllData(); showToast('Silindi.', 'success');
-    });
-  }
-
-  async function saveItem(e, table, form, setForm) {
-    e.preventDefault();
-    const { id, ...data } = form;
-    
-    let result;
-    if (id) {
-        result = await supabase.from(table).update(data).eq('id', id);
-    } else {
-        result = await supabase.from(table).insert([data]);
-    }
-
-    if (result && result.error) {
-        showToast('Veritabanı Hatası: ' + result.error.message, 'error');
-        return; 
-    }
-
-    setIsEditing(false); loadAllData(); showToast('Kaydedildi.', 'success');
-    if(table==='news') setNewsForm({ id: null, title: '', summary: '', image_url: '', date: '' });
-    if(table==='activities') setActivityForm({ id: null, title: '', type: 'Toplantı (TPM)', location: '', date: '', summary: '', description: '', image_url: '' });
-    if(table==='partners') setPartnerForm({ id: null, name: '', country: '', image_url: '', flag_url: '', website: '', description: '', role: 'Ortak' });
-    if(table==='results') setResultForm({ id: null, title: '', description: '', status: 'Planlanıyor', link: '', icon: 'file' });
-  }
-
-  function startEdit(item, type) {
-    setIsEditing(true);
-    if(type==='news') setNewsForm(item);
-    if(type==='activities') setActivityForm({
-        id: item.id,
-        title: item.title,
-        type: item.type || 'Toplantı (TPM)',
-        location: item.location || '',
-        date: item.date || '',
-        summary: item.summary || '',
-        description: item.description || '',
-        image_url: item.image_url || ''
-    });
-    if(type==='partners') setPartnerForm({
-        id: item.id, 
-        name: item.name, 
-        country: item.country, 
-        image_url: item.image_url, 
-        flag_url: item.flag_url,
-        website: item.website || '',
-        description: item.description || '',
-        role: item.role || 'Ortak'
-    });
-    if(type==='results') setResultForm(item);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  }
-
-  const TabButton = ({ id, label, icon }) => (
-    <button onClick={() => { setActiveTab(id); setIsEditing(false); }} 
-        style={{padding:'12px 20px', cursor:'pointer', background: activeTab === id ? '#003399' : 'white', color: activeTab === id ? 'white' : '#555', border: '1px solid #ddd', borderRadius: '8px', textAlign:'left', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '10px', width:'100%', marginBottom:'5px'}}>
-        <i className={icon} style={{width:'20px', textAlign:'center'}}></i> {label}
-    </button>
-  );
-
-  if (loading) return <div style={{height:'100vh', display:'flex', alignItems:'center', justifyContent:'center', color:'#003399'}}>Yükleniyor...</div>;
-
-  const commonProps = { settings, handleSettingChange, updateSetting, uploadFile };
-
-  return (
-    <div className="container" style={{marginTop:'40px', marginBottom:'100px', maxWidth:'1200px', margin:'40px auto', padding:'0 20px'}}>
-      {toast && <ToastNotification message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
-      <ConfirmModal isOpen={modal.isOpen} message={modal.message} onConfirm={handleConfirmAction} onCancel={closeConfirm} />
-
-      <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:'30px', paddingBottom:'20px', borderBottom:'1px solid #eee'}}>
-        <h1 style={{fontSize:'1.8rem', color:'#333', margin:0}}>Yönetim Paneli</h1>
-        <button onClick={async () => { await supabase.auth.signOut(); router.push('/login'); }} style={{background:'#e74c3c', color:'white', padding:'10px 20px', border:'none', borderRadius:'30px', cursor:'pointer'}}>Çıkış Yap</button>
-      </div>
-
-      <div style={{display:'grid', gridTemplateColumns:'260px 1fr', gap:'30px'}}>
-        <div>
-            <TabButton id="messages" label={`Mesajlar (${messages.length})`} icon="fas fa-envelope" />
-            <TabButton id="home" label="Ana Sayfa" icon="fas fa-home" />
-            <TabButton id="about" label="Hakkında" icon="fas fa-info-circle" />
-            <TabButton id="news" label="Haberler" icon="fas fa-newspaper" />
-            
-            {/* ✨ FAALİYETLER TAB'I BURADA */}
-            <TabButton id="activities" label="Faaliyetler" icon="fas fa-calendar-check" /> 
-            
-            <TabButton id="partners" label="Ortaklar" icon="fas fa-handshake" />
-            <TabButton id="results" label="Çıktılar" icon="fas fa-file-alt" />
-            <TabButton id="contact" label="İletişim" icon="fas fa-phone" />
-            <TabButton id="site" label="Site Ayarları (Header/Footer)" icon="fas fa-desktop" />
-        </div>
-
-        <div style={{background:'#fcfcfc', padding:'40px', borderRadius:'12px', border:'1px solid #eee'}}>
-            
-            {activeTab === 'home' && (
-                <div className="fade-in">
-                    <h2 style={{marginBottom:'25px', color:'#003399'}}>Ana Sayfa Düzenle</h2>
-                    
-                    <h4 style={{margin:'20px 0', color:'#555', borderLeft:'4px solid #003399', paddingLeft:'10px'}}>1. Hero (Kapak) Alanı</h4>
-                    <SettingInput label="Kapak Resmi" settingKey="hero_bg_image" type="image" {...commonProps} />
-                    <SettingInput label="Büyük Başlık" settingKey="hero_title" {...commonProps} />
-                    <SettingInput label="Açıklama Metni" settingKey="hero_desc" type="textarea" {...commonProps} />
-
-                    <h4 style={{margin:'40px 0 20px', color:'#555', borderLeft:'4px solid #003399', paddingLeft:'10px'}}>2. Özet Kartlar (4 Adet)</h4>
-                    <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:'15px'}}>
-                        <div style={{border:'1px solid #ddd', padding:'15px', borderRadius:'8px', background:'white'}}>
-                            <strong style={{color:'#003399'}}>Kart 1 (Süre)</strong>
-                            <SettingInput label="Değer" settingKey="home_summary_1_val" {...commonProps} />
-                            <SettingInput label="Etiket" settingKey="home_summary_1_label" {...commonProps} />
-                        </div>
-                        <div style={{border:'1px solid #ddd', padding:'15px', borderRadius:'8px', background:'white'}}>
-                            <strong style={{color:'#003399'}}>Kart 2 (Bütçe)</strong>
-                            <SettingInput label="Değer" settingKey="home_summary_2_val" {...commonProps} />
-                            <SettingInput label="Etiket" settingKey="home_summary_2_label" {...commonProps} />
-                        </div>
-                        <div style={{border:'1px solid #ddd', padding:'15px', borderRadius:'8px', background:'white'}}>
-                            <strong style={{color:'#003399'}}>Kart 3 (Program)</strong>
-                            <SettingInput label="Değer" settingKey="home_summary_3_val" {...commonProps} />
-                            <SettingInput label="Etiket" settingKey="home_summary_3_label" {...commonProps} />
-                        </div>
-                        <div style={{border:'1px solid #ddd', padding:'15px', borderRadius:'8px', background:'white'}}>
-                            <strong style={{color:'#003399'}}>Kart 4 (Kapsam)</strong>
-                            <SettingInput label="Değer" settingKey="home_summary_4_val" {...commonProps} />
-                            <SettingInput label="Etiket" settingKey="home_summary_4_label" {...commonProps} />
-                        </div>
-                    </div>
-
-                    <h4 style={{margin:'40px 0 20px', color:'#555', borderLeft:'4px solid #003399', paddingLeft:'10px'}}>3. Hakkında Bölümü</h4>
-                    <SettingInput label="Sol Taraf Görseli" settingKey="home_about_image" type="image" {...commonProps} />
-                    <SettingInput label="Bölüm Başlığı" settingKey="home_about_title" {...commonProps} />
-                    <SettingInput label="Bölüm Metni" settingKey="home_about_text" type="textarea" {...commonProps} />
-
-                    <h4 style={{margin:'40px 0 20px', color:'#555', borderLeft:'4px solid #003399', paddingLeft:'10px'}}>4. Hedef Kitle Kartları</h4>
-                    <SettingInput label="Kart 1 Başlık" settingKey="home_target_1_title" {...commonProps} />
-                    <SettingInput label="Kart 1 Açıklama" settingKey="home_target_1_desc" type="textarea" {...commonProps} />
-                    <hr style={{margin:'15px 0', borderTop:'1px dashed #ddd'}}/>
-                    <SettingInput label="Kart 2 Başlık" settingKey="home_target_2_title" {...commonProps} />
-                    <SettingInput label="Kart 2 Açıklama" settingKey="home_target_2_desc" type="textarea" {...commonProps} />
-                    <hr style={{margin:'15px 0', borderTop:'1px dashed #ddd'}}/>
-                    <SettingInput label="Kart 3 Başlık" settingKey="home_target_3_title" {...commonProps} />
-                    <SettingInput label="Kart 3 Açıklama" settingKey="home_target_3_desc" type="textarea" {...commonProps} />
-
-                    <h4 style={{margin:'40px 0 20px', color:'#555', borderLeft:'4px solid #003399', paddingLeft:'10px'}}>5. Dijital Ekosistem (Ağaç Kutuları)</h4>
-                    
-                    {ecoItems.map((item, index) => (
-                        <div key={index} style={{background:'#fcfcfc', padding:'20px', borderRadius:'8px', border:'1px solid #ddd', marginBottom:'15px', position:'relative'}}>
-                            <button onClick={() => {
-                                const newItems = ecoItems.filter((_, i) => i !== index);
-                                saveEcoItems(newItems);
-                            }} style={{position:'absolute', top:'20px', right:'20px', background:'#e74c3c', color:'white', border:'none', padding:'5px 10px', borderRadius:'5px', cursor:'pointer', fontSize:'0.8rem'}}>Kutuyu Sil</button>
-                            
-                            <strong style={{color:'#003399', display:'block', marginBottom:'10px'}}>Ağaç Kutusu {index + 1}</strong>
-                            <div style={{display:'flex', gap:'10px'}}>
-                                <input className="form-control" value={item.title} onChange={e => handleEcoChange(index, 'title', e.target.value)} placeholder="Kart Başlığı" style={{flex:1, padding:'10px', border:'1px solid #ddd', borderRadius:'5px'}} />
-                                <input className="form-control" value={item.icon} onChange={e => handleEcoChange(index, 'icon', e.target.value)} placeholder="İkon (Örn: fa-star)" style={{width:'150px', padding:'10px', border:'1px solid #ddd', borderRadius:'5px'}} />
-                            </div>
-                            <textarea className="form-control" value={item.desc} onChange={e => handleEcoChange(index, 'desc', e.target.value)} placeholder="Kart Açıklaması" rows="2" style={{width:'100%', padding:'10px', border:'1px solid #ddd', borderRadius:'5px', marginTop:'10px', boxSizing:'border-box'}}></textarea>
-                            
-                            <button onClick={() => saveEcoItems(ecoItems)} style={{background:'#003399', color:'white', padding:'8px 15px', border:'none', borderRadius:'5px', cursor:'pointer', marginTop:'10px', fontSize:'0.9rem'}}>Değişikliği Kaydet</button>
-                        </div>
-                    ))}
-                    
-                    <button onClick={() => {
-                        const newItems = [...ecoItems, { title: 'Yeni Kutu', desc: 'Açıklama metnini buraya giriniz...', icon: 'fa-star' }];
-                        saveEcoItems(newItems);
-                    }} style={{background:'#27ae60', color:'white', padding:'10px 20px', border:'none', borderRadius:'5px', cursor:'pointer', fontWeight:'bold'}}>+ Yeni Kutu Ekle</button>
-
-                    <h4 style={{margin:'40px 0 20px', color:'#555', borderLeft:'4px solid #003399', paddingLeft:'10px'}}>6. Etki Sayaçları</h4>
-                    <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:'15px'}}>
-                        <div>
-                            <SettingInput label="Sayaç 1 Değer" settingKey="home_counter_1_val" {...commonProps} />
-                            <SettingInput label="Sayaç 1 Etiket" settingKey="home_counter_1_label" {...commonProps} />
-                        </div>
-                        <div>
-                            <SettingInput label="Sayaç 2 Değer" settingKey="home_counter_2_val" {...commonProps} />
-                            <SettingInput label="Sayaç 2 Etiket" settingKey="home_counter_2_label" {...commonProps} />
-                        </div>
-                        <div>
-                            <SettingInput label="Sayaç 3 Değer" settingKey="home_counter_3_val" {...commonProps} />
-                            <SettingInput label="Sayaç 3 Etiket" settingKey="home_counter_3_label" {...commonProps} />
-                        </div>
-                        <div>
-                            <SettingInput label="Sayaç 4 Değer" settingKey="home_counter_4_val" {...commonProps} />
-                            <SettingInput label="Sayaç 4 Etiket" settingKey="home_counter_4_label" {...commonProps} />
-                        </div>
-                    </div>
-
-                    <h4 style={{margin:'40px 0 20px', color:'#555', borderLeft:'4px solid #003399', paddingLeft:'10px'}}>7. Alt Kapanış (CTA)</h4>
-                    <SettingInput label="Kapanış Başlığı" settingKey="home_cta_title" {...commonProps} />
-                    <SettingInput label="Kapanış Metni" settingKey="home_cta_text" type="textarea" {...commonProps} />
+    };
+    const ConfirmModal = ({ isOpen, message, onConfirm, onCancel }) => {
+    if (!isOpen) return null;
+    return (
+        <div style={{position:'fixed', top:0, left:0, width:'100%', height:'100%', background:'rgba(0,0,0,0.5)', zIndex:10000, display:'flex', alignItems:'center', justifyContent:'center', backdropFilter: 'blur(3px)'}}>
+            <div style={{background:'white', borderRadius:'12px', padding:'30px', width:'400px', maxWidth:'90%', textAlign:'center', boxShadow:'0 10px 40px rgba(0,0,0,0.3)'}}>
+                <h3 style={{margin:'0 0 10px', color:'#333'}}>Emin misiniz?</h3>
+                <p style={{color:'#666', marginBottom:'25px', lineHeight:'1.5'}}>{message}</p>
+                <div style={{display:'flex', gap:'10px', justifyContent:'center'}}>
+                    <button onClick={onCancel} className="btn" style={{background:'#f1f1f1', color:'#555', padding:'10px 25px', borderRadius:'30px', fontWeight:'600', border:'none', cursor:'pointer'}}>Vazgeç</button>
+                    <button onClick={onConfirm} className="btn" style={{background:'#e74c3c', color:'white', padding:'10px 25px', borderRadius:'30px', fontWeight:'600', border:'none', cursor:'pointer'}}>Evet, Sil</button>
                 </div>
-            )}
-
-            {activeTab === 'about' && (
-                <div className="fade-in">
-                    <h2 style={{marginBottom:'25px', color:'#003399'}}>Hakkında Sayfası</h2>
-                    <div style={{display:'flex', gap:'10px', marginBottom:'20px'}}>
-                        {['general','strategy','consortium','plan','impact','roadmap'].map(t => (
-                            <button key={t} onClick={()=>setAboutSubTab(t)} style={{padding:'5px 15px', borderRadius:'15px', border:'none', background:subTab===t?'#003399':'#eee', color:subTab===t?'white':'#555', cursor:'pointer', textTransform:'capitalize'}}>{t}</button>
+            </div>
+        </div>
+    );
+    };
+    const SettingInput = ({ label, settingKey, type="text", placeholder="", settings, handleSettingChange, updateSetting, uploadFile }) => {
+        const settingItem = settings.find(s => s.key === settingKey);
+        const val = settingItem ? settingItem.value : (DEFAULTS[settingKey] || ''); 
+        return (
+            <div style={{background:'#fff', padding:'15px', borderRadius:'8px', border:'1px solid #eee', marginBottom:'15px'}}>
+                <label style={{fontWeight:'bold', display:'block', marginBottom:'8px', color:'#333', fontSize:'0.9rem'}}>
+                    {label} <span style={{color:'#ccc', fontWeight:'normal', fontSize:'0.75rem', float:'right'}}>{settingKey}</span>
+                </label>
+                <div style={{display:'flex', gap:'10px', alignItems: 'flex-start'}}>
+                    {type === 'textarea' ? (
+                        <textarea className="form-control" value={val} onChange={(e) => handleSettingChange(settingKey, e.target.value)} placeholder={placeholder} rows="3" style={{marginBottom:0, flex: 1, padding:'10px', border:'1px solid #ddd', borderRadius:'5px', width:'100%'}}></textarea>
+                    ) : type === 'image' ? (
+                        <div style={{flex:1, display:'flex', gap:'10px', alignItems:'center'}}>
+                            <div style={{flex:1, display:'flex', alignItems:'center', background:'white', border:'1px solid #ddd', borderRadius:'5px', padding:'5px 10px', gap:'10px'}}>
+                                {val ? <img src={val} style={{height:'30px', width:'30px', objectFit:'cover', borderRadius:'4px'}} /> : <i className="fas fa-link" style={{color:'#999'}}></i>}
+                                <input type="text" className="form-control" value={val} onChange={(e) => handleSettingChange(settingKey, e.target.value)} placeholder="URL Yapıştırın (https://...)" style={{flex:1, marginBottom:0, padding:'5px', border:'none', outline:'none', fontSize:'0.9rem'}} />
+                            </div>
+                            <label style={{background:'#eef2f7', padding:'9px 13px', borderRadius:'5px', cursor:'pointer', fontSize:'1rem', border:'1px solid #ddd', color:'#333', marginBottom:0, display:'flex', alignItems:'center', justifyContent:'center'}}>
+                                <i className="fas fa-desktop"></i>
+                                <input type="file" hidden onChange={async (e) => {
+                                    const url = await uploadFile(e.target.files[0]);
+                                    if(url) { handleSettingChange(settingKey, url); updateSetting(settingKey, url); }
+                                }} />
+                            </label>
+                        </div>
+                    ) : (
+                        <input type="text" className="form-control" value={val} onChange={(e) => handleSettingChange(settingKey, e.target.value)} placeholder={placeholder} style={{marginBottom:0, flex: 1, padding:'10px', border:'1px solid #ddd', borderRadius:'5px', width:'100%'}} />
+                    )}
+                    <button onClick={() => updateSetting(settingKey, val)} style={{padding:'10px 20px', height:'auto', background:'#003399', color:'white', border:'none', borderRadius:'5px', cursor:'pointer', whiteSpace:'nowrap'}}>Kaydet</button>
+                </div>
+            </div>
+        );
+    };
+    const FileInput = ({ value, onChange, placeholder, uploadFile, showToast }) => {
+        const [uploading, setUploading] = useState(false);
+        const handleFileChange = async (e) => {
+        try {
+            setUploading(true);
+            const file = e.target.files[0];
+            if (!file) return;
+            const url = await uploadFile(file);
+            if (url) { onChange(url); if(showToast) showToast('Dosya başarıyla yüklendi.', 'success'); }
+        } catch (error) { if(showToast) showToast('Hata oluştu', 'error'); } finally { setUploading(false); }
+        };
+        return (
+        <div style={{display:'flex', gap:'10px', alignItems:'center', width:'100%'}}>
+            <div style={{flex:1, display:'flex', alignItems:'center', background:'white', border:'1px solid #ddd', borderRadius:'5px', padding:'5px 10px', gap:'10px'}}>
+                {value ? (
+                    <img src={value} alt="preview" onError={(e) => e.target.style.display='none'} style={{width:'30px', height:'30px', objectFit:'cover', borderRadius:'4px'}} />
+                ) : <i className="fas fa-link" style={{color:'#999'}}></i>}
+                <input type="text" className="form-control" placeholder={`${placeholder} URL'si yapıştırın`} value={value || ''} onChange={(e) => onChange(e.target.value)} style={{flex:1, marginBottom:0, border:'none', padding:'5px', outline:'none', fontSize:'0.9rem'}}/>
+            </div>
+            <div style={{position:'relative', overflow:'hidden', display:'inline-block'}}>
+                <button type="button" className="btn" style={{background: uploading ? '#ccc' : '#eef2f7', color:'#333', padding:'9px 13px', border:'1px solid #ddd', cursor:'pointer', borderRadius:'5px', display:'flex', alignItems:'center', justifyContent:'center', fontSize:'1rem'}}>
+                    {uploading ? <i className="fas fa-spinner fa-spin"></i> : <i className="fas fa-desktop"></i>}
+                </button>
+                <input type="file" onChange={handleFileChange} disabled={uploading} style={{position:'absolute', left:0, top:0, opacity:0, width:'100%', height:'100%', cursor:'pointer'}} />
+            </div>
+        </div>
+        );
+    };
+    export default function AdminPage() {
+    const router = useRouter();
+    const [activeTab, setActiveTab] = useState('home');
+    const [subTab, setAboutSubTab] = useState('general');
+    const [loading, setLoading] = useState(true);
+    const [settings, setSettings] = useState([]);
+    const [news, setNews] = useState([]);
+    const [activities, setActivities] = useState([]);
+    const [partners, setPartners] = useState([]);
+    const [results, setResults] = useState([]);
+    const [messages, setMessages] = useState([]); 
+    const [ecoItems, setEcoItems] = useState([]);
+    const [newsForm, setNewsForm] = useState({ id: null, title: '', summary: '', description: '', image_url: '', date: '' });
+    const [activityForm, setActivityForm] = useState({ id: null, title: '', type: 'Toplantı (TPM)', location: '', date: '', summary: '', description: '', image_url: '' });
+    const [partnerForm, setPartnerForm] = useState({ id: null, name: '', country: '', image_url: '', flag_url: '', website: '', description: '', role: 'Ortak' }); 
+    const [resultForm, setResultForm] = useState({ id: null, title: '', description: '', status: 'Planlanıyor', link: '', icon: 'file' });
+    const [isEditing, setIsEditing] = useState(false);
+    const [toast, setToast] = useState(null); 
+    const [modal, setModal] = useState({ isOpen: false, message: '', onConfirm: null });
+    const showToast = (message, type = 'success') => { setToast({ message, type }); setTimeout(() => setToast(null), 3000); };
+    const showConfirm = (message, onConfirm) => { setModal({ isOpen: true, message, onConfirm }); };
+    const closeConfirm = () => { setModal({ ...modal, isOpen: false }); };
+    const handleConfirmAction = () => { if (modal.onConfirm) modal.onConfirm(); closeConfirm(); };
+    useEffect(() => { checkSessionAndLoad(); }, []);
+    async function checkSessionAndLoad() {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) { router.push('/login'); return; }
+        await loadAllData();
+        setLoading(false);
+    }
+    async function loadAllData() {
+        const s = await supabase.from('settings').select('*').order('id');
+        const n = await supabase.from('news').select('*').order('date', {ascending:false});
+        const a = await supabase.from('activities').select('*').order('id', {ascending:false});
+        const p = await supabase.from('partners').select('*').order('id');
+        const r = await supabase.from('results').select('*').order('id');
+        const m = await supabase.from('contact_messages').select('*').order('created_at', {ascending:false}); 
+        setSettings(s.data || []); 
+        setNews(n.data || []); 
+        setActivities(a.data || []); 
+        setPartners(p.data || []); 
+        setResults(r.data || []); 
+        setMessages(m.data || []);
+        const ecoStr = s.data?.find(x => x.key === 'home_eco_list')?.value;
+        if (ecoStr) {
+            try { setEcoItems(JSON.parse(ecoStr)); } catch(e) { console.error(e); }
+        } else {
+            const defaultEco = [
+                { title: s.data?.find(x => x.key==='home_eco_1_title')?.value || DEFAULTS.home_eco_1_title, desc: s.data?.find(x => x.key==='home_eco_1_desc')?.value || DEFAULTS.home_eco_1_desc, icon: 'fa-mobile-screen' },
+                { title: s.data?.find(x => x.key==='home_eco_2_title')?.value || DEFAULTS.home_eco_2_title, desc: s.data?.find(x => x.key==='home_eco_2_desc')?.value || DEFAULTS.home_eco_2_desc, icon: 'fa-recycle' },
+                { title: s.data?.find(x => x.key==='home_eco_3_title')?.value || DEFAULTS.home_eco_3_title, desc: s.data?.find(x => x.key==='home_eco_3_desc')?.value || DEFAULTS.home_eco_3_desc, icon: 'fa-graduation-cap' },
+                { title: s.data?.find(x => x.key==='home_eco_4_title')?.value || DEFAULTS.home_eco_4_title, desc: s.data?.find(x => x.key==='home_eco_4_desc')?.value || DEFAULTS.home_eco_4_desc, icon: 'fa-leaf' }
+            ];
+            setEcoItems(defaultEco);
+        }
+    }
+    const handleEcoChange = (index, field, value) => {
+        const newItems = [...ecoItems];
+        newItems[index][field] = value;
+        setEcoItems(newItems);
+    };
+    const saveEcoItems = async (itemsToSave) => {
+        setEcoItems(itemsToSave);
+        const { error } = await supabase.from('settings').upsert({ key: 'home_eco_list', value: JSON.stringify(itemsToSave) }, { onConflict: 'key' });
+        if(error) showToast('Hata: ' + error.message, 'error'); 
+        else showToast('Ağaç kutuları güncellendi.', 'success');
+    };
+    async function uploadFile(file) {
+        if (!file) return null;
+        const fileName = `${Date.now()}_${Math.random().toString(36).substring(2)}.${file.name.split('.').pop()}`;
+        const { error } = await supabase.storage.from('images').upload(fileName, file);
+        if (error) { showToast('Yükleme Hatası: ' + error.message, 'error'); return null; }
+        const { data: { publicUrl } } = supabase.storage.from('images').getPublicUrl(fileName);
+        return publicUrl;
+    }
+    const handleSettingChange = (key, newValue) => {
+        setSettings(prev => {
+            const exists = prev.find(item => item.key === key);
+            if (exists) {
+                return prev.map(item => item.key === key ? { ...item, value: newValue } : item);
+            } else {
+                return [...prev, { key: key, value: newValue }];
+            }
+        });
+    };
+    async function updateSetting(key, value) {
+        const { error } = await supabase.from('settings').upsert({ key, value }, { onConflict: 'key' });
+        if(error) showToast('Hata: ' + error.message, 'error'); 
+        else showToast('Güncellendi.', 'success');
+    }
+    async function deleteItem(table, id) {
+        showConfirm('Silmek istediğinize emin misiniz?', async () => {
+            await supabase.from(table).delete().eq('id', id); loadAllData(); showToast('Silindi.', 'success');
+        });
+    }
+    async function saveItem(e, table, form, setForm) {
+        e.preventDefault();
+        const { id, ...data } = form;
+        let result;
+        if (id) {
+            result = await supabase.from(table).update(data).eq('id', id);
+        } else {
+            result = await supabase.from(table).insert([data]);
+        }
+        if (result && result.error) {
+            showToast('Veritabanı Hatası: ' + result.error.message, 'error');
+            return; 
+        }
+        setIsEditing(false); loadAllData(); showToast('Kaydedildi.', 'success');
+        if(table==='news') setNewsForm({ id: null, title: '', summary: '', description: '', image_url: '', date: '' });
+        if(table==='activities') setActivityForm({ id: null, title: '', type: 'Toplantı (TPM)', location: '', date: '', summary: '', description: '', image_url: '' });
+        if(table==='partners') setPartnerForm({ id: null, name: '', country: '', image_url: '', flag_url: '', website: '', description: '', role: 'Ortak' });
+        if(table==='results') setResultForm({ id: null, title: '', description: '', status: 'Planlanıyor', link: '', icon: 'file' });
+    }
+    function startEdit(item, type) {
+        setIsEditing(true);
+        if(type==='news') setNewsForm({
+            id: item.id,
+            title: item.title,
+            summary: item.summary || '',
+            description: item.description || '',
+            image_url: item.image_url || '',
+            date: item.date || ''
+        });
+        if(type==='activities') setActivityForm({
+            id: item.id,
+            title: item.title,
+            type: item.type || 'Toplantı (TPM)',
+            location: item.location || '',
+            date: item.date || '',
+            summary: item.summary || '',
+            description: item.description || '',
+            image_url: item.image_url || ''
+        });
+        if(type==='partners') setPartnerForm({
+            id: item.id, 
+            name: item.name, 
+            country: item.country, 
+            image_url: item.image_url, 
+            flag_url: item.flag_url,
+            website: item.website || '',
+            description: item.description || '',
+            role: item.role || 'Ortak'
+        });
+        if(type==='results') setResultForm(item);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+    const TabButton = ({ id, label, icon }) => (
+        <button onClick={() => { setActiveTab(id); setIsEditing(false); }} 
+            style={{padding:'12px 20px', cursor:'pointer', background: activeTab === id ? '#003399' : 'white', color: activeTab === id ? 'white' : '#555', border: '1px solid #ddd', borderRadius: '8px', textAlign:'left', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '10px', width:'100%', marginBottom:'5px'}}>
+            <i className={icon} style={{width:'20px', textAlign:'center'}}></i> {label}
+        </button>
+    );
+    if (loading) return <div style={{height:'100vh', display:'flex', alignItems:'center', justifyContent:'center', color:'#003399'}}>Yükleniyor...</div>;
+    const commonProps = { settings, handleSettingChange, updateSetting, uploadFile };
+    return (
+        <div className="container" style={{marginTop:'40px', marginBottom:'100px', maxWidth:'1200px', margin:'40px auto', padding:'0 20px'}}>
+        {toast && <ToastNotification message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
+        <ConfirmModal isOpen={modal.isOpen} message={modal.message} onConfirm={handleConfirmAction} onCancel={closeConfirm} />
+        <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:'30px', paddingBottom:'20px', borderBottom:'1px solid #eee'}}>
+            <h1 style={{fontSize:'1.8rem', color:'#333', margin:0}}>Yönetim Paneli</h1>
+            <button onClick={async () => { await supabase.auth.signOut(); router.push('/login'); }} style={{background:'#e74c3c', color:'white', padding:'10px 20px', border:'none', borderRadius:'30px', cursor:'pointer'}}>Çıkış Yap</button>
+        </div>
+        <div style={{display:'grid', gridTemplateColumns:'260px 1fr', gap:'30px'}}>
+            <div>
+                <TabButton id="messages" label={`Mesajlar (${messages.length})`} icon="fas fa-envelope" />
+                <TabButton id="home" label="Ana Sayfa" icon="fas fa-home" />
+                <TabButton id="about" label="Hakkında" icon="fas fa-info-circle" />
+                <TabButton id="news" label="Haberler" icon="fas fa-newspaper" />
+                <TabButton id="activities" label="Faaliyetler" icon="fas fa-calendar-check" /> 
+                <TabButton id="partners" label="Ortaklar" icon="fas fa-handshake" />
+                <TabButton id="results" label="Çıktılar" icon="fas fa-file-alt" />
+                <TabButton id="contact" label="İletişim" icon="fas fa-phone" />
+                <TabButton id="site" label="Site Ayarları (Header/Footer)" icon="fas fa-desktop" />
+            </div>
+            <div style={{background:'#fcfcfc', padding:'40px', borderRadius:'12px', border:'1px solid #eee'}}>
+                {activeTab === 'home' && (
+                    <div className="fade-in">
+                        <h2 style={{marginBottom:'25px', color:'#003399'}}>Ana Sayfa Düzenle</h2>
+                        <h4 style={{margin:'20px 0', color:'#555', borderLeft:'4px solid #003399', paddingLeft:'10px'}}>1. Hero (Kapak) Alanı</h4>
+                        <SettingInput label="Kapak Resmi" settingKey="hero_bg_image" type="image" {...commonProps} />
+                        <SettingInput label="Büyük Başlık" settingKey="hero_title" {...commonProps} />
+                        <SettingInput label="Açıklama Metni" settingKey="hero_desc" type="textarea" {...commonProps} />
+                        <h4 style={{margin:'40px 0 20px', color:'#555', borderLeft:'4px solid #003399', paddingLeft:'10px'}}>2. Özet Kartlar (4 Adet)</h4>
+                        <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:'15px'}}>
+                            <div style={{border:'1px solid #ddd', padding:'15px', borderRadius:'8px', background:'white'}}>
+                                <strong style={{color:'#003399'}}>Kart 1 (Süre)</strong>
+                                <SettingInput label="Değer" settingKey="home_summary_1_val" {...commonProps} />
+                                <SettingInput label="Etiket" settingKey="home_summary_1_label" {...commonProps} />
+                            </div>
+                            <div style={{border:'1px solid #ddd', padding:'15px', borderRadius:'8px', background:'white'}}>
+                                <strong style={{color:'#003399'}}>Kart 2 (Bütçe)</strong>
+                                <SettingInput label="Değer" settingKey="home_summary_2_val" {...commonProps} />
+                                <SettingInput label="Etiket" settingKey="home_summary_2_label" {...commonProps} />
+                            </div>
+                            <div style={{border:'1px solid #ddd', padding:'15px', borderRadius:'8px', background:'white'}}>
+                                <strong style={{color:'#003399'}}>Kart 3 (Program)</strong>
+                                <SettingInput label="Değer" settingKey="home_summary_3_val" {...commonProps} />
+                                <SettingInput label="Etiket" settingKey="home_summary_3_label" {...commonProps} />
+                            </div>
+                            <div style={{border:'1px solid #ddd', padding:'15px', borderRadius:'8px', background:'white'}}>
+                                <strong style={{color:'#003399'}}>Kart 4 (Kapsam)</strong>
+                                <SettingInput label="Değer" settingKey="home_summary_4_val" {...commonProps} />
+                                <SettingInput label="Etiket" settingKey="home_summary_4_label" {...commonProps} />
+                            </div>
+                        </div>
+                        <h4 style={{margin:'40px 0 20px', color:'#555', borderLeft:'4px solid #003399', paddingLeft:'10px'}}>3. Hakkında Bölümü</h4>
+                        <SettingInput label="Sol Taraf Görseli" settingKey="home_about_image" type="image" {...commonProps} />
+                        <SettingInput label="Bölüm Başlığı" settingKey="home_about_title" {...commonProps} />
+                        <SettingInput label="Bölüm Metni" settingKey="home_about_text" type="textarea" {...commonProps} />
+                        <h4 style={{margin:'40px 0 20px', color:'#555', borderLeft:'4px solid #003399', paddingLeft:'10px'}}>4. Hedef Kitle Kartları</h4>
+                        <SettingInput label="Kart 1 Başlık" settingKey="home_target_1_title" {...commonProps} />
+                        <SettingInput label="Kart 1 Açıklama" settingKey="home_target_1_desc" type="textarea" {...commonProps} />
+                        <hr style={{margin:'15px 0', borderTop:'1px dashed #ddd'}}/>
+                        <SettingInput label="Kart 2 Başlık" settingKey="home_target_2_title" {...commonProps} />
+                        <SettingInput label="Kart 2 Açıklama" settingKey="home_target_2_desc" type="textarea" {...commonProps} />
+                        <hr style={{margin:'15px 0', borderTop:'1px dashed #ddd'}}/>
+                        <SettingInput label="Kart 3 Başlık" settingKey="home_target_3_title" {...commonProps} />
+                        <SettingInput label="Kart 3 Açıklama" settingKey="home_target_3_desc" type="textarea" {...commonProps} />
+                        <h4 style={{margin:'40px 0 20px', color:'#555', borderLeft:'4px solid #003399', paddingLeft:'10px'}}>5. Dijital Ekosistem (Ağaç Kutuları)</h4>
+                        {ecoItems.map((item, index) => (
+                            <div key={index} style={{background:'#fcfcfc', padding:'20px', borderRadius:'8px', border:'1px solid #ddd', marginBottom:'15px', position:'relative'}}>
+                                <button onClick={() => {
+                                    const newItems = ecoItems.filter((_, i) => i !== index);
+                                    saveEcoItems(newItems);
+                                }} style={{position:'absolute', top:'20px', right:'20px', background:'#e74c3c', color:'white', border:'none', padding:'5px 10px', borderRadius:'5px', cursor:'pointer', fontSize:'0.8rem'}}>Kutuyu Sil</button>
+                                <strong style={{color:'#003399', display:'block', marginBottom:'10px'}}>Ağaç Kutusu {index + 1}</strong>
+                                <div style={{display:'flex', gap:'10px'}}>
+                                    <input className="form-control" value={item.title} onChange={e => handleEcoChange(index, 'title', e.target.value)} placeholder="Kart Başlığı" style={{flex:1, padding:'10px', border:'1px solid #ddd', borderRadius:'5px'}} />
+                                    <input className="form-control" value={item.icon} onChange={e => handleEcoChange(index, 'icon', e.target.value)} placeholder="İkon (Örn: fa-star)" style={{width:'150px', padding:'10px', border:'1px solid #ddd', borderRadius:'5px'}} />
+                                </div>
+                                <textarea className="form-control" value={item.desc} onChange={e => handleEcoChange(index, 'desc', e.target.value)} placeholder="Kart Açıklaması" rows="2" style={{width:'100%', padding:'10px', border:'1px solid #ddd', borderRadius:'5px', marginTop:'10px', boxSizing:'border-box'}}></textarea>
+                                <button onClick={() => saveEcoItems(ecoItems)} style={{background:'#003399', color:'white', padding:'8px 15px', border:'none', borderRadius:'5px', cursor:'pointer', marginTop:'10px', fontSize:'0.9rem'}}>Değişikliği Kaydet</button>
+                            </div>
+                        ))}
+                        <button onClick={() => {
+                            const newItems = [...ecoItems, { title: 'Yeni Kutu', desc: 'Açıklama metnini buraya giriniz...', icon: 'fa-star' }];
+                            saveEcoItems(newItems);
+                        }} style={{background:'#27ae60', color:'white', padding:'10px 20px', border:'none', borderRadius:'5px', cursor:'pointer', fontWeight:'bold'}}>+ Yeni Kutu Ekle</button>
+                        <h4 style={{margin:'40px 0 20px', color:'#555', borderLeft:'4px solid #003399', paddingLeft:'10px'}}>6. Etki Sayaçları</h4>
+                        <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:'15px'}}>
+                            <div>
+                                <SettingInput label="Sayaç 1 Değer" settingKey="home_counter_1_val" {...commonProps} />
+                                <SettingInput label="Sayaç 1 Etiket" settingKey="home_counter_1_label" {...commonProps} />
+                            </div>
+                            <div>
+                                <SettingInput label="Sayaç 2 Değer" settingKey="home_counter_2_val" {...commonProps} />
+                                <SettingInput label="Sayaç 2 Etiket" settingKey="home_counter_2_label" {...commonProps} />
+                            </div>
+                            <div>
+                                <SettingInput label="Sayaç 3 Değer" settingKey="home_counter_3_val" {...commonProps} />
+                                <SettingInput label="Sayaç 3 Etiket" settingKey="home_counter_3_label" {...commonProps} />
+                            </div>
+                            <div>
+                                <SettingInput label="Sayaç 4 Değer" settingKey="home_counter_4_val" {...commonProps} />
+                                <SettingInput label="Sayaç 4 Etiket" settingKey="home_counter_4_label" {...commonProps} />
+                            </div>
+                        </div>
+                        <h4 style={{margin:'40px 0 20px', color:'#555', borderLeft:'4px solid #003399', paddingLeft:'10px'}}>7. Alt Kapanış (CTA)</h4>
+                        <SettingInput label="Kapanış Başlığı" settingKey="home_cta_title" {...commonProps} />
+                        <SettingInput label="Kapanış Metni" settingKey="home_cta_text" type="textarea" {...commonProps} />
+                    </div>
+                )}
+                {activeTab === 'about' && (
+                    <div className="fade-in">
+                        <h2 style={{marginBottom:'25px', color:'#003399'}}>Hakkında Sayfası</h2>
+                        <div style={{display:'flex', gap:'10px', marginBottom:'20px'}}>
+                            {['general','strategy','consortium','plan','impact','roadmap'].map(t => (
+                                <button key={t} onClick={()=>setAboutSubTab(t)} style={{padding:'5px 15px', borderRadius:'15px', border:'none', background:subTab===t?'#003399':'#eee', color:subTab===t?'white':'#555', cursor:'pointer', textTransform:'capitalize'}}>{t}</button>
+                            ))}
+                        </div>
+                        {subTab === 'general' && (
+                            <>
+                                <SettingInput label="Proje Adı" settingKey="about_project_name" {...commonProps} />
+                                <SettingInput label="Proje Kısaltması" settingKey="about_project_code" {...commonProps} />
+                                <SettingInput label="Program" settingKey="about_project_program" {...commonProps} />
+                                <SettingInput label="Süresi" settingKey="about_project_duration" {...commonProps} />
+                                <SettingInput label="Bütçe" settingKey="about_project_budget" {...commonProps} />
+                            </>
+                        )}
+                        {subTab === 'strategy' && (
+                            <>
+                                <SettingInput label="Sayfa Başlığı" settingKey="about_strategy_title" {...commonProps} />
+                                <SettingInput label="Alt Başlık" settingKey="about_strategy_desc" type="textarea" {...commonProps} />
+                                <SettingInput label="Bölüm A Metni" settingKey="strategy_text_a_1" type="textarea" {...commonProps} />
+                                <SettingInput label="Bölüm B Metni" settingKey="strategy_text_b" type="textarea" {...commonProps} />
+                            </>
+                        )}
+                    </div>
+                )}
+                {activeTab === 'activities' && (
+                    <div className="fade-in">
+                        <h2 style={{marginBottom:'25px', color:'#003399'}}>Faaliyetler (Etkinlikler)</h2>
+                        <SettingInput label="Sayfa Başlık Resmi" settingKey="activities_header_bg" type="image" {...commonProps} />
+                        <div style={{background:'white', padding:'25px', margin:'20px 0', border:'1px solid #ddd', borderRadius:'8px'}}>
+                            <h4>{isEditing ? 'Faaliyeti Düzenle' : 'Yeni Faaliyet Ekle'}</h4>
+                            <form onSubmit={(e) => saveItem(e, 'activities', activityForm, setActivityForm)} style={{display:'grid', gap:'15px'}}>
+                                <input className="form-control" placeholder="Faaliyet Başlığı" value={activityForm.title} onChange={e=>setActivityForm({...activityForm, title:e.target.value})} required style={{padding:'10px', width:'100%', boxSizing:'border-box', border:'1px solid #ddd', borderRadius:'5px'}} />
+                                <div style={{display:'flex', gap:'10px'}}>
+                                    <input className="form-control" placeholder="Türü (Örn: Eğitim, Toplantı)" value={activityForm.type} onChange={e=>setActivityForm({...activityForm, type:e.target.value})} style={{padding:'10px', flex:1, border:'1px solid #ddd', borderRadius:'5px'}} />
+                                    <input 
+                                        type="date" 
+                                        className="form-control" 
+                                        title="Tarih Seçiniz"
+                                        value={activityForm.date} 
+                                        onChange={e=>setActivityForm({...activityForm, date:e.target.value})} 
+                                        style={{padding:'10px', flex:1, border:'1px solid #ddd', borderRadius:'5px', color: activityForm.date ? '#333' : '#999', fontFamily: 'inherit'}} 
+                                    />
+                                    <input className="form-control" placeholder="Konum (Örn: Çevrimiçi)" value={activityForm.location} onChange={e=>setActivityForm({...activityForm, location:e.target.value})} style={{padding:'10px', flex:1, border:'1px solid #ddd', borderRadius:'5px'}} />
+                                </div>
+                                <FileInput value={activityForm.image_url} onChange={url=>setActivityForm({...activityForm, image_url:url})} placeholder="Faaliyet Görseli (Tercihen Yatay)" uploadFile={uploadFile} showToast={showToast} />
+                                <textarea placeholder="Kısa Özet (Kartlarda görünecek, max 2-3 cümle)" value={activityForm.summary} onChange={e=>setActivityForm({...activityForm, summary:e.target.value})} rows="2" style={{padding:'10px', width:'100%', boxSizing:'border-box', border:'1px solid #ddd', borderRadius:'5px'}} />
+                                <textarea placeholder="Detaylı Açıklama (Faaliyetin kendi sayfasında görünecek uzun, detaylı metin)" value={activityForm.description} onChange={e=>setActivityForm({...activityForm, description:e.target.value})} rows="8" style={{padding:'10px', width:'100%', boxSizing:'border-box', border:'1px solid #ddd', borderRadius:'5px'}} />
+                                <button type="submit" style={{background:'#003399', color:'white', border:'none', padding:'12px', borderRadius:'5px', cursor:'pointer', fontWeight:'bold'}}>{isEditing?'Değişiklikleri Kaydet':'Faaliyeti Ekle'}</button>
+                            </form>
+                        </div>
+                        <h4 style={{marginTop:'30px'}}>Mevcut Faaliyetler</h4>
+                        {activities.map(item => (
+                            <div key={item.id} style={{background:'white', padding:'15px', margin:'10px 0', border:'1px solid #eee', display:'flex', justifyContent:'space-between', alignItems:'center', borderRadius:'8px'}}>
+                                <div>
+                                    <strong style={{display:'block', color:'#333'}}>{item.title}</strong>
+                                    <span style={{fontSize:'0.85rem', color:'#666'}}>{item.date} - {item.type}</span>
+                                </div>
+                                <div>
+                                    <button onClick={()=>startEdit(item, 'activities')} style={{marginRight:'15px', border:'none', background:'none', color:'#003399', cursor:'pointer', fontWeight:'bold'}}>Düzenle</button>
+                                    <button onClick={()=>deleteItem('activities', item.id)} style={{border:'none', background:'none', color:'#e74c3c', cursor:'pointer', fontWeight:'bold'}}>Sil</button>
+                                </div>
+                            </div>
                         ))}
                     </div>
-                    {subTab === 'general' && (
-                        <>
-                            <SettingInput label="Proje Adı" settingKey="about_project_name" {...commonProps} />
-                            <SettingInput label="Proje Kısaltması" settingKey="about_project_code" {...commonProps} />
-                            <SettingInput label="Program" settingKey="about_project_program" {...commonProps} />
-                            <SettingInput label="Süresi" settingKey="about_project_duration" {...commonProps} />
-                            <SettingInput label="Bütçe" settingKey="about_project_budget" {...commonProps} />
-                        </>
-                    )}
-                    {subTab === 'strategy' && (
-                        <>
-                            <SettingInput label="Sayfa Başlığı" settingKey="about_strategy_title" {...commonProps} />
-                            <SettingInput label="Alt Başlık" settingKey="about_strategy_desc" type="textarea" {...commonProps} />
-                            <SettingInput label="Bölüm A Metni" settingKey="strategy_text_a_1" type="textarea" {...commonProps} />
-                            <SettingInput label="Bölüm B Metni" settingKey="strategy_text_b" type="textarea" {...commonProps} />
-                        </>
-                    )}
-                </div>
-            )}
-
-            {/* ✨ FAALİYETLER SEKMESİ İÇERİĞİ ✨ */}
-           {/* ✨ FAALİYETLER SEKMESİ İÇERİĞİ ✨ */}
-{activeTab === 'activities' && (
-    <div className="fade-in">
-        <h2 style={{marginBottom:'25px', color:'#003399'}}>Faaliyetler (Etkinlikler)</h2>
-        <SettingInput label="Sayfa Başlık Resmi" settingKey="activities_header_bg" type="image" {...commonProps} />
-        
-        <div style={{background:'white', padding:'25px', margin:'20px 0', border:'1px solid #ddd', borderRadius:'8px'}}>
-            <h4>{isEditing ? 'Faaliyeti Düzenle' : 'Yeni Faaliyet Ekle'}</h4>
-            <form onSubmit={(e) => saveItem(e, 'activities', activityForm, setActivityForm)} style={{display:'grid', gap:'15px'}}>
-                
-                <input className="form-control" placeholder="Faaliyet Başlığı" value={activityForm.title} onChange={e=>setActivityForm({...activityForm, title:e.target.value})} required style={{padding:'10px', width:'100%', boxSizing:'border-box', border:'1px solid #ddd', borderRadius:'5px'}} />
-                
-                <div style={{display:'flex', gap:'10px'}}>
-                    <input className="form-control" placeholder="Türü (Örn: Eğitim, Toplantı)" value={activityForm.type} onChange={e=>setActivityForm({...activityForm, type:e.target.value})} style={{padding:'10px', flex:1, border:'1px solid #ddd', borderRadius:'5px'}} />
-                    
-                    {/* ✨ TARİH SEÇİCİ (DATE PICKER) EKLENDİ ✨ */}
-                    <input 
-                        type="date" 
-                        className="form-control" 
-                        title="Tarih Seçiniz"
-                        value={activityForm.date} 
-                        onChange={e=>setActivityForm({...activityForm, date:e.target.value})} 
-                        style={{padding:'10px', flex:1, border:'1px solid #ddd', borderRadius:'5px', color: activityForm.date ? '#333' : '#999', fontFamily: 'inherit'}} 
-                    />
-
-                    <input className="form-control" placeholder="Konum (Örn: Çevrimiçi)" value={activityForm.location} onChange={e=>setActivityForm({...activityForm, location:e.target.value})} style={{padding:'10px', flex:1, border:'1px solid #ddd', borderRadius:'5px'}} />
-                </div>
-
-                <FileInput value={activityForm.image_url} onChange={url=>setActivityForm({...activityForm, image_url:url})} placeholder="Faaliyet Görseli (Tercihen Yatay)" uploadFile={uploadFile} showToast={showToast} />
-                
-                <textarea placeholder="Kısa Özet (Kartlarda görünecek, max 2-3 cümle)" value={activityForm.summary} onChange={e=>setActivityForm({...activityForm, summary:e.target.value})} rows="2" style={{padding:'10px', width:'100%', boxSizing:'border-box', border:'1px solid #ddd', borderRadius:'5px'}} />
-                
-                <textarea placeholder="Detaylı Açıklama (Faaliyetin kendi sayfasında görünecek uzun, detaylı metin)" value={activityForm.description} onChange={e=>setActivityForm({...activityForm, description:e.target.value})} rows="8" style={{padding:'10px', width:'100%', boxSizing:'border-box', border:'1px solid #ddd', borderRadius:'5px'}} />
-                
-                <button type="submit" style={{background:'#003399', color:'white', border:'none', padding:'12px', borderRadius:'5px', cursor:'pointer', fontWeight:'bold'}}>{isEditing?'Değişiklikleri Kaydet':'Faaliyeti Ekle'}</button>
-            </form>
-        </div>
-
-        <h4 style={{marginTop:'30px'}}>Mevcut Faaliyetler</h4>
-        {activities.map(item => (
-            <div key={item.id} style={{background:'white', padding:'15px', margin:'10px 0', border:'1px solid #eee', display:'flex', justifyContent:'space-between', alignItems:'center', borderRadius:'8px'}}>
-                <div>
-                    <strong style={{display:'block', color:'#333'}}>{item.title}</strong>
-                    <span style={{fontSize:'0.85rem', color:'#666'}}>{item.date} - {item.type}</span>
-                </div>
-                <div>
-                    <button onClick={()=>startEdit(item, 'activities')} style={{marginRight:'15px', border:'none', background:'none', color:'#003399', cursor:'pointer', fontWeight:'bold'}}>Düzenle</button>
-                    <button onClick={()=>deleteItem('activities', item.id)} style={{border:'none', background:'none', color:'#e74c3c', cursor:'pointer', fontWeight:'bold'}}>Sil</button>
-                </div>
-            </div>
-        ))}
-    </div>
-)}
-
-            {activeTab === 'partners' && (
-                <div className="fade-in">
-                     <h2 style={{marginBottom:'25px', color:'#003399'}}>Ortaklar & Kurumlar</h2>
-                     <SettingInput label="Sayfa Başlığı" settingKey="partners_page_title" {...commonProps} />
-                     <SettingInput label="Başlık Resmi" settingKey="partners_header_bg" type="image" {...commonProps} />
-                     
-                     <div style={{background:'white', padding:'25px', marginBottom:'20px', border:'1px solid #ddd', borderRadius:'8px'}}>
-                        <h4>{isEditing ? 'Düzenle' : 'Yeni Ekle'}</h4>
-                        
-                        <form onSubmit={(e) => saveItem(e, 'partners', partnerForm, setPartnerForm)} style={{display:'grid', gap:'15px'}}>
-                            <input className="form-control" placeholder="Kurum Adı" value={partnerForm.name} onChange={e=>setPartnerForm({...partnerForm, name:e.target.value})} required style={{padding:'10px', width:'100%', boxSizing:'border-box', border:'1px solid #ddd', borderRadius:'5px'}} />
-                            
-                            <div style={{display:'flex', gap:'15px'}}>
-                                <select className="form-control" value={partnerForm.role} onChange={e=>setPartnerForm({...partnerForm, role:e.target.value})} style={{padding:'10px', flex:1, border:'1px solid #ddd', borderRadius:'5px'}}>
-                                    <option value="Ortak">Ortak</option>
-                                    <option value="Koordinatör">Koordinatör</option>
-                                </select>
-                                <input className="form-control" placeholder="Ülke" value={partnerForm.country} onChange={e=>setPartnerForm({...partnerForm, country:e.target.value})} required style={{padding:'10px', flex:1, boxSizing:'border-box', border:'1px solid #ddd', borderRadius:'5px'}} />
-                            </div>
-
-                            <textarea className="form-control" placeholder="Kurum Açıklaması (Detaylı Bilgi)" value={partnerForm.description} onChange={e=>setPartnerForm({...partnerForm, description:e.target.value})} rows="4" style={{padding:'10px', width:'100%', boxSizing:'border-box', border:'1px solid #ddd', borderRadius:'5px'}}></textarea>
-                            
-                            <input className="form-control" placeholder="Web Sitesi Bağlantısı (https://...)" value={partnerForm.website} onChange={e=>setPartnerForm({...partnerForm, website:e.target.value})} style={{padding:'10px', width:'100%', boxSizing:'border-box', border:'1px solid #ddd', borderRadius:'5px'}} />
-
-                            <FileInput value={partnerForm.image_url} onChange={(url) => setPartnerForm({...partnerForm, image_url: url})} placeholder="Kurum Logosu (Önerilen: Yatay, Şeffaf PNG)" uploadFile={uploadFile} showToast={showToast} />
-                            <FileInput value={partnerForm.flag_url} onChange={(url) => setPartnerForm({...partnerForm, flag_url: url})} placeholder="Ülke Bayrağı URL" uploadFile={uploadFile} showToast={showToast} />
-                            
-                            <button type="submit" style={{background:'#003399', color:'white', border:'none', padding:'12px', borderRadius:'5px', cursor:'pointer', fontWeight:'bold', marginTop:'10px'}}>{isEditing ? 'Ortak Bilgilerini Güncelle' : 'Yeni Ortak Ekle'}</button>
-                        </form>
-
-                     </div>
-                     
-                     {partners.map(item => (
-                        <div key={item.id} style={{background:'white', padding:'15px', margin:'10px 0', border:'1px solid #eee', display:'flex', justifyContent:'space-between', alignItems:'center', borderRadius:'8px'}}>
-                            <div>
-                                <strong style={{display:'block', color:'#333'}}>{item.name}</strong>
-                                <span style={{fontSize:'0.85rem', color:'#666'}}>{item.role} - {item.country}</span>
-                            </div>
-                            <div>
-                                <button onClick={()=>startEdit(item, 'partners')} style={{marginRight:'15px', border:'none', background:'none', color:'#003399', cursor:'pointer', fontWeight:'bold'}}>Düzenle</button>
-                                <button onClick={()=>deleteItem('partners', item.id)} style={{border:'none', background:'none', color:'#e74c3c', cursor:'pointer', fontWeight:'bold'}}>Sil</button>
-                            </div>
+                )}
+                {activeTab === 'partners' && (
+                    <div className="fade-in">
+                        <h2 style={{marginBottom:'25px', color:'#003399'}}>Ortaklar & Kurumlar</h2>
+                        <SettingInput label="Sayfa Başlığı" settingKey="partners_page_title" {...commonProps} />
+                        <SettingInput label="Başlık Resmi" settingKey="partners_header_bg" type="image" {...commonProps} />
+                        <div style={{background:'white', padding:'25px', marginBottom:'20px', border:'1px solid #ddd', borderRadius:'8px'}}>
+                            <h4>{isEditing ? 'Düzenle' : 'Yeni Ekle'}</h4>
+                            <form onSubmit={(e) => saveItem(e, 'partners', partnerForm, setPartnerForm)} style={{display:'grid', gap:'15px'}}>
+                                <input className="form-control" placeholder="Kurum Adı" value={partnerForm.name} onChange={e=>setPartnerForm({...partnerForm, name:e.target.value})} required style={{padding:'10px', width:'100%', boxSizing:'border-box', border:'1px solid #ddd', borderRadius:'5px'}} />
+                                <div style={{display:'flex', gap:'15px'}}>
+                                    <select className="form-control" value={partnerForm.role} onChange={e=>setPartnerForm({...partnerForm, role:e.target.value})} style={{padding:'10px', flex:1, border:'1px solid #ddd', borderRadius:'5px'}}>
+                                        <option value="Ortak">Ortak</option>
+                                        <option value="Koordinatör">Koordinatör</option>
+                                    </select>
+                                    <input className="form-control" placeholder="Ülke" value={partnerForm.country} onChange={e=>setPartnerForm({...partnerForm, country:e.target.value})} required style={{padding:'10px', flex:1, boxSizing:'border-box', border:'1px solid #ddd', borderRadius:'5px'}} />
+                                </div>
+                                <textarea className="form-control" placeholder="Kurum Açıklaması (Detaylı Bilgi)" value={partnerForm.description} onChange={e=>setPartnerForm({...partnerForm, description:e.target.value})} rows="4" style={{padding:'10px', width:'100%', boxSizing:'border-box', border:'1px solid #ddd', borderRadius:'5px'}}></textarea>
+                                <input className="form-control" placeholder="Web Sitesi Bağlantısı (https://...)" value={partnerForm.website} onChange={e=>setPartnerForm({...partnerForm, website:e.target.value})} style={{padding:'10px', width:'100%', boxSizing:'border-box', border:'1px solid #ddd', borderRadius:'5px'}} />
+                                <FileInput value={partnerForm.image_url} onChange={(url) => setPartnerForm({...partnerForm, image_url: url})} placeholder="Kurum Logosu (Önerilen: Yatay, Şeffaf PNG)" uploadFile={uploadFile} showToast={showToast} />
+                                <FileInput value={partnerForm.flag_url} onChange={(url) => setPartnerForm({...partnerForm, flag_url: url})} placeholder="Ülke Bayrağı URL" uploadFile={uploadFile} showToast={showToast} />
+                                <button type="submit" style={{background:'#003399', color:'white', border:'none', padding:'12px', borderRadius:'5px', cursor:'pointer', fontWeight:'bold', marginTop:'10px'}}>{isEditing ? 'Ortak Bilgilerini Güncelle' : 'Yeni Ortak Ekle'}</button>
+                            </form>
                         </div>
-                    ))}
-                </div>
-            )}
-
-           {activeTab === 'news' && (
-    <div className="fade-in">
-        <h2 style={{marginBottom:'25px', color:'#003399'}}>Haberler & Duyurular</h2>
-        <SettingInput label="Sayfa Başlık Resmi" settingKey="news_header_bg" type="image" {...commonProps} />
-        
-        <div style={{background:'white', padding:'25px', margin:'20px 0', border:'1px solid #ddd', borderRadius:'8px'}}>
-            <h4>{isEditing ? 'Haberi Düzenle' : 'Yeni Haber Ekle'}</h4>
-            <form onSubmit={(e) => saveItem(e, 'news', newsForm, setNewsForm)} style={{display:'grid', gap:'15px'}}>
-                
-                <div style={{display:'flex', gap:'10px'}}>
-                    <input className="form-control" placeholder="Haber Başlığı" value={newsForm.title} onChange={e=>setNewsForm({...newsForm, title:e.target.value})} required style={{padding:'10px', flex:2, boxSizing:'border-box', border:'1px solid #ddd', borderRadius:'5px'}} />
-                    
-                    {/* ✨ TARİH SEÇİCİ (DATE PICKER) ✨ */}
-                    <input 
-                        type="date" 
-                        className="form-control" 
-                        title="Haber Tarihi Seçiniz"
-                        value={newsForm.date || ''} 
-                        onChange={e=>setNewsForm({...newsForm, date:e.target.value})} 
-                        style={{padding:'10px', flex:1, border:'1px solid #ddd', borderRadius:'5px', color: newsForm.date ? '#333' : '#999', fontFamily: 'inherit'}} 
-                    />
-                </div>
-
-                <FileInput value={newsForm.image_url} onChange={url=>setNewsForm({...newsForm, image_url:url})} placeholder="Haber Görseli (Tercihen Yatay)" uploadFile={uploadFile} showToast={showToast} />
-                
-                <textarea placeholder="Kısa Özet (Ana sayfada ve kartlarda görünecek 2-3 cümle)" value={newsForm.summary} onChange={e=>setNewsForm({...newsForm, summary:e.target.value})} rows="2" style={{padding:'10px', width:'100%', boxSizing:'border-box', border:'1px solid #ddd', borderRadius:'5px'}} />
-                
-                {/* ✨ YENİ: HABER DETAY YAZISI ALANI ✨ */}
-                <textarea placeholder="Detaylı Haber İçeriği (Haberin kendi sayfasında okunacak uzun metin)" value={newsForm.description} onChange={e=>setNewsForm({...newsForm, description:e.target.value})} rows="8" style={{padding:'10px', width:'100%', boxSizing:'border-box', border:'1px solid #ddd', borderRadius:'5px'}} />
-                
-                <button type="submit" style={{background:'#003399', color:'white', border:'none', padding:'12px', borderRadius:'5px', cursor:'pointer', fontWeight:'bold'}}>
-                    {isEditing ? 'Değişiklikleri Kaydet' : 'Haberi Ekle'}
-                </button>
-            </form>
-        </div>
-
-        <h4 style={{marginTop:'30px'}}>Mevcut Haberler</h4>
-        {news.map(item => (
-            <div key={item.id} style={{background:'white', padding:'15px', margin:'10px 0', border:'1px solid #eee', display:'flex', justifyContent:'space-between', alignItems:'center', borderRadius:'8px'}}>
-                <div>
-                    <strong style={{display:'block', color:'#333'}}>{item.title}</strong>
-                    {item.date && <span style={{fontSize:'0.85rem', color:'#666'}}><i className="far fa-calendar-alt"></i> {item.date}</span>}
-                </div>
-                <div>
-                    <button onClick={()=>startEdit(item, 'news')} style={{marginRight:'15px', border:'none', background:'none', color:'#003399', cursor:'pointer', fontWeight:'bold'}}>Düzenle</button>
-                    <button onClick={()=>deleteItem('news', item.id)} style={{border:'none', background:'none', color:'#e74c3c', cursor:'pointer', fontWeight:'bold'}}>Sil</button>
-                </div>
-            </div>
-        ))}
-    </div>
-)}
-
-            {activeTab === 'results' && (
-                <div className="fade-in">
-                    <h2 style={{marginBottom:'25px', color:'#003399'}}>Çıktılar</h2>
-                    <SettingInput label="Sayfa Başlığı" settingKey="results_page_title" {...commonProps} />
-                    <SettingInput label="Başlık Resmi" settingKey="results_header_bg" type="image" {...commonProps} />
-                    <div style={{background:'white', padding:'25px', margin:'20px 0', border:'1px solid #ddd', borderRadius:'8px'}}>
-                        <form onSubmit={(e) => saveItem(e, 'results', resultForm, setResultForm)} style={{display:'grid', gap:'10px'}}>
-                            <input className="form-control" placeholder="Başlık" value={resultForm.title} onChange={e=>setResultForm({...resultForm, title:e.target.value})} required style={{padding:'10px', width:'100%', boxSizing:'border-box', border:'1px solid #ddd', borderRadius:'5px'}} />
-                            <FileInput value={resultForm.link} onChange={(url) => setResultForm({...resultForm, link: url})} placeholder="Dosya URL" uploadFile={uploadFile} showToast={showToast} />
-                            <button type="submit" style={{background:'#003399', color:'white', border:'none', padding:'10px', borderRadius:'5px', cursor:'pointer'}}>{isEditing ? 'Güncelle' : 'Ekle'}</button>
-                        </form>
+                        {partners.map(item => (
+                            <div key={item.id} style={{background:'white', padding:'15px', margin:'10px 0', border:'1px solid #eee', display:'flex', justifyContent:'space-between', alignItems:'center', borderRadius:'8px'}}>
+                                <div>
+                                    <strong style={{display:'block', color:'#333'}}>{item.name}</strong>
+                                    <span style={{fontSize:'0.85rem', color:'#666'}}>{item.role} - {item.country}</span>
+                                </div>
+                                <div>
+                                    <button onClick={()=>startEdit(item, 'partners')} style={{marginRight:'15px', border:'none', background:'none', color:'#003399', cursor:'pointer', fontWeight:'bold'}}>Düzenle</button>
+                                    <button onClick={()=>deleteItem('partners', item.id)} style={{border:'none', background:'none', color:'#e74c3c', cursor:'pointer', fontWeight:'bold'}}>Sil</button>
+                                </div>
+                            </div>
+                        ))}
                     </div>
-                    {results.map(item => (
-                        <div key={item.id} style={{background:'white', padding:'10px', margin:'5px 0', border:'1px solid #eee', display:'flex', justifyContent:'space-between'}}>
-                            {item.title}
-                            <button onClick={()=>deleteItem('results', item.id)} style={{border:'none', background:'none', color:'red', cursor:'pointer'}}>Sil</button>
+                )}
+                {activeTab === 'news' && (
+                    <div className="fade-in">
+                        <h2 style={{marginBottom:'25px', color:'#003399'}}>Haberler & Duyurular</h2>
+                        <SettingInput label="Sayfa Başlık Resmi" settingKey="news_header_bg" type="image" {...commonProps} />
+                        <div style={{background:'white', padding:'25px', margin:'20px 0', border:'1px solid #ddd', borderRadius:'8px'}}>
+                            <h4>{isEditing ? 'Haberi Düzenle' : 'Yeni Haber Ekle'}</h4>
+                            <form onSubmit={(e) => saveItem(e, 'news', newsForm, setNewsForm)} style={{display:'grid', gap:'15px'}}>
+                                <div style={{display:'flex', gap:'10px'}}>
+                                    <input className="form-control" placeholder="Haber Başlığı" value={newsForm.title} onChange={e=>setNewsForm({...newsForm, title:e.target.value})} required style={{padding:'10px', flex:2, boxSizing:'border-box', border:'1px solid #ddd', borderRadius:'5px'}} />
+                                    <input 
+                                        type="date" 
+                                        className="form-control" 
+                                        title="Haber Tarihi Seçiniz"
+                                        value={newsForm.date || ''} 
+                                        onChange={e=>setNewsForm({...newsForm, date:e.target.value})} 
+                                        style={{padding:'10px', flex:1, border:'1px solid #ddd', borderRadius:'5px', color: newsForm.date ? '#333' : '#999', fontFamily: 'inherit'}} 
+                                    />
+                                </div>
+                                <FileInput value={newsForm.image_url} onChange={url=>setNewsForm({...newsForm, image_url:url})} placeholder="Haber Görseli (Tercihen Yatay)" uploadFile={uploadFile} showToast={showToast} />
+                                <textarea placeholder="Kısa Özet (Ana sayfada ve kartlarda görünecek 2-3 cümle)" value={newsForm.summary} onChange={e=>setNewsForm({...newsForm, summary:e.target.value})} rows="2" style={{padding:'10px', width:'100%', boxSizing:'border-box', border:'1px solid #ddd', borderRadius:'5px'}} />
+                                <textarea placeholder="Detaylı Haber İçeriği (Haberin kendi sayfasında okunacak uzun metin)" value={newsForm.description} onChange={e=>setNewsForm({...newsForm, description:e.target.value})} rows="8" style={{padding:'10px', width:'100%', boxSizing:'border-box', border:'1px solid #ddd', borderRadius:'5px'}} />
+                                <button type="submit" style={{background:'#003399', color:'white', border:'none', padding:'12px', borderRadius:'5px', cursor:'pointer', fontWeight:'bold'}}>
+                                    {isEditing ? 'Değişiklikleri Kaydet' : 'Haberi Ekle'}
+                                </button>
+                            </form>
                         </div>
-                    ))}
-                </div>
-            )}
-
-            {activeTab === 'contact' && (
-                <div className="fade-in">
-                    <h2 style={{marginBottom:'25px', color:'#003399'}}>İletişim</h2>
-                    <SettingInput label="Sayfa Başlığı" settingKey="contact_page_title" {...commonProps} />
-                    <SettingInput label="Başlık Resmi" settingKey="contact_header_bg" type="image" {...commonProps} />
-                    <div style={{height:'20px'}}></div>
-                    <SettingInput label="E-posta" settingKey="contact_email" {...commonProps} />
-                    <SettingInput label="Telefon" settingKey="contact_phone" {...commonProps} />
-                    <SettingInput label="Adres" settingKey="contact_address" type="textarea" {...commonProps} />
-                </div>
-            )}
-
-            {activeTab === 'messages' && (
-                <div className="fade-in">
-                    <h2 style={{marginBottom:'25px', color:'#003399'}}>Mesajlar</h2>
-                    {messages.length === 0 ? <p style={{color:'#999'}}>Mesaj yok.</p> : messages.map(msg => (
-                        <div key={msg.id} style={{background:'white', padding:'15px', marginBottom:'10px', border:'1px solid #eee', borderRadius:'8px'}}>
-                            <div style={{fontWeight:'bold'}}>{msg.name} ({msg.email})</div>
-                            <div style={{margin:'5px 0', color:'#555'}}>{msg.message}</div>
-                            <button onClick={()=>deleteItem('contact_messages', msg.id)} style={{color:'red', border:'none', background:'none', cursor:'pointer', fontSize:'0.9rem'}}>Sil</button>
+                        <h4 style={{marginTop:'30px'}}>Mevcut Haberler</h4>
+                        {news.map(item => (
+                            <div key={item.id} style={{background:'white', padding:'15px', margin:'10px 0', border:'1px solid #eee', display:'flex', justifyContent:'space-between', alignItems:'center', borderRadius:'8px'}}>
+                                <div>
+                                    <strong style={{display:'block', color:'#333'}}>{item.title}</strong>
+                                    {item.date && <span style={{fontSize:'0.85rem', color:'#666'}}><i className="far fa-calendar-alt"></i> {item.date}</span>}
+                                </div>
+                                <div>
+                                    <button onClick={()=>startEdit(item, 'news')} style={{marginRight:'15px', border:'none', background:'none', color:'#003399', cursor:'pointer', fontWeight:'bold'}}>Düzenle</button>
+                                    <button onClick={()=>deleteItem('news', item.id)} style={{border:'none', background:'none', color:'#e74c3c', cursor:'pointer', fontWeight:'bold'}}>Sil</button>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                )}
+                {activeTab === 'results' && (
+                    <div className="fade-in">
+                        <h2 style={{marginBottom:'25px', color:'#003399'}}>Çıktılar</h2>
+                        <SettingInput label="Sayfa Başlığı" settingKey="results_page_title" {...commonProps} />
+                        <SettingInput label="Başlık Resmi" settingKey="results_header_bg" type="image" {...commonProps} />
+                        <div style={{background:'white', padding:'25px', margin:'20px 0', border:'1px solid #ddd', borderRadius:'8px'}}>
+                            <form onSubmit={(e) => saveItem(e, 'results', resultForm, setResultForm)} style={{display:'grid', gap:'10px'}}>
+                                <input className="form-control" placeholder="Başlık" value={resultForm.title} onChange={e=>setResultForm({...resultForm, title:e.target.value})} required style={{padding:'10px', width:'100%', boxSizing:'border-box', border:'1px solid #ddd', borderRadius:'5px'}} />
+                                <FileInput value={resultForm.link} onChange={(url) => setResultForm({...resultForm, link: url})} placeholder="Dosya URL" uploadFile={uploadFile} showToast={showToast} />
+                                <button type="submit" style={{background:'#003399', color:'white', border:'none', padding:'10px', borderRadius:'5px', cursor:'pointer'}}>{isEditing ? 'Güncelle' : 'Ekle'}</button>
+                            </form>
                         </div>
-                    ))}
-                </div>
-            )}
-
-            {activeTab === 'site' && (
-                <div className="fade-in">
-                    <h2 style={{marginBottom:'25px', color:'#003399'}}>Site Genel Ayarları</h2>
-                    
-                    <h4 style={{margin:'20px 0', color:'#555', borderLeft:'4px solid #003399', paddingLeft:'10px'}}>Üst Menü (Header)</h4>
-                    <SettingInput label="Logo Ana Metni" settingKey="header_logo_text" placeholder="DIGI-GREEN" {...commonProps} />
-                    <SettingInput label="Logo Vurgu Metni (Yeşil)" settingKey="header_logo_highlight" placeholder="FUTURE" {...commonProps} />
-
-                    <h4 style={{margin:'40px 0 20px', color:'#555', borderLeft:'4px solid #003399', paddingLeft:'10px'}}>Alt Bilgi (Footer)</h4>
-                    <SettingInput label="AB Logosu (Bayrak/Duyuru)" settingKey="footer_eu_logo" type="image" {...commonProps} />
-                    <SettingInput label="Footer Hakkında Metni" settingKey="footer_desc" type="textarea" {...commonProps} />
-                    <SettingInput label="Footer 2. Kolon Başlığı" settingKey="footer_column2_title" {...commonProps} />
-                    <SettingInput label="Footer 3. Kolon Başlığı" settingKey="footer_column3_title" {...commonProps} />
-                    <SettingInput label="AB Bilgilendirme Metni" settingKey="footer_disclaimer" type="textarea" {...commonProps} />
-
-                    <h4 style={{margin:'40px 0 20px', color:'#555', borderLeft:'4px solid #003399', paddingLeft:'10px'}}>Sosyal Medya Linkleri</h4>
-                    <SettingInput label="Facebook" settingKey="social_facebook" placeholder="https://facebook.com/..." {...commonProps} />
-                    <SettingInput label="Twitter (X)" settingKey="social_twitter" placeholder="https://twitter.com/..." {...commonProps} />
-                    <SettingInput label="Instagram" settingKey="social_instagram" placeholder="https://instagram.com/..." {...commonProps} />
-                </div>
-            )}
+                        {results.map(item => (
+                            <div key={item.id} style={{background:'white', padding:'10px', margin:'5px 0', border:'1px solid #eee', display:'flex', justifyContent:'space-between'}}>
+                                {item.title}
+                                <button onClick={()=>deleteItem('results', item.id)} style={{border:'none', background:'none', color:'red', cursor:'pointer'}}>Sil</button>
+                            </div>
+                        ))}
+                    </div>
+                )}
+                {activeTab === 'contact' && (
+                    <div className="fade-in">
+                        <h2 style={{marginBottom:'25px', color:'#003399'}}>İletişim</h2>
+                        <SettingInput label="Sayfa Başlığı" settingKey="contact_page_title" {...commonProps} />
+                        <SettingInput label="Başlık Resmi" settingKey="contact_header_bg" type="image" {...commonProps} />
+                        <div style={{height:'20px'}}></div>
+                        <SettingInput label="E-posta" settingKey="contact_email" {...commonProps} />
+                        <SettingInput label="Telefon" settingKey="contact_phone" {...commonProps} />
+                        <SettingInput label="Adres" settingKey="contact_address" type="textarea" {...commonProps} />
+                    </div>
+                )}
+                {activeTab === 'messages' && (
+                    <div className="fade-in">
+                        <h2 style={{marginBottom:'25px', color:'#003399'}}>Mesajlar</h2>
+                        {messages.length === 0 ? <p style={{color:'#999'}}>Mesaj yok.</p> : messages.map(msg => (
+                            <div key={msg.id} style={{background:'white', padding:'15px', marginBottom:'10px', border:'1px solid #eee', borderRadius:'8px'}}>
+                                <div style={{fontWeight:'bold'}}>{msg.name} ({msg.email})</div>
+                                <div style={{margin:'5px 0', color:'#555'}}>{msg.message}</div>
+                                <button onClick={()=>deleteItem('contact_messages', msg.id)} style={{color:'red', border:'none', background:'none', cursor:'pointer', fontSize:'0.9rem'}}>Sil</button>
+                            </div>
+                        ))}
+                    </div>
+                )}
+                {activeTab === 'site' && (
+                    <div className="fade-in">
+                        <h2 style={{marginBottom:'25px', color:'#003399'}}>Site Genel Ayarları</h2>
+                        <h4 style={{margin:'20px 0', color:'#555', borderLeft:'4px solid #003399', paddingLeft:'10px'}}>Üst Menü & Sekme (Header)</h4>
+                        <SettingInput label="Sekme Logosu (Favicon - Kare)" settingKey="site_favicon" type="image" {...commonProps} />
+                        <SettingInput label="Site Ana Logosu (Resim)" settingKey="header_logo_image" type="image" {...commonProps} />
+                        <SettingInput label="Logo Ana Metni (Resim Yoksa Görünür)" settingKey="header_logo_text" placeholder="DIGI-GREEN" {...commonProps} />
+                        <SettingInput label="Logo Vurgu Metni (Yeşil)" settingKey="header_logo_highlight" placeholder="FUTURE" {...commonProps} />
+                        <h4 style={{margin:'40px 0 20px', color:'#555', borderLeft:'4px solid #003399', paddingLeft:'10px'}}>Alt Bilgi (Footer)</h4>
+                        <SettingInput label="AB Logosu (Bayrak/Duyuru)" settingKey="footer_eu_logo" type="image" {...commonProps} />
+                        <SettingInput label="Footer Hakkında Metni" settingKey="footer_desc" type="textarea" {...commonProps} />
+                        <SettingInput label="Footer 2. Kolon Başlığı" settingKey="footer_column2_title" {...commonProps} />
+                        <SettingInput label="Footer 3. Kolon Başlığı" settingKey="footer_column3_title" {...commonProps} />
+                        <SettingInput label="AB Bilgilendirme Metni" settingKey="footer_disclaimer" type="textarea" {...commonProps} />
+                        <h4 style={{margin:'40px 0 20px', color:'#555', borderLeft:'4px solid #003399', paddingLeft:'10px'}}>Sosyal Medya Linkleri</h4>
+                        <SettingInput label="Facebook" settingKey="social_facebook" placeholder="https://facebook.com/..." {...commonProps} />
+                        <SettingInput label="Twitter (X)" settingKey="social_twitter" placeholder="https://twitter.com/..." {...commonProps} />
+                        <SettingInput label="Instagram" settingKey="social_instagram" placeholder="https://instagram.com/..." {...commonProps} />
+                    </div>
+                )}
+            </div>
         </div>
-      </div>
-    </div>
-  );
-}
+        </div>
+    );
+    }

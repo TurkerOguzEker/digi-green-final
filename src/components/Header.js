@@ -27,8 +27,6 @@ export default function Header() {
             name: 'Hakkında',
             path: '/about',
             subItems: [
-                // ✨ UX İYİLEŞTİRMESİ: Ana sayfayı menünün en üstüne de koyduk, tıklaması çok daha kolay!
-                { name: 'Genel Bakış (Hakkında)', path: '/about' },
                 { name: 'Stratejik Genel Bakış', path: '/about/strategy' },
                 { name: 'Konsorsiyum Ortaklıkları', path: '/about/consortium' },
                 { name: 'Proje Planı', path: '/about/plan' },
@@ -37,7 +35,6 @@ export default function Header() {
             ]
         },
         { name: 'Ortaklar', path: '/partners' },
-        /* YENİ EKLENEN FAALİYETLER LİNKİ */
         { name: 'Faaliyetler', path: '/activities' }, 
         { name: 'Dosyalar', path: '/results' },
         { name: 'Haberler', path: '/news' },
@@ -46,9 +43,17 @@ export default function Header() {
 
     return (
         <header className="site-header">
+            {/* ✨ EL YAZISI FONTU DEĞİŞTİRİLDİ (Google Fonts: Caveat) ✨ */}
+            <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@700&display=swap" rel="stylesheet" />
+
             <div className="container header-container">
-                {/* LOGO */}
+                {/* LOGO ALANI */}
                 <Link href="/" className="logo-area">
+                    {content.header_logo_image && (
+                        <img src={content.header_logo_image} alt="Site Logo" className="logo-image" />
+                    )}
+                    
+                    {/* Metni her zaman logonun yanına (veya tek başına) koy */}
                     <span className="logo-text">
                         {content.header_logo_text || 'DIGI-GREEN'} <span className="highlight-green">{content.header_logo_highlight || 'FUTURE'}</span>
                     </span>
@@ -116,12 +121,36 @@ export default function Header() {
                 width: 100%;
                 height: 100%;
             }
-            .logo-text {
-                font-size: 1.6rem;
-                font-weight: 800;
-                color: #003399;
+            
+            /* LOGO GÖRSEL STİLLERİ */
+            .logo-area {
+                display: flex;
+                align-items: center;
+                gap: 12px; 
                 text-decoration: none;
-                letter-spacing: -0.5px;
+                height: 100%;
+            }
+            .logo-image {
+                max-height: 45px; 
+                width: auto;
+                object-fit: contain;
+                transition: transform 0.3s ease;
+            }
+            .logo-image:hover {
+                transform: scale(1.05);
+            }
+            
+            /* ✨ CAVEAT METİN LOGO STİLLERİ ✨ */
+            .logo-text {
+                font-family: 'Caveat', cursive; /* Caveat fontu atandı */
+                font-size: 1.4rem; /* Caveat fontu yapı olarak biraz daha küçük göründüğü için boyutu büyütüldü */
+                font-weight: 700;
+                color: #106b21;
+                text-decoration: none;
+                letter-spacing: 1px;
+                display: flex;
+                align-items: center; 
+                gap: 8px;
             }
             .highlight-green { color: #27ae60; }
             
@@ -168,30 +197,25 @@ export default function Header() {
                 border-radius: 3px 3px 0 0;
             }
 
-            /* =====================================
-               ✨ GARANTİLİ MODERN DROPDOWN TASARIMI 
-               ===================================== */
+            /* MODERN DROPDOWN TASARIMI */
             .modern-dropdown-menu {
                 position: absolute !important;
-                top: 100% !important; /* Header hizasından kesinlikle aşağı iner */
-                left: -15px !important; /* Buton hizasına alır */
+                top: 100% !important;
+                left: -15px !important;
                 background: #ffffff !important;
                 box-shadow: 0 15px 40px rgba(0, 51, 153, 0.1) !important;
                 border-radius: 12px !important;
                 min-width: 270px !important;
-                display: none !important; /* Normalde gizli */
-                flex-direction: column !important; /* Yan yana dizilmeyi REDDEDER, alt alta zorlar */
+                display: none !important;
+                flex-direction: column !important;
                 padding: 12px !important;
                 margin: 0 !important;
                 z-index: 1001 !important;
                 border: 1px solid rgba(0, 51, 153, 0.05) !important;
             }
 
-            /* Tıklamayı Engelleyen Görünmez Köprüyü Tamamen Kaldırdık! */
-
-            /* HOVER ANİMASYONU */
             .nav-item-with-dropdown:hover .modern-dropdown-menu {
-                display: flex !important; /* Üzerine gelince görünür */
+                display: flex !important;
                 animation: slideUpFade 0.3s ease forwards;
             }
 
@@ -209,7 +233,6 @@ export default function Header() {
                 margin-bottom: 0 !important;
             }
 
-            /* LİNKLER */
             .modern-dropdown-link {
                 padding: 12px 16px !important;
                 display: flex !important;
@@ -225,9 +248,8 @@ export default function Header() {
                 width: 100% !important;
             }
 
-            /* Zarif Ok İkonu (FontAwesome) */
             .modern-dropdown-link::after {
-                content: '\\f105'; /* Çift ters slash Next.js içinde kaçış karakteridir */
+                content: '\\f105';
                 font-family: 'Font Awesome 5 Free';
                 font-weight: 900;
                 font-size: 0.9rem;
@@ -237,7 +259,6 @@ export default function Header() {
                 transition: all 0.3s ease;
             }
 
-            /* Linkin Üzerine Gelindiğinde */
             .modern-dropdown-link:hover {
                 background: #f4f7fa !important;
                 color: #003399 !important;
@@ -268,7 +289,6 @@ export default function Header() {
                 .active-nav-link::after, .nav-link:hover::after { display: none; }
                 .active-nav-link { background: #f0f4f8; color: #003399; }
 
-                /* Mobilde Dropdown Normal Liste Gibi Görünür */
                 .modern-dropdown-menu { 
                     position: static !important; box-shadow: none !important; padding: 5px 0 !important; 
                     background: #fcfcfc !important; display: none !important; width: 100% !important; 
@@ -290,6 +310,10 @@ export default function Header() {
                     background: #f1f1f1 !important; 
                     padding-left: 45px !important; 
                 }
+
+                /* Mobilde logo ve metin sığsın diye biraz küçültüyoruz */
+                .logo-text { font-size: 1.8rem; } /* Mobilde de biraz büyük kalsın */
+                .logo-image { max-height: 35px; }
             }
         `}</style>
         </header>

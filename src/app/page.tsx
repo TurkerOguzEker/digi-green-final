@@ -299,7 +299,7 @@ export default function Home() {
       </section>
 
       {/* 7️⃣ CTA */}
-      <section style={{background:'#003399', padding:'100px 0', textAlign:'center', color:'white', position:'relative', overflow:'hidden'}}>
+      <section style={{background:'#094cb1', padding:'100px 0', textAlign:'center', color:'white', position:'relative', overflow:'hidden'}}>
           <div className="reveal reveal-left" style={{position:'absolute', top:'-50px', left:'-50px', width:'200px', height:'200px', borderRadius:'50%', background:'rgba(255,255,255,0.1)'}}></div>
           <div className="reveal reveal-right" style={{position:'absolute', bottom:'-50px', right:'-50px', width:'300px', height:'300px', borderRadius:'50%', background:'rgba(255,255,255,0.05)'}}></div>
           <div className="container reveal reveal-up" style={{position:'relative', zIndex:5}}>

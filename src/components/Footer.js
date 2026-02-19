@@ -52,9 +52,9 @@ export default function Footer() {
               <div className="footer-col">
                   <h4>{content.footer_column2_title || 'Hızlı Menü'}</h4>
                   <ul className="footer-links">
-                      <li><Link href="/about">Proje Hakkında</Link></li>
+                      <li><Link href="/about">Hakkında</Link></li>
                       <li><Link href="/partners">Ortaklar</Link></li>
-                      <li><Link href="/results">Eğitim Materyalleri</Link></li>
+                      <li><Link href="/results">Dosyalar</Link></li>
                       <li><Link href="/contact">İletişim</Link></li>
                   </ul>
               </div>
@@ -70,7 +70,6 @@ export default function Footer() {
           
           <div className="eu-disclaimer-bar">
               <div className="container disclaimer-content">
-                  {/* ✨ LOGO ARTIK DİNAMİK: Admin panelden yüklenen resim gösterilecek, yüklenmediyse varsayılan çıkacak ✨ */}
                   <img 
                       src={content.footer_eu_logo || "/assets/images/eu-flag.png"} 
                       alt="EU Flag" 
@@ -84,8 +83,8 @@ export default function Footer() {
 
           <style jsx>{`
               .site-footer {
-                  background-color: #0b1e3b; 
-                  color: #dbe4ef;
+                  background-color: #1a5c38;
+                  color: #e8f5ee;
                   padding-top: 60px;
                   font-size: 0.95rem;
               }
@@ -96,25 +95,25 @@ export default function Footer() {
                   padding-bottom: 50px;
               }
               .footer-logo { font-size: 1.8rem; font-weight: 800; color: white; text-decoration: none; display: inline-block; margin-bottom: 15px; }
-              .highlight-green { color: #2ecc71; }
-              .footer-desc { line-height: 1.6; margin-bottom: 20px; max-width: 90%; opacity: 0.8; }
-              .footer-col h4 { color: white; margin-bottom: 20px; font-size: 1.2rem; border-left: 3px solid #2ecc71; padding-left: 15px; }
+              .highlight-green { color: #a8f0c0; }
+              .footer-desc { line-height: 1.6; margin-bottom: 20px; max-width: 90%; opacity: 0.85; }
+              .footer-col h4 { color: white; margin-bottom: 20px; font-size: 1.2rem; border-left: 3px solid #6ee8a2; padding-left: 15px; }
               .footer-links { list-style: none; padding: 0; }
               .footer-links li { margin-bottom: 10px; }
-              .footer-links li a { color: #dbe4ef; text-decoration: none; transition: 0.3s; }
-              .footer-links li a:hover { color: #2ecc71; padding-left: 5px; }
+              .footer-links li a { color: #d4f0de; text-decoration: none; transition: 0.3s; }
+              .footer-links li a:hover { color: #a8f0c0; padding-left: 5px; }
               .contact-list { list-style: none; padding: 0; }
               .contact-list li { margin-bottom: 12px; display: flex; align-items: center; gap: 10px; }
-              .contact-list i { color: #2ecc71; width: 20px; text-align: center; }
+              .contact-list i { color: #6ee8a2; width: 20px; text-align: center; }
               .social-icons { display: flex; gap: 12px; margin-top: 20px; }
               .social-link {
                   width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
-                  color: white; font-size: 1.1rem; transition: all 0.3s; background: rgba(255,255,255,0.1); 
-                  text-decoration: none; border: 1px solid rgba(255,255,255,0.2);
+                  color: white; font-size: 1.1rem; transition: all 0.3s; background: rgba(255,255,255,0.15); 
+                  text-decoration: none; border: 1px solid rgba(255,255,255,0.25);
               }
-              .social-link:hover { transform: translateY(-3px); background: #2ecc71; border-color: #2ecc71; box-shadow: 0 5px 15px rgba(46, 204, 113, 0.4); }
-              .eu-disclaimer-bar { background: #051021; padding: 20px 0; border-top: 1px solid rgba(255,255,255,0.05); }
-              .disclaimer-content { display: flex; align-items: center; justify-content: center; text-align: center; font-size: 0.85rem; color: #8fa1b8; }
+              .social-link:hover { transform: translateY(-3px); background: #27ae60; border-color: #27ae60; box-shadow: 0 5px 15px rgba(46, 204, 113, 0.4); }
+              .eu-disclaimer-bar { background: #0f3320; padding: 20px 0; border-top: 1px solid rgba(255,255,255,0.1); }
+              .disclaimer-content { display: flex; align-items: center; justify-content: center; text-align: center; font-size: 0.85rem; color: #9dcfae; }
               @media (max-width: 768px) {
                   .footer-grid { grid-template-columns: 1fr; gap: 30px; }
                   .disclaimer-content { flex-direction: column; gap: 10px; }
