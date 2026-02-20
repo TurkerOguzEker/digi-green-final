@@ -4,22 +4,26 @@ import { useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import { supabase } from '../lib/supabase';
 
-export default function Header() {
+export default function Header({ initialSettings = {} }) {
     const pathname = usePathname();
-    const [content, setContent] = useState({});
+    const [content, setContent] = useState(initialSettings);
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
     useEffect(() => {
-        async function fetchData() {
-            const { data } = await supabase.from('settings').select('*');
-            if (data) {
-                const map = {};
-                data.forEach(item => map[item.key] = item.value);
-                setContent(map);
+        if (Object.keys(initialSettings).length > 0) {
+            setContent(initialSettings);
+        } else {
+            async function fetchData() {
+                const { data } = await supabase.from('settings').select('*');
+                if (data) {
+                    const map = {};
+                    data.forEach(item => map[item.key] = item.value);
+                    setContent(map);
+                }
             }
+            fetchData();
         }
-        fetchData();
-    }, []);
+    }, [initialSettings]);
 
     const navItems = [
         { name: 'Ana Sayfa', path: '/' },
@@ -43,23 +47,43 @@ export default function Header() {
 
     return (
         <header className="site-header">
-            {/* ✨ EL YAZISI FONTU DEĞİŞTİRİLDİ (Google Fonts: Caveat) ✨ */}
             <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@700&display=swap" rel="stylesheet" />
 
             <div className="container header-container">
-                {/* LOGO ALANI */}
                 <Link href="/" className="logo-area">
                     {content.header_logo_image && (
-                        <img src={content.header_logo_image} alt="Site Logo" className="logo-image" />
+                        <img 
+                            src={content.header_logo_image} 
+                            alt="Site Logo" 
+                            className="logo-image"
+                            style={{ maxHeight: '45px', width: 'auto', objectFit: 'contain' }}
+                        />
                     )}
                     
-                    {/* Metni her zaman logonun yanına (veya tek başına) koy */}
-                    <span className="logo-text">
-                        {content.header_logo_text || 'DIGI-GREEN'} <span className="highlight-green">{content.header_logo_highlight || 'FUTURE'}</span>
+                    <span 
+                        className="logo-text" 
+                        style={{
+                            fontFamily: "'Caveat', cursive",
+                            fontSize: "1.4rem", 
+                            fontWeight: "700",
+                            color: "#106b21",   
+                            textDecoration: "none",
+                            letterSpacing: "1px",
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "8px"
+                        }}
+                    >
+                        {content.header_logo_text || 'DIGI-GREEN'} 
+                        <span 
+                            className="highlight-green" 
+                            style={{ color: "#27ae60" }}
+                        >
+                            {content.header_logo_highlight || 'FUTURE'}
+                        </span>
                     </span>
                 </Link>
 
-                {/* NAVİGASYON */}
                 <nav className={`main-nav ${mobileMenuOpen ? 'active' : ''}`}>
                     <ul className="nav-list">
                         {navItems.map((item) => (
@@ -70,10 +94,9 @@ export default function Header() {
                                     onClick={() => !item.subItems && setMobileMenuOpen(false)}
                                 >
                                     {item.name}
-                                    {item.subItems && <i className="fas fa-chevron-down" style={{ fontSize: '0.7rem', marginLeft: '6px', opacity: 0.6, marginTop: '2px' }}></i>}
+                                    {item.subItems && <i className="fas fa-chevron-down" style={{ fontSize: '0.7rem', marginLeft: '6px', opacity: pathname === item.path ? 1 : 0.6, marginTop: '2px' }}></i>}
                                 </Link>
 
-                                {/* MODERN DROPDOWN YAPI */}
                                 {item.subItems && (
                                     <ul className="modern-dropdown-menu">
                                         {item.subItems.map((subItem, index) => (
@@ -94,14 +117,12 @@ export default function Header() {
                     </ul>
                 </nav>
 
-                {/* MOBİL BUTON */}
                 <div className="mobile-menu-toggle" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
                     <i className={`fas ${mobileMenuOpen ? 'fa-times' : 'fa-bars'}`}></i>
                 </div>
             </div>
 
-            <style jsx>{`
-            /* HEADER GENEL */
+            <style dangerouslySetInnerHTML={{ __html: `
             .site-header {
                 position: fixed;
                 top: 0;
@@ -121,8 +142,6 @@ export default function Header() {
                 width: 100%;
                 height: 100%;
             }
-            
-            /* LOGO GÖRSEL STİLLERİ */
             .logo-area {
                 display: flex;
                 align-items: center;
@@ -131,33 +150,16 @@ export default function Header() {
                 height: 100%;
             }
             .logo-image {
-                max-height: 45px; 
-                width: auto;
-                object-fit: contain;
                 transition: transform 0.3s ease;
             }
             .logo-image:hover {
                 transform: scale(1.05);
             }
             
-            /* ✨ CAVEAT METİN LOGO STİLLERİ ✨ */
-            .logo-text {
-                font-family: 'Caveat', cursive; /* Caveat fontu atandı */
-                font-size: 1.4rem; /* Caveat fontu yapı olarak biraz daha küçük göründüğü için boyutu büyütüldü */
-                font-weight: 700;
-                color: #106b21;
-                text-decoration: none;
-                letter-spacing: 1px;
-                display: flex;
-                align-items: center; 
-                gap: 8px;
-            }
-            .highlight-green { color: #27ae60; }
-            
-            /* NAV LİSTESİ */
             .nav-list {
                 display: flex;
-                gap: 25px; 
+                flex-direction: row;
+                gap: 2px;
                 list-style: none;
                 margin: 0;
                 padding: 0;
@@ -177,27 +179,27 @@ export default function Header() {
                 text-decoration: none;
                 font-weight: 600;
                 font-size: 0.95rem;
-                padding: 0 5px; 
-                height: 100%; 
+                padding: 6px 10px;
+                border-radius: 50px; 
                 display: flex;
                 align-items: center;
-                transition: color 0.3s;
-                position: relative;
+                transition: all 0.3s ease;
             }
 
-            .nav-link:hover, .active-nav-link { color: #003399 !important; }
-            .active-nav-link::after, .nav-link:hover::after {
-                content: '';
-                position: absolute;
-                bottom: 0;
-                left: 0;
-                width: 100%;
-                height: 3px;
-                background: #27ae60;
-                border-radius: 3px 3px 0 0;
+            /* ✨ HOVER DÜZELTMESİ: Arka plan yeşil olurken yazı beyaza döner ✨ */
+            .nav-link:hover { 
+                background: #27ae60; 
+                color: #ffffff !important; 
+                box-shadow: 0 4px 10px rgba(39, 174, 96, 0.2);
             }
 
-            /* MODERN DROPDOWN TASARIMI */
+            /* Aktif Sayfa Görünümü */
+            .active-nav-link { 
+                background: #27ae60 !important; 
+                color: #ffffff !important; 
+                box-shadow: 0 4px 12px rgba(39, 174, 96, 0.3);
+            }
+
             .modern-dropdown-menu {
                 position: absolute !important;
                 top: 100% !important;
@@ -270,7 +272,6 @@ export default function Header() {
                 transform: translateX(0);
             }
 
-            /* --- MOBİL RESPONSIVE --- */
             @media (max-width: 992px) {
                 .mobile-menu-toggle { display: block !important; cursor: pointer; font-size: 1.5rem; color: #333; }
                 
@@ -280,15 +281,21 @@ export default function Header() {
                 }
                 .main-nav.active { display: block; }
                 
-                .nav-list { flex-direction: column; padding: 0; align-items: flex-start; gap: 0; height: auto; }
+                .nav-list { flex-direction: column; padding: 10px 0; align-items: flex-start; gap: 0; height: auto; }
                 
                 .nav-item, .nav-item-with-dropdown {
-                    width: 100%; height: auto; display: block; border-bottom: 1px solid #f5f5f5;
+                    width: 100%; height: auto; display: block;
                 }
-                .nav-link { width: 100%; height: 55px; padding: 0 20px; justify-content: space-between; }
-                .active-nav-link::after, .nav-link:hover::after { display: none; }
-                .active-nav-link { background: #f0f4f8; color: #003399; }
-
+                
+                .nav-link { 
+                    width: calc(100% - 20px); 
+                    height: 50px; 
+                    padding: 0 20px; 
+                    margin: 5px 10px;
+                    justify-content: space-between; 
+                    border-radius: 12px;
+                }
+                
                 .modern-dropdown-menu { 
                     position: static !important; box-shadow: none !important; padding: 5px 0 !important; 
                     background: #fcfcfc !important; display: none !important; width: 100% !important; 
@@ -310,12 +317,8 @@ export default function Header() {
                     background: #f1f1f1 !important; 
                     padding-left: 45px !important; 
                 }
-
-                /* Mobilde logo ve metin sığsın diye biraz küçültüyoruz */
-                .logo-text { font-size: 1.8rem; } /* Mobilde de biraz büyük kalsın */
-                .logo-image { max-height: 35px; }
             }
-        `}</style>
+            ` }} />
         </header>
     );
 }

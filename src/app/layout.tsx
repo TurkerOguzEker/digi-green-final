@@ -4,9 +4,11 @@ import Footer from '../components/Footer';
 import ScrollToTop from '../components/ScrollToTop';
 import { supabase } from '../lib/supabase'; 
 
-// ✨ STATİK YERİNE DİNAMİK METADATA EKLENDİ (Favicon için) ✨
+// ✨ NEXT.JS ÖNBELLEĞİNİ İPTAL EDİYORUZ (Her seferinde güncel veriyi çekecek)
+export const revalidate = 0;
+export const dynamic = 'force-dynamic';
+
 export async function generateMetadata() {
-  // Veritabanından ayarları çekiyoruz
   const { data } = await supabase.from('settings').select('*');
   const settings: Record<string, string> = {};
   
@@ -16,40 +18,56 @@ export async function generateMetadata() {
     });
   }
 
+  // Tarayıcı önbelleğini kırmak için URL sonuna rastgele zaman damgası ekliyoruz
+  const logoUrl = settings['header_logo_image'] 
+    ? `${settings['header_logo_image']}?v=${new Date().getTime()}` 
+    : '/favicon.ico';
+
   return {
     title: 'DIGI-GREEN FUTURE | Kapaklı Belediyesi',
     description: 'Vatandaş Odaklı Yerel Yeşil Gelecek için Dijital Dönüşüm - Erasmus+ Projesi',
     icons: {
-      // ✨ DEĞİŞİKLİK BURADA: Artık sekme logosu olarak doğrudan Header Logosu kullanılıyor ✨
-      icon: settings['header_logo_image'] || '/favicon.ico',
+      icon: logoUrl,
     },
   }
 }
 
-export default function RootLayout({
+// ✨ RootLayout async yapıldı! Ayarlar sayfa yüklenmeden ÖNCE burada çekilecek ✨
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
+  
+  // SUNUCU (SERVER) TARAFINDA SİTE AYARLARINI ÇEKİYORUZ
+  const { data } = await supabase.from('settings').select('*');
+  const settings: Record<string, string> = {};
+  if (data) {
+    data.forEach(item => {
+      settings[item.key] = item.value;
+    });
+  }
+
   return (
-    // suppressHydrationWarning buraya eklendi (HTML seviyesi eklentiler için)
     <html lang="tr" suppressHydrationWarning>
       <head>
-        {/* Google Fonts ve Font Awesome */}
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Montserrat:wght@600;700;800&display=swap" rel="stylesheet" />
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
-        {/* Proje CSS dosyası */}
         <link rel="stylesheet" href="/assets/css/main.css" />
       </head>
-      {/* suppressHydrationWarning buraya da eklendi (Body seviyesi eklentiler için) */}
       <body suppressHydrationWarning>
-        <Header />
+        
+        {/* ✨ TYPESCRIPT HATASINI SUSTURMAK İÇİN ts-ignore EKLENDİ ✨ */}
+        {/* @ts-ignore */}
+        <Header initialSettings={settings} />
+        
         <main style={{ minHeight: '80vh' }}>
             {children}
         </main>
-        <Footer />
-
-        {/* YUKARI ÇIK BUTONU */}
+        
+        {/* @ts-ignore */}
+        <Footer initialSettings={settings} />
+        
         <ScrollToTop />
       </body>
     </html>

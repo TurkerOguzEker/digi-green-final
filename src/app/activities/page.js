@@ -4,7 +4,7 @@ import { supabase } from '../../lib/supabase';
 import ScrollToTop from '../../components/ScrollToTop';
 import Link from 'next/link';
 
-// ─── SAYFA GENELİ ARKA PLAN AĞI ───────────────────────────────────────────────
+// ─── SAYFA GENELİ ARKA PLAN AĞI (YÜKSEK PERFORMANS) ───────────────────────────
 const NetworkBackground = () => {
   const canvasRef = useRef(null);
   useEffect(() => {
@@ -12,9 +12,16 @@ const NetworkBackground = () => {
     const ctx = canvas.getContext('2d');
     let animationFrameId;
     let particles = [];
+    let isVisible = true; // ✨ OPTİMİZASYON
 
     const resize = () => { canvas.width = window.innerWidth; canvas.height = window.innerHeight; };
     window.addEventListener('resize', resize); resize();
+
+    // ✨ OPTİMİZASYON: Ekranda görünmüyorsa animasyonu durdur
+    const observer = new IntersectionObserver(([entry]) => {
+      isVisible = entry.isIntersecting;
+    }, { threshold: 0 });
+    observer.observe(canvas);
 
     class Particle {
       constructor() {
@@ -37,28 +44,35 @@ const NetworkBackground = () => {
     for (let i = 0; i < 55; i++) particles.push(new Particle());
 
     const animate = () => {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      particles.forEach(p => { p.update(); p.draw(); });
-      for (let i = 0; i < particles.length; i++) {
-        for (let j = i + 1; j < particles.length; j++) {
-          const dx = particles[i].x - particles[j].x; const dy = particles[i].y - particles[j].y;
-          const dist = Math.sqrt(dx * dx + dy * dy);
-          if (dist < 140) {
-            ctx.beginPath();
-            ctx.strokeStyle = `rgba(52, 120, 80, ${0.25 * (1 - dist / 140)})`;
-            ctx.lineWidth = 0.8; ctx.moveTo(particles[i].x, particles[i].y); ctx.lineTo(particles[j].x, particles[j].y); ctx.stroke();
+      if (isVisible) {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        particles.forEach(p => { p.update(); p.draw(); });
+        for (let i = 0; i < particles.length; i++) {
+          for (let j = i + 1; j < particles.length; j++) {
+            const dx = particles[i].x - particles[j].x; const dy = particles[i].y - particles[j].y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            if (dist < 140) {
+              ctx.beginPath();
+              ctx.strokeStyle = `rgba(52, 120, 80, ${0.25 * (1 - dist / 140)})`;
+              ctx.lineWidth = 0.8; ctx.moveTo(particles[i].x, particles[i].y); ctx.lineTo(particles[j].x, particles[j].y); ctx.stroke();
+            }
           }
         }
       }
       animationFrameId = requestAnimationFrame(animate);
     };
     animate();
-    return () => { window.removeEventListener('resize', resize); cancelAnimationFrame(animationFrameId); };
+    
+    return () => { 
+      window.removeEventListener('resize', resize); 
+      cancelAnimationFrame(animationFrameId); 
+      observer.disconnect();
+    };
   }, []);
   return <canvas ref={canvasRef} style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', zIndex: -1, pointerEvents: 'none', background: '#f4f7f2' }} />;
 };
 
-// ─── YAPRAK ANİMASYONU ────────────────────────────────────────────────────────
+// ─── YAPRAK ANİMASYONU (500ms GECİKME + YÜKSEK PERFORMANS) ────────────────────
 const HeroAnimation = () => {
   const canvasRef = useRef(null);
 
@@ -68,46 +82,47 @@ const HeroAnimation = () => {
     let animationFrameId;
     let leaves = [];
     let windTime = 0;
+    
+    let spawnTimeouts = [];
+    let mainTimeout;
+    let isVisible = true; // ✨ OPTİMİZASYON
 
     const resize = () => {
-      canvas.width  = canvas.offsetWidth;
-      canvas.height = canvas.offsetHeight;
+      const parent = canvas.parentElement;
+      canvas.width  = parent ? parent.offsetWidth : window.innerWidth;
+      canvas.height = parent ? parent.offsetHeight : window.innerHeight;
     };
+    
+    resize();
     window.addEventListener('resize', resize);
-    setTimeout(resize, 80);
+
+    const observer = new IntersectionObserver(([entry]) => {
+      isVisible = entry.isIntersecting;
+    }, { threshold: 0 });
+    observer.observe(canvas);
 
     const turb = (x, y, t) =>
       Math.sin(x * 0.007 + t * 0.35) * 0.5 +
       Math.sin(y * 0.009 - t * 0.25) * 0.35 +
       Math.sin((x + y) * 0.004 + t * 0.45) * 0.3;
 
-    const drawLeaf = (s, v) => {
-      ctx.beginPath();
-      if (v === 0) {
-        ctx.moveTo(0, -s * 2.0);
-        ctx.bezierCurveTo( s*1.6, -s*1.0,  s*1.6,  s*1.0, 0,  s*2.0);
-        ctx.bezierCurveTo(-s*1.6,  s*1.0, -s*1.6, -s*1.0, 0, -s*2.0);
-      } else if (v === 1) {
-        ctx.moveTo(0, -s * 2.4);
-        ctx.bezierCurveTo( s*0.9, -s*0.8,  s*0.9,  s*0.8, 0,  s*2.4);
-        ctx.bezierCurveTo(-s*0.9,  s*0.8, -s*0.9, -s*0.8, 0, -s*2.4);
-      } else {
-        ctx.moveTo(0, -s * 1.5);
-        ctx.bezierCurveTo( s*1.8, -s*0.6,  s*1.8,  s*0.6, 0,  s*1.5);
-        ctx.bezierCurveTo(-s*1.8,  s*0.6, -s*1.8, -s*0.6, 0, -s*1.5);
-      }
-      ctx.closePath();
-    };
+    // ✨ OPTİMİZASYON: Şekilleri önbelleğe al
+    const leafPaths = [new Path2D(), new Path2D(), new Path2D()];
+    leafPaths[0].moveTo(0, -2.0); leafPaths[0].bezierCurveTo(1.6, -1.0, 1.6, 1.0, 0, 2.0); leafPaths[0].bezierCurveTo(-1.6, 1.0, -1.6, -1.0, 0, -2.0);
+    leafPaths[1].moveTo(0, -2.4); leafPaths[1].bezierCurveTo(0.9, -0.8, 0.9, 0.8, 0, 2.4); leafPaths[1].bezierCurveTo(-0.9, 0.8, -0.9, -0.8, 0, -2.4);
+    leafPaths[2].moveTo(0, -1.5); leafPaths[2].bezierCurveTo(1.8, -0.6, 1.8, 0.6, 0, 1.5); leafPaths[2].bezierCurveTo(-1.8, 0.6, -1.8, -0.6, 0, -1.5);
 
     class Leaf {
       reset() {
+        // ✨ Ekran DIŞINDAN doğma ayarı
         if (Math.random() < 0.75) {
-          this.x = canvas.width + 30 + Math.random() * 120;
+          this.x = canvas.width + 50 + Math.random() * 150; 
           this.y = Math.random() * canvas.height;
         } else {
           this.x = Math.random() * canvas.width;
-          this.y = -30;
+          this.y = -50 - Math.random() * 100; 
         }
+        
         this.size      = Math.random() * 5 + 4;
         this.windX     = -(0.25 + Math.random() * 0.45);
         this.gravY     = 0.06 + Math.random() * 0.08;
@@ -128,8 +143,6 @@ const HeroAnimation = () => {
       }
       constructor() {
         this.reset();
-        this.x = Math.random() * canvas.width;
-        this.y = Math.random() * canvas.height;
       }
       update(t) {
         const tx = turb(this.x + this.phaseX, this.y, t) * this.turbScale;
@@ -152,39 +165,57 @@ const HeroAnimation = () => {
         if (this.x < -60 || this.y > canvas.height + 60 || this.y < -100) this.reset();
       }
       draw() {
-        const s = this.size;
         ctx.save();
         ctx.translate(this.x, this.y);
         ctx.rotate(this.angle);
+        ctx.scale(this.size, this.size); 
         ctx.globalAlpha = this.opacity;
-        ctx.shadowBlur  = 7;
-        ctx.shadowColor = 'rgba(0,0,0,0.18)';
-        ctx.fillStyle   = `rgb(${this.r},${this.g},${this.b})`;
-        drawLeaf(s, this.variant);
-        ctx.fill();
+        
+        // ✨ OPTİMİZASYON: Fake Shadow
+        ctx.save();
+        ctx.translate(0.3, 0.6);
+        ctx.fillStyle = 'rgba(0,0,0,0.12)';
+        ctx.fill(leafPaths[this.variant]);
+        ctx.restore();
+
+        // Yaprak
+        ctx.fillStyle = `rgb(${this.r},${this.g},${this.b})`;
+        ctx.fill(leafPaths[this.variant]);
+
+        // Damarlar
         ctx.beginPath();
-        ctx.moveTo(0, -s * 1.8); ctx.lineTo(0, s * 1.8);
+        ctx.moveTo(0, -1.8); ctx.lineTo(0, 1.8);
         ctx.strokeStyle = 'rgba(255,255,255,0.22)';
-        ctx.lineWidth = 0.6; ctx.stroke();
-        const d = s * 0.9;
+        ctx.lineWidth = 0.6 / this.size; 
+        ctx.stroke();
+
         ctx.beginPath();
-        ctx.moveTo(0, -d); ctx.lineTo( s * 1.0, -d - s * 0.35);
-        ctx.moveTo(0,  0); ctx.lineTo( s * 1.1,  0  - s * 0.3);
-        ctx.moveTo(0, -d); ctx.lineTo(-s * 1.0, -d - s * 0.35);
-        ctx.moveTo(0,  0); ctx.lineTo(-s * 1.1,  0  - s * 0.3);
+        ctx.moveTo(0, -0.9); ctx.lineTo( 1.0, -1.25); ctx.moveTo(0,  0); ctx.lineTo( 1.1, -0.3);
+        ctx.moveTo(0, -0.9); ctx.lineTo(-1.0, -1.25); ctx.moveTo(0,  0); ctx.lineTo(-1.1, -0.3);
         ctx.strokeStyle = 'rgba(255,255,255,0.12)';
-        ctx.lineWidth = 0.4; ctx.stroke();
-        ctx.globalAlpha = 1;
+        ctx.lineWidth = 0.4 / this.size; 
+        ctx.stroke();
+        
         ctx.restore();
       }
     }
 
-    for (let i = 0; i < 20; i++) leaves.push(new Leaf());
+    // ✨ 500ms GECİKMELİ BAŞLANGIÇ ✨
+    mainTimeout = setTimeout(() => {
+      for (let i = 0; i < 20; i++) {
+        let t = setTimeout(() => {
+          leaves.push(new Leaf());
+        }, Math.random() * 3000); 
+        spawnTimeouts.push(t);
+      }
+    }, 500);
 
     const animate = () => {
-      windTime += 0.007;
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      leaves.forEach(l => { l.update(windTime); l.draw(); });
+      if (isVisible) {
+        windTime += 0.007;
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        leaves.forEach(l => { l.update(windTime); l.draw(); });
+      }
       animationFrameId = requestAnimationFrame(animate);
     };
     animate();
@@ -192,6 +223,9 @@ const HeroAnimation = () => {
     return () => {
       window.removeEventListener('resize', resize);
       cancelAnimationFrame(animationFrameId);
+      observer.disconnect();
+      clearTimeout(mainTimeout);
+      spawnTimeouts.forEach(t => clearTimeout(t));
     };
   }, []);
 
