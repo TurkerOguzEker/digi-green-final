@@ -16,7 +16,7 @@ export default function NewsDetailPage() {
       if (data) {
         setNewsItem(data);
       } else {
-        router.push('/news'); // Bulunamazsa geri gönder
+        router.push('/news');
       }
       setLoading(false);
     }
@@ -33,23 +33,13 @@ export default function NewsDetailPage() {
 
   if (!newsItem) return null;
 
-  // Tarihi şık göstermek için
-  const dateParts = newsItem.date ? newsItem.date.split(' ') : [];
-  const displayDate = dateParts.length >= 2 ? `${dateParts[0]} ${dateParts[1]}` : newsItem.date;
-
   return (
     <div className="news-detail-page">
-      {/* HERO ALANI (Resimli Başlık) */}
+      {/* HERO ALANI */}
       <section className="detail-hero" style={{ backgroundImage: `url(${newsItem.image_url || 'https://images.unsplash.com/photo-1504711434969-e33886168f5c?auto=format&fit=crop&q=80&w=1200'})` }}>
         <div className="hero-overlay"></div>
         <div className="container hero-content">
-          
-          <div className="meta-info">
-             {displayDate && (
-                 <span className="badge-date"><i className="far fa-calendar-alt"></i> {displayDate}</span>
-             )}
-          </div>
-
+          {/* Tarih bölümü buradan kaldırıldı */}
           <h1 className="news-title">{newsItem.title}</h1>
         </div>
       </section>
@@ -58,19 +48,45 @@ export default function NewsDetailPage() {
       <section className="detail-content-section">
         <div className="container" style={{ maxWidth: '900px' }}>
             
-          <Link href="/news" className="back-btn">
+          {/* ✨ BUTON BEYAZ KUTUNUN HEMEN ÜSTÜNDE ✨ */}
+          <Link 
+            href="/news" 
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '10px',
+              color: '#ffffff',
+              backgroundColor: '#27ae60',
+              textDecoration: 'none',
+              fontWeight: '700',
+              marginBottom: '25px', 
+              padding: '12px 25px',
+              borderRadius: '50px',
+              boxShadow: '0 4px 15px rgba(39, 174, 96, 0.4)',
+              transition: 'all 0.3s ease'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.transform = 'translateY(-3px)';
+              e.currentTarget.style.backgroundColor = '#1a5c38';
+              e.currentTarget.style.boxShadow = '0 8px 25px rgba(26, 92, 56, 0.5)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = 'translateY(0)';
+              e.currentTarget.style.backgroundColor = '#27ae60';
+              e.currentTarget.style.boxShadow = '0 4px 15px rgba(39, 174, 96, 0.4)';
+            }}
+          >
             <i className="fas fa-arrow-left"></i> Haberlere Dön
           </Link>
 
           <div className="content-box">
-             {/* Admin panelinden girilen uzun açıklama (paragraf boşluklarını korumak için) */}
              <div className="description-text">
                 {newsItem.description ? (
                    newsItem.description.split('\n').map((paragraph, idx) => (
                       <p key={idx}>{paragraph}</p>
                    ))
                 ) : (
-                   <p>{newsItem.summary}</p> /* Eğer detay girilmemişse özeti gösterir */
+                   <p>{newsItem.summary}</p>
                 )}
              </div>
           </div>
@@ -84,7 +100,6 @@ export default function NewsDetailPage() {
           font-family: 'Inter', sans-serif;
           padding-bottom: 80px;
         }
-
         .detail-hero {
           position: relative;
           height: 60vh;
@@ -95,45 +110,20 @@ export default function NewsDetailPage() {
           align-items: flex-end;
           padding-bottom: 60px;
         }
-
         .hero-overlay {
           position: absolute;
           inset: 0;
           background: linear-gradient(to top, rgba(13, 43, 31, 0.98) 0%, rgba(13, 43, 31, 0.5) 50%, rgba(0,0,0,0.15) 100%);
         }
-
         .container {
           width: 100%;
           padding: 0 24px;
           margin: 0 auto;
         }
-
         .hero-content {
           position: relative;
           z-index: 2;
         }
-
-        .meta-info {
-          display: flex;
-          gap: 15px;
-          margin-bottom: 20px;
-          flex-wrap: wrap;
-        }
-
-        .badge-date { 
-            background: rgba(255,255,255,0.15); 
-            backdrop-filter: blur(8px); 
-            color: white; 
-            padding: 6px 14px; 
-            border-radius: 50px; 
-            font-weight: 600; 
-            font-size: 0.85rem; 
-            display: flex; 
-            align-items: center; 
-            gap: 6px; 
-            border: 1px solid rgba(255,255,255,0.2); 
-        }
-
         .news-title {
           font-size: clamp(2rem, 4vw, 3.5rem);
           font-weight: 800;
@@ -142,46 +132,23 @@ export default function NewsDetailPage() {
           line-height: 1.2;
           text-shadow: 0 4px 20px rgba(0,0,0,0.5);
         }
-
         .detail-content-section {
-          padding: 0;
+          padding-top: 40px; 
           position: relative;
           z-index: 5;
-          margin-top: -40px;
         }
-
-        .back-btn {
-          display: inline-flex;
-          align-items: center;
-          gap: 10px;
-          color: #1a5c38;
-          text-decoration: none;
-          font-weight: 700;
-          margin-bottom: 30px;
-          transition: transform 0.3s;
-          background: white;
-          padding: 10px 20px;
-          border-radius: 50px;
-          box-shadow: 0 4px 15px rgba(0,0,0,0.05);
-          position: relative;
-          top: -20px;
-        }
-        .back-btn:hover { transform: translateX(-5px); color: #27ae60; }
-
         .content-box {
           background: white;
           padding: 50px;
           border-radius: 20px;
           box-shadow: 0 10px 40px rgba(0,0,0,0.05);
         }
-
         .description-text p {
           font-size: 1.15rem;
           line-height: 1.8;
           color: #444;
           margin-bottom: 25px;
         }
-
         @media (max-width: 768px) {
           .detail-hero { height: auto; padding-top: 150px; padding-bottom: 40px; }
           .content-box { padding: 30px 20px; }
