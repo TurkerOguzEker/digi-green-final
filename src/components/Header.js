@@ -1,6 +1,6 @@
 'use client';
 import Link from 'next/link';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { usePathname } from 'next/navigation';
 import { supabase } from '../lib/supabase';
 
@@ -8,6 +8,10 @@ export default function Header({ initialSettings = {} }) {
     const pathname = usePathname();
     const [content, setContent] = useState(initialSettings);
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+    
+    // Header'ın görünürlük durumu ve scroll takibi için
+    const [isVisible, setIsVisible] = useState(true);
+    const lastScrollY = useRef(0);
 
     useEffect(() => {
         if (Object.keys(initialSettings).length > 0) {
@@ -24,6 +28,33 @@ export default function Header({ initialSettings = {} }) {
             fetchData();
         }
     }, [initialSettings]);
+
+    // Scroll olayını dinleyen useEffect
+    useEffect(() => {
+        lastScrollY.current = window.scrollY;
+
+        const handleScroll = () => {
+            const currentScrollY = window.scrollY;
+
+            // Sayfanın en üstüne yakınken her zaman göster
+            if (currentScrollY < 50) {
+                setIsVisible(true);
+            } 
+            // Aşağı kaydırılıyorsa ve mobil menü açık değilse gizle
+            else if (currentScrollY > lastScrollY.current && !mobileMenuOpen) {
+                setIsVisible(false);
+            } 
+            // Yukarı kaydırılıyorsa göster
+            else if (currentScrollY < lastScrollY.current) {
+                setIsVisible(true);
+            }
+
+            lastScrollY.current = currentScrollY;
+        };
+
+        window.addEventListener('scroll', handleScroll, { passive: true });
+        return () => window.removeEventListener('scroll', handleScroll);
+    }, [mobileMenuOpen]);
 
     const navItems = [
         { name: 'Ana Sayfa', path: '/' },
@@ -46,7 +77,7 @@ export default function Header({ initialSettings = {} }) {
     ];
 
     return (
-        <header className="site-header">
+        <header className={`site-header ${isVisible ? '' : 'header-hidden'}`}>
             <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@700&display=swap" rel="stylesheet" />
 
             <div className="container header-container">
@@ -86,34 +117,47 @@ export default function Header({ initialSettings = {} }) {
 
                 <nav className={`main-nav ${mobileMenuOpen ? 'active' : ''}`}>
                     <ul className="nav-list">
-                        {navItems.map((item) => (
-                            <li key={item.path} className={item.subItems ? "nav-item-with-dropdown" : "nav-item"}>
-                                <Link
-                                    href={item.path}
-                                    className={`nav-link ${pathname === item.path ? 'active-nav-link' : ''}`}
-                                    onClick={() => !item.subItems && setMobileMenuOpen(false)}
-                                >
-                                    {item.name}
-                                    {item.subItems && <i className="fas fa-chevron-down" style={{ fontSize: '0.7rem', marginLeft: '6px', opacity: pathname === item.path ? 1 : 0.6, marginTop: '2px' }}></i>}
-                                </Link>
+                        {navItems.map((item) => {
+                            // Tam aktif mi yoksa alt sayfası mı aktif kontrolü
+                            const isExactActive = pathname === item.path;
+                            const isChildActive = item.subItems && pathname.startsWith(item.path + '/');
+                            
+                            let linkClass = "nav-link";
+                            if (isExactActive) linkClass += " active-nav-link";
+                            else if (isChildActive) linkClass += " active-parent-link";
 
-                                {item.subItems && (
-                                    <ul className="modern-dropdown-menu">
-                                        {item.subItems.map((subItem, index) => (
-                                            <li key={index} className="dropdown-list-item">
-                                                <Link
-                                                    href={subItem.path}
-                                                    className="modern-dropdown-link"
-                                                    onClick={() => setMobileMenuOpen(false)}
-                                                >
-                                                    {subItem.name}
-                                                </Link>
-                                            </li>
-                                        ))}
-                                    </ul>
-                                )}
-                            </li>
-                        ))}
+                            return (
+                                <li key={item.path} className={item.subItems ? "nav-item-with-dropdown" : "nav-item"}>
+                                    <Link
+                                        href={item.path}
+                                        className={linkClass}
+                                        onClick={() => !item.subItems && setMobileMenuOpen(false)}
+                                    >
+                                        {item.name}
+                                        {item.subItems && <i className="fas fa-chevron-down" style={{ fontSize: '0.7rem', marginLeft: '4px', opacity: (isExactActive || isChildActive) ? 1 : 0.6, marginTop: '2px' }}></i>}
+                                    </Link>
+
+                                    {item.subItems && (
+                                        <ul className="modern-dropdown-menu">
+                                            {item.subItems.map((subItem, index) => {
+                                                const isSubActive = pathname === subItem.path;
+                                                return (
+                                                    <li key={index} className="dropdown-list-item">
+                                                        <Link
+                                                            href={subItem.path}
+                                                            className={`modern-dropdown-link ${isSubActive ? 'active-sub-link' : ''}`}
+                                                            onClick={() => setMobileMenuOpen(false)}
+                                                        >
+                                                            {subItem.name}
+                                                        </Link>
+                                                    </li>
+                                                );
+                                            })}
+                                        </ul>
+                                    )}
+                                </li>
+                            );
+                        })}
                     </ul>
                 </nav>
 
@@ -134,7 +178,13 @@ export default function Header({ initialSettings = {} }) {
                 height: 80px; 
                 display: flex;
                 align-items: center;
+                transition: transform 0.4s cubic-bezier(0.25, 0.8, 0.25, 1), background-color 0.3s ease;
             }
+            
+            .header-hidden {
+                transform: translateY(-100%);
+            }
+
             .header-container {
                 display: flex;
                 justify-content: space-between;
@@ -159,7 +209,7 @@ export default function Header({ initialSettings = {} }) {
             .nav-list {
                 display: flex;
                 flex-direction: row;
-                gap: 2px;
+                gap: 1px; /* ✨ Menü elemanları arasındaki boşluk en aza indirildi */
                 list-style: none;
                 margin: 0;
                 padding: 0;
@@ -178,26 +228,37 @@ export default function Header({ initialSettings = {} }) {
                 color: #444;
                 text-decoration: none;
                 font-weight: 600;
-                font-size: 0.95rem;
-                padding: 6px 10px;
+                font-size: 0.92rem;
+                padding: 6px 10px; /* ✨ Buton padding'i kısıldı, butonlar yakınlaştı */
                 border-radius: 50px; 
                 display: flex;
                 align-items: center;
                 transition: all 0.3s ease;
+                border: 2px solid transparent; 
             }
 
-            /* ✨ HOVER DÜZELTMESİ: Arka plan yeşil olurken yazı beyaza döner ✨ */
             .nav-link:hover { 
                 background: #27ae60; 
                 color: #ffffff !important; 
                 box-shadow: 0 4px 10px rgba(39, 174, 96, 0.2);
             }
 
-            /* Aktif Sayfa Görünümü */
+            /* Tam Aktif Sayfa Görünümü */
             .active-nav-link { 
                 background: #27ae60 !important; 
                 color: #ffffff !important; 
                 box-shadow: 0 4px 12px rgba(39, 174, 96, 0.3);
+            }
+
+            /* Alt Sayfa Aktifken Ebeveyn (Hakkında) Çerçevesi */
+            .active-parent-link {
+                border-color: #27ae60;
+                color: #27ae60 !important;
+                background: rgba(39, 174, 96, 0.08);
+            }
+            .active-parent-link:hover {
+                background: #27ae60 !important;
+                color: #ffffff !important;
             }
 
             .modern-dropdown-menu {
@@ -263,11 +324,23 @@ export default function Header({ initialSettings = {} }) {
 
             .modern-dropdown-link:hover {
                 background: #f4f7fa !important;
-                color: #003399 !important;
+                color: #27ae60 !important;
                 padding-left: 22px !important;
             }
 
             .modern-dropdown-link:hover::after {
+                opacity: 1;
+                transform: translateX(0);
+            }
+
+            /* Seçili olan alt sekme için stil */
+            .modern-dropdown-link.active-sub-link {
+                background: #f4f7fa !important;
+                color: #27ae60 !important;
+                font-weight: 700 !important;
+                padding-left: 22px !important;
+            }
+            .modern-dropdown-link.active-sub-link::after {
                 opacity: 1;
                 transform: translateX(0);
             }
@@ -316,6 +389,12 @@ export default function Header({ initialSettings = {} }) {
                 .modern-dropdown-link:hover { 
                     background: #f1f1f1 !important; 
                     padding-left: 45px !important; 
+                }
+                
+                /* Mobilde alt link aktif stili */
+                .modern-dropdown-link.active-sub-link {
+                    background: #eef7f2 !important;
+                    padding-left: 45px !important;
                 }
             }
             ` }} />

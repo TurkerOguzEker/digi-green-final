@@ -133,11 +133,14 @@ const Icon = ({ name, color = 'currentColor', size = 20 }) => {
 const SectionCard = ({ accent, letter, title, children, reverse = false }) => (
   <div className={`sc reveal ${reverse ? 'reveal-right' : 'reveal-left'}`} style={{ '--accent': accent }}>
     <div className="sc-shine" />
+    
+    {/* YENİ: Kartın başından sonuna uzanan yatay, saydam renkli başlık şeridi */}
+    <div className="sc-head">
+      <span className="sc-badge">{letter}.</span>
+      <h2 className="sc-title">{title}</h2>
+    </div>
+
     <div className="sc-inner">
-      <div className="sc-head">
-        <span className="sc-badge">{letter}</span>
-        <h2 className="sc-title">{title}</h2>
-      </div>
       <div className="sc-body">{children}</div>
     </div>
   </div>
@@ -237,7 +240,7 @@ export default function StrategyPage() {
               <div className="stats reveal-up" style={{transitionDelay:'.1s'}}>
                 {[
                   {val:'24',   unit:'Ay',     label:'Proje Süresi'},
-                  {val:'250K', unit:'€',       label:'Toplam Hibe'},
+                  {val:'250K', unit:'€',      label:'Toplam Hibe'},
                   {val:'2025', unit:'→ 2027',  label:'Proje Dönemi'},
                   {val:'%29',  unit:'',        label:'Geri Dönüşüm Hedefi'},
                 ].map((s,i) => (
@@ -342,8 +345,8 @@ export default function StrategyPage() {
         /* HERO - Şeffaf ve Temiz Arka Plan */
         .hero{position:relative;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;overflow:hidden;background:transparent;}
         .hero-noise{position:absolute;inset:0;z-index:0;pointer-events:none;opacity:.3;
-          background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
-          background-size:256px;}
+        background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+        background-size:256px;}
         .orb{position:absolute;border-radius:50%;pointer-events:none;z-index:0;filter:blur(80px);opacity:.4;}
         .orb-1{width:500px;height:500px;top:-120px;left:-80px;background:radial-gradient(circle,rgba(39,174,96,.15) 0%,transparent 70%);animation:orbF 14s ease-in-out infinite;}
         .orb-2{width:400px;height:400px;bottom:-100px;right:-60px;background:radial-gradient(circle,rgba(201,168,76,.1) 0%,transparent 70%);animation:orbF 18s ease-in-out infinite reverse;}
@@ -386,11 +389,42 @@ export default function StrategyPage() {
         .sc:hover{transform:translateY(-4px);box-shadow:var(--shh);}
         .sc-shine{position:absolute;top:0;left:-120%;width:55%;height:100%;background:linear-gradient(to right,rgba(255,255,255,0),rgba(255,255,255,.32),rgba(255,255,255,0));transform:skewX(-20deg);transition:left .65s ease;pointer-events:none;z-index:1;}
         .sc:hover .sc-shine{left:180%;}
-        .sc-inner{padding:36px 42px;position:relative;z-index:2;}
+        
+        /* Kartın İçerik ve Başlık Değişiklikleri */
+        .sc-inner{padding:0 42px 36px;position:relative;z-index:2;}
 
-        .sc-head{display:flex;align-items:center;gap:16px;margin-bottom:24px;padding-bottom:20px;border-bottom:1px solid rgba(0,0,0,0.07);}
-        .sc-badge{width:46px;height:46px;border-radius:12px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:1.3rem;font-weight:800;color:#fff;background:var(--accent);box-shadow:0 4px 14px color-mix(in srgb,var(--accent) 38%,transparent);}
-        .sc-title{font-size:1.22rem;font-weight:800;color:var(--accent);line-height:1.28;}
+        /* ── BAŞLIK SATIRI (Yatay, saydam ve uzun şerit kutu) ── */
+        .sc-head {
+          display: flex;
+          align-items: center;
+          gap: 16px;
+          padding: 24px 42px;
+          margin-bottom: 28px;
+          background: color-mix(in srgb, var(--accent) 8%, transparent);
+          border-bottom: 1px solid color-mix(in srgb, var(--accent) 15%, transparent);
+          position: relative;
+          z-index: 2;
+        }
+        
+        /* ── BADGE TASARIMI ── */
+        .sc-badge {
+          width: 48px;
+          height: 48px;
+          border-radius: 12px;
+          flex-shrink: 0;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 1.3rem;
+          font-weight: 800;
+          color: var(--accent); 
+          background: color-mix(in srgb, var(--accent) 15%, transparent); 
+          position: relative;
+          letter-spacing: -1px;
+          padding-right: 2px;
+        }
+
+        .sc-title{font-size:1.22rem;font-weight:800;color:var(--accent);line-height:1.28; margin: 0;}
 
         .body-text{color:var(--ts);font-size:.97rem;line-height:1.82;margin-bottom:14px;}
 
@@ -434,7 +468,8 @@ export default function StrategyPage() {
         @media(max-width:900px){
           .stats{grid-template-columns:repeat(2,1fr);}
           .priority-grid{grid-template-columns:1fr 1fr;}
-          .sc-inner{padding:28px 26px;}
+          .sc-inner{padding:0 26px 28px;}
+          .sc-head{padding:20px 26px;}
           .reveal-left,.reveal-right{transform:translateY(28px)!important;}
         }
         @media(max-width:640px){
@@ -443,7 +478,9 @@ export default function StrategyPage() {
           .stats{grid-template-columns:1fr 1fr;gap:10px;}
           .pill-grid{grid-template-columns:1fr;}
           .priority-grid{grid-template-columns:1fr;}
-          .sc-inner{padding:22px 18px;}
+          .sc-inner{padding:0 18px 22px;}
+          .sc-head { padding: 18px; flex-direction: row; align-items: center; gap: 12px; }
+          .sc-badge { width: 40px; height: 40px; font-size: 1.1rem; }
           .scroll-btn{bottom:26px;}
         }
       `}</style>

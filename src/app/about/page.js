@@ -89,7 +89,7 @@ export default function AboutPage() {
     { value: 500, suffix: '+', label: 'Eğitilen Vatandaş' },
     { value: 29, suffix: '%', label: 'Geri Dönüşüm' },
     { value: 24, suffix: '', label: 'Proje Süresi (Ay)' },
-    { value: 5, suffix: '+', label: 'Ortak Ülke' },
+    { value: 3, suffix: '+', label: 'Ortak Ülke' },
   ];
 
   const tableRows = [

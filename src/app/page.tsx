@@ -96,7 +96,7 @@ export default function Home() {
   if (isLoading) {
     return (
       <div style={{height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#fff'}}>
-          <div style={{color: '#003399', fontSize: '1.2rem', fontWeight: 'bold', fontFamily: 'sans-serif'}}>Yükleniyor...</div>
+          <div style={{color: '#27ae60', fontSize: '1.2rem', fontWeight: 'bold', fontFamily: 'sans-serif'}}>Yükleniyor...</div>
       </div>
     );
   }
@@ -120,7 +120,7 @@ export default function Home() {
   return (
     <main>
       
-      {/* 1️⃣ HERO ALANI */}
+      {/* 1. HERO ALANI */}
       <section style={{position:'relative', height:'100vh', minHeight:'600px', display:'flex', alignItems:'center', justifyContent:'center', textAlign:'center', color:'white', overflow:'hidden'}}>
           <div className="hero-bg-animate" style={{position:'absolute', top:0, left:0, width:'100%', height:'100%', backgroundImage: content.hero_bg_image ? `url(${content.hero_bg_image})` : 'linear-gradient(135deg, #1B5E20 0%, #004d40 100%)', backgroundSize: 'cover', backgroundPosition: 'center', zIndex: -2}}></div>
           <div className="hero-overlay" style={{position:'absolute', top:0, left:0, width:'100%', height:'100%', zIndex:-1}}></div>
@@ -135,13 +135,13 @@ export default function Home() {
                   {content.hero_desc || 'Erasmus+ KA220-ADU kapsamında 3 ülkede sürdürülebilir ve dijital belediyecilik çözümleri geliştiriyoruz.'}
               </p>
               <div className="reveal reveal-up delay-300" style={{display:'flex', justifyContent:'center', gap:'20px', flexWrap:'wrap'}}>
-                  <a href="#solutions" className="btn-hero">📱 Mobil Çözümler</a>
-                  <a href="/about" className="btn-hero" style={{background:'white', color:'#003399', border:'2px solid white'}}>🌍 Projeyi İncele</a>
+                  <a href="#solutions" className="btn-hero"><i className="fas fa-mobile-alt" style={{marginRight:'8px'}}></i>Mobil Çözümler</a>
+                  <a href="/about" className="btn-hero" style={{background:'white', color:'#27ae60', border:'2px solid white'}}><i className="fas fa-leaf" style={{marginRight:'8px'}}></i>Projeyi İncele</a>
               </div>
           </div>
       </section>
 
-      {/* 2️⃣ HIZLI ÖZET KARTLARI */}
+      {/* 2. HIZLI ÖZET KARTLARI */}
       <section className="section-padding" style={{background:'transparent', marginTop:'-100px', position:'relative', zIndex:50, paddingBottom:'0'}}>
           <div className="container">
               <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(250px, 1fr))', gap:'25px'}}>
@@ -161,7 +161,7 @@ export default function Home() {
           </div>
       </section>
 
-      {/* 3️⃣ PROJE HAKKINDA */}
+      {/* 3. PROJE HAKKINDA */}
       <section className="section-padding" style={{background:'white', overflow:'hidden'}}>
           <div className="container" style={{display:'flex', flexWrap:'wrap', alignItems:'center', gap:'60px'}}>
               <div className="reveal reveal-left" style={{flex:'1 1 500px'}}>
@@ -169,7 +169,7 @@ export default function Home() {
                       <div style={{borderRadius:'20px', overflow:'hidden', boxShadow:'0 20px 50px rgba(0,0,0,0.1)', border:'10px solid white'}}>
                           <img src={content.home_about_image || "https://images.unsplash.com/photo-1497366216548-37526070297c?q=80&w=1000"} alt="About" style={{width:'100%', display:'block'}} />
                       </div>
-                      <div style={{position:'absolute', bottom:'0', right:'0', background:'#003399', color:'white', padding:'30px', borderRadius:'20px', boxShadow:'0 10px 30px rgba(0,51,153,0.3)', maxWidth:'250px'}}>
+                      <div style={{position:'absolute', bottom:'0', right:'0', background:'#27ae60', color:'white', padding:'30px', borderRadius:'20px', boxShadow:'0 10px 30px rgba(39, 174, 96, 0.3)', maxWidth:'250px'}}>
                           <h4 style={{fontSize:'1.2rem', fontWeight:'bold', margin:0, lineHeight:1.4}}>
                               {content.home_summary_1_val || '24 Ay'} Sürecek Dijital ve Yeşil Bir Yolculuk
                           </h4>
@@ -196,7 +196,7 @@ export default function Home() {
           </div>
       </section>
 
-      {/* 4️⃣ HEDEF KİTLE */}
+      {/* 4. HEDEF KİTLE */}
       <section className="section-padding" style={{background:'#f0f4f8'}}>
           <div className="container">
               <div className="reveal reveal-up" style={{textAlign:'center', marginBottom:'50px'}}>
@@ -221,7 +221,7 @@ export default function Home() {
           </div>
       </section>
 
-      {/* 5️⃣ DİJİTAL EKOSİSTEM (ZİG-ZAG & SLIDER) */}
+      {/* 5. DİJİTAL EKOSİSTEM (ZİG-ZAG & SLIDER) */}
       <section id="solutions" className="section-padding bg-grid-green" style={{backgroundColor:'#fff'}}>
           <div className="container">
               <div className="reveal reveal-up" style={{textAlign:'center', marginBottom:'40px'}}>
@@ -276,7 +276,7 @@ export default function Home() {
           </div>
       </section>
 
-      {/* 6️⃣ SAYAÇLAR */}
+      {/* 6. SAYAÇLAR */}
       <section className="section-padding" style={{background:'#1B5E20', color:'white'}}>
           <div className="container">
               <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(200px, 1fr))', gap:'40px', textAlign:'center'}}>
@@ -298,19 +298,19 @@ export default function Home() {
           </div>
       </section>
 
-      {/* 7️⃣ CTA */}
-      <section style={{background:'#094cb1', padding:'100px 0', textAlign:'center', color:'white', position:'relative', overflow:'hidden'}}>
-          <div className="reveal reveal-left" style={{position:'absolute', top:'-50px', left:'-50px', width:'200px', height:'200px', borderRadius:'50%', background:'rgba(255,255,255,0.1)'}}></div>
-          <div className="reveal reveal-right" style={{position:'absolute', bottom:'-50px', right:'-50px', width:'300px', height:'300px', borderRadius:'50%', background:'rgba(255,255,255,0.05)'}}></div>
+      {/* 7. CTA (Aydınlık Tema ve Kareli Arka Plan) */}
+      <section className="bg-grid-green" style={{backgroundColor:'#f4f7f2', padding:'100px 0', textAlign:'center', position:'relative', overflow:'hidden'}}>
+          <div className="reveal reveal-left" style={{position:'absolute', top:'-50px', left:'-50px', width:'200px', height:'200px', borderRadius:'50%', background:'rgba(39, 174, 96, 0.05)'}}></div>
+          <div className="reveal reveal-right" style={{position:'absolute', bottom:'-50px', right:'-50px', width:'300px', height:'300px', borderRadius:'50%', background:'rgba(39, 174, 96, 0.08)'}}></div>
           <div className="container reveal reveal-up" style={{position:'relative', zIndex:5}}>
-              <h2 style={{fontSize:'2.5rem', fontWeight:'800', marginBottom:'20px'}}>
+              <h2 style={{fontSize:'2.5rem', fontWeight:'800', marginBottom:'20px', color: '#1a1a1a'}}>
                   {content.home_cta_title || 'Geleceği Birlikte Tasarlayalım'}
               </h2>
-              <p style={{fontSize:'1.2rem', opacity:0.9, maxWidth:'700px', margin:'0 auto 40px'}}>
+              <p style={{fontSize:'1.2rem', color:'#666', maxWidth:'700px', margin:'0 auto 40px'}}>
                   {content.home_cta_text || 'DIGI-GREEN FUTURE projesi hakkında daha fazla bilgi almak, eğitimlere katılmak veya işbirliği yapmak için bize ulaşın.'}
               </p>
-              <a href="/contact" className="btn" style={{background:'white', color:'#003399', padding:'15px 45px', borderRadius:'50px', fontSize:'1.1rem', boxShadow:'0 10px 20px rgba(0,0,0,0.2)', fontWeight:'bold'}}>
-                  İletişime Geç <i className="fas fa-arrow-right"></i>
+              <a href="/contact" className="btn" style={{background:'#27ae60', color:'white', padding:'15px 45px', borderRadius:'50px', fontSize:'1.1rem', boxShadow:'0 10px 20px rgba(39, 174, 96, 0.3)', fontWeight:'bold', display:'inline-block', textDecoration:'none'}}>
+                  İletişime Geç <i className="fas fa-arrow-right" style={{marginLeft:'8px'}}></i>
               </a>
           </div>
       </section>

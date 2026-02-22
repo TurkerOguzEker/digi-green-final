@@ -71,13 +71,14 @@ export default function Footer() {
           <div className="eu-disclaimer-bar">
               <div className="container disclaimer-content">
                   <img 
-                      src={content.footer_eu_logo || "/assets/images/eu-flag.png"} 
+                      src={content.footer_eu_logo || "/assets/css/images/eu-flag.png.png"} 
                       alt="EU Flag" 
-                      width="50" 
-                      style={{marginRight:'15px', objectFit: 'contain'}} 
+                      className="eu-flag-img"
                       onError={(e)=>e.target.style.display='none'} 
                   />
-                  <p>{content.footer_disclaimer || 'Co-funded by the European Union.'}</p>
+                  <p className="eu-text">
+                      {content.footer_disclaimer || 'Funded by the European Union. Views and opinions expressed are however those of the author(s) only and do not necessarily reflect those of the European Union.'}
+                  </p>
               </div>
           </div>
 
@@ -112,11 +113,37 @@ export default function Footer() {
                   text-decoration: none; border: 1px solid rgba(255,255,255,0.25);
               }
               .social-link:hover { transform: translateY(-3px); background: #27ae60; border-color: #27ae60; box-shadow: 0 5px 15px rgba(46, 204, 113, 0.4); }
-              .eu-disclaimer-bar { background: #0f3320; padding: 20px 0; border-top: 1px solid rgba(255,255,255,0.1); }
-              .disclaimer-content { display: flex; align-items: center; justify-content: center; text-align: center; font-size: 0.85rem; color: #9dcfae; }
+              
+              /* AB BİLGİLENDİRME ÇUBUĞU */
+              .eu-disclaimer-bar { 
+                  background: #0f3320; 
+                  padding: 20px 0; 
+                  border-top: 1px solid rgba(255,255,255,0.1); 
+              }
+              .disclaimer-content { 
+                  display: flex; 
+                  align-items: center; 
+                  justify-content: flex-start; /* Sola dayalı */
+                  gap: 20px;
+              }
+              .eu-flag-img {
+                  height: 45px;
+                  width: auto;
+                  object-fit: contain;
+                  flex-shrink: 0;
+              }
+              .eu-text {
+                  margin: 0;
+                  font-size: 0.85rem; 
+                  color: #9dcfae;
+                  line-height: 1.5;
+                  text-align: left;
+              }
+
               @media (max-width: 768px) {
                   .footer-grid { grid-template-columns: 1fr; gap: 30px; }
-                  .disclaimer-content { flex-direction: column; gap: 10px; }
+                  .disclaimer-content { flex-direction: column; text-align: center; justify-content: center; }
+                  .eu-text { text-align: center; }
               }
           `}</style>
       </footer>
