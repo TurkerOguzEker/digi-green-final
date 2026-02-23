@@ -2,6 +2,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { supabase } from '../lib/supabase';
 
+// ... (Arayüz tanımları ve Counter bileşeni aynı - DEĞİŞİKLİK YOK) ...
 interface ContentState { [key: string]: string; }
 interface CounterProps { end: number; duration?: number; }
 
@@ -47,7 +48,11 @@ export default function Home() {
   const [content, setContent] = useState<ContentState>({});
   const [isLoading, setIsLoading] = useState(true);
   const sliderRef = useRef<HTMLDivElement>(null);
+  
+  // Slider İçin State
+  const [currentSlide, setCurrentSlide] = useState(0);
 
+  // 1. Veri Çekme Hook'u
   useEffect(() => {
     async function fetchSettings() {
       try {
@@ -66,6 +71,7 @@ export default function Home() {
     fetchSettings();
   }, []);
 
+  // 2. Scroll Animasyonları Hook'u
   useEffect(() => {
     if (isLoading) return;
     const handleScroll = () => {
@@ -81,6 +87,45 @@ export default function Home() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, [isLoading]);
 
+  // Veri Hazırlıkları
+  let ecoList: Array<{title: string, desc: string, icon: string}> = [];
+  if (content.home_eco_list) {
+      try { ecoList = JSON.parse(content.home_eco_list); } catch(e) { console.error(e); }
+  }
+  
+  if (ecoList.length === 0) {
+      ecoList = [
+          { title: content.home_eco_1_title || 'Mobil Entegrasyon', desc: content.home_eco_1_desc || 'Vatandaşların belediye hizmetlerine tek tıkla ulaşmasını sağlayan entegre mobil çözüm.', icon: 'fa-mobile-screen' },
+          { title: content.home_eco_2_title || 'Yapay Zeka & Atık', desc: content.home_eco_2_desc || 'Yapay zeka destekli sensörler ile atık yönetimini optimize ediyor, doluluk oranlarına göre rota planlıyoruz.', icon: 'fa-recycle' },
+          { title: content.home_eco_3_title || 'E-Öğrenme', desc: content.home_eco_3_desc || 'İklim değişikliği ve dijital okuryazarlık üzerine modüler çevrimiçi eğitimler.', icon: 'fa-graduation-cap' },
+          { title: content.home_eco_4_title || 'Sürdürülebilir Etki', desc: content.home_eco_4_desc || 'Karbon ayak izini azaltan ve kopyalanabilir dijital modeller.', icon: 'fa-leaf' }
+      ];
+  }
+
+  let heroImages: string[] = [];
+  if (content.hero_slider_images) {
+      try { heroImages = JSON.parse(content.hero_slider_images); } catch(e) { console.error(e); }
+  } else if (content.hero_bg_image) {
+      heroImages = [content.hero_bg_image];
+  }
+
+  // 3. Slider Otomatik Geçiş Efekti Hook'u
+  useEffect(() => {
+      if (heroImages.length <= 1) return;
+      const interval = setInterval(() => {
+          setCurrentSlide((prev) => (prev + 1) % heroImages.length);
+      }, 15000); 
+      return () => clearInterval(interval);
+  }, [heroImages.length]);
+
+  if (isLoading) {
+    return (
+      <div style={{height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#fff'}}>
+          <div style={{color: '#27ae60', fontSize: '1.2rem', fontWeight: 'bold', fontFamily: 'sans-serif'}}>Yükleniyor...</div>
+      </div>
+    );
+  }
+
   const scrollSlider = (direction: 'left' | 'right') => {
     if (sliderRef.current) {
         const { current } = sliderRef;
@@ -93,37 +138,47 @@ export default function Home() {
     }
   };
 
-  if (isLoading) {
-    return (
-      <div style={{height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#fff'}}>
-          <div style={{color: '#27ae60', fontSize: '1.2rem', fontWeight: 'bold', fontFamily: 'sans-serif'}}>Yükleniyor...</div>
-      </div>
-    );
-  }
-
-  // ✨ YENİ: Veritabanından gelen dinamik listeyi hazırla
-  let ecoList: Array<{title: string, desc: string, icon: string}> = [];
-  if (content.home_eco_list) {
-      try { ecoList = JSON.parse(content.home_eco_list); } catch(e) { console.error(e); }
-  }
-  
-  // Eğer henüz Admin'den yeni formatta kaydedilmediyse, sitenizin bozulmaması için eskisini kullan
-  if (ecoList.length === 0) {
-      ecoList = [
-          { title: content.home_eco_1_title || 'Mobil Entegrasyon', desc: content.home_eco_1_desc || 'Vatandaşların belediye hizmetlerine tek tıkla ulaşmasını sağlayan entegre mobil çözüm.', icon: 'fa-mobile-screen' },
-          { title: content.home_eco_2_title || 'Yapay Zeka & Atık', desc: content.home_eco_2_desc || 'Yapay zeka destekli sensörler ile atık yönetimini optimize ediyor, doluluk oranlarına göre rota planlıyoruz.', icon: 'fa-recycle' },
-          { title: content.home_eco_3_title || 'E-Öğrenme', desc: content.home_eco_3_desc || 'İklim değişikliği ve dijital okuryazarlık üzerine modüler çevrimiçi eğitimler.', icon: 'fa-graduation-cap' },
-          { title: content.home_eco_4_title || 'Sürdürülebilir Etki', desc: content.home_eco_4_desc || 'Karbon ayak izini azaltan ve kopyalanabilir dijital modeller.', icon: 'fa-leaf' }
-      ];
-  }
-
   return (
     <main>
       
-      {/* 1. HERO ALANI */}
+      {/* 1. HERO ALANI (SLIDER) */}
       <section style={{position:'relative', height:'100vh', minHeight:'600px', display:'flex', alignItems:'center', justifyContent:'center', textAlign:'center', color:'white', overflow:'hidden'}}>
-          <div className="hero-bg-animate" style={{position:'absolute', top:0, left:0, width:'100%', height:'100%', backgroundImage: content.hero_bg_image ? `url(${content.hero_bg_image})` : 'linear-gradient(135deg, #1B5E20 0%, #004d40 100%)', backgroundSize: 'cover', backgroundPosition: 'center', zIndex: -2}}></div>
-          <div className="hero-overlay" style={{position:'absolute', top:0, left:0, width:'100%', height:'100%', zIndex:-1}}></div>
+
+          {heroImages.length > 0 ? (
+              heroImages.map((img, index) => {
+                  const isActive = currentSlide === index;
+                  
+                  const transitionStyle = isActive
+                    ? 'opacity 3s ease-in-out 0s, transform 30s linear 0s'
+                    : 'opacity 3s ease-in-out 0s, transform 0.1s linear 3.2s';
+
+                  return (
+                    <div 
+                        key={index} 
+                        style={{
+                            position: 'absolute', 
+                            top: 0, 
+                            left: 0, 
+                            width: '100%', 
+                            height: '100%', 
+                            backgroundImage: `url(${img})`, 
+                            backgroundSize: 'cover', 
+                            backgroundPosition: 'center', 
+                            zIndex: isActive ? -1 : -2,
+                            opacity: isActive ? 1 : 0,
+                            transform: isActive ? 'scale(1.15)' : 'scale(1)',
+                            transition: transitionStyle,
+                            willChange: 'opacity, transform',
+                        }}
+                    ></div>
+                  );
+              })
+          ) : (
+              <div style={{position:'absolute', top:0, left:0, width:'100%', height:'100%', backgroundImage: 'linear-gradient(135deg, #1B5E20 0%, #004d40 100%)', zIndex: -2}}></div>
+          )}
+
+          <div className="hero-overlay" style={{position:'absolute', top:0, left:0, width:'100%', height:'100%', zIndex:-1, background: 'rgba(0,0,0,0.4)'}}></div>
+          
           <div className="container" style={{zIndex:10}}>
               <span className="reveal reveal-up" style={{background:'rgba(255,255,255,0.15)', backdropFilter:'blur(5px)', padding:'10px 25px', borderRadius:'50px', border:'1px solid rgba(255,255,255,0.3)', fontWeight:'bold', letterSpacing:'2px', textTransform:'uppercase', fontSize:'0.9rem'}}>
                   {content.header_logo_text || 'DIGI-GREEN FUTURE'}
@@ -243,10 +298,8 @@ export default function Home() {
                   <i className="fas fa-chevron-left"></i>
               </button>
               
-              {/* ✨ YENİ: DİNAMİK LİSTE (Admin panelinde kaç kutu varsa otomatik çeker ve renkleri döngüyle atar) */}
               <div className="tree-scroll" ref={sliderRef}>
                   {ecoList.map((item, index) => {
-                      // Kutu renklerini otomatik sırayla atamak için dizi:
                       const colors = ['#003399', '#27ae60', '#f39c12', '#00acc1', '#8e44ad', '#e74c3c'];
                       const color = colors[index % colors.length];
                       
@@ -277,7 +330,7 @@ export default function Home() {
       </section>
 
       {/* 6. SAYAÇLAR */}
-      <section className="section-padding" style={{background:'#1B5E20', color:'white'}}>
+      <section className="section-padding" style={{background:'#27ae60', color:'white'}}>
           <div className="container">
               <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(200px, 1fr))', gap:'40px', textAlign:'center'}}>
                   {[
@@ -309,9 +362,32 @@ export default function Home() {
               <p style={{fontSize:'1.2rem', color:'#666', maxWidth:'700px', margin:'0 auto 40px'}}>
                   {content.home_cta_text || 'DIGI-GREEN FUTURE projesi hakkında daha fazla bilgi almak, eğitimlere katılmak veya işbirliği yapmak için bize ulaşın.'}
               </p>
-              <a href="/contact" className="btn" style={{background:'#27ae60', color:'white', padding:'15px 45px', borderRadius:'50px', fontSize:'1.1rem', boxShadow:'0 10px 20px rgba(39, 174, 96, 0.3)', fontWeight:'bold', display:'inline-block', textDecoration:'none'}}>
+              
+              {/* ✨ YENİ: İletişim Butonu İçin Hover Stili */}
+              <style dangerouslySetInnerHTML={{__html: `
+                .btn-contact-hover {
+                  background: #27ae60;
+                  color: white;
+                  padding: 15px 45px;
+                  border-radius: 50px;
+                  font-size: 1.1rem;
+                  box-shadow: 0 10px 20px rgba(39, 174, 96, 0.3);
+                  font-weight: bold;
+                  display: inline-block;
+                  text-decoration: none;
+                  transition: all 0.3s ease;
+                }
+                .btn-contact-hover:hover {
+                  background: #1e8449; /* Daha koyu yeşil */
+                  box-shadow: 0 15px 25px rgba(39, 174, 96, 0.5); /* Gölgelendirme artar */
+                  transform: translateY(-3px); /* Hafifçe yukarı kalkar */
+                }
+              `}} />
+              
+              <a href="/contact" className="btn-contact-hover">
                   İletişime Geç <i className="fas fa-arrow-right" style={{marginLeft:'8px'}}></i>
               </a>
+
           </div>
       </section>
 

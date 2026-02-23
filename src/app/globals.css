@@ -8,6 +8,8 @@
   --dark: #1a1a1a;
   --light: #f4f6f8;
   --danger: #e74c3c;
+  --green-mid: #27ae60;
+  --green-deep: #1a5c38;
 }
 
 body {
@@ -46,16 +48,15 @@ body {
 }
 
 /* =========================================
-   3. AĞAÇ / TIMELINE TASARIMI (KUSURSUZ DİNAMİK YAPI)
+   3. AĞAÇ / TIMELINE TASARIMI
    ========================================= */
 .tree-wrapper {
   position: relative;
-  padding: 60px 0; /* Dikeyde çarpışmaları önlemek için boşluğu artırdık */
+  padding: 60px 0;
   width: 100%;
-  overflow: visible; /* Çizgi dışarı taşabilsin */
+  overflow: visible;
 }
 
-/* EKRANI UÇTAN UCA KAPLAYAN ANA ÇİZGİ */
 .tree-line {
   position: absolute;
   top: 50%;
@@ -68,7 +69,6 @@ body {
   border-radius: 4px;
 }
 
-/* Kaydırılabilir Alan */
 .tree-scroll {
   display: flex;
   gap: 40px;
@@ -81,7 +81,6 @@ body {
 }
 .tree-scroll::-webkit-scrollbar { display: none; }
 
-/* Tekil Öğe Kapsayıcısı */
 .tree-item {
   position: relative;
   z-index: 1;
@@ -91,7 +90,6 @@ body {
   flex-direction: column;
 }
 
-/* ✨ KART TASARIMI - SABİT YÜKSEKLİK & İÇ KAYDIRMA (KAYMAYI ÖNLER) ✨ */
 .tree-card {
   background: white;
   padding: 30px;
@@ -102,13 +100,12 @@ body {
   display: flex;
   flex-direction: column;
   justify-content: flex-start;
-  height: 280px; /* Tüm kartları tek bir standart boya kilitledik */
-  overflow-y: auto; /* Yazı uzunsa dışarı taşmaz, kartın içinde kayar! */
+  height: 280px;
+  overflow-y: auto;
   position: relative;
   z-index: 2; 
 }
 
-/* Kartın İçindeki Gizli ve Zarif Kaydırma Çubuğu */
 .tree-card::-webkit-scrollbar { width: 4px; }
 .tree-card::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
 .tree-card:hover::-webkit-scrollbar-thumb { background: var(--secondary); }
@@ -119,7 +116,6 @@ body {
   border-color: var(--secondary);
 }
 
-/* Noktalar (Ağaç Gövdesine Bağlanan Kısımlar) */
 .tree-dot {
   position: absolute;
   width: 24px;
@@ -131,31 +127,26 @@ body {
   transition: 0.3s;
 }
 
-/* --- MASAÜSTÜ ZİG-ZAG GÖRÜNÜM (MATEMATİKSEL KUSURSUZ HİZALAMA) --- */
 @media (min-width: 992px) {
   .tree-scroll {
     align-items: center; 
-    min-height: 650px; /* Kaymaları önlemek için dikey esneme alanı */
+    min-height: 650px;
   }
 
-  /* 1. ÜSTTEKİ KARTLAR (160px YUKARI) */
   .tree-item:nth-child(odd) { transform: translateY(-160px); }
   
-  /* Çizgi artık kartın altından değil, tam MERKEZİNDEN (top: 50%) çıkıyor */
   .tree-item:nth-child(odd)::after {
     content: ''; position: absolute; 
     top: 50%; left: 50%;
-    width: 3px; height: 160px; /* Çizgi boyu tam itme miktarı kadar */
+    width: 3px; height: 160px;
     background: var(--secondary);
     transform: translateX(-50%); z-index: 0;
   }
   
-  /* Nokta her zaman merkezden 160px aşağıda durur, hedefi asla ıskalamaz */
   .tree-item:nth-child(odd) .tree-dot {
     top: calc(50% + 160px); left: 50%; transform: translate(-50%, -50%); 
   }
 
-  /* 2. ALTTAKİ KARTLAR (160px AŞAĞI) */
   .tree-item:nth-child(even) { transform: translateY(160px); }
   
   .tree-item:nth-child(even)::after {
@@ -177,7 +168,6 @@ body {
   }
 }
 
-/* --- MOBİL GÖRÜNÜM --- */
 @media (max-width: 991px) {
   .tree-scroll { flex-direction: column; padding: 20px 20px 20px 50px; }
   
@@ -202,7 +192,7 @@ body {
 }
 
 /* =========================================
-   4. SLIDER BUTONLARI (OKLAR)
+   4. SLIDER BUTONLARI
    ========================================= */
 .slider-btn {
   position: absolute;
@@ -231,7 +221,6 @@ body {
   transform: translateY(-50%) scale(1.1);
 }
 .slider-btn:active { transform: translateY(-50%) scale(0.95); }
-
 .slider-btn.prev { left: 15px; }
 .slider-btn.next { right: 15px; }
 
@@ -276,7 +265,7 @@ body {
 @keyframes fadeInPage { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
 /* =========================================
-   7. HEADER DROPDOWN (MODERN TASARIM)
+   7. HEADER DROPDOWN
    ========================================= */
 .dropdown-menu {
   position: absolute;
@@ -330,13 +319,8 @@ body {
   to { opacity: 1; transform: translate(-50%, 0); }
 }
 
-.dropdown-menu li { 
-  width: 100%; 
-  margin-bottom: 4px; 
-}
-.dropdown-menu li:last-child {
-  margin-bottom: 0;
-}
+.dropdown-menu li { width: 100%; margin-bottom: 4px; }
+.dropdown-menu li:last-child { margin-bottom: 0; }
 
 .nav-item-with-dropdown .dropdown-menu .dropdown-link {
   padding: 12px 16px;
@@ -394,4 +378,97 @@ body {
       background: #f1f1f1 !important; 
       padding-left: 45px; 
   }
+}
+
+/* =========================================
+   8. İLETİŞİME GEÇ BUTONU (about page CTA)
+      Scoped JSX yerine burada tanımlandı — global
+      stillerle çakışma bu şekilde önlenir.
+   ========================================= */
+.btn-primary-solid {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 14px;
+  padding: 18px 38px;
+  border-radius: 99px;
+  font-weight: 700;
+  font-size: 1.05rem;
+  text-decoration: none !important;
+  color: var(--green-deep) !important;
+  background-color: #ffffff !important;
+  border: 2px solid transparent;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  /* Geçişleri önceden tanımla — !important ile Tailwind reset'i ezer */
+  -webkit-transition:
+    background-color 0.3s ease,
+    color 0.3s ease,
+    transform 0.3s ease,
+    box-shadow 0.3s ease,
+    border-color 0.3s ease !important;
+  transition:
+    background-color 0.3s ease,
+    color 0.3s ease,
+    transform 0.3s ease,
+    box-shadow 0.3s ease,
+    border-color 0.3s ease !important;
+}
+
+/* İç parlaklık katmanı */
+.btn-primary-solid::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(255,255,255,0.18) 0%, transparent 60%);
+  border-radius: 99px;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+}
+
+/* Ok sarmalayıcısı */
+.btn-primary-solid .btn-arrow {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: rgba(26, 92, 56, 0.12);
+  flex-shrink: 0;
+  -webkit-transition: background 0.3s ease, transform 0.3s ease !important;
+  transition: background 0.3s ease, transform 0.3s ease !important;
+}
+
+/* ── HOVER — global scope'ta !important gerekli değil, ama güvence için ── */
+.btn-primary-solid:hover,
+.btn-primary-solid:hover:focus {
+  background-color: var(--green-mid) !important;
+  color: #ffffff !important;
+  -webkit-transform: translateY(-4px) !important;
+  transform: translateY(-4px) !important;
+  box-shadow:
+    0 12px 32px rgba(39, 174, 96, 0.55),
+    0 4px 12px rgba(0, 0, 0, 0.1) !important;
+  border-color: rgba(255, 255, 255, 0.25) !important;
+  text-decoration: none !important;
+}
+
+.btn-primary-solid:hover::before {
+  opacity: 1;
+}
+
+.btn-primary-solid:hover .btn-arrow {
+  background: rgba(255, 255, 255, 0.22) !important;
+  -webkit-transform: translateX(4px) !important;
+  transform: translateX(4px) !important;
+}
+
+/* ── ACTIVE ── */
+.btn-primary-solid:active {
+  -webkit-transform: translateY(-1px) !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 6px 16px rgba(39, 174, 96, 0.4) !important;
+  transition-duration: 0.1s !important;
 }
