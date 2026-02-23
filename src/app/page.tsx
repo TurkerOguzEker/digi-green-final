@@ -49,8 +49,11 @@ export default function Home() {
   const [isLoading, setIsLoading] = useState(true);
   const sliderRef = useRef<HTMLDivElement>(null);
   
-  // Slider İçin State
+  // Slider İçin Stateler
   const [currentSlide, setCurrentSlide] = useState(0);
+  
+  // İlk yükleme animasyonunu tetiklemek için state
+  const [startAnim, setStartAnim] = useState(false);
 
   // 1. Veri Çekme Hook'u
   useEffect(() => {
@@ -70,6 +73,16 @@ export default function Home() {
     }
     fetchSettings();
   }, []);
+
+  // Sayfa yüklendikten hemen sonra ilk resmi büyütmeye başla
+  useEffect(() => {
+      if (!isLoading) {
+          const timer = setTimeout(() => {
+              setStartAnim(true);
+          }, 50);
+          return () => clearTimeout(timer);
+      }
+  }, [isLoading]);
 
   // 2. Scroll Animasyonları Hook'u
   useEffect(() => {
@@ -166,7 +179,7 @@ export default function Home() {
                             backgroundPosition: 'center', 
                             zIndex: isActive ? -1 : -2,
                             opacity: isActive ? 1 : 0,
-                            transform: isActive ? 'scale(1.15)' : 'scale(1)',
+                            transform: (isActive && startAnim) ? 'scale(1.15)' : 'scale(1)',
                             transition: transitionStyle,
                             willChange: 'opacity, transform',
                         }}
@@ -190,7 +203,19 @@ export default function Home() {
                   {content.hero_desc || 'Erasmus+ KA220-ADU kapsamında 3 ülkede sürdürülebilir ve dijital belediyecilik çözümleri geliştiriyoruz.'}
               </p>
               <div className="reveal reveal-up delay-300" style={{display:'flex', justifyContent:'center', gap:'20px', flexWrap:'wrap'}}>
-                  <a href="#solutions" className="btn-hero"><i className="fas fa-mobile-alt" style={{marginRight:'8px'}}></i>Mobil Çözümler</a>
+                  
+                  {/* ✨ GÜNCELLENDİ: Mobil Çözümler butonuna onClick smooth scroll eklendi */}
+                  <a 
+                      href="#solutions" 
+                      className="btn-hero"
+                      onClick={(e) => {
+                          e.preventDefault(); // Varsayılan anında zıplamayı engelle
+                          document.getElementById('solutions')?.scrollIntoView({ behavior: 'smooth' }); // Yağ gibi kaydır
+                      }}
+                  >
+                      <i className="fas fa-mobile-alt" style={{marginRight:'8px'}}></i>Mobil Çözümler
+                  </a>
+                  
                   <a href="/about" className="btn-hero" style={{background:'white', color:'#27ae60', border:'2px solid white'}}><i className="fas fa-leaf" style={{marginRight:'8px'}}></i>Projeyi İncele</a>
               </div>
           </div>
@@ -363,7 +388,6 @@ export default function Home() {
                   {content.home_cta_text || 'DIGI-GREEN FUTURE projesi hakkında daha fazla bilgi almak, eğitimlere katılmak veya işbirliği yapmak için bize ulaşın.'}
               </p>
               
-              {/* ✨ YENİ: İletişim Butonu İçin Hover Stili */}
               <style dangerouslySetInnerHTML={{__html: `
                 .btn-contact-hover {
                   background: #27ae60;
@@ -378,9 +402,9 @@ export default function Home() {
                   transition: all 0.3s ease;
                 }
                 .btn-contact-hover:hover {
-                  background: #1e8449; /* Daha koyu yeşil */
-                  box-shadow: 0 15px 25px rgba(39, 174, 96, 0.5); /* Gölgelendirme artar */
-                  transform: translateY(-3px); /* Hafifçe yukarı kalkar */
+                  background: #1e8449; 
+                  box-shadow: 0 15px 25px rgba(39, 174, 96, 0.5); 
+                  transform: translateY(-3px); 
                 }
               `}} />
               

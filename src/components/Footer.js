@@ -20,12 +20,29 @@ export default function Footer() {
 
   return (
       <footer className="site-footer">
+          {/* Fontu Footer'da da garantiye almak için ekliyoruz */}
+          <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@700&display=swap" rel="stylesheet" />
+
           <div className="container footer-grid">
               
               <div className="footer-col">
+                  {/* ✨ GÜNCELLENDİ: Header ile aynı mantıkta Flex, nowrap ve clamp kullanıldı */}
                   <Link href="/" className="footer-logo">
-                      {content.header_logo_text || 'DIGI-GREEN'} <span className="highlight-green">{content.header_logo_highlight || 'FUTURE'}</span>
+                      {content.header_logo_image && (
+                          <img 
+                              src={content.header_logo_image} 
+                              alt="Site Logo" 
+                              className="footer-logo-image"
+                          />
+                      )}
+                      <span className="footer-logo-text">
+                          {content.header_logo_text || 'DIGI-GREEN'} 
+                          <span className="highlight-green">
+                              {content.header_logo_highlight || 'FUTURE'}
+                          </span>
+                      </span>
                   </Link>
+                  
                   <p className="footer-desc">
                       {content.footer_desc || 'Kapaklı Belediyesi liderliğinde yürütülen sürdürülebilir kalkınma projesi.'}
                   </p>
@@ -95,8 +112,39 @@ export default function Footer() {
                   gap: 40px;
                   padding-bottom: 50px;
               }
-              .footer-logo { font-size: 1.8rem; font-weight: 800; color: white; text-decoration: none; display: inline-block; margin-bottom: 15px; }
+
+              /* ✨ YENİ LOGO ALANI STİLLERİ ✨ */
+              .footer-logo { 
+                  display: flex; 
+                  align-items: center; 
+                  gap: 12px; 
+                  text-decoration: none; 
+                  margin-bottom: 15px; 
+                  flex-shrink: 0;
+                  width: fit-content;
+              }
+              .footer-logo-image {
+                  max-height: 45px;
+                  width: auto;
+                  object-fit: contain;
+                  transition: transform 0.3s ease;
+              }
+              .footer-logo:hover .footer-logo-image {
+                  transform: scale(1.05);
+              }
+              .footer-logo-text {
+                  font-family: 'Caveat', cursive;
+                  font-size: clamp(1.4rem, 2.5vw, 1.8rem); /* Dinamik boyut */
+                  font-weight: 700;
+                  color: white; 
+                  white-space: nowrap; /* Yazının alt satıra inmesini engeller */
+                  display: flex;
+                  align-items: center;
+                  gap: 8px;
+                  letter-spacing: 1px;
+              }
               .highlight-green { color: #a8f0c0; }
+
               .footer-desc { line-height: 1.6; margin-bottom: 20px; max-width: 90%; opacity: 0.85; }
               .footer-col h4 { color: white; margin-bottom: 20px; font-size: 1.2rem; border-left: 3px solid #6ee8a2; padding-left: 15px; }
               .footer-links { list-style: none; padding: 0; }

@@ -3,6 +3,228 @@ import { useEffect, useState, useRef } from 'react';
 import Link from 'next/link';
 import { supabase } from '../../lib/supabase';
 
+// ─── SAYFA GENELİ ARKA PLAN AĞI (YÜKSEK PERFORMANS) ───────────────────────────
+const NetworkBackground = () => {
+  const canvasRef = useRef(null);
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext('2d');
+    let animationFrameId;
+    let particles = [];
+    let isVisible = true;
+
+    const resize = () => { canvas.width = window.innerWidth; canvas.height = window.innerHeight; };
+    window.addEventListener('resize', resize); resize();
+
+    const observer = new IntersectionObserver(([entry]) => {
+      isVisible = entry.isIntersecting;
+    }, { threshold: 0 });
+    observer.observe(canvas);
+
+    class Particle {
+      constructor() {
+        this.x = Math.random() * canvas.width; this.y = Math.random() * canvas.height;
+        this.vx = (Math.random() - 0.5) * 0.12;
+        this.vy = (Math.random() - 0.5) * 0.12;
+        this.radius = Math.random() * 1.5 + 0.5;
+      }
+      update() {
+        this.x += this.vx; this.y += this.vy;
+        if (this.x < 0 || this.x > canvas.width) this.vx = -this.vx;
+        if (this.y < 0 || this.y > canvas.height) this.vy = -this.vy;
+      }
+      draw() {
+        ctx.beginPath(); ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(52, 120, 80, 0.35)'; ctx.fill();
+      }
+    }
+
+    for (let i = 0; i < 55; i++) particles.push(new Particle());
+
+    const animate = () => {
+      if (isVisible) {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        particles.forEach(p => { p.update(); p.draw(); });
+        for (let i = 0; i < particles.length; i++) {
+          for (let j = i + 1; j < particles.length; j++) {
+            const dx = particles[i].x - particles[j].x; const dy = particles[i].y - particles[j].y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            if (dist < 140) {
+              ctx.beginPath();
+              ctx.strokeStyle = `rgba(52, 120, 80, ${0.25 * (1 - dist / 140)})`;
+              ctx.lineWidth = 0.8; ctx.moveTo(particles[i].x, particles[i].y); ctx.lineTo(particles[j].x, particles[j].y); ctx.stroke();
+            }
+          }
+        }
+      }
+      animationFrameId = requestAnimationFrame(animate);
+    };
+    animate();
+    
+    return () => { 
+      window.removeEventListener('resize', resize); 
+      cancelAnimationFrame(animationFrameId); 
+      observer.disconnect();
+    };
+  }, []);
+  return <canvas ref={canvasRef} style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', zIndex: -1, pointerEvents: 'none', background: '#f4f7f2' }} />;
+};
+
+// ─── YAPRAK ANİMASYONU ────────────────────────────────────────────────────────
+const HeroAnimation = () => {
+  const canvasRef = useRef(null);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext('2d');
+    let animationFrameId;
+    let leaves = [];
+    let windTime = 0;
+    let spawnTimeouts = [];
+    let mainTimeout;
+    let isVisible = true;
+
+    const resize = () => {
+      const parent = canvas.parentElement;
+      canvas.width  = parent ? parent.offsetWidth : window.innerWidth;
+      canvas.height = parent ? parent.offsetHeight : window.innerHeight;
+    };
+    resize();
+    window.addEventListener('resize', resize);
+
+    const observer = new IntersectionObserver(([entry]) => {
+      isVisible = entry.isIntersecting;
+    }, { threshold: 0 });
+    observer.observe(canvas);
+
+    const turb = (x, y, t) =>
+      Math.sin(x * 0.007 + t * 0.35) * 0.5 +
+      Math.sin(y * 0.009 - t * 0.25) * 0.35 +
+      Math.sin((x + y) * 0.004 + t * 0.45) * 0.3;
+
+    const leafPaths = [new Path2D(), new Path2D(), new Path2D()];
+    leafPaths[0].moveTo(0, -2.0); leafPaths[0].bezierCurveTo(1.6, -1.0, 1.6, 1.0, 0, 2.0); leafPaths[0].bezierCurveTo(-1.6, 1.0, -1.6, -1.0, 0, -2.0);
+    leafPaths[1].moveTo(0, -2.4); leafPaths[1].bezierCurveTo(0.9, -0.8, 0.9, 0.8, 0, 2.4); leafPaths[1].bezierCurveTo(-0.9, 0.8, -0.9, -0.8, 0, -2.4);
+    leafPaths[2].moveTo(0, -1.5); leafPaths[2].bezierCurveTo(1.8, -0.6, 1.8, 0.6, 0, 1.5); leafPaths[2].bezierCurveTo(-1.8, 0.6, -1.8, -0.6, 0, -1.5);
+
+    class Leaf {
+      reset() {
+        if (Math.random() < 0.75) {
+          this.x = canvas.width + 50 + Math.random() * 150; 
+          this.y = Math.random() * canvas.height;
+        } else {
+          this.x = Math.random() * canvas.width;
+          this.y = -50 - Math.random() * 100; 
+        }
+        
+        this.size      = Math.random() * 5 + 4;
+        this.windX     = -(0.25 + Math.random() * 0.45);
+        this.gravY     = 0.06 + Math.random() * 0.08;
+        this.vx        = this.windX;
+        this.vy        = this.gravY;
+        this.drag      = 0.988 + Math.random() * 0.008;
+        this.angle     = Math.random() * Math.PI * 2;
+        this.angVel    = (Math.random() - 0.5) * 0.010;
+        this.angDamp   = 0.97;
+        this.turbScale = 0.4 + Math.random() * 0.4;
+        this.phaseX    = Math.random() * 80;
+        this.phaseY    = Math.random() * 80;
+        this.opacity   = 0.40 + Math.random() * 0.45;
+        this.variant   = Math.floor(Math.random() * 3);
+        const pal = [[28,118,58],[42,158,80],[18,82,44],[55,145,70],[22,100,52],[100,172,48]];
+        const c = pal[Math.floor(Math.random() * pal.length)];
+        this.r = c[0]; this.g = c[1]; this.b = c[2];
+      }
+      constructor() { this.reset(); }
+      update(t) {
+        const tx = turb(this.x + this.phaseX, this.y, t) * this.turbScale;
+        const ty = turb(this.y + this.phaseY, this.x, t + 40) * this.turbScale * 0.35;
+        this.vx += this.windX * 0.015 + tx * 0.025;
+        this.vy += this.gravY * 0.012 + ty * 0.018;
+        this.vx = Math.max(-1.5, Math.min(0.4, this.vx));
+        this.vy = Math.max(-0.3, Math.min(0.9, this.vy));
+        this.vx *= this.drag;
+        this.vy *= this.drag;
+        this.x += this.vx;
+        this.y += this.vy;
+        const target = Math.atan2(this.vy, -this.vx) + Math.PI * 0.08;
+        let diff = target - this.angle;
+        while (diff >  Math.PI) diff -= Math.PI * 2;
+        while (diff < -Math.PI) diff += Math.PI * 2;
+        this.angVel += diff * 0.006;
+        this.angVel *= this.angDamp;
+        this.angle  += this.angVel;
+        if (this.x < -60 || this.y > canvas.height + 60 || this.y < -100) this.reset();
+      }
+      draw() {
+        ctx.save();
+        ctx.translate(this.x, this.y);
+        ctx.rotate(this.angle);
+        ctx.scale(this.size, this.size); 
+        ctx.globalAlpha = this.opacity;
+        
+        ctx.save();
+        ctx.translate(0.3, 0.6);
+        ctx.fillStyle = 'rgba(0,0,0,0.12)';
+        ctx.fill(leafPaths[this.variant]);
+        ctx.restore();
+
+        ctx.fillStyle = `rgb(${this.r},${this.g},${this.b})`;
+        ctx.fill(leafPaths[this.variant]);
+
+        ctx.beginPath();
+        ctx.moveTo(0, -1.8); ctx.lineTo(0, 1.8);
+        ctx.strokeStyle = 'rgba(255,255,255,0.22)';
+        ctx.lineWidth = 0.6 / this.size; 
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.moveTo(0, -0.9); ctx.lineTo( 1.0, -1.25); ctx.moveTo(0,  0); ctx.lineTo( 1.1, -0.3);
+        ctx.moveTo(0, -0.9); ctx.lineTo(-1.0, -1.25); ctx.moveTo(0,  0); ctx.lineTo(-1.1, -0.3);
+        ctx.strokeStyle = 'rgba(255,255,255,0.12)';
+        ctx.lineWidth = 0.4 / this.size; 
+        ctx.stroke();
+        
+        ctx.restore();
+      }
+    }
+
+    mainTimeout = setTimeout(() => {
+      for (let i = 0; i < 20; i++) {
+        let t = setTimeout(() => {
+          leaves.push(new Leaf());
+        }, Math.random() * 3000); 
+        spawnTimeouts.push(t);
+      }
+    }, 500);
+
+    const animate = () => {
+      if (isVisible) {
+        windTime += 0.007;
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        leaves.forEach(l => { l.update(windTime); l.draw(); });
+      }
+      animationFrameId = requestAnimationFrame(animate);
+    };
+    animate();
+
+    return () => {
+      window.removeEventListener('resize', resize);
+      cancelAnimationFrame(animationFrameId);
+      observer.disconnect();
+      clearTimeout(mainTimeout);
+      spawnTimeouts.forEach(t => clearTimeout(t));
+    };
+  }, []);
+
+  return (
+    <canvas
+      ref={canvasRef}
+      style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', zIndex: 1, pointerEvents: 'none' }}
+    />
+  );
+};
+
 // ─── SAYAC BİLEŞENİ ───
 const Counter = ({ end, suffix = '', duration = 2000 }) => {
   const [count, setCount] = useState(0);
@@ -148,10 +370,17 @@ export default function AboutPage() {
 
   return (
     <div className="about-page">
+      
+      {/* ✨ YENİ: ARKA PLAN AĞI */}
+      <NetworkBackground />
 
       {/* 1️⃣ HERO */}
       <section className="hero">
-        <div className="container">
+        {/* ✨ YENİ: YAPRAK ANİMASYONU */}
+        <HeroAnimation />
+        
+        {/* İçerik, canvas'ın üstünde durması için relative ve z-index almalı */}
+        <div className="container" style={{ position: 'relative', zIndex: 2 }}>
           <span className="eyebrow reveal active">Erasmus+ Destekli Proje</span>
           <h1 className="hero-title reveal active">
             Daha Yeşil Bir <br /> Gelecek İçin <span>Dijital Dönüşüm</span>
@@ -251,7 +480,6 @@ export default function AboutPage() {
               Digi-Green Future; yerel yönetimler, sivil toplum kuruluşları ve bireyler için yenilikçi, açık ve sürdürülebilir bir iş birliği platformudur.
             </p>
             <div className="cta-actions">
-              {/* Hover inline React state ile — Tailwind/globals.css hiçbir şeyi ezemez */}
               <ContactButton href="/contact" />
             </div>
           </div>
@@ -262,16 +490,21 @@ export default function AboutPage() {
         .about-page {
           font-family: 'Inter', system-ui, sans-serif;
           color: #111827;
-          background-color: #ffffff;
+          /* background-color: #ffffff; -> Arka plan animasyonu görünsün diye kaldırıldı */
           line-height: 1.6;
           --primary: #003399;
           --green-mid: #27ae60;
           --green-deep: #1a5c38;
         }
-        .container { max-width: 1200px; margin: 0 auto; padding: 0 24px; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 0 24px; position: relative; z-index: 2; }
         .container.narrow { max-width: 900px; }
-        .section { padding: 120px 0; }
-        .bg-light { background-color: #f9fafb; }
+        .section { padding: 120px 0; position: relative; z-index: 2; }
+        
+        /* Arka plandaki ağ animasyonu üstte dursun diye hafif saydamlık eklendi */
+        .bg-light { 
+          background-color: rgba(249, 250, 251, 0.6); 
+          backdrop-filter: blur(8px);
+        }
         .text-center { text-align: center; }
         .mb-4 { margin-bottom: 32px; }
         .mb-5 { margin-bottom: 64px; }
@@ -287,8 +520,15 @@ export default function AboutPage() {
         .section-title { font-size: 2.5rem; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 24px; color: #111827; }
         .section-text { font-size: 1.125rem; color: #4b5563; margin-bottom: 32px; }
 
-        .hero { padding: 160px 0 100px; text-align: center; background: linear-gradient(to bottom, #f9fafb, #ffffff); }
-        .eyebrow { display: inline-block; font-size: 0.875rem; font-weight: 600; padding: 6px 16px; border-radius: 99px; background: #ecfdf5; color: #059669; margin-bottom: 32px; }
+        /* HERO BÖLÜMÜ GÜNCELLENDİ */
+        .hero { 
+          position: relative; /* Yapraklar bunun içinde taşmasın diye */
+          padding: 160px 0 100px; 
+          text-align: center; 
+          background: linear-gradient(to bottom, rgba(249, 250, 251, 0.4), rgba(255, 255, 255, 0.9)); 
+          overflow: hidden; 
+        }
+        .eyebrow { display: inline-block; font-size: 0.875rem; font-weight: 600; padding: 6px 16px; border-radius: 99px; background: rgba(236, 253, 245, 0.8); color: #059669; margin-bottom: 32px; backdrop-filter: blur(5px); }
         .hero-title { font-size: clamp(3rem, 8vw, 5rem); font-weight: 800; line-height: 1.1; letter-spacing: -0.03em; margin-bottom: 24px; }
         .hero-title span { color: #10b981; }
         .hero-desc { font-size: 1.25rem; color: #6b7280; max-width: 600px; margin: 0 auto; }
@@ -306,19 +546,21 @@ export default function AboutPage() {
         .stat-label { font-size: 1rem; font-weight: 500; color: #6b7280; }
 
         .targets-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 40px; }
-        .target-card { padding: 40px; background: #f9fafb; border-radius: 24px; transition: background 0.3s ease; }
-        .target-card:hover { background: #f3f4f6; }
+        /* Target kartları cam efekti yapıldı ki ağ arkadan görünsün */
+        .target-card { padding: 40px; background: rgba(249, 250, 251, 0.85); backdrop-filter: blur(10px); border-radius: 24px; transition: background 0.3s ease; }
+        .target-card:hover { background: rgba(243, 244, 246, 0.95); }
         .target-num { display: block; font-size: 1rem; font-weight: 700; color: #10b981; margin-bottom: 16px; }
         .target-title { font-size: 1.25rem; font-weight: 700; margin-bottom: 12px; }
         .target-desc { color: #4b5563; }
 
-        .spec-sheet { border-top: 1px solid #e5e7eb; }
-        .spec-row { display: grid; grid-template-columns: 240px 1fr; padding: 32px 24px; border-bottom: 1px solid #e5e7eb; transition: all 0.3s ease; border-left: 4px solid transparent; }
-        .spec-row:hover { background-color: #f9fafb; border-left-color: #10b981; }
+        /* SPEC SHEET için de cam efekti */
+        .spec-sheet { border-top: 1px solid rgba(229, 231, 235, 0.6); }
+        .spec-row { display: grid; grid-template-columns: 240px 1fr; padding: 32px 24px; border-bottom: 1px solid rgba(229, 231, 235, 0.6); transition: all 0.3s ease; border-left: 4px solid transparent; }
+        .spec-row:hover { background-color: rgba(249, 250, 251, 0.7); backdrop-filter: blur(5px); border-left-color: #10b981; }
         .spec-label { font-size: 0.875rem; font-weight: 700; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em; align-self: center; }
         .spec-value { font-size: 1.125rem; font-weight: 500; color: #111827; line-height: 1.6; }
 
-        .cta-section { padding: 40px 24px 80px; }
+        .cta-section { padding: 40px 24px 80px; position: relative; z-index: 2; }
         .cta-container {
           position: relative; max-width: 1000px; margin: 0 auto;
           background: linear-gradient(145deg, #1a5c38 0%, #2a953c 100%);

@@ -81,7 +81,8 @@ export default function Header({ initialSettings = {} }) {
             <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@700&display=swap" rel="stylesheet" />
 
             <div className="container header-container">
-                <Link href="/" className="logo-area">
+                {/* ✨ GÜNCELLENDİ: logo-area sıkışmayı engellemek için flexShrink: 0 eklendi */}
+                <Link href="/" className="logo-area" style={{ flexShrink: 0 }}>
                     {content.header_logo_image && (
                         <img 
                             src={content.header_logo_image} 
@@ -91,18 +92,20 @@ export default function Header({ initialSettings = {} }) {
                         />
                     )}
                     
+                    {/* ✨ GÜNCELLENDİ: Yazının kırılmasını engellemek için whiteSpace: "nowrap" ve esnek boyut için clamp eklendi */}
                     <span 
                         className="logo-text" 
                         style={{
                             fontFamily: "'Caveat', cursive",
-                            fontSize: "1.4rem", 
+                            fontSize: "clamp(1.1rem, 2vw, 1.4rem)", 
                             fontWeight: "700",
                             color: "#106b21",   
                             textDecoration: "none",
                             letterSpacing: "1px",
                             display: "flex",
                             alignItems: "center",
-                            gap: "8px"
+                            gap: "8px",
+                            whiteSpace: "nowrap" 
                         }}
                     >
                         {content.header_logo_text || 'DIGI-GREEN'} 
@@ -198,6 +201,7 @@ export default function Header({ initialSettings = {} }) {
                 gap: 12px; 
                 text-decoration: none;
                 height: 100%;
+                flex-shrink: 0; /* Logoyu korur */
             }
             .logo-image {
                 transition: transform 0.3s ease;
@@ -209,7 +213,7 @@ export default function Header({ initialSettings = {} }) {
             .nav-list {
                 display: flex;
                 flex-direction: row;
-                gap: 1px; /* ✨ Menü elemanları arasındaki boşluk en aza indirildi */
+                gap: 1px; 
                 list-style: none;
                 margin: 0;
                 padding: 0;
@@ -229,12 +233,13 @@ export default function Header({ initialSettings = {} }) {
                 text-decoration: none;
                 font-weight: 600;
                 font-size: 0.92rem;
-                padding: 6px 10px; /* ✨ Buton padding'i kısıldı, butonlar yakınlaştı */
+                padding: 6px 10px; 
                 border-radius: 50px; 
                 display: flex;
                 align-items: center;
                 transition: all 0.3s ease;
                 border: 2px solid transparent; 
+                white-space: nowrap; /* Menü metinlerinin kırılmasını önler */
             }
 
             .nav-link:hover { 

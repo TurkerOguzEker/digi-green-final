@@ -3,706 +3,2109 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '../../lib/supabase';
 
-// --- VARSAYILAN DEĞERLER ---
+/* ─── DEFAULTS ──────────────────────────────────────────────────────── */
 const DEFAULTS = {
-    header_logo_text: "DIGI-GREEN",
-    header_logo_highlight: "FUTURE",
-    footer_desc: "Kapaklı Belediyesi liderliğinde yürütülen sürdürülebilir kalkınma projesi.",
-    footer_column2_title: "Hızlı Menü",
-    footer_column3_title: "İletişim",
-    footer_eu_logo: "/assets/images/eu-flag.png",
-    footer_disclaimer: "Funded by the European Union. Views and opinions expressed are however those of the author(s) only and do not necessarily reflect those of the European Union.",
-    contact_email: "info@digigreen.eu",
-    contact_phone: "+90 282 717 10 10",
-    hero_title: "Yerel Yeşil Gelecek İçin Dijital Dönüşüm",
-    hero_desc: "Erasmus+ KA220-ADU kapsamında, iklim değişikliği ile mücadelede dijital araçları kullanmayı hedefleyen öncü proje.",
-    home_summary_1_val: "24 Ay", home_summary_1_label: "Proje Süresi",
-    home_summary_2_val: "250.000€", home_summary_2_label: "Toplam Hibe",
-    home_summary_3_val: "KA220-ADU", home_summary_3_label: "Program",
-    home_summary_4_val: "3 Ülke", home_summary_4_label: "Kapsam",
-    home_about_title: "Teknoloji ve Doğanın Mükemmel Uyumu",
-    home_about_text: "Projemiz, iklim kriziyle mücadelede yerel yönetimler ve vatandaşların aktif rol alması gerekliliğinden doğmuştur.",
-    home_target_1_title: "Vatandaşlar", home_target_1_desc: "Mobil uygulamalar ile geri dönüşüme katılın.",
-    home_target_2_title: "Yerel Yönetimler", home_target_2_desc: "Veriye dayalı kararlar alarak kaynakları verimli kullanın.",
-    home_target_3_title: "STK ve Akademik", home_target_3_desc: "Araştırma ve eğitim çalışmalarında aktif rol alın.",
-    home_counter_1_val: "250000", home_counter_1_label: "Toplam Hibe (€)",
-    home_counter_2_val: "3", home_counter_2_label: "Ortak Ülke",
-    home_counter_3_val: "5", home_counter_3_label: "Proje Ortağı",
-    home_counter_4_val: "24", home_counter_4_label: "Ay Süre",
-    home_cta_title: "Geleceği Birlikte Tasarlayalım",
-    home_cta_text: "Daha fazla bilgi almak için bize ulaşın."
+  header_logo_text: "DIGI-GREEN",
+  header_logo_highlight: "FUTURE",
+  footer_desc: "Kapaklı Belediyesi liderliğinde yürütülen sürdürülebilir kalkınma projesi.",
+  footer_column2_title: "Hızlı Menü",
+  footer_column3_title: "İletişim",
+  footer_eu_logo: "/assets/images/eu-flag.png",
+  footer_disclaimer: "Funded by the European Union.",
+  contact_email: "info@digigreen.eu",
+  contact_phone: "+90 282 717 10 10",
+  hero_title: "Yerel Yeşil Gelecek İçin Dijital Dönüşüm",
+  hero_desc: "Erasmus+ KA220-ADU kapsamında, iklim değişikliği ile mücadelede dijital araçları kullanmayı hedefleyen öncü proje.",
+  home_summary_1_val: "24 Ay", home_summary_1_label: "Proje Süresi",
+  home_summary_2_val: "250.000€", home_summary_2_label: "Toplam Hibe",
+  home_summary_3_val: "KA220-ADU", home_summary_3_label: "Program",
+  home_summary_4_val: "3 Ülke", home_summary_4_label: "Kapsam",
+  home_about_title: "Teknoloji ve Doğanın Mükemmel Uyumu",
+  home_about_text: "Projemiz, iklim kriziyle mücadelede yerel yönetimler ve vatandaşların aktif rol alması gerekliliğinden doğmuştur.",
+  home_target_1_title: "Vatandaşlar", home_target_1_desc: "Mobil uygulamalar ile geri dönüşüme katılın.",
+  home_target_2_title: "Yerel Yönetimler", home_target_2_desc: "Veriye dayalı kararlar alarak kaynakları verimli kullanın.",
+  home_target_3_title: "STK ve Akademik", home_target_3_desc: "Araştırma ve eğitim çalışmalarında aktif rol alın.",
+  home_counter_1_val: "250000", home_counter_1_label: "Toplam Hibe (€)",
+  home_counter_2_val: "3", home_counter_2_label: "Ortak Ülke",
+  home_counter_3_val: "5", home_counter_3_label: "Proje Ortağı",
+  home_counter_4_val: "24", home_counter_4_label: "Ay Süre",
+  home_cta_title: "Geleceği Birlikte Tasarlayalım",
+  home_cta_text: "Daha fazla bilgi almak için bize ulaşın."
 };
 
-const ToastNotification = ({ message, type, onClose }) => {
-if (!message) return null;
-const bgColor = type === 'error' ? '#e74c3c' : '#27ae60';
-return (
-    <div style={{position: 'fixed', top: '20px', right: '20px', zIndex: 9999, background: 'white', borderRadius: '8px', padding: '15px 20px', boxShadow: '0 5px 20px rgba(0,0,0,0.2)', borderLeft: `5px solid ${bgColor}`, display: 'flex', alignItems: 'center', gap: '15px', minWidth: '300px'}}>
-        <div style={{flex:1}}>
-            <h5 style={{margin:0, fontSize:'0.95rem', color:'#333'}}>{type === 'error' ? 'Hata' : 'Başarılı'}</h5>
-            <p style={{margin:0, fontSize:'0.85rem', color:'#666'}}>{message}</p>
-        </div>
-        <button onClick={onClose} style={{background:'none', border:'none', color:'#999', cursor:'pointer', fontSize:'1.2rem'}}>&times;</button>
+/* ─── GLOBAL STYLES ──────────────────────────────────────────────────── */
+const globalStyle = `
+  @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0d1117;
+    --surface: #161b22;
+    --surface-2: #1c2333;
+    --border: rgba(255,255,255,0.07);
+    --border-hover: rgba(255,255,255,0.15);
+    --accent: #22c55e;
+    --accent-dim: rgba(34,197,94,0.12);
+    --accent-glow: rgba(34,197,94,0.25);
+    --blue: #3b82f6;
+    --blue-dim: rgba(59,130,246,0.12);
+    --red: #ef4444;
+    --red-dim: rgba(239,68,68,0.12);
+    --yellow: #f59e0b;
+    --text-primary: #e6edf3;
+    --text-secondary: #7d8590;
+    --text-muted: #484f58;
+    --sidebar-w: 260px;
+    --radius: 10px;
+    --radius-lg: 14px;
+    --shadow: 0 4px 24px rgba(0,0,0,0.4);
+    --shadow-sm: 0 2px 8px rgba(0,0,0,0.2);
+    --font: 'DM Sans', sans-serif;
+    --font-display: 'Syne', sans-serif;
+    --transition: 0.18s cubic-bezier(0.4,0,0.2,1);
+  }
+
+  html, body { height: 100%; }
+
+  body {
+    font-family: var(--font);
+    background: var(--bg);
+    color: var(--text-primary);
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .adm-layout {
+    display: flex;
+    min-height: 100vh;
+  }
+
+  /* ── SIDEBAR ── */
+  .adm-sidebar {
+    width: var(--sidebar-w);
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    position: fixed;
+    top: 0; left: 0; bottom: 0;
+    z-index: 100;
+    overflow-y: auto;
+  }
+
+  .adm-sidebar::-webkit-scrollbar { width: 4px; }
+  .adm-sidebar::-webkit-scrollbar-track { background: transparent; }
+  .adm-sidebar::-webkit-scrollbar-thumb { background: var(--border-hover); border-radius: 4px; }
+
+  .adm-brand {
+    padding: 24px 20px 20px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .adm-brand-logo {
+    font-family: var(--font-display);
+    font-size: 1.1rem;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .adm-brand-logo span {
+    color: var(--accent);
+  }
+
+  .adm-brand-icon {
+    width: 34px; height: 34px;
+    background: var(--accent-dim);
+    border: 1px solid rgba(34,197,94,0.3);
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--accent);
+    font-size: 0.9rem;
+    flex-shrink: 0;
+  }
+
+  .adm-brand-sub {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    margin-top: 4px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    font-weight: 500;
+  }
+
+  .adm-nav {
+    padding: 16px 12px;
+    flex: 1;
+  }
+
+  .adm-nav-section {
+    margin-bottom: 24px;
+  }
+
+  .adm-nav-label {
+    font-size: 0.65rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    padding: 0 8px;
+    margin-bottom: 6px;
+  }
+
+  .adm-nav-btn {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 9px 10px;
+    border-radius: 8px;
+    border: none;
+    background: transparent;
+    color: var(--text-secondary);
+    font-family: var(--font);
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: var(--transition);
+    text-align: left;
+    position: relative;
+    margin-bottom: 2px;
+  }
+
+  .adm-nav-btn:hover {
+    background: var(--surface-2);
+    color: var(--text-primary);
+  }
+
+  .adm-nav-btn.active {
+    background: var(--accent-dim);
+    color: var(--accent);
+  }
+
+  .adm-nav-btn.active .adm-nav-icon {
+    color: var(--accent);
+  }
+
+  .adm-nav-icon {
+    width: 18px; height: 18px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.85rem;
+    flex-shrink: 0;
+    transition: var(--transition);
+  }
+
+  .adm-nav-badge {
+    margin-left: auto;
+    background: var(--accent);
+    color: #000;
+    font-size: 0.65rem;
+    font-weight: 700;
+    padding: 2px 7px;
+    border-radius: 20px;
+    min-width: 20px;
+    text-align: center;
+  }
+
+  .adm-sidebar-footer {
+    padding: 16px 12px;
+    border-top: 1px solid var(--border);
+  }
+
+  .adm-signout {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 9px 10px;
+    border-radius: 8px;
+    border: 1px solid rgba(239,68,68,0.2);
+    background: var(--red-dim);
+    color: var(--red);
+    font-family: var(--font);
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: var(--transition);
+    text-align: left;
+  }
+
+  .adm-signout:hover {
+    background: rgba(239,68,68,0.2);
+    border-color: rgba(239,68,68,0.4);
+  }
+
+  /* ── MAIN CONTENT ── */
+  .adm-main {
+    margin-left: var(--sidebar-w);
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+  }
+
+  .adm-topbar {
+    height: 60px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    padding: 0 32px;
+    gap: 16px;
+    position: sticky;
+    top: 0;
+    z-index: 50;
+  }
+
+  .adm-topbar-title {
+    font-family: var(--font-display);
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    flex: 1;
+  }
+
+  .adm-topbar-pill {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--accent-dim);
+    border: 1px solid rgba(34,197,94,0.25);
+    border-radius: 20px;
+    padding: 5px 12px;
+    font-size: 0.75rem;
+    color: var(--accent);
+    font-weight: 600;
+  }
+
+  .adm-topbar-pill span.dot {
+    width: 6px; height: 6px;
+    background: var(--accent);
+    border-radius: 50%;
+    animation: pulse 2s infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.6; transform: scale(0.85); }
+  }
+
+  .adm-content {
+    padding: 32px;
+    flex: 1;
+  }
+
+  /* ── PAGE HEADER ── */
+  .adm-page-header {
+    margin-bottom: 28px;
+  }
+
+  .adm-page-title {
+    font-family: var(--font-display);
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    letter-spacing: -0.02em;
+    line-height: 1.2;
+  }
+
+  .adm-page-title em {
+    color: var(--accent);
+    font-style: normal;
+  }
+
+  .adm-page-desc {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+    margin-top: 4px;
+  }
+
+  /* ── SECTION ── */
+  .adm-section {
+    margin-bottom: 36px;
+  }
+
+  .adm-section-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .adm-section-num {
+    width: 26px; height: 26px;
+    background: var(--accent-dim);
+    border: 1px solid rgba(34,197,94,0.3);
+    border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: var(--accent);
+    flex-shrink: 0;
+    font-family: var(--font-display);
+  }
+
+  .adm-section-title {
+    font-family: var(--font-display);
+    font-size: 0.875rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+  }
+
+  /* ── CARD ── */
+  .adm-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 20px;
+    margin-bottom: 12px;
+  }
+
+  .adm-card-grid2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+
+  .adm-card-inner {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px;
+  }
+
+  .adm-card-inner-label {
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--blue);
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .adm-card-inner-label::before {
+    content: '';
+    width: 3px; height: 14px;
+    background: var(--blue);
+    border-radius: 2px;
+    display: block;
+  }
+
+  /* ── FIELD ── */
+  .adm-field {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px 16px;
+    margin-bottom: 10px;
+    transition: border-color var(--transition);
+  }
+
+  .adm-field:hover {
+    border-color: var(--border-hover);
+  }
+
+  .adm-field-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+  }
+
+  .adm-field-label {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    letter-spacing: 0.01em;
+  }
+
+  .adm-field-key {
+    font-size: 0.65rem;
+    color: var(--text-muted);
+    font-family: monospace;
+    background: var(--surface-2);
+    padding: 2px 7px;
+    border-radius: 4px;
+    border: 1px solid var(--border);
+  }
+
+  .adm-field-row {
+    display: flex;
+    gap: 8px;
+    align-items: flex-start;
+  }
+
+  .adm-input {
+    flex: 1;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text-primary);
+    font-family: var(--font);
+    font-size: 0.875rem;
+    padding: 10px 14px;
+    transition: border-color var(--transition), box-shadow var(--transition);
+    outline: none;
+    width: 100%;
+  }
+
+  .adm-input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-glow);
+  }
+
+  .adm-input::placeholder {
+    color: var(--text-muted);
+  }
+
+  .adm-textarea {
+    flex: 1;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text-primary);
+    font-family: var(--font);
+    font-size: 0.875rem;
+    padding: 10px 14px;
+    resize: vertical;
+    transition: border-color var(--transition), box-shadow var(--transition);
+    outline: none;
+    width: 100%;
+    line-height: 1.5;
+  }
+
+  .adm-textarea:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-glow);
+  }
+
+  .adm-textarea::placeholder {
+    color: var(--text-muted);
+  }
+
+  /* ── BUTTONS ── */
+  .adm-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    border: none;
+    border-radius: 8px;
+    font-family: var(--font);
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--transition);
+    white-space: nowrap;
+    line-height: 1;
+    padding: 0 16px;
+    height: 38px;
+  }
+
+  .adm-btn-save {
+    background: var(--accent);
+    color: #000;
+  }
+
+  .adm-btn-save:hover {
+    background: #16a34a;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 14px var(--accent-glow);
+  }
+
+  .adm-btn-primary {
+    background: var(--blue);
+    color: white;
+  }
+
+  .adm-btn-primary:hover {
+    background: #2563eb;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 14px rgba(59,130,246,0.3);
+  }
+
+  .adm-btn-danger {
+    background: transparent;
+    border: 1px solid rgba(239,68,68,0.3);
+    color: var(--red);
+  }
+
+  .adm-btn-danger:hover {
+    background: var(--red-dim);
+    border-color: rgba(239,68,68,0.6);
+  }
+
+  .adm-btn-ghost {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    color: var(--text-secondary);
+  }
+
+  .adm-btn-ghost:hover {
+    border-color: var(--border-hover);
+    color: var(--text-primary);
+  }
+
+  .adm-btn-success {
+    background: var(--accent-dim);
+    border: 1px solid rgba(34,197,94,0.3);
+    color: var(--accent);
+  }
+
+  .adm-btn-success:hover {
+    background: rgba(34,197,94,0.2);
+  }
+
+  .adm-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    transform: none !important;
+    box-shadow: none !important;
+  }
+
+  /* ── IMAGE FIELD ── */
+  .adm-img-field {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    width: 100%;
+  }
+
+  .adm-img-preview-wrap {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 6px 10px;
+    gap: 10px;
+    overflow: hidden;
+  }
+
+  .adm-img-thumb {
+    width: 32px; height: 32px;
+    object-fit: cover;
+    border-radius: 5px;
+    flex-shrink: 0;
+  }
+
+  .adm-img-url-input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    color: var(--text-primary);
+    font-family: var(--font);
+    font-size: 0.8rem;
+    outline: none;
+  }
+
+  .adm-img-url-input::placeholder { color: var(--text-muted); }
+
+  .adm-upload-btn {
+    width: 38px; height: 38px;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text-secondary);
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.85rem;
+    transition: var(--transition);
+    flex-shrink: 0;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .adm-upload-btn:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: var(--accent-dim);
+  }
+
+  .adm-upload-btn input[type=file] {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    cursor: pointer;
+    width: 100%;
+    height: 100%;
+  }
+
+  /* ── ITEMS LIST ── */
+  .adm-item-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px 16px;
+    margin-bottom: 8px;
+    transition: border-color var(--transition);
+  }
+
+  .adm-item-row:hover {
+    border-color: var(--border-hover);
+  }
+
+  .adm-item-info strong {
+    display: block;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 2px;
+  }
+
+  .adm-item-info span {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+  }
+
+  .adm-item-actions {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+
+  /* ── FORM CARD ── */
+  .adm-form-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 24px;
+    margin-bottom: 24px;
+  }
+
+  .adm-form-card-title {
+    font-family: var(--font-display);
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .adm-form-card-title i {
+    color: var(--accent);
+  }
+
+  .adm-form-grid2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+
+  .adm-form-grid3 {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 12px;
+  }
+
+  .adm-form-item {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .adm-form-item label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .adm-input-full {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text-primary);
+    font-family: var(--font);
+    font-size: 0.875rem;
+    padding: 10px 14px;
+    transition: border-color var(--transition), box-shadow var(--transition);
+    outline: none;
+    width: 100%;
+  }
+
+  .adm-input-full:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-glow);
+  }
+
+  .adm-input-full::placeholder { color: var(--text-muted); }
+
+  .adm-select-full {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text-primary);
+    font-family: var(--font);
+    font-size: 0.875rem;
+    padding: 10px 14px;
+    transition: border-color var(--transition);
+    outline: none;
+    width: 100%;
+    cursor: pointer;
+    appearance: none;
+  }
+
+  .adm-select-full:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-glow);
+  }
+
+  .adm-textarea-full {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text-primary);
+    font-family: var(--font);
+    font-size: 0.875rem;
+    padding: 10px 14px;
+    transition: border-color var(--transition), box-shadow var(--transition);
+    outline: none;
+    width: 100%;
+    resize: vertical;
+    line-height: 1.5;
+  }
+
+  .adm-textarea-full:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-glow);
+  }
+
+  .adm-textarea-full::placeholder { color: var(--text-muted); }
+
+  .adm-form-submit {
+    width: 100%;
+    height: 44px;
+    background: var(--accent);
+    color: #000;
+    border: none;
+    border-radius: 8px;
+    font-family: var(--font);
+    font-size: 0.9rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: var(--transition);
+    margin-top: 4px;
+  }
+
+  .adm-form-submit:hover {
+    background: #16a34a;
+    transform: translateY(-1px);
+    box-shadow: 0 6px 18px var(--accent-glow);
+  }
+
+  /* ── SLIDER ITEM ── */
+  .adm-slider-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 10px;
+    margin-bottom: 8px;
+    transition: border-color var(--transition);
+  }
+
+  .adm-slider-item:hover {
+    border-color: var(--border-hover);
+  }
+
+  .adm-slider-idx {
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: var(--text-muted);
+    width: 20px;
+    text-align: center;
+    flex-shrink: 0;
+  }
+
+  .adm-slider-thumb {
+    width: 64px; height: 42px;
+    object-fit: cover;
+    border-radius: 5px;
+    flex-shrink: 0;
+    border: 1px solid var(--border);
+    background: var(--surface);
+  }
+
+  .adm-slider-url {
+    flex: 1;
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+    font-family: monospace;
+    font-size: 0.78rem;
+    outline: none;
+    min-width: 0;
+  }
+
+  .adm-slider-url:focus { color: var(--text-primary); }
+
+  .adm-arrow-btn {
+    width: 30px; height: 30px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--surface);
+    color: var(--text-secondary);
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.7rem;
+    transition: var(--transition);
+    flex-shrink: 0;
+  }
+
+  .adm-arrow-btn:hover:not(:disabled) {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: var(--accent-dim);
+  }
+
+  .adm-arrow-btn:disabled {
+    opacity: 0.2;
+    cursor: not-allowed;
+  }
+
+  /* ── ECO ITEM ── */
+  .adm-eco-item {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px;
+    margin-bottom: 12px;
+    position: relative;
+    transition: border-color var(--transition);
+  }
+
+  .adm-eco-item:hover {
+    border-color: var(--border-hover);
+  }
+
+  .adm-eco-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+  }
+
+  .adm-eco-idx {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--accent);
+    font-family: var(--font-display);
+  }
+
+  /* ── SUBTAB ── */
+  .adm-subtabs {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 24px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--border);
+    flex-wrap: wrap;
+  }
+
+  .adm-subtab {
+    padding: 6px 14px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text-secondary);
+    font-family: var(--font);
+    font-size: 0.8rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: var(--transition);
+    text-transform: capitalize;
+  }
+
+  .adm-subtab:hover {
+    border-color: var(--border-hover);
+    color: var(--text-primary);
+  }
+
+  .adm-subtab.active {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #000;
+    font-weight: 600;
+  }
+
+  /* ── MESSAGES ── */
+  .adm-msg-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 18px 20px;
+    margin-bottom: 12px;
+    transition: border-color var(--transition);
+  }
+
+  .adm-msg-card:hover {
+    border-color: var(--border-hover);
+  }
+
+  .adm-msg-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 10px;
+  }
+
+  .adm-msg-sender {
+    font-weight: 600;
+    font-size: 0.875rem;
+    color: var(--text-primary);
+  }
+
+  .adm-msg-email {
+    font-size: 0.75rem;
+    color: var(--accent);
+    margin-top: 2px;
+  }
+
+  .adm-msg-body {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+    line-height: 1.6;
+    padding: 12px;
+    background: var(--surface-2);
+    border-radius: 8px;
+    border: 1px solid var(--border);
+  }
+
+  /* ── TOAST ── */
+  .adm-toast {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 9999;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 14px 18px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.6);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 280px;
+    animation: slideIn 0.25s cubic-bezier(0.4,0,0.2,1);
+  }
+
+  @keyframes slideIn {
+    from { transform: translateX(110%); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+  }
+
+  .adm-toast-icon {
+    width: 32px; height: 32px;
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.9rem;
+    flex-shrink: 0;
+  }
+
+  .adm-toast-icon.success {
+    background: var(--accent-dim);
+    color: var(--accent);
+    border: 1px solid rgba(34,197,94,0.25);
+  }
+
+  .adm-toast-icon.error {
+    background: var(--red-dim);
+    color: var(--red);
+    border: 1px solid rgba(239,68,68,0.25);
+  }
+
+  .adm-toast-text strong {
+    display: block;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+
+  .adm-toast-text span {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+  }
+
+  .adm-toast-close {
+    margin-left: auto;
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-size: 1rem;
+    padding: 4px;
+    transition: color var(--transition);
+    flex-shrink: 0;
+  }
+
+  .adm-toast-close:hover { color: var(--text-primary); }
+
+  /* ── MODAL ── */
+  .adm-modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.7);
+    backdrop-filter: blur(4px);
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: fadeIn 0.15s ease;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  .adm-modal {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 28px 32px;
+    width: 400px;
+    max-width: 90vw;
+    text-align: center;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+    animation: scaleIn 0.2s cubic-bezier(0.4,0,0.2,1);
+  }
+
+  @keyframes scaleIn {
+    from { transform: scale(0.92); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+  }
+
+  .adm-modal-icon {
+    width: 48px; height: 48px;
+    background: var(--red-dim);
+    border: 1px solid rgba(239,68,68,0.25);
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.3rem;
+    color: var(--red);
+    margin: 0 auto 16px;
+  }
+
+  .adm-modal h3 {
+    font-family: var(--font-display);
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 8px;
+  }
+
+  .adm-modal p {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+    margin-bottom: 24px;
+    line-height: 1.5;
+  }
+
+  .adm-modal-btns {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+  }
+
+  /* ── LOADING ── */
+  .adm-loading {
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg);
+    gap: 16px;
+  }
+
+  .adm-loading-spinner {
+    width: 40px; height: 40px;
+    border: 3px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+
+  .adm-loading p {
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+  }
+
+  /* ── DIVIDER ── */
+  .adm-divider {
+    border: none;
+    border-top: 1px dashed var(--border);
+    margin: 16px 0;
+  }
+
+  /* ── ADD SLIDER AREA ── */
+  .adm-slider-add {
+    border: 1px dashed var(--border-hover);
+    border-radius: var(--radius);
+    padding: 14px;
+    margin-top: 12px;
+    background: var(--surface-2);
+  }
+
+  .adm-slider-add-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--accent);
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  /* ── EMPTY ── */
+  .adm-empty {
+    text-align: center;
+    padding: 40px;
+    color: var(--text-muted);
+    font-size: 0.875rem;
+    border: 1px dashed var(--border);
+    border-radius: var(--radius-lg);
+  }
+
+  .adm-empty i {
+    display: block;
+    font-size: 2rem;
+    margin-bottom: 12px;
+    opacity: 0.4;
+  }
+
+  .adm-counter-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+
+  .adm-fade-in {
+    animation: fadeUp 0.25s cubic-bezier(0.4,0,0.2,1);
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .adm-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 9px;
+    border-radius: 20px;
+    font-size: 0.68rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  .adm-badge-green {
+    background: var(--accent-dim);
+    color: var(--accent);
+    border: 1px solid rgba(34,197,94,0.25);
+  }
+
+  .adm-badge-blue {
+    background: var(--blue-dim);
+    color: var(--blue);
+    border: 1px solid rgba(59,130,246,0.25);
+  }
+
+  .adm-badge-yellow {
+    background: rgba(245,158,11,0.12);
+    color: var(--yellow);
+    border: 1px solid rgba(245,158,11,0.25);
+  }
+`;
+
+/* ─── TOAST ──────────────────────────────────────────────────────────── */
+const Toast = ({ message, type, onClose }) => {
+  if (!message) return null;
+  return (
+    <div className="adm-toast">
+      <div className={`adm-toast-icon ${type}`}>
+        <i className={type === 'error' ? 'fas fa-xmark' : 'fas fa-check'} />
+      </div>
+      <div className="adm-toast-text">
+        <strong>{type === 'error' ? 'Hata oluştu' : 'Başarılı'}</strong>
+        <span>{message}</span>
+      </div>
+      <button className="adm-toast-close" onClick={onClose}><i className="fas fa-xmark" /></button>
     </div>
-);
+  );
 };
 
+/* ─── CONFIRM MODAL ──────────────────────────────────────────────────── */
 const ConfirmModal = ({ isOpen, message, onConfirm, onCancel }) => {
-if (!isOpen) return null;
-return (
-    <div style={{position:'fixed', top:0, left:0, width:'100%', height:'100%', background:'rgba(0,0,0,0.5)', zIndex:10000, display:'flex', alignItems:'center', justifyContent:'center', backdropFilter: 'blur(3px)'}}>
-        <div style={{background:'white', borderRadius:'12px', padding:'30px', width:'400px', maxWidth:'90%', textAlign:'center', boxShadow:'0 10px 40px rgba(0,0,0,0.3)'}}>
-            <h3 style={{margin:'0 0 10px', color:'#333'}}>Emin misiniz?</h3>
-            <p style={{color:'#666', marginBottom:'25px', lineHeight:'1.5'}}>{message}</p>
-            <div style={{display:'flex', gap:'10px', justifyContent:'center'}}>
-                <button onClick={onCancel} className="btn" style={{background:'#f1f1f1', color:'#555', padding:'10px 25px', borderRadius:'30px', fontWeight:'600', border:'none', cursor:'pointer'}}>Vazgeç</button>
-                <button onClick={onConfirm} className="btn" style={{background:'#e74c3c', color:'white', padding:'10px 25px', borderRadius:'30px', fontWeight:'600', border:'none', cursor:'pointer'}}>Evet, Sil</button>
-            </div>
+  if (!isOpen) return null;
+  return (
+    <div className="adm-modal-overlay">
+      <div className="adm-modal">
+        <div className="adm-modal-icon"><i className="fas fa-trash" /></div>
+        <h3>Emin misiniz?</h3>
+        <p>{message}</p>
+        <div className="adm-modal-btns">
+          <button className="adm-btn adm-btn-ghost" onClick={onCancel}>Vazgeç</button>
+          <button className="adm-btn adm-btn-danger" style={{background:'var(--red)', color:'white', border:'none'}} onClick={onConfirm}>
+            <i className="fas fa-trash" /> Evet, Sil
+          </button>
         </div>
+      </div>
     </div>
-);
+  );
 };
 
-const SettingInput = ({ label, settingKey, type="text", placeholder="", settings, handleSettingChange, updateSetting, uploadFile }) => {
-    const settingItem = settings.find(s => s.key === settingKey);
-    const val = settingItem ? settingItem.value : (DEFAULTS[settingKey] || ''); 
-    return (
-        <div style={{background:'#fff', padding:'15px', borderRadius:'8px', border:'1px solid #eee', marginBottom:'15px'}}>
-            <label style={{fontWeight:'bold', display:'block', marginBottom:'8px', color:'#333', fontSize:'0.9rem'}}>
-                {label} <span style={{color:'#ccc', fontWeight:'normal', fontSize:'0.75rem', float:'right'}}>{settingKey}</span>
+/* ─── SETTING INPUT ──────────────────────────────────────────────────── */
+const SettingInput = ({ label, settingKey, type = 'text', placeholder = '', settings, handleSettingChange, updateSetting, uploadFile }) => {
+  const settingItem = settings.find(s => s.key === settingKey);
+  const val = settingItem ? settingItem.value : (DEFAULTS[settingKey] || '');
+
+  return (
+    <div className="adm-field">
+      <div className="adm-field-header">
+        <span className="adm-field-label">{label}</span>
+        <span className="adm-field-key">{settingKey}</span>
+      </div>
+      <div className="adm-field-row">
+        {type === 'textarea' ? (
+          <textarea className="adm-textarea" value={val} onChange={e => handleSettingChange(settingKey, e.target.value)} placeholder={placeholder} rows={3} />
+        ) : type === 'image' ? (
+          <div className="adm-img-field">
+            <div className="adm-img-preview-wrap">
+              {val ? <img src={val} className="adm-img-thumb" alt="" onError={e => e.target.style.display='none'} /> : <i className="fas fa-link" style={{color:'var(--text-muted)', fontSize:'0.8rem'}} />}
+              <input type="text" className="adm-img-url-input" value={val} onChange={e => handleSettingChange(settingKey, e.target.value)} placeholder="URL girin veya dosya yükleyin..." />
+            </div>
+            <label className="adm-upload-btn" title="Masaüstünden Yükle">
+              <i className="fas fa-upload" />
+              <input type="file" hidden onChange={async e => {
+                const url = await uploadFile(e.target.files[0]);
+                if (url) { handleSettingChange(settingKey, url); updateSetting(settingKey, url); }
+              }} />
             </label>
-            <div style={{display:'flex', gap:'10px', alignItems: 'flex-start'}}>
-                {type === 'textarea' ? (
-                    <textarea className="form-control" value={val} onChange={(e) => handleSettingChange(settingKey, e.target.value)} placeholder={placeholder} rows="3" style={{marginBottom:0, flex: 1, padding:'10px', border:'1px solid #ddd', borderRadius:'5px', width:'100%'}}></textarea>
-                ) : type === 'image' ? (
-                    <div style={{flex:1, display:'flex', gap:'10px', alignItems:'center'}}>
-                        <div style={{flex:1, display:'flex', alignItems:'center', background:'white', border:'1px solid #ddd', borderRadius:'5px', padding:'5px 10px', gap:'10px'}}>
-                            {val ? <img src={val} style={{height:'30px', width:'30px', objectFit:'cover', borderRadius:'4px'}} /> : <i className="fas fa-link" style={{color:'#999'}}></i>}
-                            <input type="text" className="form-control" value={val} onChange={(e) => handleSettingChange(settingKey, e.target.value)} placeholder="URL Yapıştırın (https://...)" style={{flex:1, marginBottom:0, padding:'5px', border:'none', outline:'none', fontSize:'0.9rem'}} />
-                        </div>
-                        <label style={{background:'#eef2f7', padding:'9px 13px', borderRadius:'5px', cursor:'pointer', fontSize:'1rem', border:'1px solid #ddd', color:'#333', marginBottom:0, display:'flex', alignItems:'center', justifyContent:'center'}}>
-                            <i className="fas fa-desktop"></i>
-                            <input type="file" hidden onChange={async (e) => {
-                                const url = await uploadFile(e.target.files[0]);
-                                if(url) { handleSettingChange(settingKey, url); updateSetting(settingKey, url); }
-                            }} />
-                        </label>
-                    </div>
-                ) : (
-                    <input type="text" className="form-control" value={val} onChange={(e) => handleSettingChange(settingKey, e.target.value)} placeholder={placeholder} style={{marginBottom:0, flex: 1, padding:'10px', border:'1px solid #ddd', borderRadius:'5px', width:'100%'}} />
-                )}
-                <button onClick={() => updateSetting(settingKey, val)} style={{padding:'10px 20px', height:'auto', background:'#003399', color:'white', border:'none', borderRadius:'5px', cursor:'pointer', whiteSpace:'nowrap'}}>Kaydet</button>
-            </div>
-        </div>
-    );
-};
-
-const FileInput = ({ value, onChange, placeholder, uploadFile, showToast }) => {
-    const [uploading, setUploading] = useState(false);
-    const handleFileChange = async (e) => {
-    try {
-        setUploading(true);
-        const file = e.target.files[0];
-        if (!file) return;
-        const url = await uploadFile(file);
-        if (url) { onChange(url); if(showToast) showToast('Dosya başarıyla yüklendi.', 'success'); }
-    } catch (error) { if(showToast) showToast('Hata oluştu', 'error'); } finally { setUploading(false); }
-    };
-    return (
-    <div style={{display:'flex', gap:'10px', alignItems:'center', width:'100%'}}>
-        <div style={{flex:1, display:'flex', alignItems:'center', background:'white', border:'1px solid #ddd', borderRadius:'5px', padding:'5px 10px', gap:'10px'}}>
-            {value ? (
-                <img src={value} alt="preview" onError={(e) => e.target.style.display='none'} style={{width:'30px', height:'30px', objectFit:'cover', borderRadius:'4px'}} />
-            ) : <i className="fas fa-link" style={{color:'#999'}}></i>}
-            <input type="text" className="form-control" placeholder={`${placeholder}`} value={value || ''} onChange={(e) => onChange(e.target.value)} style={{flex:1, marginBottom:0, border:'none', padding:'5px', outline:'none', fontSize:'0.9rem'}}/>
-        </div>
-        <div style={{position:'relative', overflow:'hidden', display:'inline-block'}}>
-            <button type="button" className="btn" style={{background: uploading ? '#ccc' : '#eef2f7', color:'#333', padding:'9px 13px', border:'1px solid #ddd', cursor:'pointer', borderRadius:'5px', display:'flex', alignItems:'center', justifyContent:'center', fontSize:'1rem'}}>
-                {uploading ? <i className="fas fa-spinner fa-spin"></i> : <i className="fas fa-desktop"></i>}
-            </button>
-            <input type="file" onChange={handleFileChange} disabled={uploading} style={{position:'absolute', left:0, top:0, opacity:0, width:'100%', height:'100%', cursor:'pointer'}} />
-        </div>
+          </div>
+        ) : (
+          <input type="text" className="adm-input" value={val} onChange={e => handleSettingChange(settingKey, e.target.value)} placeholder={placeholder} />
+        )}
+        <button className="adm-btn adm-btn-save" onClick={() => updateSetting(settingKey, val)}>
+          <i className="fas fa-floppy-disk" /> Kaydet
+        </button>
+      </div>
     </div>
-    );
+  );
 };
 
+/* ─── FILE INPUT ─────────────────────────────────────────────────────── */
+const FileInput = ({ value, onChange, placeholder, uploadFile, showToast }) => {
+  const [uploading, setUploading] = useState(false);
+  const handleFile = async e => {
+    try {
+      setUploading(true);
+      const file = e.target.files[0];
+      if (!file) return;
+      const url = await uploadFile(file);
+      if (url) { onChange(url); if (showToast) showToast('Dosya başarıyla yüklendi.', 'success'); }
+    } catch { if (showToast) showToast('Yükleme hatası oluştu.', 'error'); }
+    finally { setUploading(false); }
+  };
+  return (
+    <div className="adm-img-field">
+      <div className="adm-img-preview-wrap">
+        {value ? <img src={value} className="adm-img-thumb" alt="" onError={e => e.target.style.display='none'} /> : <i className="fas fa-link" style={{color:'var(--text-muted)', fontSize:'0.8rem'}} />}
+        <input type="text" className="adm-img-url-input" placeholder={placeholder} value={value || ''} onChange={e => onChange(e.target.value)} />
+      </div>
+      <label className="adm-upload-btn" title="Yükle">
+        {uploading ? <i className="fas fa-spinner fa-spin" /> : <i className="fas fa-upload" />}
+        <input type="file" onChange={handleFile} disabled={uploading} />
+      </label>
+    </div>
+  );
+};
+
+/* ─── SECTION HEADER ─────────────────────────────────────────────────── */
+const SectionHeader = ({ num, title }) => (
+  <div className="adm-section-header">
+    <div className="adm-section-num">{num}</div>
+    <div className="adm-section-title">{title}</div>
+  </div>
+);
+
+/* ═══════════════════════════════════════════════════════════════════════
+   MAIN PAGE
+══════════════════════════════════════════════════════════════════════ */
 export default function AdminPage() {
-const router = useRouter();
-const [activeTab, setActiveTab] = useState('home');
-const [subTab, setAboutSubTab] = useState('general');
-const [loading, setLoading] = useState(true);
-const [settings, setSettings] = useState([]);
-const [news, setNews] = useState([]);
-const [activities, setActivities] = useState([]);
-const [partners, setPartners] = useState([]);
-const [results, setResults] = useState([]);
-const [messages, setMessages] = useState([]); 
-const [ecoItems, setEcoItems] = useState([]);
+  const router = useRouter();
+  const [activeTab, setActiveTab] = useState('home');
+  const [subTab, setAboutSubTab] = useState('general');
+  const [loading, setLoading] = useState(true);
+  const [settings, setSettings] = useState([]);
+  const [news, setNews] = useState([]);
+  const [activities, setActivities] = useState([]);
+  const [partners, setPartners] = useState([]);
+  const [results, setResults] = useState([]);
+  const [messages, setMessages] = useState([]);
+  const [ecoItems, setEcoItems] = useState([]);
+  const [heroImages, setHeroImages] = useState([]);
 
-// Slider Resimleri İçin State
-const [heroImages, setHeroImages] = useState([]);
+  const [newsForm, setNewsForm] = useState({ id: null, title: '', summary: '', description: '', image_url: '', date: '' });
+  const [activityForm, setActivityForm] = useState({ id: null, title: '', type: 'Toplantı (TPM)', location: '', date: '', summary: '', description: '', image_url: '' });
+  const [partnerForm, setPartnerForm] = useState({ id: null, name: '', country: '', image_url: '', flag_url: '', website: '', description: '', role: 'Ortak' });
+  const [resultForm, setResultForm] = useState({ id: null, title: '', description: '', status: 'Planlanıyor', link: '', icon: 'file' });
+  const [isEditing, setIsEditing] = useState(false);
+  const [toast, setToast] = useState(null);
+  const [modal, setModal] = useState({ isOpen: false, message: '', onConfirm: null });
 
-const [newsForm, setNewsForm] = useState({ id: null, title: '', summary: '', description: '', image_url: '', date: '' });
-const [activityForm, setActivityForm] = useState({ id: null, title: '', type: 'Toplantı (TPM)', location: '', date: '', summary: '', description: '', image_url: '' });
-const [partnerForm, setPartnerForm] = useState({ id: null, name: '', country: '', image_url: '', flag_url: '', website: '', description: '', role: 'Ortak' }); 
-const [resultForm, setResultForm] = useState({ id: null, title: '', description: '', status: 'Planlanıyor', link: '', icon: 'file' });
-const [isEditing, setIsEditing] = useState(false);
-const [toast, setToast] = useState(null); 
-const [modal, setModal] = useState({ isOpen: false, message: '', onConfirm: null });
+  const showToast = (message, type = 'success') => { setToast({ message, type }); setTimeout(() => setToast(null), 3500); };
+  const showConfirm = (message, onConfirm) => setModal({ isOpen: true, message, onConfirm });
+  const closeConfirm = () => setModal({ ...modal, isOpen: false });
+  const handleConfirmAction = () => { if (modal.onConfirm) modal.onConfirm(); closeConfirm(); };
 
-const showToast = (message, type = 'success') => { setToast({ message, type }); setTimeout(() => setToast(null), 3000); };
-const showConfirm = (message, onConfirm) => { setModal({ isOpen: true, message, onConfirm }); };
-const closeConfirm = () => { setModal({ ...modal, isOpen: false }); };
-const handleConfirmAction = () => { if (modal.onConfirm) modal.onConfirm(); closeConfirm(); };
+  useEffect(() => { checkSessionAndLoad(); }, []);
 
-useEffect(() => { checkSessionAndLoad(); }, []);
-
-async function checkSessionAndLoad() {
+  async function checkSessionAndLoad() {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) { router.push('/login'); return; }
     await loadAllData();
     setLoading(false);
-}
+  }
 
-async function loadAllData() {
+  async function loadAllData() {
     const s = await supabase.from('settings').select('*').order('id');
-    const n = await supabase.from('news').select('*').order('date', {ascending:false});
-    const a = await supabase.from('activities').select('*').order('id', {ascending:false});
+    const n = await supabase.from('news').select('*').order('date', { ascending: false });
+    const a = await supabase.from('activities').select('*').order('id', { ascending: false });
     const p = await supabase.from('partners').select('*').order('id');
     const r = await supabase.from('results').select('*').order('id');
-    const m = await supabase.from('contact_messages').select('*').order('created_at', {ascending:false}); 
-    
-    setSettings(s.data || []); 
-    setNews(n.data || []); 
-    setActivities(a.data || []); 
-    setPartners(p.data || []); 
-    setResults(r.data || []); 
+    const m = await supabase.from('contact_messages').select('*').order('created_at', { ascending: false });
+
+    setSettings(s.data || []);
+    setNews(n.data || []);
+    setActivities(a.data || []);
+    setPartners(p.data || []);
+    setResults(r.data || []);
     setMessages(m.data || []);
 
     const ecoStr = s.data?.find(x => x.key === 'home_eco_list')?.value;
-    if (ecoStr) {
-        try { setEcoItems(JSON.parse(ecoStr)); } catch(e) { console.error(e); }
-    } else {
-        const defaultEco = [
-            { title: s.data?.find(x => x.key==='home_eco_1_title')?.value || DEFAULTS.home_eco_1_title, desc: s.data?.find(x => x.key==='home_eco_1_desc')?.value || DEFAULTS.home_eco_1_desc, icon: 'fa-mobile-screen' },
-            { title: s.data?.find(x => x.key==='home_eco_2_title')?.value || DEFAULTS.home_eco_2_title, desc: s.data?.find(x => x.key==='home_eco_2_desc')?.value || DEFAULTS.home_eco_2_desc, icon: 'fa-recycle' },
-            { title: s.data?.find(x => x.key==='home_eco_3_title')?.value || DEFAULTS.home_eco_3_title, desc: s.data?.find(x => x.key==='home_eco_3_desc')?.value || DEFAULTS.home_eco_3_desc, icon: 'fa-graduation-cap' },
-            { title: s.data?.find(x => x.key==='home_eco_4_title')?.value || DEFAULTS.home_eco_4_title, desc: s.data?.find(x => x.key==='home_eco_4_desc')?.value || DEFAULTS.home_eco_4_desc, icon: 'fa-leaf' }
-        ];
-        setEcoItems(defaultEco);
+    if (ecoStr) { try { setEcoItems(JSON.parse(ecoStr)); } catch(e){} }
+    else {
+      setEcoItems([
+        { title: 'Mobil Uygulama', desc: 'Vatandaşlara yönelik dijital araçlar.', icon: 'fa-mobile-screen' },
+        { title: 'Geri Dönüşüm', desc: 'Çevre dostu alışkanlıklar.', icon: 'fa-recycle' },
+        { title: 'Eğitim', desc: 'Farkındalık ve kapasite geliştirme.', icon: 'fa-graduation-cap' },
+        { title: 'Doğa', desc: 'Sürdürülebilir yaşam pratikleri.', icon: 'fa-leaf' }
+      ]);
     }
 
-    // Hero Slider Resimlerini Çekme
     const heroSliderStr = s.data?.find(x => x.key === 'hero_slider_images')?.value;
-    if (heroSliderStr) {
-        try { setHeroImages(JSON.parse(heroSliderStr)); } catch(e) {}
-    } else {
-        const oldHeroBg = s.data?.find(x => x.key === 'hero_bg_image')?.value;
-        if(oldHeroBg) setHeroImages([oldHeroBg]);
+    if (heroSliderStr) { try { setHeroImages(JSON.parse(heroSliderStr)); } catch(e){} }
+    else {
+      const oldHeroBg = s.data?.find(x => x.key === 'hero_bg_image')?.value;
+      if (oldHeroBg) setHeroImages([oldHeroBg]);
     }
-}
+  }
 
-const handleEcoChange = (index, field, value) => {
+  const handleEcoChange = (index, field, value) => {
     const newItems = [...ecoItems];
     newItems[index][field] = value;
     setEcoItems(newItems);
-};
+  };
 
-const saveEcoItems = async (itemsToSave) => {
+  const saveEcoItems = async (itemsToSave) => {
     setEcoItems(itemsToSave);
     const { error } = await supabase.from('settings').upsert({ key: 'home_eco_list', value: JSON.stringify(itemsToSave) }, { onConflict: 'key' });
-    if(error) showToast('Hata: ' + error.message, 'error'); 
+    if (error) showToast('Hata: ' + error.message, 'error');
     else showToast('Ağaç kutuları güncellendi.', 'success');
-};
+  };
 
-// Slider Resimlerini Toplu Kaydetme
-const saveHeroImages = async (newImagesArray) => {
-    setHeroImages(newImagesArray);
-    const { error } = await supabase.from('settings').upsert({ key: 'hero_slider_images', value: JSON.stringify(newImagesArray) }, { onConflict: 'key' });
-    if(error) showToast('Hata: ' + error.message, 'error'); 
-    else showToast('Slider resimleri başarıyla güncellendi.', 'success');
-};
+  const saveHeroImages = async (newArr) => {
+    setHeroImages(newArr);
+    const { error } = await supabase.from('settings').upsert({ key: 'hero_slider_images', value: JSON.stringify(newArr) }, { onConflict: 'key' });
+    if (error) showToast('Hata: ' + error.message, 'error');
+    else showToast('Slider güncellendi.', 'success');
+  };
 
-// YENİ: Slider Resimlerinin Sırasını Değiştirme Fonksiyonu
-const moveHeroImage = (index, direction) => {
+  const moveHeroImage = (index, direction) => {
     const newArr = [...heroImages];
-    // direction = -1 (Yukarı taşı), direction = 1 (Aşağı taşı)
-    if (direction === -1 && index > 0) {
-        const temp = newArr[index - 1];
-        newArr[index - 1] = newArr[index];
-        newArr[index] = temp;
-        saveHeroImages(newArr);
-    } else if (direction === 1 && index < newArr.length - 1) {
-        const temp = newArr[index + 1];
-        newArr[index + 1] = newArr[index];
-        newArr[index] = temp;
-        saveHeroImages(newArr);
-    }
-};
+    if (direction === -1 && index > 0) { [newArr[index - 1], newArr[index]] = [newArr[index], newArr[index - 1]]; }
+    else if (direction === 1 && index < newArr.length - 1) { [newArr[index + 1], newArr[index]] = [newArr[index], newArr[index + 1]]; }
+    saveHeroImages(newArr);
+  };
 
-async function uploadFile(file) {
+  async function uploadFile(file) {
     if (!file) return null;
     const fileName = `${Date.now()}_${Math.random().toString(36).substring(2)}.${file.name.split('.').pop()}`;
     const { error } = await supabase.storage.from('images').upload(fileName, file);
     if (error) { showToast('Yükleme Hatası: ' + error.message, 'error'); return null; }
     const { data: { publicUrl } } = supabase.storage.from('images').getPublicUrl(fileName);
     return publicUrl;
-}
+  }
 
-const handleSettingChange = (key, newValue) => {
+  const handleSettingChange = (key, newValue) => {
     setSettings(prev => {
-        const exists = prev.find(item => item.key === key);
-        if (exists) {
-            return prev.map(item => item.key === key ? { ...item, value: newValue } : item);
-        } else {
-            return [...prev, { key: key, value: newValue }];
-        }
+      const exists = prev.find(item => item.key === key);
+      if (exists) return prev.map(item => item.key === key ? { ...item, value: newValue } : item);
+      return [...prev, { key, value: newValue }];
     });
-};
+  };
 
-async function updateSetting(key, value) {
+  async function updateSetting(key, value) {
     const { error } = await supabase.from('settings').upsert({ key, value }, { onConflict: 'key' });
-    if(error) showToast('Hata: ' + error.message, 'error'); 
-    else showToast('Güncellendi.', 'success');
-}
+    if (error) showToast('Hata: ' + error.message, 'error');
+    else showToast('Ayar kaydedildi.', 'success');
+  }
 
-async function deleteItem(table, id) {
-    showConfirm('Silmek istediğinize emin misiniz?', async () => {
-        await supabase.from(table).delete().eq('id', id); loadAllData(); showToast('Silindi.', 'success');
+  async function deleteItem(table, id) {
+    showConfirm('Bu öğeyi kalıcı olarak silmek istediğinizden emin misiniz?', async () => {
+      await supabase.from(table).delete().eq('id', id);
+      loadAllData();
+      showToast('Başarıyla silindi.', 'success');
     });
-}
+  }
 
-async function saveItem(e, table, form, setForm) {
+  async function saveItem(e, table, form, setForm) {
     e.preventDefault();
     const { id, ...data } = form;
-    let result;
-    if (id) {
-        result = await supabase.from(table).update(data).eq('id', id);
-    } else {
-        result = await supabase.from(table).insert([data]);
-    }
-    if (result && result.error) {
-        showToast('Veritabanı Hatası: ' + result.error.message, 'error');
-        return; 
-    }
-    setIsEditing(false); loadAllData(); showToast('Kaydedildi.', 'success');
-    if(table==='news') setNewsForm({ id: null, title: '', summary: '', description: '', image_url: '', date: '' });
-    if(table==='activities') setActivityForm({ id: null, title: '', type: 'Toplantı (TPM)', location: '', date: '', summary: '', description: '', image_url: '' });
-    if(table==='partners') setPartnerForm({ id: null, name: '', country: '', image_url: '', flag_url: '', website: '', description: '', role: 'Ortak' });
-    if(table==='results') setResultForm({ id: null, title: '', description: '', status: 'Planlanıyor', link: '', icon: 'file' });
-}
+    let result = id
+      ? await supabase.from(table).update(data).eq('id', id)
+      : await supabase.from(table).insert([data]);
+    if (result?.error) { showToast('Hata: ' + result.error.message, 'error'); return; }
+    setIsEditing(false);
+    loadAllData();
+    showToast('Başarıyla kaydedildi.', 'success');
+    if (table === 'news') setNewsForm({ id: null, title: '', summary: '', description: '', image_url: '', date: '' });
+    if (table === 'activities') setActivityForm({ id: null, title: '', type: 'Toplantı (TPM)', location: '', date: '', summary: '', description: '', image_url: '' });
+    if (table === 'partners') setPartnerForm({ id: null, name: '', country: '', image_url: '', flag_url: '', website: '', description: '', role: 'Ortak' });
+    if (table === 'results') setResultForm({ id: null, title: '', description: '', status: 'Planlanıyor', link: '', icon: 'file' });
+  }
 
-function startEdit(item, type) {
+  function startEdit(item, type) {
     setIsEditing(true);
-    if(type==='news') setNewsForm({
-        id: item.id,
-        title: item.title,
-        summary: item.summary || '',
-        description: item.description || '',
-        image_url: item.image_url || '',
-        date: item.date || ''
-    });
-    if(type==='activities') setActivityForm({
-        id: item.id,
-        title: item.title,
-        type: item.type || 'Toplantı (TPM)',
-        location: item.location || '',
-        date: item.date || '',
-        summary: item.summary || '',
-        description: item.description || '',
-        image_url: item.image_url || ''
-    });
-    if(type==='partners') setPartnerForm({
-        id: item.id, 
-        name: item.name, 
-        country: item.country, 
-        image_url: item.image_url, 
-        flag_url: item.flag_url,
-        website: item.website || '',
-        description: item.description || '',
-        role: item.role || 'Ortak'
-    });
-    if(type==='results') setResultForm(item);
+    if (type === 'news') setNewsForm({ id: item.id, title: item.title, summary: item.summary || '', description: item.description || '', image_url: item.image_url || '', date: item.date || '' });
+    if (type === 'activities') setActivityForm({ id: item.id, title: item.title, type: item.type || 'Toplantı (TPM)', location: item.location || '', date: item.date || '', summary: item.summary || '', description: item.description || '', image_url: item.image_url || '' });
+    if (type === 'partners') setPartnerForm({ id: item.id, name: item.name, country: item.country, image_url: item.image_url, flag_url: item.flag_url, website: item.website || '', description: item.description || '', role: item.role || 'Ortak' });
+    if (type === 'results') setResultForm(item);
     window.scrollTo({ top: 0, behavior: 'smooth' });
-}
+  }
 
-const TabButton = ({ id, label, icon }) => (
-    <button onClick={() => { setActiveTab(id); setIsEditing(false); }} 
-        style={{padding:'12px 20px', cursor:'pointer', background: activeTab === id ? '#003399' : 'white', color: activeTab === id ? 'white' : '#555', border: '1px solid #ddd', borderRadius: '8px', textAlign:'left', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '10px', width:'100%', marginBottom:'5px'}}>
-        <i className={icon} style={{width:'20px', textAlign:'center'}}></i> {label}
-    </button>
-);
+  const commonProps = { settings, handleSettingChange, updateSetting, uploadFile };
 
-if (loading) return <div style={{height:'100vh', display:'flex', alignItems:'center', justifyContent:'center', color:'#003399'}}>Yükleniyor...</div>;
+  const NAV = [
+    { id: 'messages', label: `Mesajlar`, icon: 'fas fa-inbox', badge: messages.length, group: 'Genel' },
+    { id: 'home', label: 'Ana Sayfa', icon: 'fas fa-house', group: 'İçerik' },
+    { id: 'about', label: 'Hakkında', icon: 'fas fa-circle-info', group: 'İçerik' },
+    { id: 'news', label: 'Haberler', icon: 'fas fa-newspaper', badge: news.length, group: 'İçerik' },
+    { id: 'activities', label: 'Faaliyetler', icon: 'fas fa-calendar-check', badge: activities.length, group: 'İçerik' },
+    { id: 'partners', label: 'Ortaklar', icon: 'fas fa-handshake', badge: partners.length, group: 'İçerik' },
+    { id: 'results', label: 'Çıktılar', icon: 'fas fa-file-circle-check', badge: results.length, group: 'İçerik' },
+    { id: 'contact', label: 'İletişim', icon: 'fas fa-phone', group: 'Ayarlar' },
+    { id: 'site', label: 'Site Ayarları', icon: 'fas fa-sliders', group: 'Ayarlar' },
+  ];
 
-const commonProps = { settings, handleSettingChange, updateSetting, uploadFile };
+  const groupedNav = NAV.reduce((acc, item) => {
+    if (!acc[item.group]) acc[item.group] = [];
+    acc[item.group].push(item);
+    return acc;
+  }, {});
 
-return (
-    <div className="container" style={{marginTop:'40px', marginBottom:'100px', maxWidth:'1200px', margin:'40px auto', padding:'0 20px'}}>
-    {toast && <ToastNotification message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
-    <ConfirmModal isOpen={modal.isOpen} message={modal.message} onConfirm={handleConfirmAction} onCancel={closeConfirm} />
-    <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:'30px', paddingBottom:'20px', borderBottom:'1px solid #eee'}}>
-        <h1 style={{fontSize:'1.8rem', color:'#333', margin:0}}>Yönetim Paneli</h1>
-        <button onClick={async () => { await supabase.auth.signOut(); router.push('/login'); }} style={{background:'#e74c3c', color:'white', padding:'10px 20px', border:'none', borderRadius:'30px', cursor:'pointer'}}>Çıkış Yap</button>
+  const currentTab = NAV.find(n => n.id === activeTab);
+
+  if (loading) return (
+    <div className="adm-loading">
+      <style>{globalStyle}</style>
+      <div className="adm-loading-spinner" />
+      <p>Yükleniyor...</p>
     </div>
-    <div style={{display:'grid', gridTemplateColumns:'260px 1fr', gap:'30px'}}>
-        <div>
-            <TabButton id="messages" label={`Mesajlar (${messages.length})`} icon="fas fa-envelope" />
-            <TabButton id="home" label="Ana Sayfa" icon="fas fa-home" />
-            <TabButton id="about" label="Hakkında" icon="fas fa-info-circle" />
-            <TabButton id="news" label="Haberler" icon="fas fa-newspaper" />
-            <TabButton id="activities" label="Faaliyetler" icon="fas fa-calendar-check" /> 
-            <TabButton id="partners" label="Ortaklar" icon="fas fa-handshake" />
-            <TabButton id="results" label="Çıktılar" icon="fas fa-file-alt" />
-            <TabButton id="contact" label="İletişim" icon="fas fa-phone" />
-            <TabButton id="site" label="Site Ayarları (Header/Footer)" icon="fas fa-desktop" />
-        </div>
-        <div style={{background:'#fcfcfc', padding:'40px', borderRadius:'12px', border:'1px solid #eee'}}>
-            {activeTab === 'home' && (
-                <div className="fade-in">
-                    <h2 style={{marginBottom:'25px', color:'#003399'}}>Ana Sayfa Düzenle</h2>
-                    
-                    {/* DİNAMİK SLIDER DÜZENLEME ALANI */}
-                    <h4 style={{margin:'20px 0', color:'#555', borderLeft:'4px solid #003399', paddingLeft:'10px'}}>1. Ana Sayfa Kapak (Slider) Resimleri</h4>
-                    <div style={{background:'#fff', padding:'20px', borderRadius:'8px', border:'1px solid #ddd', marginBottom:'20px'}}>
-                        <p style={{color:'#666', fontSize:'0.9rem', marginBottom:'15px'}}>Ana sayfada yavaşça büyüyerek (5 saniyede bir) değişecek resimleri buradan ekleyebilir ve sırasını oklar ile değiştirebilirsiniz.</p>
-                        
-                        {heroImages.map((img, i) => (
-                            <div key={i} style={{display:'flex', gap:'10px', marginBottom:'10px', alignItems:'center', background:'#f9f9f9', padding:'10px', borderRadius:'6px', border:'1px solid #eee'}}>
-                                <div style={{fontWeight:'bold', color:'#999', width:'25px', textAlign:'center'}}>{i+1}.</div>
-                                <img src={img} alt={`Slide ${i+1}`} style={{width:'60px', height:'40px', objectFit:'cover', borderRadius:'4px'}} />
-                                <input className="form-control" placeholder="Resim URL'si" value={img} onChange={(e) => {
-                                    const newArr = [...heroImages];
-                                    newArr[i] = e.target.value;
-                                    setHeroImages(newArr);
-                                }} style={{flex:1, marginBottom:0, border:'none', background:'transparent', outline:'none'}} />
-                                
-                                {/* YUKARI TAŞI BUTONU */}
-                                <button onClick={() => moveHeroImage(i, -1)} disabled={i === 0} style={{background: i === 0 ? '#ddd' : '#003399', color:'white', border:'none', padding:'6px 10px', borderRadius:'5px', cursor: i === 0 ? 'not-allowed' : 'pointer'}} title="Yukarı Taşı">
-                                    <i className="fas fa-arrow-up"></i>
-                                </button>
+  );
 
-                                {/* AŞAĞI TAŞI BUTONU */}
-                                <button onClick={() => moveHeroImage(i, 1)} disabled={i === heroImages.length - 1} style={{background: i === heroImages.length - 1 ? '#ddd' : '#003399', color:'white', border:'none', padding:'6px 10px', borderRadius:'5px', cursor: i === heroImages.length - 1 ? 'not-allowed' : 'pointer'}} title="Aşağı Taşı">
-                                    <i className="fas fa-arrow-down"></i>
-                                </button>
+  return (
+    <>
+      <style>{globalStyle}</style>
+      <Toast message={toast?.message} type={toast?.type} onClose={() => setToast(null)} />
+      <ConfirmModal isOpen={modal.isOpen} message={modal.message} onConfirm={handleConfirmAction} onCancel={closeConfirm} />
 
-                                {/* SİL BUTONU */}
-                                <button onClick={() => {
-                                    const filtered = heroImages.filter((_, idx) => idx !== i);
-                                    saveHeroImages(filtered);
-                                }} style={{background:'#e74c3c', color:'white', border:'none', padding:'6px 12px', borderRadius:'5px', cursor:'pointer', fontSize:'0.85rem', marginLeft:'5px'}}>Sil</button>
-                            </div>
-                        ))}
-                        
-                        <div style={{marginTop:'15px', borderTop:'1px dashed #ccc', paddingTop:'15px'}}>
-                            <strong style={{display:'block', marginBottom:'10px', fontSize:'0.9rem', color:'#003399'}}>+ Yeni Slider Resmi Ekle</strong>
-                            <FileInput value="" onChange={(url) => {
-                                if(url) saveHeroImages([...heroImages, url]);
-                            }} placeholder="Yeni resim linki yapıştırın veya masaüstünden yükleyin" uploadFile={uploadFile} showToast={showToast} />
-                        </div>
-                        <button onClick={() => saveHeroImages(heroImages)} style={{marginTop:'15px', background:'#003399', color:'white', padding:'8px 15px', border:'none', borderRadius:'5px', cursor:'pointer', fontSize:'0.9rem'}}>Link Değişikliklerini Kaydet</button>
-                    </div>
+      <div className="adm-layout">
+        {/* ── SIDEBAR ── */}
+        <aside className="adm-sidebar">
+          <div className="adm-brand">
+            <div className="adm-brand-logo">
+              <div className="adm-brand-icon"><i className="fas fa-leaf" /></div>
+              DIGI-<span>GREEN</span>
+            </div>
+            <div className="adm-brand-sub">Yönetim Paneli</div>
+          </div>
 
-                    <SettingInput label="Büyük Başlık" settingKey="hero_title" {...commonProps} />
-                    <SettingInput label="Açıklama Metni" settingKey="hero_desc" type="textarea" {...commonProps} />
-                    
-                    <h4 style={{margin:'40px 0 20px', color:'#555', borderLeft:'4px solid #003399', paddingLeft:'10px'}}>2. Özet Kartlar (4 Adet)</h4>
-                    <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:'15px'}}>
-                        <div style={{border:'1px solid #ddd', padding:'15px', borderRadius:'8px', background:'white'}}>
-                            <strong style={{color:'#003399'}}>Kart 1 (Süre)</strong>
-                            <SettingInput label="Değer" settingKey="home_summary_1_val" {...commonProps} />
-                            <SettingInput label="Etiket" settingKey="home_summary_1_label" {...commonProps} />
-                        </div>
-                        <div style={{border:'1px solid #ddd', padding:'15px', borderRadius:'8px', background:'white'}}>
-                            <strong style={{color:'#003399'}}>Kart 2 (Bütçe)</strong>
-                            <SettingInput label="Değer" settingKey="home_summary_2_val" {...commonProps} />
-                            <SettingInput label="Etiket" settingKey="home_summary_2_label" {...commonProps} />
-                        </div>
-                        <div style={{border:'1px solid #ddd', padding:'15px', borderRadius:'8px', background:'white'}}>
-                            <strong style={{color:'#003399'}}>Kart 3 (Program)</strong>
-                            <SettingInput label="Değer" settingKey="home_summary_3_val" {...commonProps} />
-                            <SettingInput label="Etiket" settingKey="home_summary_3_label" {...commonProps} />
-                        </div>
-                        <div style={{border:'1px solid #ddd', padding:'15px', borderRadius:'8px', background:'white'}}>
-                            <strong style={{color:'#003399'}}>Kart 4 (Kapsam)</strong>
-                            <SettingInput label="Değer" settingKey="home_summary_4_val" {...commonProps} />
-                            <SettingInput label="Etiket" settingKey="home_summary_4_label" {...commonProps} />
-                        </div>
-                    </div>
-                    
-                    <h4 style={{margin:'40px 0 20px', color:'#555', borderLeft:'4px solid #003399', paddingLeft:'10px'}}>3. Hakkında Bölümü</h4>
-                    <SettingInput label="Sol Taraf Görseli" settingKey="home_about_image" type="image" {...commonProps} />
-                    <SettingInput label="Bölüm Başlığı" settingKey="home_about_title" {...commonProps} />
-                    <SettingInput label="Bölüm Metni" settingKey="home_about_text" type="textarea" {...commonProps} />
-                    
-                    <h4 style={{margin:'40px 0 20px', color:'#555', borderLeft:'4px solid #003399', paddingLeft:'10px'}}>4. Hedef Kitle Kartları</h4>
-                    <SettingInput label="Kart 1 Başlık" settingKey="home_target_1_title" {...commonProps} />
-                    <SettingInput label="Kart 1 Açıklama" settingKey="home_target_1_desc" type="textarea" {...commonProps} />
-                    <hr style={{margin:'15px 0', borderTop:'1px dashed #ddd'}}/>
-                    <SettingInput label="Kart 2 Başlık" settingKey="home_target_2_title" {...commonProps} />
-                    <SettingInput label="Kart 2 Açıklama" settingKey="home_target_2_desc" type="textarea" {...commonProps} />
-                    <hr style={{margin:'15px 0', borderTop:'1px dashed #ddd'}}/>
-                    <SettingInput label="Kart 3 Başlık" settingKey="home_target_3_title" {...commonProps} />
-                    <SettingInput label="Kart 3 Açıklama" settingKey="home_target_3_desc" type="textarea" {...commonProps} />
-                    
-                    <h4 style={{margin:'40px 0 20px', color:'#555', borderLeft:'4px solid #003399', paddingLeft:'10px'}}>5. Dijital Ekosistem (Ağaç Kutuları)</h4>
-                    {ecoItems.map((item, index) => (
-                        <div key={index} style={{background:'#fcfcfc', padding:'20px', borderRadius:'8px', border:'1px solid #ddd', marginBottom:'15px', position:'relative'}}>
-                            <button onClick={() => {
-                                const newItems = ecoItems.filter((_, i) => i !== index);
-                                saveEcoItems(newItems);
-                            }} style={{position:'absolute', top:'20px', right:'20px', background:'#e74c3c', color:'white', border:'none', padding:'5px 10px', borderRadius:'5px', cursor:'pointer', fontSize:'0.8rem'}}>Kutuyu Sil</button>
-                            <strong style={{color:'#003399', display:'block', marginBottom:'10px'}}>Ağaç Kutusu {index + 1}</strong>
-                            <div style={{display:'flex', gap:'10px'}}>
-                                <input className="form-control" value={item.title} onChange={e => handleEcoChange(index, 'title', e.target.value)} placeholder="Kart Başlığı" style={{flex:1, padding:'10px', border:'1px solid #ddd', borderRadius:'5px'}} />
-                                <input className="form-control" value={item.icon} onChange={e => handleEcoChange(index, 'icon', e.target.value)} placeholder="İkon (Örn: fa-star)" style={{width:'150px', padding:'10px', border:'1px solid #ddd', borderRadius:'5px'}} />
-                            </div>
-                            <textarea className="form-control" value={item.desc} onChange={e => handleEcoChange(index, 'desc', e.target.value)} placeholder="Kart Açıklaması" rows="2" style={{width:'100%', padding:'10px', border:'1px solid #ddd', borderRadius:'5px', marginTop:'10px', boxSizing:'border-box'}}></textarea>
-                            <button onClick={() => saveEcoItems(ecoItems)} style={{background:'#003399', color:'white', padding:'8px 15px', border:'none', borderRadius:'5px', cursor:'pointer', marginTop:'10px', fontSize:'0.9rem'}}>Değişikliği Kaydet</button>
-                        </div>
-                    ))}
-                    <button onClick={() => {
-                        const newItems = [...ecoItems, { title: 'Yeni Kutu', desc: 'Açıklama metnini buraya giriniz...', icon: 'fa-star' }];
-                        saveEcoItems(newItems);
-                    }} style={{background:'#27ae60', color:'white', padding:'10px 20px', border:'none', borderRadius:'5px', cursor:'pointer', fontWeight:'bold'}}>+ Yeni Kutu Ekle</button>
-                    
-                    <h4 style={{margin:'40px 0 20px', color:'#555', borderLeft:'4px solid #003399', paddingLeft:'10px'}}>6. Etki Sayaçları</h4>
-                    <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:'15px'}}>
-                        <div>
-                            <SettingInput label="Sayaç 1 Değer" settingKey="home_counter_1_val" {...commonProps} />
-                            <SettingInput label="Sayaç 1 Etiket" settingKey="home_counter_1_label" {...commonProps} />
-                        </div>
-                        <div>
-                            <SettingInput label="Sayaç 2 Değer" settingKey="home_counter_2_val" {...commonProps} />
-                            <SettingInput label="Sayaç 2 Etiket" settingKey="home_counter_2_label" {...commonProps} />
-                        </div>
-                        <div>
-                            <SettingInput label="Sayaç 3 Değer" settingKey="home_counter_3_val" {...commonProps} />
-                            <SettingInput label="Sayaç 3 Etiket" settingKey="home_counter_3_label" {...commonProps} />
-                        </div>
-                        <div>
-                            <SettingInput label="Sayaç 4 Değer" settingKey="home_counter_4_val" {...commonProps} />
-                            <SettingInput label="Sayaç 4 Etiket" settingKey="home_counter_4_label" {...commonProps} />
-                        </div>
-                    </div>
-                    
-                    <h4 style={{margin:'40px 0 20px', color:'#555', borderLeft:'4px solid #003399', paddingLeft:'10px'}}>7. Alt Kapanış (CTA)</h4>
-                    <SettingInput label="Kapanış Başlığı" settingKey="home_cta_title" {...commonProps} />
-                    <SettingInput label="Kapanış Metni" settingKey="home_cta_text" type="textarea" {...commonProps} />
-                </div>
-            )}
-            {activeTab === 'about' && (
-                <div className="fade-in">
-                    <h2 style={{marginBottom:'25px', color:'#003399'}}>Hakkında Sayfası</h2>
-                    <div style={{display:'flex', gap:'10px', marginBottom:'20px'}}>
-                        {['general','strategy','consortium','plan','impact','roadmap'].map(t => (
-                            <button key={t} onClick={()=>setAboutSubTab(t)} style={{padding:'5px 15px', borderRadius:'15px', border:'none', background:subTab===t?'#003399':'#eee', color:subTab===t?'white':'#555', cursor:'pointer', textTransform:'capitalize'}}>{t}</button>
-                        ))}
-                    </div>
-                    {subTab === 'general' && (
-                        <>
-                            <SettingInput label="Proje Adı" settingKey="about_project_name" {...commonProps} />
-                            <SettingInput label="Proje Kısaltması" settingKey="about_project_code" {...commonProps} />
-                            <SettingInput label="Program" settingKey="about_project_program" {...commonProps} />
-                            <SettingInput label="Süresi" settingKey="about_project_duration" {...commonProps} />
-                            <SettingInput label="Bütçe" settingKey="about_project_budget" {...commonProps} />
-                        </>
-                    )}
-                    {subTab === 'strategy' && (
-                        <>
-                            <SettingInput label="Sayfa Başlığı" settingKey="about_strategy_title" {...commonProps} />
-                            <SettingInput label="Alt Başlık" settingKey="about_strategy_desc" type="textarea" {...commonProps} />
-                            <SettingInput label="Bölüm A Metni" settingKey="strategy_text_a_1" type="textarea" {...commonProps} />
-                            <SettingInput label="Bölüm B Metni" settingKey="strategy_text_b" type="textarea" {...commonProps} />
-                        </>
-                    )}
-                </div>
-            )}
-            {activeTab === 'activities' && (
-                <div className="fade-in">
-                    <h2 style={{marginBottom:'25px', color:'#003399'}}>Faaliyetler (Etkinlikler)</h2>
-                    <SettingInput label="Sayfa Başlık Resmi" settingKey="activities_header_bg" type="image" {...commonProps} />
-                    <div style={{background:'white', padding:'25px', margin:'20px 0', border:'1px solid #ddd', borderRadius:'8px'}}>
-                        <h4>{isEditing ? 'Faaliyeti Düzenle' : 'Yeni Faaliyet Ekle'}</h4>
-                        <form onSubmit={(e) => saveItem(e, 'activities', activityForm, setActivityForm)} style={{display:'grid', gap:'15px'}}>
-                            <input className="form-control" placeholder="Faaliyet Başlığı" value={activityForm.title} onChange={e=>setActivityForm({...activityForm, title:e.target.value})} required style={{padding:'10px', width:'100%', boxSizing:'border-box', border:'1px solid #ddd', borderRadius:'5px'}} />
-                            <div style={{display:'flex', gap:'10px'}}>
-                                <input className="form-control" placeholder="Türü (Örn: Eğitim, Toplantı)" value={activityForm.type} onChange={e=>setActivityForm({...activityForm, type:e.target.value})} style={{padding:'10px', flex:1, border:'1px solid #ddd', borderRadius:'5px'}} />
-                                <input 
-                                    type="date" 
-                                    className="form-control" 
-                                    title="Tarih Seçiniz"
-                                    value={activityForm.date} 
-                                    onChange={e=>setActivityForm({...activityForm, date:e.target.value})} 
-                                    style={{padding:'10px', flex:1, border:'1px solid #ddd', borderRadius:'5px', color: activityForm.date ? '#333' : '#999', fontFamily: 'inherit'}} 
-                                />
-                                <input className="form-control" placeholder="Konum (Örn: Çevrimiçi)" value={activityForm.location} onChange={e=>setActivityForm({...activityForm, location:e.target.value})} style={{padding:'10px', flex:1, border:'1px solid #ddd', borderRadius:'5px'}} />
-                            </div>
-                            <FileInput value={activityForm.image_url} onChange={url=>setActivityForm({...activityForm, image_url:url})} placeholder="Faaliyet Görseli (Tercihen Yatay)" uploadFile={uploadFile} showToast={showToast} />
-                            <textarea placeholder="Kısa Özet (Kartlarda görünecek, max 2-3 cümle)" value={activityForm.summary} onChange={e=>setActivityForm({...activityForm, summary:e.target.value})} rows="2" style={{padding:'10px', width:'100%', boxSizing:'border-box', border:'1px solid #ddd', borderRadius:'5px'}} />
-                            <textarea placeholder="Detaylı Açıklama (Faaliyetin kendi sayfasında görünecek uzun, detaylı metin)" value={activityForm.description} onChange={e=>setActivityForm({...activityForm, description:e.target.value})} rows="8" style={{padding:'10px', width:'100%', boxSizing:'border-box', border:'1px solid #ddd', borderRadius:'5px'}} />
-                            <button type="submit" style={{background:'#003399', color:'white', border:'none', padding:'12px', borderRadius:'5px', cursor:'pointer', fontWeight:'bold'}}>{isEditing?'Değişiklikleri Kaydet':'Faaliyeti Ekle'}</button>
-                        </form>
-                    </div>
-                    <h4 style={{marginTop:'30px'}}>Mevcut Faaliyetler</h4>
-                    {activities.map(item => (
-                        <div key={item.id} style={{background:'white', padding:'15px', margin:'10px 0', border:'1px solid #eee', display:'flex', justifyContent:'space-between', alignItems:'center', borderRadius:'8px'}}>
-                            <div>
-                                <strong style={{display:'block', color:'#333'}}>{item.title}</strong>
-                                <span style={{fontSize:'0.85rem', color:'#666'}}>{item.date} - {item.type}</span>
-                            </div>
-                            <div>
-                                <button onClick={()=>startEdit(item, 'activities')} style={{marginRight:'15px', border:'none', background:'none', color:'#003399', cursor:'pointer', fontWeight:'bold'}}>Düzenle</button>
-                                <button onClick={()=>deleteItem('activities', item.id)} style={{border:'none', background:'none', color:'#e74c3c', cursor:'pointer', fontWeight:'bold'}}>Sil</button>
-                            </div>
-                        </div>
-                    ))}
-                </div>
-            )}
-            {activeTab === 'partners' && (
-                <div className="fade-in">
-                    <h2 style={{marginBottom:'25px', color:'#003399'}}>Ortaklar & Kurumlar</h2>
-                    <SettingInput label="Sayfa Başlığı" settingKey="partners_page_title" {...commonProps} />
-                    <SettingInput label="Başlık Resmi" settingKey="partners_header_bg" type="image" {...commonProps} />
-                    <div style={{background:'white', padding:'25px', marginBottom:'20px', border:'1px solid #ddd', borderRadius:'8px'}}>
-                        <h4>{isEditing ? 'Düzenle' : 'Yeni Ekle'}</h4>
-                        <form onSubmit={(e) => saveItem(e, 'partners', partnerForm, setPartnerForm)} style={{display:'grid', gap:'15px'}}>
-                            <input className="form-control" placeholder="Kurum Adı" value={partnerForm.name} onChange={e=>setPartnerForm({...partnerForm, name:e.target.value})} required style={{padding:'10px', width:'100%', boxSizing:'border-box', border:'1px solid #ddd', borderRadius:'5px'}} />
-                            <div style={{display:'flex', gap:'15px'}}>
-                                <select className="form-control" value={partnerForm.role} onChange={e=>setPartnerForm({...partnerForm, role:e.target.value})} style={{padding:'10px', flex:1, border:'1px solid #ddd', borderRadius:'5px'}}>
-                                    <option value="Ortak">Ortak</option>
-                                    <option value="Koordinatör">Koordinatör</option>
-                                </select>
-                                <input className="form-control" placeholder="Ülke" value={partnerForm.country} onChange={e=>setPartnerForm({...partnerForm, country:e.target.value})} required style={{padding:'10px', flex:1, boxSizing:'border-box', border:'1px solid #ddd', borderRadius:'5px'}} />
-                            </div>
-                            <textarea className="form-control" placeholder="Kurum Açıklaması (Detaylı Bilgi)" value={partnerForm.description} onChange={e=>setPartnerForm({...partnerForm, description:e.target.value})} rows="4" style={{padding:'10px', width:'100%', boxSizing:'border-box', border:'1px solid #ddd', borderRadius:'5px'}}></textarea>
-                            <input className="form-control" placeholder="Web Sitesi Bağlantısı (https://...)" value={partnerForm.website} onChange={e=>setPartnerForm({...partnerForm, website:e.target.value})} style={{padding:'10px', width:'100%', boxSizing:'border-box', border:'1px solid #ddd', borderRadius:'5px'}} />
-                            <FileInput value={partnerForm.image_url} onChange={(url) => setPartnerForm({...partnerForm, image_url: url})} placeholder="Kurum Logosu (Önerilen: Yatay, Şeffaf PNG)" uploadFile={uploadFile} showToast={showToast} />
-                            <FileInput value={partnerForm.flag_url} onChange={(url) => setPartnerForm({...partnerForm, flag_url: url})} placeholder="Ülke Bayrağı URL" uploadFile={uploadFile} showToast={showToast} />
-                            <button type="submit" style={{background:'#003399', color:'white', border:'none', padding:'12px', borderRadius:'5px', cursor:'pointer', fontWeight:'bold', marginTop:'10px'}}>{isEditing ? 'Ortak Bilgilerini Güncelle' : 'Yeni Ortak Ekle'}</button>
-                        </form>
-                    </div>
-                    {partners.map(item => (
-                        <div key={item.id} style={{background:'white', padding:'15px', margin:'10px 0', border:'1px solid #eee', display:'flex', justifyContent:'space-between', alignItems:'center', borderRadius:'8px'}}>
-                            <div>
-                                <strong style={{display:'block', color:'#333'}}>{item.name}</strong>
-                                <span style={{fontSize:'0.85rem', color:'#666'}}>{item.role} - {item.country}</span>
-                            </div>
-                            <div>
-                                <button onClick={()=>startEdit(item, 'partners')} style={{marginRight:'15px', border:'none', background:'none', color:'#003399', cursor:'pointer', fontWeight:'bold'}}>Düzenle</button>
-                                <button onClick={()=>deleteItem('partners', item.id)} style={{border:'none', background:'none', color:'#e74c3c', cursor:'pointer', fontWeight:'bold'}}>Sil</button>
-                            </div>
-                        </div>
-                    ))}
-                </div>
-            )}
-            {activeTab === 'news' && (
-                <div className="fade-in">
-                    <h2 style={{marginBottom:'25px', color:'#003399'}}>Haberler & Duyurular</h2>
-                    <SettingInput label="Sayfa Başlık Resmi" settingKey="news_header_bg" type="image" {...commonProps} />
-                    <div style={{background:'white', padding:'25px', margin:'20px 0', border:'1px solid #ddd', borderRadius:'8px'}}>
-                        <h4>{isEditing ? 'Haberi Düzenle' : 'Yeni Haber Ekle'}</h4>
-                        <form onSubmit={(e) => saveItem(e, 'news', newsForm, setNewsForm)} style={{display:'grid', gap:'15px'}}>
-                            <div style={{display:'flex', gap:'10px'}}>
-                                <input className="form-control" placeholder="Haber Başlığı" value={newsForm.title} onChange={e=>setNewsForm({...newsForm, title:e.target.value})} required style={{padding:'10px', flex:2, boxSizing:'border-box', border:'1px solid #ddd', borderRadius:'5px'}} />
-                                <input 
-                                    type="date" 
-                                    className="form-control" 
-                                    title="Haber Tarihi Seçiniz"
-                                    value={newsForm.date || ''} 
-                                    onChange={e=>setNewsForm({...newsForm, date:e.target.value})} 
-                                    style={{padding:'10px', flex:1, border:'1px solid #ddd', borderRadius:'5px', color: newsForm.date ? '#333' : '#999', fontFamily: 'inherit'}} 
-                                />
-                            </div>
-                            <FileInput value={newsForm.image_url} onChange={url=>setNewsForm({...newsForm, image_url:url})} placeholder="Haber Görseli (Tercihen Yatay)" uploadFile={uploadFile} showToast={showToast} />
-                            <textarea placeholder="Kısa Özet (Ana sayfada ve kartlarda görünecek 2-3 cümle)" value={newsForm.summary} onChange={e=>setNewsForm({...newsForm, summary:e.target.value})} rows="2" style={{padding:'10px', width:'100%', boxSizing:'border-box', border:'1px solid #ddd', borderRadius:'5px'}} />
-                            <textarea placeholder="Detaylı Haber İçeriği (Haberin kendi sayfasında okunacak uzun metin)" value={newsForm.description} onChange={e=>setNewsForm({...newsForm, description:e.target.value})} rows="8" style={{padding:'10px', width:'100%', boxSizing:'border-box', border:'1px solid #ddd', borderRadius:'5px'}} />
-                            <button type="submit" style={{background:'#003399', color:'white', border:'none', padding:'12px', borderRadius:'5px', cursor:'pointer', fontWeight:'bold'}}>
-                                {isEditing ? 'Değişiklikleri Kaydet' : 'Haberi Ekle'}
-                            </button>
-                        </form>
-                    </div>
-                    <h4 style={{marginTop:'30px'}}>Mevcut Haberler</h4>
-                    {news.map(item => (
-                        <div key={item.id} style={{background:'white', padding:'15px', margin:'10px 0', border:'1px solid #eee', display:'flex', justifyContent:'space-between', alignItems:'center', borderRadius:'8px'}}>
-                            <div>
-                                <strong style={{display:'block', color:'#333'}}>{item.title}</strong>
-                                {item.date && <span style={{fontSize:'0.85rem', color:'#666'}}><i className="far fa-calendar-alt"></i> {item.date}</span>}
-                            </div>
-                            <div>
-                                <button onClick={()=>startEdit(item, 'news')} style={{marginRight:'15px', border:'none', background:'none', color:'#003399', cursor:'pointer', fontWeight:'bold'}}>Düzenle</button>
-                                <button onClick={()=>deleteItem('news', item.id)} style={{border:'none', background:'none', color:'#e74c3c', cursor:'pointer', fontWeight:'bold'}}>Sil</button>
-                            </div>
-                        </div>
-                    ))}
-                </div>
-            )}
-            {activeTab === 'results' && (
-                <div className="fade-in">
-                    <h2 style={{marginBottom:'25px', color:'#003399'}}>Çıktılar</h2>
-                    <SettingInput label="Sayfa Başlığı" settingKey="results_page_title" {...commonProps} />
-                    <SettingInput label="Başlık Resmi" settingKey="results_header_bg" type="image" {...commonProps} />
-                    <div style={{background:'white', padding:'25px', margin:'20px 0', border:'1px solid #ddd', borderRadius:'8px'}}>
-                        <form onSubmit={(e) => saveItem(e, 'results', resultForm, setResultForm)} style={{display:'grid', gap:'10px'}}>
-                            <input className="form-control" placeholder="Başlık" value={resultForm.title} onChange={e=>setResultForm({...resultForm, title:e.target.value})} required style={{padding:'10px', width:'100%', boxSizing:'border-box', border:'1px solid #ddd', borderRadius:'5px'}} />
-                            <FileInput value={resultForm.link} onChange={(url) => setResultForm({...resultForm, link: url})} placeholder="Dosya URL" uploadFile={uploadFile} showToast={showToast} />
-                            <button type="submit" style={{background:'#003399', color:'white', border:'none', padding:'10px', borderRadius:'5px', cursor:'pointer'}}>{isEditing ? 'Güncelle' : 'Ekle'}</button>
-                        </form>
-                    </div>
-                    {results.map(item => (
-                        <div key={item.id} style={{background:'white', padding:'10px', margin:'5px 0', border:'1px solid #eee', display:'flex', justifyContent:'space-between'}}>
-                            {item.title}
-                            <button onClick={()=>deleteItem('results', item.id)} style={{border:'none', background:'none', color:'red', cursor:'pointer'}}>Sil</button>
-                        </div>
-                    ))}
-                </div>
-            )}
-            {activeTab === 'contact' && (
-                <div className="fade-in">
-                    <h2 style={{marginBottom:'25px', color:'#003399'}}>İletişim</h2>
-                    <SettingInput label="Sayfa Başlığı" settingKey="contact_page_title" {...commonProps} />
-                    <SettingInput label="Başlık Resmi" settingKey="contact_header_bg" type="image" {...commonProps} />
-                    <div style={{height:'20px'}}></div>
-                    <SettingInput label="E-posta" settingKey="contact_email" {...commonProps} />
-                    <SettingInput label="Telefon" settingKey="contact_phone" {...commonProps} />
-                    <SettingInput label="Adres" settingKey="contact_address" type="textarea" {...commonProps} />
-                </div>
-            )}
+          <nav className="adm-nav">
+            {Object.entries(groupedNav).map(([group, items]) => (
+              <div key={group} className="adm-nav-section">
+                <div className="adm-nav-label">{group}</div>
+                {items.map(item => (
+                  <button
+                    key={item.id}
+                    className={`adm-nav-btn ${activeTab === item.id ? 'active' : ''}`}
+                    onClick={() => { setActiveTab(item.id); setIsEditing(false); }}
+                  >
+                    <span className="adm-nav-icon"><i className={item.icon} /></span>
+                    {item.label}
+                    {item.badge > 0 && <span className="adm-nav-badge">{item.badge}</span>}
+                  </button>
+                ))}
+              </div>
+            ))}
+          </nav>
+
+          <div className="adm-sidebar-footer">
+            <button className="adm-signout" onClick={async () => { await supabase.auth.signOut(); router.push('/login'); }}>
+              <i className="fas fa-arrow-right-from-bracket" /> Çıkış Yap
+            </button>
+          </div>
+        </aside>
+
+        {/* ── MAIN ── */}
+        <main className="adm-main">
+          <div className="adm-topbar">
+            <div className="adm-topbar-title">
+              {currentTab && <><i className={currentTab.icon} style={{marginRight:'10px', color:'var(--accent)'}} />{currentTab.label}</>}
+            </div>
+            <div className="adm-topbar-pill">
+              <span className="dot" /> Canlı
+            </div>
+          </div>
+
+          <div className="adm-content">
+
+            {/* ══ MESAJLAR ══════════════════════════════════════════════ */}
             {activeTab === 'messages' && (
-                <div className="fade-in">
-                    <h2 style={{marginBottom:'25px', color:'#003399'}}>Mesajlar</h2>
-                    {messages.length === 0 ? <p style={{color:'#999'}}>Mesaj yok.</p> : messages.map(msg => (
-                        <div key={msg.id} style={{background:'white', padding:'15px', marginBottom:'10px', border:'1px solid #eee', borderRadius:'8px'}}>
-                            <div style={{fontWeight:'bold'}}>{msg.name} ({msg.email})</div>
-                            <div style={{margin:'5px 0', color:'#555'}}>{msg.message}</div>
-                            <button onClick={()=>deleteItem('contact_messages', msg.id)} style={{color:'red', border:'none', background:'none', cursor:'pointer', fontSize:'0.9rem'}}>Sil</button>
-                        </div>
+              <div className="adm-fade-in">
+                <div className="adm-page-header">
+                  <div className="adm-page-title">Gelen <em>Mesajlar</em></div>
+                  <div className="adm-page-desc">{messages.length} adet mesaj bulunuyor.</div>
+                </div>
+                {messages.length === 0 ? (
+                  <div className="adm-empty"><i className="fas fa-inbox" />Henüz mesaj yok.</div>
+                ) : messages.map(msg => (
+                  <div key={msg.id} className="adm-msg-card">
+                    <div className="adm-msg-header">
+                      <div>
+                        <div className="adm-msg-sender">{msg.name}</div>
+                        <div className="adm-msg-email">{msg.email}</div>
+                      </div>
+                      <button className="adm-btn adm-btn-danger" onClick={() => deleteItem('contact_messages', msg.id)}>
+                        <i className="fas fa-trash" />
+                      </button>
+                    </div>
+                    <div className="adm-msg-body">{msg.message}</div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* ══ ANA SAYFA ══════════════════════════════════════════════ */}
+            {activeTab === 'home' && (
+              <div className="adm-fade-in">
+                <div className="adm-page-header">
+                  <div className="adm-page-title">Ana Sayfa <em>Düzenle</em></div>
+                </div>
+
+                {/* 1. SLIDER */}
+                <div className="adm-section">
+                  <SectionHeader num="1" title="Kapak Slider Resimleri" />
+                  <div className="adm-card">
+                    <p style={{fontSize:'0.8rem', color:'var(--text-muted)', marginBottom:'14px'}}>
+                      Resimleri sürükleyip sıralayabilir, ok butonlarıyla yukarı/aşağı taşıyabilirsiniz.
+                    </p>
+                    {heroImages.map((img, i) => (
+                      <div key={i} className="adm-slider-item">
+                        <span className="adm-slider-idx">{i + 1}</span>
+                        <img src={img} className="adm-slider-thumb" alt="" onError={e => e.target.style.background='var(--surface-2)'} />
+                        <input className="adm-slider-url" placeholder="Resim URL" value={img}
+                          onChange={e => { const a = [...heroImages]; a[i] = e.target.value; setHeroImages(a); }} />
+                        <button className="adm-arrow-btn" onClick={() => moveHeroImage(i, -1)} disabled={i === 0} title="Yukarı">
+                          <i className="fas fa-chevron-up" />
+                        </button>
+                        <button className="adm-arrow-btn" onClick={() => moveHeroImage(i, 1)} disabled={i === heroImages.length - 1} title="Aşağı">
+                          <i className="fas fa-chevron-down" />
+                        </button>
+                        <button className="adm-btn adm-btn-danger" style={{height:'30px', padding:'0 10px', fontSize:'0.75rem'}}
+                          onClick={() => saveHeroImages(heroImages.filter((_, idx) => idx !== i))}>
+                          <i className="fas fa-xmark" />
+                        </button>
+                      </div>
                     ))}
+                    <div className="adm-slider-add">
+                      <div className="adm-slider-add-label"><i className="fas fa-plus" /> Yeni Resim Ekle</div>
+                      <FileInput value="" onChange={url => { if (url) saveHeroImages([...heroImages, url]); }}
+                        placeholder="URL yapıştırın veya dosya yükleyin..." uploadFile={uploadFile} showToast={showToast} />
+                    </div>
+                    <button className="adm-btn adm-btn-ghost" style={{marginTop:'12px'}} onClick={() => saveHeroImages(heroImages)}>
+                      <i className="fas fa-floppy-disk" /> URL Değişikliklerini Kaydet
+                    </button>
+                  </div>
                 </div>
+
+                {/* 2. HERO */}
+                <div className="adm-section">
+                  <SectionHeader num="2" title="Kapak Başlığı & Açıklaması" />
+                  <SettingInput label="Ana Başlık" settingKey="hero_title" {...commonProps} />
+                  <SettingInput label="Açıklama Metni" settingKey="hero_desc" type="textarea" {...commonProps} />
+                </div>
+
+                {/* 3. ÖZET KARTLAR */}
+                <div className="adm-section">
+                  <SectionHeader num="3" title="Özet Bilgi Kartları" />
+                  <div className="adm-card-grid2">
+                    {[1, 2, 3, 4].map(n => (
+                      <div key={n} className="adm-card-inner">
+                        <div className="adm-card-inner-label">Kart {n}</div>
+                        <SettingInput label="Değer" settingKey={`home_summary_${n}_val`} {...commonProps} />
+                        <SettingInput label="Etiket" settingKey={`home_summary_${n}_label`} {...commonProps} />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* 4. HAKKINDA */}
+                <div className="adm-section">
+                  <SectionHeader num="4" title="Hakkında Bölümü" />
+                  <SettingInput label="Sol Taraf Görseli" settingKey="home_about_image" type="image" {...commonProps} />
+                  <SettingInput label="Bölüm Başlığı" settingKey="home_about_title" {...commonProps} />
+                  <SettingInput label="Bölüm Metni" settingKey="home_about_text" type="textarea" {...commonProps} />
+                </div>
+
+                {/* 5. HEDEF KİTLE */}
+                <div className="adm-section">
+                  <SectionHeader num="5" title="Hedef Kitle Kartları" />
+                  {[1, 2, 3].map(n => (
+                    <div key={n} className="adm-card-inner" style={{marginBottom:'10px'}}>
+                      <div className="adm-card-inner-label">Hedef {n}</div>
+                      <SettingInput label="Başlık" settingKey={`home_target_${n}_title`} {...commonProps} />
+                      <SettingInput label="Açıklama" settingKey={`home_target_${n}_desc`} type="textarea" {...commonProps} />
+                    </div>
+                  ))}
+                </div>
+
+                {/* 6. EKOSİSTEM */}
+                <div className="adm-section">
+                  <SectionHeader num="6" title="Dijital Ekosistem (Ağaç Kutuları)" />
+                  {ecoItems.map((item, index) => (
+                    <div key={index} className="adm-eco-item">
+                      <div className="adm-eco-header">
+                        <span className="adm-eco-idx">Kutu #{index + 1}</span>
+                        <button className="adm-btn adm-btn-danger" style={{height:'28px', padding:'0 10px', fontSize:'0.75rem'}}
+                          onClick={() => saveEcoItems(ecoItems.filter((_, i) => i !== index))}>
+                          <i className="fas fa-trash" /> Sil
+                        </button>
+                      </div>
+                      <div style={{display:'flex', gap:'8px', marginBottom:'8px'}}>
+                        <input className="adm-input-full" value={item.title} onChange={e => handleEcoChange(index, 'title', e.target.value)} placeholder="Kart Başlığı" style={{flex:2}} />
+                        <input className="adm-input-full" value={item.icon} onChange={e => handleEcoChange(index, 'icon', e.target.value)} placeholder="İkon (fa-star)" style={{flex:1}} />
+                      </div>
+                      <textarea className="adm-textarea-full" value={item.desc} onChange={e => handleEcoChange(index, 'desc', e.target.value)} placeholder="Açıklama" rows={2} style={{marginBottom:'10px'}} />
+                      <button className="adm-btn adm-btn-save" onClick={() => saveEcoItems(ecoItems)}>
+                        <i className="fas fa-floppy-disk" /> Kaydet
+                      </button>
+                    </div>
+                  ))}
+                  <button className="adm-btn adm-btn-success"
+                    onClick={() => saveEcoItems([...ecoItems, { title: 'Yeni Kutu', desc: 'Açıklama...', icon: 'fa-star' }])}>
+                    <i className="fas fa-plus" /> Yeni Kutu Ekle
+                  </button>
+                </div>
+
+                {/* 7. SAYAÇLAR */}
+                <div className="adm-section">
+                  <SectionHeader num="7" title="Etki Sayaçları" />
+                  <div className="adm-counter-grid">
+                    {[1, 2, 3, 4].map(n => (
+                      <div key={n} className="adm-card-inner">
+                        <div className="adm-card-inner-label">Sayaç {n}</div>
+                        <SettingInput label="Değer" settingKey={`home_counter_${n}_val`} {...commonProps} />
+                        <SettingInput label="Etiket" settingKey={`home_counter_${n}_label`} {...commonProps} />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* 8. CTA */}
+                <div className="adm-section">
+                  <SectionHeader num="8" title="Alt Kapanış (CTA)" />
+                  <SettingInput label="Başlık" settingKey="home_cta_title" {...commonProps} />
+                  <SettingInput label="Metin" settingKey="home_cta_text" type="textarea" {...commonProps} />
+                </div>
+              </div>
             )}
+
+            {/* ══ HAKKINDA ══════════════════════════════════════════════ */}
+            {activeTab === 'about' && (
+              <div className="adm-fade-in">
+                <div className="adm-page-header">
+                  <div className="adm-page-title">Hakkında <em>Sayfası</em></div>
+                </div>
+                <div className="adm-subtabs">
+                  {['general', 'strategy', 'consortium', 'plan', 'impact', 'roadmap'].map(t => (
+                    <button key={t} className={`adm-subtab ${subTab === t ? 'active' : ''}`} onClick={() => setAboutSubTab(t)}>{t}</button>
+                  ))}
+                </div>
+                {subTab === 'general' && (
+                  <>
+                    <SettingInput label="Proje Adı" settingKey="about_project_name" {...commonProps} />
+                    <SettingInput label="Proje Kısaltması" settingKey="about_project_code" {...commonProps} />
+                    <SettingInput label="Program" settingKey="about_project_program" {...commonProps} />
+                    <SettingInput label="Süresi" settingKey="about_project_duration" {...commonProps} />
+                    <SettingInput label="Bütçe" settingKey="about_project_budget" {...commonProps} />
+                  </>
+                )}
+                {subTab === 'strategy' && (
+                  <>
+                    <SettingInput label="Sayfa Başlığı" settingKey="about_strategy_title" {...commonProps} />
+                    <SettingInput label="Alt Başlık" settingKey="about_strategy_desc" type="textarea" {...commonProps} />
+                    <SettingInput label="Bölüm A Metni" settingKey="strategy_text_a_1" type="textarea" {...commonProps} />
+                    <SettingInput label="Bölüm B Metni" settingKey="strategy_text_b" type="textarea" {...commonProps} />
+                  </>
+                )}
+              </div>
+            )}
+
+            {/* ══ HABERLer ══════════════════════════════════════════════ */}
+            {activeTab === 'news' && (
+              <div className="adm-fade-in">
+                <div className="adm-page-header">
+                  <div className="adm-page-title">Haberler & <em>Duyurular</em></div>
+                </div>
+                <SettingInput label="Sayfa Başlık Resmi" settingKey="news_header_bg" type="image" {...commonProps} />
+                <div className="adm-form-card">
+                  <div className="adm-form-card-title">
+                    <i className={isEditing ? 'fas fa-pen' : 'fas fa-plus'} />
+                    {isEditing ? 'Haberi Düzenle' : 'Yeni Haber Ekle'}
+                  </div>
+                  <form onSubmit={e => saveItem(e, 'news', newsForm, setNewsForm)} style={{display:'grid', gap:'14px'}}>
+                    <div className="adm-form-grid2">
+                      <div className="adm-form-item">
+                        <label>Haber Başlığı</label>
+                        <input className="adm-input-full" placeholder="Başlık..." value={newsForm.title} onChange={e => setNewsForm({...newsForm, title: e.target.value})} required />
+                      </div>
+                      <div className="adm-form-item">
+                        <label>Tarih</label>
+                        <input type="date" className="adm-input-full" value={newsForm.date || ''} onChange={e => setNewsForm({...newsForm, date: e.target.value})} style={{colorScheme:'dark'}} />
+                      </div>
+                    </div>
+                    <div className="adm-form-item">
+                      <label>Görsel</label>
+                      <FileInput value={newsForm.image_url} onChange={url => setNewsForm({...newsForm, image_url: url})} placeholder="Haber görseli..." uploadFile={uploadFile} showToast={showToast} />
+                    </div>
+                    <div className="adm-form-item">
+                      <label>Kısa Özet (Kartlarda görünür)</label>
+                      <textarea className="adm-textarea-full" placeholder="2-3 cümle özet..." value={newsForm.summary} onChange={e => setNewsForm({...newsForm, summary: e.target.value})} rows={2} />
+                    </div>
+                    <div className="adm-form-item">
+                      <label>Detaylı İçerik</label>
+                      <textarea className="adm-textarea-full" placeholder="Haberin tam içeriği..." value={newsForm.description} onChange={e => setNewsForm({...newsForm, description: e.target.value})} rows={7} />
+                    </div>
+                    <button type="submit" className="adm-form-submit">
+                      {isEditing ? 'Değişiklikleri Kaydet' : '+ Haber Ekle'}
+                    </button>
+                  </form>
+                </div>
+                <div style={{marginTop:'24px'}}>
+                  <div style={{fontSize:'0.8rem', fontWeight:'700', color:'var(--text-muted)', textTransform:'uppercase', letterSpacing:'0.08em', marginBottom:'12px'}}>Mevcut Haberler ({news.length})</div>
+                  {news.length === 0 ? (
+                    <div className="adm-empty"><i className="fas fa-newspaper" />Haber bulunamadı.</div>
+                  ) : news.map(item => (
+                    <div key={item.id} className="adm-item-row">
+                      <div className="adm-item-info">
+                        <strong>{item.title}</strong>
+                        {item.date && <span><i className="far fa-calendar" style={{marginRight:'5px'}} />{item.date}</span>}
+                      </div>
+                      <div className="adm-item-actions">
+                        <button className="adm-btn adm-btn-ghost" onClick={() => startEdit(item, 'news')} style={{height:'32px', fontSize:'0.78rem'}}>
+                          <i className="fas fa-pen" /> Düzenle
+                        </button>
+                        <button className="adm-btn adm-btn-danger" onClick={() => deleteItem('news', item.id)} style={{height:'32px', fontSize:'0.78rem'}}>
+                          <i className="fas fa-trash" />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* ══ FAALİYETLER ═══════════════════════════════════════════ */}
+            {activeTab === 'activities' && (
+              <div className="adm-fade-in">
+                <div className="adm-page-header">
+                  <div className="adm-page-title">Faaliyetler & <em>Etkinlikler</em></div>
+                </div>
+                <SettingInput label="Sayfa Başlık Resmi" settingKey="activities_header_bg" type="image" {...commonProps} />
+                <div className="adm-form-card">
+                  <div className="adm-form-card-title">
+                    <i className={isEditing ? 'fas fa-pen' : 'fas fa-plus'} />
+                    {isEditing ? 'Faaliyeti Düzenle' : 'Yeni Faaliyet Ekle'}
+                  </div>
+                  <form onSubmit={e => saveItem(e, 'activities', activityForm, setActivityForm)} style={{display:'grid', gap:'14px'}}>
+                    <div className="adm-form-item">
+                      <label>Faaliyet Başlığı</label>
+                      <input className="adm-input-full" placeholder="Başlık..." value={activityForm.title} onChange={e => setActivityForm({...activityForm, title: e.target.value})} required />
+                    </div>
+                    <div className="adm-form-grid3">
+                      <div className="adm-form-item">
+                        <label>Türü</label>
+                        <input className="adm-input-full" placeholder="Toplantı, Eğitim..." value={activityForm.type} onChange={e => setActivityForm({...activityForm, type: e.target.value})} />
+                      </div>
+                      <div className="adm-form-item">
+                        <label>Tarih</label>
+                        <input type="date" className="adm-input-full" value={activityForm.date} onChange={e => setActivityForm({...activityForm, date: e.target.value})} style={{colorScheme:'dark'}} />
+                      </div>
+                      <div className="adm-form-item">
+                        <label>Konum</label>
+                        <input className="adm-input-full" placeholder="İstanbul, Çevrimiçi..." value={activityForm.location} onChange={e => setActivityForm({...activityForm, location: e.target.value})} />
+                      </div>
+                    </div>
+                    <div className="adm-form-item">
+                      <label>Görsel</label>
+                      <FileInput value={activityForm.image_url} onChange={url => setActivityForm({...activityForm, image_url: url})} placeholder="Faaliyet görseli..." uploadFile={uploadFile} showToast={showToast} />
+                    </div>
+                    <div className="adm-form-item">
+                      <label>Kısa Özet</label>
+                      <textarea className="adm-textarea-full" placeholder="Kısa açıklama..." value={activityForm.summary} onChange={e => setActivityForm({...activityForm, summary: e.target.value})} rows={2} />
+                    </div>
+                    <div className="adm-form-item">
+                      <label>Detaylı Açıklama</label>
+                      <textarea className="adm-textarea-full" placeholder="Etkinliğin detaylı açıklaması..." value={activityForm.description} onChange={e => setActivityForm({...activityForm, description: e.target.value})} rows={7} />
+                    </div>
+                    <button type="submit" className="adm-form-submit">
+                      {isEditing ? 'Değişiklikleri Kaydet' : '+ Faaliyet Ekle'}
+                    </button>
+                  </form>
+                </div>
+                <div style={{marginTop:'24px'}}>
+                  <div style={{fontSize:'0.8rem', fontWeight:'700', color:'var(--text-muted)', textTransform:'uppercase', letterSpacing:'0.08em', marginBottom:'12px'}}>Mevcut Faaliyetler ({activities.length})</div>
+                  {activities.length === 0 ? (
+                    <div className="adm-empty"><i className="fas fa-calendar" />Faaliyet bulunamadı.</div>
+                  ) : activities.map(item => (
+                    <div key={item.id} className="adm-item-row">
+                      <div className="adm-item-info">
+                        <strong>{item.title}</strong>
+                        <span>
+                          {item.date && <><i className="far fa-calendar" style={{marginRight:'5px'}} />{item.date} &bull; </>}
+                          <span className="adm-badge adm-badge-blue">{item.type}</span>
+                        </span>
+                      </div>
+                      <div className="adm-item-actions">
+                        <button className="adm-btn adm-btn-ghost" onClick={() => startEdit(item, 'activities')} style={{height:'32px', fontSize:'0.78rem'}}>
+                          <i className="fas fa-pen" /> Düzenle
+                        </button>
+                        <button className="adm-btn adm-btn-danger" onClick={() => deleteItem('activities', item.id)} style={{height:'32px', fontSize:'0.78rem'}}>
+                          <i className="fas fa-trash" />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* ══ ORTAKLAR ═════════════════════════════════════════════ */}
+            {activeTab === 'partners' && (
+              <div className="adm-fade-in">
+                <div className="adm-page-header">
+                  <div className="adm-page-title">Ortaklar & <em>Kurumlar</em></div>
+                </div>
+                <SettingInput label="Sayfa Başlığı" settingKey="partners_page_title" {...commonProps} />
+                <SettingInput label="Başlık Resmi" settingKey="partners_header_bg" type="image" {...commonProps} />
+                <div className="adm-form-card">
+                  <div className="adm-form-card-title">
+                    <i className={isEditing ? 'fas fa-pen' : 'fas fa-plus'} />
+                    {isEditing ? 'Ortak Düzenle' : 'Yeni Ortak Ekle'}
+                  </div>
+                  <form onSubmit={e => saveItem(e, 'partners', partnerForm, setPartnerForm)} style={{display:'grid', gap:'14px'}}>
+                    <div className="adm-form-grid2">
+                      <div className="adm-form-item">
+                        <label>Kurum Adı</label>
+                        <input className="adm-input-full" placeholder="Kurum adı..." value={partnerForm.name} onChange={e => setPartnerForm({...partnerForm, name: e.target.value})} required />
+                      </div>
+                      <div className="adm-form-grid2">
+                        <div className="adm-form-item">
+                          <label>Rol</label>
+                          <select className="adm-select-full" value={partnerForm.role} onChange={e => setPartnerForm({...partnerForm, role: e.target.value})}>
+                            <option value="Ortak">Ortak</option>
+                            <option value="Koordinatör">Koordinatör</option>
+                          </select>
+                        </div>
+                        <div className="adm-form-item">
+                          <label>Ülke</label>
+                          <input className="adm-input-full" placeholder="Türkiye..." value={partnerForm.country} onChange={e => setPartnerForm({...partnerForm, country: e.target.value})} required />
+                        </div>
+                      </div>
+                    </div>
+                    <div className="adm-form-item">
+                      <label>Açıklama</label>
+                      <textarea className="adm-textarea-full" placeholder="Kurum hakkında..." value={partnerForm.description} onChange={e => setPartnerForm({...partnerForm, description: e.target.value})} rows={3} />
+                    </div>
+                    <div className="adm-form-item">
+                      <label>Web Sitesi</label>
+                      <input className="adm-input-full" placeholder="https://..." value={partnerForm.website} onChange={e => setPartnerForm({...partnerForm, website: e.target.value})} />
+                    </div>
+                    <div className="adm-form-item">
+                      <label>Kurum Logosu</label>
+                      <FileInput value={partnerForm.image_url} onChange={url => setPartnerForm({...partnerForm, image_url: url})} placeholder="Logo URL..." uploadFile={uploadFile} showToast={showToast} />
+                    </div>
+                    <div className="adm-form-item">
+                      <label>Ülke Bayrağı</label>
+                      <FileInput value={partnerForm.flag_url} onChange={url => setPartnerForm({...partnerForm, flag_url: url})} placeholder="Bayrak URL..." uploadFile={uploadFile} showToast={showToast} />
+                    </div>
+                    <button type="submit" className="adm-form-submit">
+                      {isEditing ? 'Ortak Bilgilerini Güncelle' : '+ Ortak Ekle'}
+                    </button>
+                  </form>
+                </div>
+                <div style={{marginTop:'24px'}}>
+                  <div style={{fontSize:'0.8rem', fontWeight:'700', color:'var(--text-muted)', textTransform:'uppercase', letterSpacing:'0.08em', marginBottom:'12px'}}>Mevcut Ortaklar ({partners.length})</div>
+                  {partners.length === 0 ? (
+                    <div className="adm-empty"><i className="fas fa-handshake" />Ortak bulunamadı.</div>
+                  ) : partners.map(item => (
+                    <div key={item.id} className="adm-item-row">
+                      <div className="adm-item-info" style={{display:'flex', alignItems:'center', gap:'12px'}}>
+                        {item.image_url && <img src={item.image_url} style={{width:'40px', height:'28px', objectFit:'contain', borderRadius:'4px', border:'1px solid var(--border)', background:'white', padding:'2px'}} alt="" />}
+                        <div>
+                          <strong>{item.name}</strong>
+                          <span>
+                            <span className={`adm-badge ${item.role === 'Koordinatör' ? 'adm-badge-yellow' : 'adm-badge-green'}`}>{item.role}</span>
+                            {' '}&bull; {item.country}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="adm-item-actions">
+                        <button className="adm-btn adm-btn-ghost" onClick={() => startEdit(item, 'partners')} style={{height:'32px', fontSize:'0.78rem'}}>
+                          <i className="fas fa-pen" /> Düzenle
+                        </button>
+                        <button className="adm-btn adm-btn-danger" onClick={() => deleteItem('partners', item.id)} style={{height:'32px', fontSize:'0.78rem'}}>
+                          <i className="fas fa-trash" />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* ══ ÇIKTILAR ═════════════════════════════════════════════ */}
+            {activeTab === 'results' && (
+              <div className="adm-fade-in">
+                <div className="adm-page-header">
+                  <div className="adm-page-title">Proje <em>Çıktıları</em></div>
+                </div>
+                <SettingInput label="Sayfa Başlığı" settingKey="results_page_title" {...commonProps} />
+                <SettingInput label="Başlık Resmi" settingKey="results_header_bg" type="image" {...commonProps} />
+                <div className="adm-form-card">
+                  <div className="adm-form-card-title">
+                    <i className="fas fa-plus" /> Yeni Çıktı Ekle
+                  </div>
+                  <form onSubmit={e => saveItem(e, 'results', resultForm, setResultForm)} style={{display:'grid', gap:'14px'}}>
+                    <div className="adm-form-item">
+                      <label>Başlık</label>
+                      <input className="adm-input-full" placeholder="Çıktı başlığı..." value={resultForm.title} onChange={e => setResultForm({...resultForm, title: e.target.value})} required />
+                    </div>
+                    <div className="adm-form-item">
+                      <label>Dosya / Link</label>
+                      <FileInput value={resultForm.link} onChange={url => setResultForm({...resultForm, link: url})} placeholder="Dosya yükleyin veya URL girin..." uploadFile={uploadFile} showToast={showToast} />
+                    </div>
+                    <button type="submit" className="adm-form-submit">
+                      {isEditing ? 'Güncelle' : '+ Ekle'}
+                    </button>
+                  </form>
+                </div>
+                <div style={{marginTop:'24px'}}>
+                  {results.length === 0 ? (
+                    <div className="adm-empty"><i className="fas fa-file" />Çıktı bulunamadı.</div>
+                  ) : results.map(item => (
+                    <div key={item.id} className="adm-item-row">
+                      <div className="adm-item-info">
+                        <strong><i className="fas fa-file-circle-check" style={{color:'var(--accent)', marginRight:'8px'}} />{item.title}</strong>
+                      </div>
+                      <button className="adm-btn adm-btn-danger" onClick={() => deleteItem('results', item.id)} style={{height:'32px', fontSize:'0.78rem'}}>
+                        <i className="fas fa-trash" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* ══ İLETİŞİM ═════════════════════════════════════════════ */}
+            {activeTab === 'contact' && (
+              <div className="adm-fade-in">
+                <div className="adm-page-header">
+                  <div className="adm-page-title">İletişim <em>Bilgileri</em></div>
+                </div>
+                <SettingInput label="Sayfa Başlığı" settingKey="contact_page_title" {...commonProps} />
+                <SettingInput label="Başlık Resmi" settingKey="contact_header_bg" type="image" {...commonProps} />
+                <div style={{height:'8px'}} />
+                <SettingInput label="E-posta Adresi" settingKey="contact_email" {...commonProps} />
+                <SettingInput label="Telefon Numarası" settingKey="contact_phone" {...commonProps} />
+                <SettingInput label="Adres" settingKey="contact_address" type="textarea" {...commonProps} />
+              </div>
+            )}
+
+            {/* ══ SİTE AYARLARI ════════════════════════════════════════ */}
             {activeTab === 'site' && (
-                <div className="fade-in">
-                    <h2 style={{marginBottom:'25px', color:'#003399'}}>Site Genel Ayarları</h2>
-                    <h4 style={{margin:'20px 0', color:'#555', borderLeft:'4px solid #003399', paddingLeft:'10px'}}>Üst Menü & Sekme (Header)</h4>
-                    <SettingInput label="Sekme Logosu (Favicon - Kare)" settingKey="site_favicon" type="image" {...commonProps} />
-                    <SettingInput label="Site Ana Logosu (Resim)" settingKey="header_logo_image" type="image" {...commonProps} />
-                    <SettingInput label="Logo Ana Metni (Resim Yoksa Görünür)" settingKey="header_logo_text" placeholder="DIGI-GREEN" {...commonProps} />
-                    <SettingInput label="Logo Vurgu Metni (Yeşil)" settingKey="header_logo_highlight" placeholder="FUTURE" {...commonProps} />
-                    <h4 style={{margin:'40px 0 20px', color:'#555', borderLeft:'4px solid #003399', paddingLeft:'10px'}}>Alt Bilgi (Footer)</h4>
-                    <SettingInput label="AB Logosu (Bayrak/Duyuru)" settingKey="footer_eu_logo" type="image" {...commonProps} />
-                    <SettingInput label="Footer Hakkında Metni" settingKey="footer_desc" type="textarea" {...commonProps} />
-                    <SettingInput label="Footer 2. Kolon Başlığı" settingKey="footer_column2_title" {...commonProps} />
-                    <SettingInput label="Footer 3. Kolon Başlığı" settingKey="footer_column3_title" {...commonProps} />
-                    <SettingInput label="AB Bilgilendirme Metni" settingKey="footer_disclaimer" type="textarea" {...commonProps} />
-                    <h4 style={{margin:'40px 0 20px', color:'#555', borderLeft:'4px solid #003399', paddingLeft:'10px'}}>Sosyal Medya Linkleri</h4>
-                    <SettingInput label="Facebook" settingKey="social_facebook" placeholder="https://facebook.com/..." {...commonProps} />
-                    <SettingInput label="Twitter (X)" settingKey="social_twitter" placeholder="https://twitter.com/..." {...commonProps} />
-                    <SettingInput label="Instagram" settingKey="social_instagram" placeholder="https://instagram.com/..." {...commonProps} />
+              <div className="adm-fade-in">
+                <div className="adm-page-header">
+                  <div className="adm-page-title">Site <em>Genel Ayarları</em></div>
                 </div>
+
+                <div className="adm-section">
+                  <SectionHeader num="1" title="Üst Menü & Sekme (Header)" />
+                  <SettingInput label="Favicon (Sekme İkonu)" settingKey="site_favicon" type="image" {...commonProps} />
+                  <SettingInput label="Site Ana Logosu" settingKey="header_logo_image" type="image" {...commonProps} />
+                  <SettingInput label="Logo Ana Metni" settingKey="header_logo_text" placeholder="DIGI-GREEN" {...commonProps} />
+                  <SettingInput label="Logo Vurgu Metni" settingKey="header_logo_highlight" placeholder="FUTURE" {...commonProps} />
+                </div>
+
+                <div className="adm-section">
+                  <SectionHeader num="2" title="Alt Bilgi (Footer)" />
+                  <SettingInput label="AB Logosu / Bayrak" settingKey="footer_eu_logo" type="image" {...commonProps} />
+                  <SettingInput label="Footer Hakkında Metni" settingKey="footer_desc" type="textarea" {...commonProps} />
+                  <SettingInput label="2. Kolon Başlığı" settingKey="footer_column2_title" {...commonProps} />
+                  <SettingInput label="3. Kolon Başlığı" settingKey="footer_column3_title" {...commonProps} />
+                  <SettingInput label="AB Bilgilendirme Metni" settingKey="footer_disclaimer" type="textarea" {...commonProps} />
+                </div>
+
+                <div className="adm-section">
+                  <SectionHeader num="3" title="Sosyal Medya" />
+                  <SettingInput label="Facebook" settingKey="social_facebook" placeholder="https://facebook.com/..." {...commonProps} />
+                  <SettingInput label="Twitter / X" settingKey="social_twitter" placeholder="https://twitter.com/..." {...commonProps} />
+                  <SettingInput label="Instagram" settingKey="social_instagram" placeholder="https://instagram.com/..." {...commonProps} />
+                </div>
+              </div>
             )}
-        </div>
-    </div>
-    </div>
-);
+
+          </div>
+        </main>
+      </div>
+    </>
+  );
 }

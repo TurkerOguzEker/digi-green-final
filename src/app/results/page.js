@@ -12,12 +12,11 @@ const NetworkBackground = () => {
     const ctx = canvas.getContext('2d');
     let animationFrameId;
     let particles = [];
-    let isVisible = true; // ✨ OPTİMİZASYON: Görünürlük kontrolü
+    let isVisible = true; 
 
     const resize = () => { canvas.width = window.innerWidth; canvas.height = window.innerHeight; };
     window.addEventListener('resize', resize); resize();
 
-    // ✨ OPTİMİZASYON: Ekran dışındayken hesaplamayı durdurur (Batarya tasarrufu)
     const observer = new IntersectionObserver(([entry]) => {
       isVisible = entry.isIntersecting;
     }, { threshold: 0 });
@@ -72,7 +71,7 @@ const NetworkBackground = () => {
   return <canvas ref={canvasRef} style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', zIndex: -1, pointerEvents: 'none', background: '#f4f7f2' }} />;
 };
 
-// ─── YAPRAK ANİMASYONU (500ms GECİKMELİ & YÜKSEK PERFORMANS) ──────────────────
+// ─── YAPRAK ANİMASYONU ──────────────────
 const HeroAnimation = () => {
   const canvasRef = useRef(null);
 
@@ -85,7 +84,7 @@ const HeroAnimation = () => {
     
     let spawnTimeouts = [];
     let mainTimeout;
-    let isVisible = true; // ✨ OPTİMİZASYON
+    let isVisible = true;
 
     const resize = () => {
       const parent = canvas.parentElement;
@@ -105,7 +104,6 @@ const HeroAnimation = () => {
       Math.sin(y * 0.009 - t * 0.25) * 0.35 +
       Math.sin((x + y) * 0.004 + t * 0.45) * 0.3;
 
-    // ✨ OPTİMİZASYON: Şekilleri her karede çizmek yerine Path2D ile önbelleğe alıyoruz
     const leafPaths = [new Path2D(), new Path2D(), new Path2D()];
     leafPaths[0].moveTo(0, -2.0); leafPaths[0].bezierCurveTo(1.6, -1.0, 1.6, 1.0, 0, 2.0); leafPaths[0].bezierCurveTo(-1.6, 1.0, -1.6, -1.0, 0, -2.0);
     leafPaths[1].moveTo(0, -2.4); leafPaths[1].bezierCurveTo(0.9, -0.8, 0.9, 0.8, 0, 2.4); leafPaths[1].bezierCurveTo(-0.9, 0.8, -0.9, -0.8, 0, -2.4);
@@ -113,7 +111,6 @@ const HeroAnimation = () => {
 
     class Leaf {
       reset() {
-        // ✨ Ekran DIŞINDAN doğma ayarı
         if (Math.random() < 0.75) {
           this.x = canvas.width + 50 + Math.random() * 150; 
           this.y = Math.random() * canvas.height;
@@ -170,18 +167,15 @@ const HeroAnimation = () => {
         ctx.scale(this.size, this.size); 
         ctx.globalAlpha = this.opacity;
         
-        // ✨ OPTİMİZASYON: Tarayıcıyı yoran shadowBlur yerine "Fake Shadow"
         ctx.save();
         ctx.translate(0.3, 0.6);
         ctx.fillStyle = 'rgba(0,0,0,0.12)';
         ctx.fill(leafPaths[this.variant]);
         ctx.restore();
 
-        // Yaprak
         ctx.fillStyle = `rgb(${this.r},${this.g},${this.b})`;
         ctx.fill(leafPaths[this.variant]);
 
-        // Damarlar
         ctx.beginPath();
         ctx.moveTo(0, -1.8); ctx.lineTo(0, 1.8);
         ctx.strokeStyle = 'rgba(255,255,255,0.22)';
@@ -199,7 +193,6 @@ const HeroAnimation = () => {
       }
     }
 
-    // ✨ 500ms GECİKMELİ BAŞLANGIÇ ✨
     mainTimeout = setTimeout(() => {
       for (let i = 0; i < 20; i++) {
         let t = setTimeout(() => {
@@ -236,7 +229,7 @@ const HeroAnimation = () => {
   );
 };
 
-// ─── CONTACT PAGE ─────────────────────────────────────────────────────────────
+// ─── CONTACT PAGE (AYNI KALDI) ─────────────────────────────────────────────────────────────
 export function ContactPage() {
   const [info, setInfo] = useState({});
   const [formData, setFormData] = useState({ name: '', email: '', subject: '', message: '' });
@@ -433,6 +426,7 @@ export function ContactPage() {
       </section>
       <ScrollToTop />
       <style jsx>{`
+        /* Contact sayfası stilleri aynen korundu */
         .contact-page {
           font-family: 'Inter', sans-serif; overflow-x: hidden;
           --green-deep: #1e9448; --green-mid: #2DB55D; --green-light: #52d47a;
@@ -443,13 +437,9 @@ export function ContactPage() {
           --shadow-hover: 0 20px 60px rgba(30,148,72,0.14), 0 4px 16px rgba(0,0,0,0.05);
           --radius: 20px;
         }
-
-        
-        /* HERO */
         .page-header {
           position:relative; min-height:100vh; display:flex; flex-direction:column;
           align-items:center; justify-content:center; text-align:center; overflow:hidden;
-          /* Eski asil ve derin orman yeşili gradyanı */
           background: linear-gradient(160deg, #071a0f 0%, #0f3320 35%, #1a5c38 65%, #0d2b1f 100%);
         }
         .hero-noise { position:absolute; inset:0; z-index:0; pointer-events:none; opacity:0.6;
@@ -478,17 +468,14 @@ export function ContactPage() {
         .hero-scroll-btn:hover .scroll-btn-icon { border-color:var(--green-mid); background:rgba(45,181,93,0.2); color:#fff; animation-play-state:paused; }
         @keyframes scrollBounce { 0%,100%{transform:translateY(0);opacity:0.7;} 50%{transform:translateY(7px);opacity:1;} }
 
-        /* SECTION */
         .section-padding { padding:48px 0 80px; position:relative; z-index:1; }
         .section-head { margin-bottom:36px; }
         .section-label { font-size:0.75rem; font-weight:600; letter-spacing:0.16em; text-transform:uppercase; color:var(--green-mid); margin-bottom:8px; }
         .section-title { font-size:2rem; font-weight:800; color:var(--text-dark); letter-spacing:-0.02em; border-left:3px solid var(--green-mid); padding-left:18px; margin:0; }
         .container { width:100%; padding:0 24px; margin:0 auto; }
 
-        /* GRID */
         .contact-grid { display:grid; grid-template-columns:1fr 1.5fr; gap:28px; }
 
-        /* KARTLAR */
         .info-card, .form-card {
           background:var(--card-bg); backdrop-filter:blur(14px);
           border-radius:var(--radius); box-shadow:var(--shadow-card);
@@ -499,7 +486,6 @@ export function ContactPage() {
 
         .card-heading { font-size:1.15rem; font-weight:800; color:var(--text-dark); margin:0 0 28px; padding-bottom:16px; border-bottom:1px solid rgba(45,181,93,0.12); }
 
-        /* İletişim listesi */
         .info-list { list-style:none; padding:0; margin:0; display:flex; flex-direction:column; gap:22px; }
         .info-item { display:flex; align-items:flex-start; gap:16px; }
         .info-icon {
@@ -513,7 +499,6 @@ export function ContactPage() {
         .info-link { color:var(--green-deep); text-decoration:none; }
         .info-link:hover { text-decoration:underline; }
 
-        /* Sosyal */
         .social-section { margin-top:28px; padding-top:22px; border-top:1px solid rgba(45,181,93,0.12); }
         .social-heading { font-size:0.72rem; font-weight:700; letter-spacing:0.1em; text-transform:uppercase; color:var(--text-soft); margin:0 0 14px; }
         .social-row { display:flex; gap:10px; flex-wrap:wrap; }
@@ -528,7 +513,6 @@ export function ContactPage() {
         .social-btn:hover { transform:translateY(-3px); background:var(--green-mid); box-shadow:0 6px 16px rgba(45,181,93,0.3); }
         .social-empty { font-size:0.85rem; color:#aaa; font-style:italic; }
 
-        /* FORM */
         .form-row { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
         .form-group { margin-bottom:18px; }
         .form-group label { display:block; margin-bottom:7px; font-size:0.82rem; font-weight:600; color:var(--text-mid); letter-spacing:0.02em; }
@@ -547,35 +531,27 @@ export function ContactPage() {
         }
         .form-group input::placeholder, .form-group textarea::placeholder { color:#b0bfb8; }
 
-        /* Gönder butonu */
-        /* Gönder butonu (Tek Renk Bütünleşik Yapı) */
         .submit-btn {
           display:inline-flex; align-items:center; justify-content:center; gap:10px;
           border-radius:10px; overflow:hidden; border:none; cursor:pointer;
           font-family:'Inter',sans-serif; font-size:0.95rem; font-weight:700;
           color:#fff; width:100%; margin-top:4px;
-          padding:14px 20px; /* Padding artık tüm butona uygulanıyor */
-          background:var(--green-deep); /* Tek renk */
+          padding:14px 20px; 
+          background:var(--green-deep); 
           transition:background 0.3s, transform 0.2s;
         }
         .submit-btn:disabled { opacity:0.7; cursor:not-allowed; }
-        
-        /* İçerideki span'ler için eski arka planları ve ekstra boşlukları kaldırıyoruz */
         .submit-btn span:first-child { flex: none; padding: 0; background: transparent; text-align: center; }
         .submit-btn .btn-icon { padding: 0; background: transparent; display: flex; align-items: center; justify-content: center; }
-        
-        /* Hover (Üzerine gelince) Efekti */
         .submit-btn:not(:disabled):hover { background:#166336; transform: translateY(-2px); }
         .submit-btn:not(:disabled):hover .btn-icon i { transform: translateX(4px); transition: transform 0.3s; }
         .submit-btn:disabled span:first-child, .submit-btn:disabled .btn-icon { background:var(--green-deep); }
 
-        /* Uyarılar */
         .alert { display:flex; align-items:flex-start; gap:10px; padding:14px 16px; border-radius:10px; font-size:0.9rem; font-weight:500; margin-bottom:20px; line-height:1.5; }
         .alert i { margin-top:2px; flex-shrink:0; }
         .alert-success { background:rgba(45,181,93,0.1); color:var(--green-deep); border:1px solid rgba(45,181,93,0.25); }
         .alert-error { background:rgba(231,76,60,0.08); color:#c0392b; border:1px solid rgba(231,76,60,0.2); }
 
-        /* REVEAL */
         .reveal { opacity:0; transform:translateY(40px); transition:opacity 0.75s cubic-bezier(0.22,1,0.36,1), transform 0.75s cubic-bezier(0.22,1,0.36,1); }
         .reveal.active { opacity:1; transform:translateY(0); }
 
@@ -594,11 +570,28 @@ export function ContactPage() {
   );
 }
 
-// ─── ICON MAP ─────────────────────────────────────────────────────────────────
+// ─── YENİ: UZANTI YAKALAMA FONKSİYONU ─────────────────────────────────────────
+// Linkin sonundaki dosya uzantısını alır (örn: PDF, DOCX, ZIP)
+const getFileExtension = (url) => {
+  if (!url) return '';
+  try {
+    const cleanUrl = url.split('?')[0]; // URL'deki parametreleri temizle
+    const parts = cleanUrl.split('.');
+    if (parts.length > 1) {
+      const ext = parts.pop().toUpperCase();
+      // Eğer uzantı çok uzunsa (nokta yoksa vs.) varsayılan DOC döndür
+      return ext.length <= 4 ? ext : 'DOC';
+    }
+    return 'DOC';
+  } catch (error) {
+    return 'DOC';
+  }
+};
+
 const getIcon = (type) => {
   if (type === 'video') return 'fa-video';
   if (type === 'app') return 'fa-mobile-alt';
-  return 'fa-file-pdf';
+  return 'fa-file-alt'; // Genel dosya ikonu (Artık pek kullanılmayacak)
 };
 
 // ─── RESULTS PAGE ─────────────────────────────────────────────────────────────
@@ -696,6 +689,11 @@ export default function ResultsPage() {
                 ) : (
                   results.map((item, index) => {
                     const delay = `${(index % 3) * 0.12 + 0.1}s`;
+                    
+                    // ✨ YENİ: İkon kontrolü ve uzantı bulma
+                    const isMedia = item.icon === 'video' || item.icon === 'app';
+                    const fileExt = getFileExtension(item.link);
+
                     return (
                       <article key={item.id} className="result-card reveal" style={{ transitionDelay: delay }}>
                         {/* Renkli üst şerit */}
@@ -707,7 +705,12 @@ export default function ResultsPage() {
                         <div className="card-inner">
                           <div className="icon-wrap">
                             <div className="icon-box">
-                              <i className={`fas ${getIcon(item.icon)}`}></i>
+                              {/* ✨ YENİ: Video/App ise ikon göster, değilse DİNAMİK UZANTI metnini göster */}
+                              {isMedia ? (
+                                <i className={`fas ${getIcon(item.icon)}`}></i>
+                              ) : (
+                                <span className="dynamic-ext">{fileExt}</span>
+                              )}
                             </div>
                             <div className="icon-ring"></div>
                           </div>
@@ -752,7 +755,6 @@ export default function ResultsPage() {
       <style jsx>{`
         /* Fontlar globals.css ile uyumlu — Inter */
 
-        /* ── RESET / BASE ───────────────────────────────────────────────────── */
         .results-page {
           font-family: 'Inter', sans-serif;
           overflow-x: hidden;
@@ -774,7 +776,6 @@ export default function ResultsPage() {
           --radius:       20px;
         }
 
-        /* ── LOADER ─────────────────────────────────────────────────────────── */
         .loading-screen {
           height: 100vh; display: flex; flex-direction: column;
           align-items: center; justify-content: center; gap: 24px;
@@ -799,7 +800,6 @@ export default function ResultsPage() {
         }
         @keyframes loader-spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
-        /* ── REVEAL — genel elementler için ────────────────────────────────── */
         .reveal:not(.result-card) {
           opacity: 0; transform: translateY(40px);
           transition: opacity 0.75s cubic-bezier(0.22, 1, 0.36, 1),
@@ -807,7 +807,6 @@ export default function ResultsPage() {
         }
         .reveal.active:not(.result-card) { opacity: 1; transform: translateY(0); }
 
-        /* ── HERO ───────────────────────────────────────────────────────────── */
         .page-header {
           position: relative;
           min-height: 100vh;
@@ -817,23 +816,15 @@ export default function ResultsPage() {
           justify-content: center;
           text-align: center;
           overflow: hidden;
-          background: linear-gradient(160deg,
-            #071a0f 0%,
-            #0f3320 35%,
-            #1a5c38 65%,
-            #0d2b1f 100%
-          );
+          background: linear-gradient(160deg, #071a0f 0%, #0f3320 35%, #1a5c38 65%, #0d2b1f 100%);
         }
 
-        /* Gürültü dokusu (SVG base64 — sayfayı yüklemeyi azaltır) */
         .hero-noise {
           position: absolute; inset: 0; z-index: 0; pointer-events: none;
           background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
-          background-size: 256px;
-          opacity: 0.6;
+          background-size: 256px; opacity: 0.6;
         }
 
-        /* Parlayan küre arka planları */
         .hero-orb {
           position: absolute; border-radius: 50%; pointer-events: none; z-index: 0;
           filter: blur(80px); opacity: 0.35;
@@ -858,11 +849,8 @@ export default function ResultsPage() {
           50% { transform: translateY(-30px) scale(1.06); }
         }
 
-        .hero-content {
-          position: relative; z-index: 3;
-        }
+        .hero-content { position: relative; z-index: 3; }
 
-        /* Eyebrow */
         .eyebrow {
           display: inline-flex; align-items: center; gap: 12px;
           font-family: 'Inter', sans-serif; font-size: 0.75rem; font-weight: 700;
@@ -878,258 +866,135 @@ export default function ResultsPage() {
           font-family: 'Inter', sans-serif;
           font-size: clamp(2.2rem, 5vw, 3.8rem);
           font-weight: 800; line-height: 1.1;
-          color: #ffffff;
-          margin-bottom: 20px;
-          text-shadow: 0 2px 20px rgba(0,0,0,0.4);
-          letter-spacing: -0.02em;
+          color: #ffffff; margin-bottom: 20px;
+          text-shadow: 0 2px 20px rgba(0,0,0,0.4); letter-spacing: -0.02em;
         }
         .header-title em {
-          font-style: normal;
-          background: linear-gradient(90deg, #6ee8a2, #a8f0c0);
-          -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-          background-clip: text;
+          font-style: normal; background: linear-gradient(90deg, #6ee8a2, #a8f0c0);
+          -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
         }
 
         .header-subtitle {
-          font-family: 'Inter', sans-serif;
-          font-size: 1.05rem; font-weight: 400; line-height: 1.7;
-          color: rgba(220,240,228,0.75);
-          max-width: 500px; margin: 0 auto 36px;
-          letter-spacing: 0.01em;
+          font-family: 'Inter', sans-serif; font-size: 1.05rem; font-weight: 400; line-height: 1.7;
+          color: rgba(220,240,228,0.75); max-width: 500px; margin: 0 auto 36px; letter-spacing: 0.01em;
         }
 
-        /* Dekoratif çizgi */
-        .hero-divider {
-          display: flex; align-items: center; justify-content: center; gap: 16px;
-        }
+        .hero-divider { display: flex; align-items: center; justify-content: center; gap: 16px; }
         .hero-divider span { height: 1px; width: 80px; background: rgba(201,168,76,0.5); }
-        .hero-divider .dot {
-          width: 6px !important; 
-          height: 6px !important; 
-          border-radius: 50%; 
-          background: var(--gold);
-        }
+        .hero-divider .dot { width: 6px !important; height: 6px !important; border-radius: 50%; background: var(--gold); }
 
-        /* Kaydırma butonu */
         .hero-scroll-btn {
           position: absolute; bottom: 40px; left: 50%; transform: translateX(-50%);
-          z-index: 3;
-          display: flex; flex-direction: column; align-items: center; gap: 10px;
+          z-index: 3; display: flex; flex-direction: column; align-items: center; gap: 10px;
           background: none; border: none; cursor: pointer; padding: 0;
         }
         .scroll-btn-label {
-          font-family: 'Inter', sans-serif;
-          font-size: 0.72rem; font-weight: 600; letter-spacing: 0.15em;
-          text-transform: uppercase; color: rgba(255,255,255,0.55);
-          transition: color 0.3s ease;
+          font-family: 'Inter', sans-serif; font-size: 0.72rem; font-weight: 600; letter-spacing: 0.15em;
+          text-transform: uppercase; color: rgba(255,255,255,0.55); transition: color 0.3s ease;
         }
         .hero-scroll-btn:hover .scroll-btn-label { color: rgba(255,255,255,0.9); }
 
         .scroll-btn-icon {
-          width: 44px; height: 44px; border-radius: 50%;
-          border: 1.5px solid rgba(255,255,255,0.25);
+          width: 44px; height: 44px; border-radius: 50%; border: 1.5px solid rgba(255,255,255,0.25);
           display: flex; align-items: center; justify-content: center;
-          color: rgba(255,255,255,0.7); font-size: 0.9rem;
-          transition: all 0.3s ease;
-          animation: scrollBounce 2.2s ease-in-out infinite;
-          background: rgba(255,255,255,0.05);
+          color: rgba(255,255,255,0.7); font-size: 0.9rem; transition: all 0.3s ease;
+          animation: scrollBounce 2.2s ease-in-out infinite; background: rgba(255,255,255,0.05);
         }
         .hero-scroll-btn:hover .scroll-btn-icon {
-          border-color: var(--green-mid);
-          background: rgba(39,174,96,0.2);
-          color: #ffffff;
-          animation-play-state: paused;
+          border-color: var(--green-mid); background: rgba(39,174,96,0.2);
+          color: #ffffff; animation-play-state: paused;
         }
         @keyframes scrollBounce {
           0%, 100% { transform: translateY(0); opacity: 0.7; }
           50% { transform: translateY(7px); opacity: 1; }
         }
 
-        /* ── SECTION ────────────────────────────────────────────────────────── */
         .section-padding { padding: 80px 0 100px; }
-
         .section-head { margin-bottom: 56px; }
-        .section-label {
-          font-size: 0.75rem; font-weight: 600; letter-spacing: 0.16em;
-          text-transform: uppercase; color: var(--green-mid); margin-bottom: 10px;
-        }
-        .section-title {
-          font-family: 'Inter', sans-serif;
-          font-size: 2rem; font-weight: 800;
-          color: var(--text-dark); letter-spacing: -0.02em;
-          border-left: 3px solid var(--green-mid);
-          padding-left: 18px; margin: 0;
-        }
+        .section-label { font-size: 0.75rem; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase; color: var(--green-mid); margin-bottom: 10px; }
+        .section-title { font-family: 'Inter', sans-serif; font-size: 2rem; font-weight: 800; color: var(--text-dark); letter-spacing: -0.02em; border-left: 3px solid var(--green-mid); padding-left: 18px; margin: 0; }
 
-        /* ── GRID ───────────────────────────────────────────────────────────── */
-        .results-grid {
-          display: grid;
-          grid-template-columns: repeat(auto-fill, minmax(330px, 1fr));
-          gap: 28px;
-        }
+        .results-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(330px, 1fr)); gap: 28px; }
 
-        /* ── CARD ───────────────────────────────────────────────────────────── */
         .result-card {
-          background: var(--card-bg);
-          border-radius: var(--radius);
-          box-shadow: var(--shadow-card);
-          border: 1px solid var(--border);
-          backdrop-filter: blur(14px);
-          position: relative; overflow: hidden;
-          /* Tek unified transition — reveal ve hover çakışmasını önler */
-          transition:
-            opacity 0.75s cubic-bezier(0.22, 1, 0.36, 1),
-            transform 0.45s cubic-bezier(0.175, 0.885, 0.32, 1.2),
-            box-shadow 0.45s ease,
-            border-color 0.3s ease;
-          display: flex; flex-direction: column;
-          will-change: transform;
+          background: var(--card-bg); border-radius: var(--radius);
+          box-shadow: var(--shadow-card); border: 1px solid var(--border);
+          backdrop-filter: blur(14px); position: relative; overflow: hidden;
+          transition: opacity 0.75s cubic-bezier(0.22, 1, 0.36, 1), transform 0.45s cubic-bezier(0.175, 0.885, 0.32, 1.2), box-shadow 0.45s ease, border-color 0.3s ease;
+          display: flex; flex-direction: column; will-change: transform;
         }
-
-        /* Reveal override: kartlar için reveal transform card'ın kendi transition'ını kullanır */
-        .result-card.reveal {
-          opacity: 0;
-          transform: translateY(40px) scale(0.98);
-        }
-        .result-card.reveal.active {
-          opacity: 1;
-          transform: translateY(0) scale(1);
-        }
-        /* Hover: reveal.active sonrası, transition-delay SIFIRLANMALI */
+        .result-card.reveal { opacity: 0; transform: translateY(40px) scale(0.98); }
+        .result-card.reveal.active { opacity: 1; transform: translateY(0) scale(1); }
         .result-card.reveal.active:hover {
-          transform: translateY(-10px) scale(1.01);
-          box-shadow: var(--shadow-hover);
-          border-color: rgba(39,174,96,0.3);
-          transition-delay: 0s;
+          transform: translateY(-10px) scale(1.01); box-shadow: var(--shadow-hover);
+          border-color: rgba(39,174,96,0.3); transition-delay: 0s;
         }
 
-        /* Üst renkli çizgi */
-        .card-top-bar {
-          height: 3px;
-          background: linear-gradient(90deg, var(--green-deep), var(--green-light), var(--gold));
-          width: 0%;
-          transition: width 0.5s ease;
-          flex-shrink: 0;
-        }
+        .card-top-bar { height: 3px; background: linear-gradient(90deg, var(--green-deep), var(--green-light), var(--gold)); width: 0%; transition: width 0.5s ease; flex-shrink: 0; }
         .result-card.reveal.active:hover .card-top-bar { width: 100%; }
 
-        /* Parlaklık taraması */
         .card-shine {
-          position: absolute; top: 0; left: -120%;
-          width: 60%; height: 100%;
-          background: linear-gradient(to right,
-            rgba(255,255,255,0) 0%,
-            rgba(255,255,255,0.45) 50%,
-            rgba(255,255,255,0) 100%);
-          transform: skewX(-20deg);
-          transition: left 0.65s ease;
-          pointer-events: none; z-index: 2;
+          position: absolute; top: 0; left: -120%; width: 60%; height: 100%;
+          background: linear-gradient(to right, rgba(255,255,255,0) 0%, rgba(255,255,255,0.45) 50%, rgba(255,255,255,0) 100%);
+          transform: skewX(-20deg); transition: left 0.65s ease; pointer-events: none; z-index: 2;
         }
         .result-card.reveal.active:hover .card-shine { left: 180%; }
 
-        .card-inner {
-          padding: 32px; display: flex; flex-direction: column;
-          gap: 20px; flex: 1; position: relative; z-index: 3;
-        }
+        .card-inner { padding: 32px; display: flex; flex-direction: column; gap: 20px; flex: 1; position: relative; z-index: 3; }
 
-        /* Icon */
         .icon-wrap { position: relative; display: inline-flex; width: fit-content; }
         .icon-box {
           width: 60px; height: 60px; border-radius: 16px;
           background: linear-gradient(135deg, rgba(39,174,96,0.12), rgba(39,174,96,0.22));
           display: flex; align-items: center; justify-content: center;
           font-size: 1.6rem; color: var(--green-deep);
-          position: relative; z-index: 2;
-          box-shadow: 0 4px 14px rgba(39,174,96,0.15);
+          position: relative; z-index: 2; box-shadow: 0 4px 14px rgba(39,174,96,0.15);
           transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1), background 0.3s ease;
         }
         .result-card.reveal.active:hover .icon-box {
           transform: scale(1.12) rotate(-5deg);
           background: linear-gradient(135deg, rgba(39,174,96,0.22), rgba(39,174,96,0.38));
         }
-        .icon-ring {
-          position: absolute; inset: -6px;
-          border-radius: 22px; border: 1.5px solid rgba(39,174,96,0.25);
-          animation: pulseRing 3s ease-in-out infinite;
-          z-index: 1;
-        }
-        @keyframes pulseRing {
-          0%, 100% { opacity: 0.4; transform: scale(1); }
-          50% { opacity: 0.9; transform: scale(1.06); }
-        }
 
-        /* Metin */
-        .card-body { flex: 1; }
-        .card-title {
+        /* ✨ YENİ: DİNAMİK UZANTI METNİ STİLİ */
+        .dynamic-ext {
           font-family: 'Inter', sans-serif;
-          font-size: 1.05rem; font-weight: 700; line-height: 1.35;
-          color: var(--text-dark); margin: 0 0 10px;
-        }
-        .card-desc {
-          font-size: 0.9rem; color: var(--text-soft);
-          line-height: 1.65; margin: 0;
-        }
-
-        /* Footer */
-        .card-footer {
-          display: flex; align-items: center;
-          justify-content: space-between; flex-wrap: wrap; gap: 12px;
-          padding-top: 20px;
-          border-top: 1px solid rgba(39,174,96,0.1);
-        }
-
-        .status-tag {
-          display: inline-flex; align-items: center; gap: 7px;
-          padding: 5px 13px; border-radius: 50px;
-          background: var(--green-pale);
+          font-size: 1.15rem;
+          font-weight: 800;
+          letter-spacing: 0.05em;
           color: var(--green-deep);
-          font-size: 0.78rem; font-weight: 600;
-          border: 1px solid rgba(39,174,96,0.2);
-        }
-        .status-dot {
-          width: 6px; height: 6px; border-radius: 50%;
-          background: var(--green-mid);
-          animation: statusPulse 2s ease-in-out infinite;
-        }
-        @keyframes statusPulse {
-          0%, 100% { opacity: 1; } 50% { opacity: 0.4; }
         }
 
-        /* Download buton */
-        .download-btn {
-          display: inline-flex; align-items: center; gap: 0;
-          border-radius: 10px; overflow: hidden;
-          text-decoration: none; font-size: 0.85rem; font-weight: 600;
-          color: white; border: none; cursor: pointer;
+        .icon-ring {
+          position: absolute; inset: -6px; border-radius: 22px; border: 1.5px solid rgba(39,174,96,0.25);
+          animation: pulseRing 3s ease-in-out infinite; z-index: 1;
         }
-        .download-btn span:first-child {
-          padding: 9px 16px;
-          background: var(--green-deep);
-          transition: background 0.25s;
-        }
-        .btn-icon {
-          padding: 9px 13px;
-          background: var(--green-mid);
-          transition: background 0.25s, transform 0.3s;
-          display: flex; align-items: center;
-        }
+        @keyframes pulseRing { 0%, 100% { opacity: 0.4; transform: scale(1); } 50% { opacity: 0.9; transform: scale(1.06); } }
+
+        .card-body { flex: 1; }
+        .card-title { font-family: 'Inter', sans-serif; font-size: 1.05rem; font-weight: 700; line-height: 1.35; color: var(--text-dark); margin: 0 0 10px; }
+        .card-desc { font-size: 0.9rem; color: var(--text-soft); line-height: 1.65; margin: 0; }
+
+        .card-footer { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; padding-top: 20px; border-top: 1px solid rgba(39,174,96,0.1); }
+        
+        .status-tag { display: inline-flex; align-items: center; gap: 7px; padding: 5px 13px; border-radius: 50px; background: var(--green-pale); color: var(--green-deep); font-size: 0.78rem; font-weight: 600; border: 1px solid rgba(39,174,96,0.2); }
+        .status-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green-mid); animation: statusPulse 2s ease-in-out infinite; }
+        @keyframes statusPulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+
+        .download-btn { display: inline-flex; align-items: center; gap: 0; border-radius: 10px; overflow: hidden; text-decoration: none; font-size: 0.85rem; font-weight: 600; color: white; border: none; cursor: pointer; }
+        .download-btn span:first-child { padding: 9px 16px; background: var(--green-deep); transition: background 0.25s; }
+        .btn-icon { padding: 9px 13px; background: var(--green-mid); transition: background 0.25s, transform 0.3s; display: flex; align-items: center; }
         .btn-icon i { transition: transform 0.3s; }
         .download-btn:hover span:first-child { background: #0f3320; }
         .download-btn:hover .btn-icon { background: var(--green-deep); }
         .download-btn:hover .btn-icon i { transform: translateY(3px); }
 
-        /* ── EMPTY STATE ────────────────────────────────────────────────────── */
-        .empty-state {
-          grid-column: 1 / -1; text-align: center; padding: 80px 40px;
-          color: var(--text-soft);
-        }
+        .empty-state { grid-column: 1 / -1; text-align: center; padding: 80px 40px; color: var(--text-soft); }
         .empty-state i { font-size: 3rem; opacity: 0.4; margin-bottom: 20px; display: block; }
         .empty-state p { font-size: 1rem; }
 
-        /* ── CONTAINER ──────────────────────────────────────────────────────── */
         .container { width: 100%; padding: 0 24px; margin: 0 auto; }
 
-        /* ── RESPONSIVE ─────────────────────────────────────────────────────── */
         @media (max-width: 640px) {
           .page-header { min-height: 100svh; padding: 0; }
           .header-title { font-size: 2rem; }
@@ -1140,4 +1005,4 @@ export default function ResultsPage() {
       `}</style>
     </div>
   );
-} 
+}
