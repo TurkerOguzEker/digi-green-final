@@ -76,12 +76,16 @@ export default function Header({ initialSettings = {} }) {
         { name: 'İletişim', path: '/contact' },
     ];
 
+    // ✨ YENİ: Eğer sayfa admin paneli veya giriş sayfası ise Header'ı GİZLE
+    if (pathname && (pathname.startsWith('/admin') || pathname.startsWith('/login'))) {
+        return null;
+    }
+
     return (
         <header className={`site-header ${isVisible ? '' : 'header-hidden'}`}>
             <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@700&display=swap" rel="stylesheet" />
 
             <div className="container header-container">
-                {/* ✨ GÜNCELLENDİ: logo-area sıkışmayı engellemek için flexShrink: 0 eklendi */}
                 <Link href="/" className="logo-area" style={{ flexShrink: 0 }}>
                     {content.header_logo_image && (
                         <img 
@@ -92,7 +96,6 @@ export default function Header({ initialSettings = {} }) {
                         />
                     )}
                     
-                    {/* ✨ GÜNCELLENDİ: Yazının kırılmasını engellemek için whiteSpace: "nowrap" ve esnek boyut için clamp eklendi */}
                     <span 
                         className="logo-text" 
                         style={{

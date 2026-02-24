@@ -1,9 +1,11 @@
 'use client';
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
+import { usePathname } from 'next/navigation'; // ✨ EKLENDİ
 import { supabase } from '../lib/supabase';
 
 export default function Footer() {
+  const pathname = usePathname(); // ✨ EKLENDİ
   const [content, setContent] = useState({});
 
   useEffect(() => {
@@ -18,15 +20,18 @@ export default function Footer() {
     fetchData();
   }, []);
 
+  // ✨ YENİ: Eğer sayfa admin paneli veya giriş sayfası ise Footer'ı GİZLE
+  if (pathname && (pathname.startsWith('/admin') || pathname.startsWith('/login'))) {
+      return null;
+  }
+
   return (
       <footer className="site-footer">
-          {/* Fontu Footer'da da garantiye almak için ekliyoruz */}
           <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@700&display=swap" rel="stylesheet" />
 
           <div className="container footer-grid">
               
               <div className="footer-col">
-                  {/* ✨ GÜNCELLENDİ: Header ile aynı mantıkta Flex, nowrap ve clamp kullanıldı */}
                   <Link href="/" className="footer-logo">
                       {content.header_logo_image && (
                           <img 
@@ -113,7 +118,6 @@ export default function Footer() {
                   padding-bottom: 50px;
               }
 
-              /* ✨ YENİ LOGO ALANI STİLLERİ ✨ */
               .footer-logo { 
                   display: flex; 
                   align-items: center; 
@@ -134,10 +138,10 @@ export default function Footer() {
               }
               .footer-logo-text {
                   font-family: 'Caveat', cursive;
-                  font-size: clamp(1.4rem, 2.5vw, 1.8rem); /* Dinamik boyut */
+                  font-size: clamp(1.4rem, 2.5vw, 1.8rem);
                   font-weight: 700;
                   color: white; 
-                  white-space: nowrap; /* Yazının alt satıra inmesini engeller */
+                  white-space: nowrap;
                   display: flex;
                   align-items: center;
                   gap: 8px;
@@ -162,7 +166,6 @@ export default function Footer() {
               }
               .social-link:hover { transform: translateY(-3px); background: #27ae60; border-color: #27ae60; box-shadow: 0 5px 15px rgba(46, 204, 113, 0.4); }
               
-              /* AB BİLGİLENDİRME ÇUBUĞU */
               .eu-disclaimer-bar { 
                   background: #0f3320; 
                   padding: 20px 0; 
@@ -171,7 +174,7 @@ export default function Footer() {
               .disclaimer-content { 
                   display: flex; 
                   align-items: center; 
-                  justify-content: flex-start; /* Sola dayalı */
+                  justify-content: flex-start;
                   gap: 20px;
               }
               .eu-flag-img {
