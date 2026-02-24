@@ -3,6 +3,8 @@ import Header from '../components/Header';
 import Footer from '../components/Footer';
 import ScrollToTop from '../components/ScrollToTop';
 import { supabase } from '../lib/supabase'; 
+// ✨ YENİ: Dil Context'ini (LanguageProvider) içeri aktarıyoruz
+import { LanguageProvider } from '../context/LanguageContext';
 
 // ✨ NEXT.JS ÖNBELLEĞİNİ İPTAL EDİYORUZ (Her seferinde güncel veriyi çekecek)
 export const revalidate = 0;
@@ -57,18 +59,22 @@ export default async function RootLayout({
       </head>
       <body suppressHydrationWarning>
         
-        {/* ✨ TYPESCRIPT HATASINI SUSTURMAK İÇİN ts-ignore EKLENDİ ✨ */}
-        {/* @ts-ignore */}
-        <Header initialSettings={settings} />
+        {/* ✨ YENİ: Tüm uygulamayı LanguageProvider ile sarmalıyoruz ✨ */}
+        <LanguageProvider>
+            {/* ✨ TYPESCRIPT HATASINI SUSTURMAK İÇİN ts-ignore EKLENDİ ✨ */}
+            {/* @ts-ignore */}
+            <Header initialSettings={settings} />
+            
+            <main style={{ minHeight: '80vh' }}>
+                {children}
+            </main>
+            
+            {/* @ts-ignore */}
+            <Footer initialSettings={settings} />
+            
+            <ScrollToTop />
+        </LanguageProvider>
         
-        <main style={{ minHeight: '80vh' }}>
-            {children}
-        </main>
-        
-        {/* @ts-ignore */}
-        <Footer initialSettings={settings} />
-        
-        <ScrollToTop />
       </body>
     </html>
   )

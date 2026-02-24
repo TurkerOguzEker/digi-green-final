@@ -3,13 +3,13 @@ import Link from 'next/link';
 import { useState, useEffect, useRef } from 'react';
 import { usePathname } from 'next/navigation';
 import { supabase } from '../lib/supabase';
+import { useLanguage } from '../context/LanguageContext'; 
 
 export default function Header({ initialSettings = {} }) {
     const pathname = usePathname();
     const [content, setContent] = useState(initialSettings);
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-    
-    // Header'ın görünürlük durumu ve scroll takibi için
+    const { language, toggleLanguage, t } = useLanguage();
     const [isVisible, setIsVisible] = useState(true);
     const lastScrollY = useRef(0);
 
@@ -29,54 +29,43 @@ export default function Header({ initialSettings = {} }) {
         }
     }, [initialSettings]);
 
-    // Scroll olayını dinleyen useEffect
     useEffect(() => {
         lastScrollY.current = window.scrollY;
-
         const handleScroll = () => {
             const currentScrollY = window.scrollY;
-
-            // Sayfanın en üstüne yakınken her zaman göster
             if (currentScrollY < 50) {
                 setIsVisible(true);
-            } 
-            // Aşağı kaydırılıyorsa ve mobil menü açık değilse gizle
-            else if (currentScrollY > lastScrollY.current && !mobileMenuOpen) {
+            } else if (currentScrollY > lastScrollY.current && !mobileMenuOpen) {
                 setIsVisible(false);
-            } 
-            // Yukarı kaydırılıyorsa göster
-            else if (currentScrollY < lastScrollY.current) {
+            } else if (currentScrollY < lastScrollY.current) {
                 setIsVisible(true);
             }
-
             lastScrollY.current = currentScrollY;
         };
-
         window.addEventListener('scroll', handleScroll, { passive: true });
         return () => window.removeEventListener('scroll', handleScroll);
     }, [mobileMenuOpen]);
 
     const navItems = [
-        { name: 'Ana Sayfa', path: '/' },
+        { name: t('nav.home'), path: '/' },
         {
-            name: 'Hakkında',
+            name: t('nav.about'),
             path: '/about',
             subItems: [
-                { name: 'Stratejik Genel Bakış', path: '/about/strategy' },
-                { name: 'Konsorsiyum Ortaklıkları', path: '/about/consortium' },
-                { name: 'Proje Planı', path: '/about/plan' },
-                { name: 'Etki ve Sürdürülebilirlik', path: '/about/impact' },
-                { name: 'Proje Yol Haritası', path: '/about/roadmap' }
+                { name: t('nav.strategy'), path: '/about/strategy' },
+                { name: t('nav.consortium'), path: '/about/consortium' },
+                { name: t('nav.plan'), path: '/about/plan' },
+                { name: t('nav.impact'), path: '/about/impact' },
+                { name: t('nav.roadmap'), path: '/about/roadmap' }
             ]
         },
-        { name: 'Ortaklar', path: '/partners' },
-        { name: 'Faaliyetler', path: '/activities' }, 
-        { name: 'Dosyalar', path: '/results' },
-        { name: 'Haberler', path: '/news' },
-        { name: 'İletişim', path: '/contact' },
+        { name: t('nav.partners'), path: '/partners' },
+        { name: t('nav.activities'), path: '/activities' }, 
+        { name: t('nav.files'), path: '/results' },
+        { name: t('nav.news'), path: '/news' },
+        { name: t('nav.contact'), path: '/contact' },
     ];
 
-    // ✨ YENİ: Eğer sayfa admin paneli veya giriş sayfası ise Header'ı GİZLE
     if (pathname && (pathname.startsWith('/admin') || pathname.startsWith('/login'))) {
         return null;
     }
@@ -95,7 +84,6 @@ export default function Header({ initialSettings = {} }) {
                             style={{ maxHeight: '45px', width: 'auto', objectFit: 'contain' }}
                         />
                     )}
-                    
                     <span 
                         className="logo-text" 
                         style={{
@@ -112,10 +100,7 @@ export default function Header({ initialSettings = {} }) {
                         }}
                     >
                         {content.header_logo_text || 'DIGI-GREEN'} 
-                        <span 
-                            className="highlight-green" 
-                            style={{ color: "#27ae60" }}
-                        >
+                        <span className="highlight-green" style={{ color: "#27ae60" }}>
                             {content.header_logo_highlight || 'FUTURE'}
                         </span>
                     </span>
@@ -124,7 +109,6 @@ export default function Header({ initialSettings = {} }) {
                 <nav className={`main-nav ${mobileMenuOpen ? 'active' : ''}`}>
                     <ul className="nav-list">
                         {navItems.map((item) => {
-                            // Tam aktif mi yoksa alt sayfası mı aktif kontrolü
                             const isExactActive = pathname === item.path;
                             const isChildActive = item.subItems && pathname.startsWith(item.path + '/');
                             
@@ -167,8 +151,31 @@ export default function Header({ initialSettings = {} }) {
                     </ul>
                 </nav>
 
-                <div className="mobile-menu-toggle" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
-                    <i className={`fas ${mobileMenuOpen ? 'fa-times' : 'fa-bars'}`}></i>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: '0 0 auto' }}>
+                    
+                    {/* Dil Switch Butonu */}
+                    <button
+                        className={`lang-switcher ${language === 'en' ? 'lang-en' : 'lang-tr'}`}
+                        onClick={toggleLanguage}
+                        aria-label="Toggle language"
+                        type="button"
+                    >
+                        <span className="lang-pill" aria-hidden="true" />
+
+                        {/* TR seçeneği */}
+                        <span className="lang-option">
+                            <span className="lang-code">TR</span>
+                        </span>
+
+                        {/* EN seçeneği */}
+                        <span className="lang-option">
+                            <span className="lang-code">EN</span>
+                        </span>
+                    </button>
+
+                    <div className="mobile-menu-toggle" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
+                        <i className={`fas ${mobileMenuOpen ? 'fa-times' : 'fa-bars'}`}></i>
+                    </div>
                 </div>
             </div>
 
@@ -197,14 +204,18 @@ export default function Header({ initialSettings = {} }) {
                 align-items: center;
                 width: 100%;
                 height: 100%;
+                gap: 4px;
             }
             .logo-area {
                 display: flex;
                 align-items: center;
-                gap: 12px; 
+                gap: 10px; 
                 text-decoration: none;
                 height: 100%;
-                flex-shrink: 0; /* Logoyu korur */
+                flex: 0 0 auto;
+                min-width: 0;
+                max-width: 200px;
+                overflow: hidden;
             }
             .logo-image {
                 transition: transform 0.3s ease;
@@ -213,15 +224,26 @@ export default function Header({ initialSettings = {} }) {
                 transform: scale(1.05);
             }
             
+            .main-nav {
+                flex: 1 1 0%;
+                min-width: 0;
+                overflow: visible;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+            }
+
             .nav-list {
                 display: flex;
                 flex-direction: row;
-                gap: 1px; 
+                gap: 0px; 
                 list-style: none;
                 margin: 0;
                 padding: 0;
                 height: 100%; 
                 align-items: center;
+                flex-wrap: nowrap;
+                min-width: 0;
             }
 
             .nav-item, .nav-item-with-dropdown {
@@ -235,14 +257,14 @@ export default function Header({ initialSettings = {} }) {
                 color: #444;
                 text-decoration: none;
                 font-weight: 600;
-                font-size: 0.92rem;
-                padding: 6px 10px; 
+                font-size: clamp(0.72rem, 1.1vw, 0.92rem);
+                padding: 5px clamp(5px, 0.7vw, 10px); 
                 border-radius: 50px; 
                 display: flex;
                 align-items: center;
                 transition: all 0.3s ease;
                 border: 2px solid transparent; 
-                white-space: nowrap; /* Menü metinlerinin kırılmasını önler */
+                white-space: nowrap;
             }
 
             .nav-link:hover { 
@@ -251,14 +273,12 @@ export default function Header({ initialSettings = {} }) {
                 box-shadow: 0 4px 10px rgba(39, 174, 96, 0.2);
             }
 
-            /* Tam Aktif Sayfa Görünümü */
             .active-nav-link { 
                 background: #27ae60 !important; 
                 color: #ffffff !important; 
                 box-shadow: 0 4px 12px rgba(39, 174, 96, 0.3);
             }
 
-            /* Alt Sayfa Aktifken Ebeveyn (Hakkında) Çerçevesi */
             .active-parent-link {
                 border-color: #27ae60;
                 color: #27ae60 !important;
@@ -341,7 +361,6 @@ export default function Header({ initialSettings = {} }) {
                 transform: translateX(0);
             }
 
-            /* Seçili olan alt sekme için stil */
             .modern-dropdown-link.active-sub-link {
                 background: #f4f7fa !important;
                 color: #27ae60 !important;
@@ -353,19 +372,138 @@ export default function Header({ initialSettings = {} }) {
                 transform: translateX(0);
             }
 
+            /* ============================================
+               ✨ YENİ DİL SWITCHER STILLERI
+            ============================================ */
+            .lang-switcher {
+                position: relative;
+                display: inline-flex;
+                align-items: center;
+                gap: 0;
+                background: #f0f4f0;
+                border: 1.5px solid #d4e8d4;
+                border-radius: 50px;
+                padding: 3px;
+                cursor: pointer;
+                outline: none;
+                transition: border-color 0.3s ease, box-shadow 0.3s ease;
+                flex-shrink: 0;
+                /* Buton sıfırlama */
+                font-family: inherit;
+            }
+
+            .lang-switcher:hover {
+                border-color: #27ae60;
+                box-shadow: 0 0 0 3px rgba(39, 174, 96, 0.12);
+            }
+
+            /* Kayan aktif arka plan */
+            .lang-pill {
+                position: absolute;
+                top: 3px;
+                left: 3px;
+                width: calc(50% - 3px);
+                height: calc(100% - 6px);
+                background: #ffffff;
+                border-radius: 50px;
+                box-shadow: 0 2px 8px rgba(39, 174, 96, 0.25);
+                transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+                pointer-events: none;
+                z-index: 0;
+            }
+
+            /* EN aktifken pill sağa kayar */
+            .lang-switcher.lang-en .lang-pill {
+                transform: translateX(100%);
+            }
+
+            .lang-option {
+                position: relative;
+                z-index: 1;
+                display: flex;
+                align-items: center;
+                padding: 5px 14px;
+                border-radius: 50px;
+                transition: all 0.3s ease;
+                min-width: 40px;
+                justify-content: center;
+            }
+
+            .lang-code {
+                font-size: 0.82rem;
+                font-weight: 800;
+                letter-spacing: 0.06em;
+                color: #888;
+                transition: color 0.3s ease;
+                font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+                line-height: 1;
+            }
+
+            /* TR aktifken (lang-tr class): ilk option aktif */
+            .lang-switcher.lang-tr .lang-option:first-of-type .lang-code {
+                color: #27ae60;
+            }
+
+            /* EN aktifken (lang-en class): ikinci option aktif */
+            .lang-switcher.lang-en .lang-option:last-of-type .lang-code {
+                color: #27ae60;
+            }
+
+            /* Hover efekti — aktif olmayan taraf */
+            .lang-switcher.lang-tr .lang-option:last-of-type:hover .lang-code,
+            .lang-switcher.lang-en .lang-option:first-of-type:hover .lang-code {
+                color: #555;
+            }
+
+            /* ============================================
+               MOBİL
+            ============================================ */
             @media (max-width: 992px) {
-                .mobile-menu-toggle { display: block !important; cursor: pointer; font-size: 1.5rem; color: #333; }
+                .lang-switcher {
+                    /* Mobilde küçük tut ama bozulmasın */
+                    padding: 2px;
+                }
+
+                .lang-option {
+                    padding: 4px 10px;
+                    min-width: 36px;
+                }
+
+                .lang-code {
+                    font-size: 0.72rem;
+                }
+
+                .mobile-menu-toggle { 
+                    display: block !important; 
+                    cursor: pointer; 
+                    font-size: 1.5rem; 
+                    color: #333; 
+                }
                 
                 .main-nav { 
-                    display: none; width: 100%; position: absolute; top: 80px; left: 0; 
-                    background: white; box-shadow: 0 10px 20px rgba(0,0,0,0.1); z-index: 999; 
+                    display: none; 
+                    width: 100%; 
+                    position: absolute; 
+                    top: 80px; 
+                    left: 0; 
+                    background: white; 
+                    box-shadow: 0 10px 20px rgba(0,0,0,0.1); 
+                    z-index: 999; 
                 }
                 .main-nav.active { display: block; }
                 
-                .nav-list { flex-direction: column; padding: 10px 0; align-items: flex-start; gap: 0; height: auto; }
+                .nav-list { 
+                    flex-direction: column; 
+                    padding: 10px 0; 
+                    align-items: flex-start; 
+                    gap: 0; 
+                    height: auto; 
+                }
                 
                 .nav-item, .nav-item-with-dropdown {
-                    width: 100%; height: auto; display: block;
+                    width: 100%; 
+                    height: auto; 
+                    display: block;
                 }
                 
                 .nav-link { 
@@ -378,9 +516,14 @@ export default function Header({ initialSettings = {} }) {
                 }
                 
                 .modern-dropdown-menu { 
-                    position: static !important; box-shadow: none !important; padding: 5px 0 !important; 
-                    background: #fcfcfc !important; display: none !important; width: 100% !important; 
-                    border: none !important; border-radius: 0 !important;
+                    position: static !important; 
+                    box-shadow: none !important; 
+                    padding: 5px 0 !important; 
+                    background: #fcfcfc !important; 
+                    display: none !important; 
+                    width: 100% !important; 
+                    border: none !important; 
+                    border-radius: 0 !important;
                 }
                 
                 .nav-item-with-dropdown:hover .modern-dropdown-menu {
@@ -399,10 +542,19 @@ export default function Header({ initialSettings = {} }) {
                     padding-left: 45px !important; 
                 }
                 
-                /* Mobilde alt link aktif stili */
                 .modern-dropdown-link.active-sub-link {
                     background: #eef7f2 !important;
                     padding-left: 45px !important;
+                }
+            }
+
+            @media (max-width: 400px) {
+                .lang-code {
+                    display: none; /* Çok dar ekranlarda sadece bayrak */
+                }
+                .lang-option {
+                    min-width: 34px;
+                    padding: 4px 8px;
                 }
             }
             ` }} />
