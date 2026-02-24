@@ -2,11 +2,10 @@
 import { useEffect, useState, useRef } from 'react';
 import { supabase } from '../../lib/supabase';
 import ScrollToTop from '../../components/ScrollToTop';
-import Link from 'next/link';
-// ✨ YENİ: Dil Context hook'umuzu dahil ettik
+// ✨ ESKİ SİSTEM: useLanguage kancası ile 'language' ve 't' fonksiyonunu alıyoruz
 import { useLanguage } from '../../context/LanguageContext';
 
-// ─── SAYFA GENELİ ARKA PLAN AĞI (YÜKSEK PERFORMANS) ───────────────────────────
+// ─── SAYFA GENELİ ARKA PLAN AĞI ────────────────────────────────────────────
 const NetworkBackground = () => {
   const canvasRef = useRef(null);
   useEffect(() => {
@@ -14,12 +13,11 @@ const NetworkBackground = () => {
     const ctx = canvas.getContext('2d');
     let animationFrameId;
     let particles = [];
-    let isVisible = true; // ✨ OPTİMİZASYON: Görünürlük kontrolü
+    let isVisible = true;
 
     const resize = () => { canvas.width = window.innerWidth; canvas.height = window.innerHeight; };
     window.addEventListener('resize', resize); resize();
 
-    // ✨ OPTİMİZASYON: Ekran dışındayken hesaplamayı durdurur (Batarya tasarrufu)
     const observer = new IntersectionObserver(([entry]) => {
       isVisible = entry.isIntersecting;
     }, { threshold: 0 });
@@ -74,7 +72,7 @@ const NetworkBackground = () => {
   return <canvas ref={canvasRef} style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', zIndex: -1, pointerEvents: 'none', background: '#f4f7f2' }} />;
 };
 
-// ─── YAPRAK ANİMASYONU (500ms GECİKMELİ & YÜKSEK PERFORMANS) ──────────────────
+// ─── YAPRAK ANİMASYONU ────────────────────────────────────────────────────
 const HeroAnimation = () => {
   const canvasRef = useRef(null);
 
@@ -87,14 +85,13 @@ const HeroAnimation = () => {
     
     let spawnTimeouts = [];
     let mainTimeout;
-    let isVisible = true; // ✨ OPTİMİZASYON
+    let isVisible = true;
 
     const resize = () => {
       const parent = canvas.parentElement;
       canvas.width  = parent ? parent.offsetWidth : window.innerWidth;
       canvas.height = parent ? parent.offsetHeight : window.innerHeight;
     };
-    
     resize();
     window.addEventListener('resize', resize);
 
@@ -108,7 +105,6 @@ const HeroAnimation = () => {
       Math.sin(y * 0.009 - t * 0.25) * 0.35 +
       Math.sin((x + y) * 0.004 + t * 0.45) * 0.3;
 
-    // ✨ OPTİMİZASYON: Şekilleri her karede çizmek yerine Path2D ile önbelleğe al
     const leafPaths = [new Path2D(), new Path2D(), new Path2D()];
     leafPaths[0].moveTo(0, -2.0); leafPaths[0].bezierCurveTo(1.6, -1.0, 1.6, 1.0, 0, 2.0); leafPaths[0].bezierCurveTo(-1.6, 1.0, -1.6, -1.0, 0, -2.0);
     leafPaths[1].moveTo(0, -2.4); leafPaths[1].bezierCurveTo(0.9, -0.8, 0.9, 0.8, 0, 2.4); leafPaths[1].bezierCurveTo(-0.9, 0.8, -0.9, -0.8, 0, -2.4);
@@ -116,7 +112,6 @@ const HeroAnimation = () => {
 
     class Leaf {
       reset() {
-        // ✨ Ekran DIŞINDAN doğma ayarı
         if (Math.random() < 0.75) {
           this.x = canvas.width + 50 + Math.random() * 150; 
           this.y = Math.random() * canvas.height;
@@ -173,18 +168,15 @@ const HeroAnimation = () => {
         ctx.scale(this.size, this.size); 
         ctx.globalAlpha = this.opacity;
         
-        // ✨ OPTİMİZASYON: Tarayıcıyı yoran shadowBlur yerine "Fake Shadow"
         ctx.save();
         ctx.translate(0.3, 0.6);
         ctx.fillStyle = 'rgba(0,0,0,0.12)';
         ctx.fill(leafPaths[this.variant]);
         ctx.restore();
 
-        // Yaprak
         ctx.fillStyle = `rgb(${this.r},${this.g},${this.b})`;
         ctx.fill(leafPaths[this.variant]);
 
-        // Damarlar
         ctx.beginPath();
         ctx.moveTo(0, -1.8); ctx.lineTo(0, 1.8);
         ctx.strokeStyle = 'rgba(255,255,255,0.22)';
@@ -202,7 +194,6 @@ const HeroAnimation = () => {
       }
     }
 
-    // ✨ 500ms GECİKMELİ BAŞLANGIÇ ✨
     mainTimeout = setTimeout(() => {
       for (let i = 0; i < 20; i++) {
         let t = setTimeout(() => {
@@ -244,7 +235,7 @@ export default function PartnersPage() {
   const [partners, setPartners] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // ✨ YENİ: Dil ve Çeviri fonksiyonlarını alıyoruz
+  // ✨ Dil fonksiyonlarını alıyoruz
   const { language, t } = useLanguage();
 
   useEffect(() => {
@@ -325,12 +316,13 @@ export default function PartnersPage() {
                   partners.map((partner, index) => {
                     const isReverse = index % 2 !== 0;
                     const animationClass = isReverse ? 'reveal-right' : 'reveal-left';
-                    
-                    // Rol İngilizce ise 'Koordinatör' -> 'Coordinator', değilse 'Ortak' -> 'Partner' vb.
-                    const isCoordinator = partner.role === 'Koordinatör';
-                    const roleText = isCoordinator 
-                        ? t('partners.list.coordinator') 
-                        : (partner.role || t('partners.list.partner'));
+                    const isCoordinator = partner.role === 'Koordinatör' || partner.role === 'Coordinator';
+
+                    // ✨ YENİ: Dile göre veritabanından veri çekiyoruz
+                    const displayName = language === 'en' && partner.name_en ? partner.name_en : partner.name;
+                    const displayCountry = language === 'en' && partner.country_en ? partner.country_en : partner.country;
+                    const displayDesc = language === 'en' && partner.description_en ? partner.description_en : partner.description;
+                    const displayRole = language === 'en' && partner.role_en ? partner.role_en : (partner.role || t('partners.list.partner'));
 
                     return (
                       <div key={partner.id} className={`partner-row reveal ${animationClass} ${isReverse ? 'row-reverse' : ''}`}>
@@ -339,19 +331,21 @@ export default function PartnersPage() {
                         <div className="partner-identity-side">
                           <div className="logo-box">
                             {partner.image_url
-                              ? <img src={partner.image_url} alt={partner.name} />
+                              ? <img src={partner.image_url} alt={displayName} />
                               : <i className="fas fa-building fa-4x" style={{ color: '#c9a84c' }}></i>}
                           </div>
                           <div className="identity-info">
-                            <h2 className="partner-name">{partner.name}</h2>
+                            <h2 className="partner-name">
+                                {displayName}
+                            </h2>
                             <div className="tags-wrapper">
                               <span className={`status-tag ${isCoordinator ? 'coordinator-tag' : ''}`}>
                                 <span className={`status-dot ${isCoordinator ? 'coordinator-dot' : ''}`}></span>
-                                {roleText}
+                                {displayRole}
                               </span>
                               <div className="country-tag">
-                                {partner.flag_url && <img src={partner.flag_url} alt={partner.country} />}
-                                <span>{partner.country}</span>
+                                {partner.flag_url && <img src={partner.flag_url} alt={displayCountry} />}
+                                <span>{displayCountry}</span>
                               </div>
                             </div>
                           </div>
@@ -360,8 +354,9 @@ export default function PartnersPage() {
                         <div className="partner-content-side">
                           <div className="content-inner">
                             <h4 className="about-title">{t('partners.list.aboutTitle')}</h4>
-                            {partner.description
-                              ? <p className="partner-desc">{partner.description}</p>
+                            
+                            {displayDesc
+                              ? <p className="partner-desc">{displayDesc}</p>
                               : <p className="partner-desc empty-desc">{t('partners.list.emptyDesc')}</p>}
                             
                             <div className="button-group" style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', marginTop: '16px', justifyContent: 'center', width: '100%' }}>
@@ -450,13 +445,13 @@ export default function PartnersPage() {
         .hero-scroll-btn:hover .scroll-btn-icon { border-color:var(--green-mid); background:rgba(39,174,96,0.2); color:#fff; animation-play-state:paused; }
         @keyframes scrollBounce { 0%,100%{transform:translateY(0);opacity:0.7;} 50%{transform:translateY(7px);opacity:1;} }
 
-        /* ── SECTION: azaltılmış boşluklar ────────────────────────────────── */
+        /* ── SECTION ────────────────────────────────── */
         .section-padding { padding: 48px 0 72px; position: relative; z-index: 1; }
         .section-head { margin-bottom: 32px; }
         .section-label { font-size:0.75rem; font-weight:600; letter-spacing:0.16em; text-transform:uppercase; color:var(--green-mid); margin-bottom:8px; }
         .section-title { font-size:2rem; font-weight:800; color:var(--text-dark); letter-spacing:-0.02em; border-left:3px solid var(--green-mid); padding-left:18px; margin:0; }
 
-        /* ── KARTLAR ARASI: azaltılmış gap ─────────────────────────────────── */
+        /* ── KARTLAR ARASI ─────────────────────────────────── */
         .partners-list { display:flex; flex-direction:column; gap: 28px; padding: 0; }
 
         .partner-row {
@@ -521,7 +516,6 @@ export default function PartnersPage() {
         .action-btn:hover .btn-icon { background:var(--green-deep); }
         .action-btn:hover .btn-icon i { transform:translateX(4px); }
 
-        /* DÜZELTME: Butonları yeşil yapıyoruz */
         .detail-btn span:first-child { background: var(--green-mid); }
         .detail-btn .btn-icon { background: var(--green-deep); }
         

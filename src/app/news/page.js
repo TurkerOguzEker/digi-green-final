@@ -3,8 +3,10 @@ import { useEffect, useState, useRef, useCallback } from 'react';
 import { supabase } from '../../lib/supabase';
 import ScrollToTop from '../../components/ScrollToTop';
 import Link from 'next/link';
+// ✨ ESKİ SİSTEM: useLanguage kancası ile 'language' ve 't' fonksiyonunu alıyoruz
+import { useLanguage } from '../../context/LanguageContext';
 
-const PAGE_SIZE = 6; // Her seferinde kaç haber yüklensin
+const PAGE_SIZE = 6; 
 
 // ─── SAYFA GENELİ ARKA PLAN AĞI ────────────────────────────────────────────
 const NetworkBackground = () => {
@@ -12,15 +14,13 @@ const NetworkBackground = () => {
   useEffect(() => {
     const canvas = canvasRef.current;
     const ctx = canvas.getContext('2d');
-    let animationFrameId;
-    let particles = [];
-    let isVisible = true;
+    let raf, particles = [], visible = true;
 
     const resize = () => { canvas.width = window.innerWidth; canvas.height = window.innerHeight; };
     window.addEventListener('resize', resize); resize();
 
     const observer = new IntersectionObserver(([entry]) => {
-      isVisible = entry.isIntersecting;
+      visible = entry.isIntersecting;
     }, { threshold: 0 });
     observer.observe(canvas);
 
@@ -45,7 +45,7 @@ const NetworkBackground = () => {
     for (let i = 0; i < 55; i++) particles.push(new Particle());
 
     const animate = () => {
-      if (isVisible) {
+      if (visible) {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         particles.forEach(p => { p.update(); p.draw(); });
         for (let i = 0; i < particles.length; i++) {
@@ -60,32 +60,27 @@ const NetworkBackground = () => {
           }
         }
       }
-      animationFrameId = requestAnimationFrame(animate);
+      raf = requestAnimationFrame(animate);
     };
     animate();
 
     return () => {
       window.removeEventListener('resize', resize);
-      cancelAnimationFrame(animationFrameId);
+      cancelAnimationFrame(raf);
       observer.disconnect();
     };
   }, []);
   return <canvas ref={canvasRef} style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', zIndex: -1, pointerEvents: 'none', background: '#f4f7f2' }} />;
 };
 
-// ─── YAPRAK ANİMASYONU ────────────────────────────────────────────────────
+// ─── YAPRAK ANİMASYONU ──────────────────────────────────
 const HeroAnimation = () => {
   const canvasRef = useRef(null);
 
   useEffect(() => {
     const canvas = canvasRef.current;
     const ctx = canvas.getContext('2d');
-    let animationFrameId;
-    let leaves = [];
-    let windTime = 0;
-    let spawnTimeouts = [];
-    let mainTimeout;
-    let isVisible = true;
+    let raf, leaves = [], windTime = 0, spawnTimeouts = [], mainTimeout, visible = true;
 
     const resize = () => {
       const parent = canvas.parentElement;
@@ -96,7 +91,7 @@ const HeroAnimation = () => {
     window.addEventListener('resize', resize);
 
     const observer = new IntersectionObserver(([entry]) => {
-      isVisible = entry.isIntersecting;
+      visible = entry.isIntersecting;
     }, { threshold: 0 });
     observer.observe(canvas);
 
@@ -149,8 +144,7 @@ const HeroAnimation = () => {
         this.vy *= this.drag;
         this.x += this.vx;
         this.y += this.vy;
-        const target = Math.atan2(this.vy, -this.vx) + Math.PI * 0.08;
-        let diff = target - this.angle;
+        let diff = Math.atan2(this.vy, -this.vx) + Math.PI * 0.08 - this.angle;
         while (diff >  Math.PI) diff -= Math.PI * 2;
         while (diff < -Math.PI) diff += Math.PI * 2;
         this.angVel += diff * 0.006;
@@ -188,50 +182,45 @@ const HeroAnimation = () => {
 
     mainTimeout = setTimeout(() => {
       for (let i = 0; i < 20; i++) {
-        let t = setTimeout(() => { leaves.push(new Leaf()); }, Math.random() * 3000);
-        spawnTimeouts.push(t);
+        let tm = setTimeout(() => { leaves.push(new Leaf()); }, Math.random() * 3000);
+        spawnTimeouts.push(tm);
       }
     }, 500);
 
     const animate = () => {
-      if (isVisible) {
+      if (visible) {
         windTime += 0.007;
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         leaves.forEach(l => { l.update(windTime); l.draw(); });
       }
-      animationFrameId = requestAnimationFrame(animate);
+      raf = requestAnimationFrame(animate);
     };
     animate();
 
     return () => {
       window.removeEventListener('resize', resize);
-      cancelAnimationFrame(animationFrameId);
+      cancelAnimationFrame(raf);
       observer.disconnect();
       clearTimeout(mainTimeout);
-      spawnTimeouts.forEach(t => clearTimeout(t));
+      spawnTimeouts.forEach(clearTimeout);
     };
   }, []);
-
-  return (
-    <canvas
-      ref={canvasRef}
-      style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', zIndex: 1, pointerEvents: 'none' }}
-    />
-  );
+  return <canvas ref={canvasRef} style={{ position:'absolute',top:0,left:0,width:'100%',height:'100%',zIndex:1,pointerEvents:'none' }} />;
 };
 
 // ─── NEWS PAGE ─────────────────────────────────────────────────────────────
 export default function NewsPage() {
   const [news, setNews]           = useState([]);
-  const [loading, setLoading]     = useState(true);      // ilk sayfa yüklemesi
-  const [loadingMore, setLoadingMore] = useState(false); // ek sayfa yüklemesi
+  const [loading, setLoading]     = useState(true);      
+  const [loadingMore, setLoadingMore] = useState(false); 
   const [hasMore, setHasMore]     = useState(true);
-  const [page, setPage]           = useState(0);         // kaçıncı sayfadayız
+  const [page, setPage]           = useState(0);         
 
-  // Sonsuz kaydırma için sentinel elementi referansı
   const sentinelRef = useRef(null);
 
-  // ── İlk yükleme ──────────────────────────────────────────────────────────
+  // ✨ Sözlük ve dil bilgisini çekiyoruz
+  const { language, t } = useLanguage();
+
   useEffect(() => {
     async function fetchFirstPage() {
       const { data } = await supabase
@@ -249,7 +238,6 @@ export default function NewsPage() {
     fetchFirstPage();
   }, []);
 
-  // ── Sonraki sayfaları yükle ───────────────────────────────────────────────
   const loadMore = useCallback(async () => {
     if (loadingMore || !hasMore) return;
     setLoadingMore(true);
@@ -274,7 +262,6 @@ export default function NewsPage() {
     setLoadingMore(false);
   }, [loadingMore, hasMore, page]);
 
-  // ── IntersectionObserver: sentinel görününce loadMore çağır ──────────────
   useEffect(() => {
     if (loading) return;
 
@@ -287,14 +274,13 @@ export default function NewsPage() {
           loadMore();
         }
       },
-      { rootMargin: '200px' } // Biraz erken tetikle, kullanıcı beklesin
+      { rootMargin: '200px' } 
     );
 
     observer.observe(sentinel);
     return () => observer.disconnect();
   }, [loading, hasMore, loadingMore, loadMore]);
 
-  // ── Reveal animasyonu: yeni kartlar eklenince tetikle ────────────────────
   useEffect(() => {
     if (loading) return;
     const revealObserver = new IntersectionObserver(
@@ -302,16 +288,15 @@ export default function NewsPage() {
         entries.forEach(entry => {
           if (entry.isIntersecting) {
             entry.target.classList.add('active');
-            revealObserver.unobserve(entry.target); // Bir kez tetiklendi mi? Artık izleme
+            revealObserver.unobserve(entry.target);
           }
         });
       },
       { threshold: 0.08 }
     );
-    // Sadece henüz aktifleşmemiş reveal elementlerini izle
     document.querySelectorAll('.reveal:not(.active)').forEach(el => revealObserver.observe(el));
     return () => revealObserver.disconnect();
-  }, [loading, news]); // news değişince (yeni kartlar gelince) yeniden bağlan
+  }, [loading, news]); 
 
   return (
     <div className="news-page">
@@ -322,7 +307,7 @@ export default function NewsPage() {
           <div className="loader-ring">
             <div></div><div></div><div></div><div></div>
           </div>
-          <span className="loader-text">Hazırlanıyor…</span>
+          <span className="loader-text">{t('news.loading')}</span>
         </div>
       ) : (
         <>
@@ -336,13 +321,13 @@ export default function NewsPage() {
 
             <div className="container hero-content">
               <div className="eyebrow reveal active">
-                <span className="eyebrow-dot"></span>Gelişmeler<span className="eyebrow-dot"></span>
+                <span className="eyebrow-dot"></span>{t('news.hero.eyebrow')}<span className="eyebrow-dot"></span>
               </div>
               <h1 className="header-title reveal active">
-                Haberler &amp;<br /><em>Etkinlikler</em>
+                {t('news.hero.title1')}<br /><em>{t('news.hero.title2')}</em>
               </h1>
               <p className="header-subtitle reveal active" style={{ transitionDelay: '0.25s' }}>
-                Projemizle ilgili en güncel gelişmeleri, duyuruları ve etkinlikleri buradan takip edebilirsiniz.
+                {t('news.hero.desc')}
               </p>
               <div className="hero-divider reveal active" style={{ transitionDelay: '0.4s' }}>
                 <span></span><span className="dot"></span><span></span>
@@ -354,7 +339,7 @@ export default function NewsPage() {
               onClick={() => document.getElementById('icerik')?.scrollIntoView({ behavior: 'smooth' })}
               aria-label="İçeriğe git"
             >
-              <span className="scroll-btn-label">Haberleri Keşfet</span>
+              <span className="scroll-btn-label">{t('news.hero.scrollBtn')}</span>
               <span className="scroll-btn-icon"><i className="fas fa-chevron-down"></i></span>
             </button>
           </section>
@@ -363,21 +348,25 @@ export default function NewsPage() {
           <section id="icerik" className="section-padding">
             <div className="container" style={{ maxWidth: '1160px' }}>
               <div className="section-head reveal">
-                <p className="section-label">Medya ve Duyurular</p>
-                <h2 className="section-title">Güncel Gelişmeler</h2>
+                <p className="section-label">{t('news.section.label')}</p>
+                <h2 className="section-title">{t('news.section.title')}</h2>
               </div>
 
               <div className="news-grid">
                 {news.length === 0 ? (
                   <div className="empty-state reveal">
                     <i className="far fa-newspaper"></i>
-                    <p>Henüz bir haber veya etkinlik eklenmemiş.</p>
+                    <p>{t('news.list.empty')}</p>
                   </div>
                 ) : (
                   news.map((item, index) => {
                     const delay = `${(index % 3) * 0.12 + 0.1}s`;
                     const dateParts = item.date ? item.date.split(' ') : [];
                     const displayDate = dateParts.length >= 2 ? `${dateParts[0]} ${dateParts[1]}` : item.date;
+
+                    // ✨ YENİ: Dile göre veritabanından veri çekiyoruz
+                    const displayTitle = language === 'en' && item.title_en ? item.title_en : item.title;
+                    const displaySummary = language === 'en' && item.summary_en ? item.summary_en : item.summary;
 
                     return (
                       <article key={item.id} className="news-card reveal" style={{ transitionDelay: delay }}>
@@ -386,7 +375,7 @@ export default function NewsPage() {
                         <div className="news-image-container">
                           <div className="news-image">
                             {item.image_url ? (
-                              <img src={item.image_url} alt={item.title} loading="lazy" />
+                              <img src={item.image_url} alt={displayTitle} loading="lazy" />
                             ) : (
                               <div className="placeholder-img"><i className="far fa-image"></i></div>
                             )}
@@ -398,11 +387,15 @@ export default function NewsPage() {
                         </div>
 
                         <div className="news-content">
-                          <h3 className="news-title">{item.title}</h3>
-                          <p className="news-desc">{item.summary}</p>
+                          <h3 className="news-title">
+                            {displayTitle}
+                          </h3>
+                          <p className="news-desc">
+                            {displaySummary}
+                          </p>
                           <div className="news-footer">
                             <Link href={`/news/${item.id}`} className="read-more" style={{ textDecoration: 'none' }}>
-                              Devamını Oku <i className="fas fa-arrow-right"></i>
+                              {t('news.list.readMore')} <i className="fas fa-arrow-right"></i>
                             </Link>
                           </div>
                         </div>
@@ -413,7 +406,6 @@ export default function NewsPage() {
               </div>
 
               {/* ── SENTINEL + YÜKLEME GÖSTERGESİ ─────────────────────── */}
-              {/* Sentinel: bu element görünce yeni haberler yüklenir */}
               <div ref={sentinelRef} style={{ height: '1px' }} />
 
               {loadingMore && (
@@ -421,12 +413,12 @@ export default function NewsPage() {
                   <div className="loader-ring small">
                     <div></div><div></div><div></div><div></div>
                   </div>
-                  <span className="loader-text">Daha fazla yükleniyor…</span>
+                  <span className="loader-text">{t('news.list.loadMore')}</span>
                 </div>
               )}
 
               {!hasMore && news.length > 0 && (
-                <p className="end-of-list">Tüm haberler yüklendi.</p>
+                <p className="end-of-list">{t('news.list.end')}</p>
               )}
             </div>
           </section>

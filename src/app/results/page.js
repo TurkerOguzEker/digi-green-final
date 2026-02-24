@@ -2,9 +2,10 @@
 import { useEffect, useState, useRef } from 'react';
 import { supabase } from '../../lib/supabase';
 import ScrollToTop from '../../components/ScrollToTop';
-import Link from 'next/link';
+// ✨ ESKİ SİSTEM: useLanguage kancası ile 'language' ve 't' fonksiyonunu alıyoruz
+import { useLanguage } from '../../context/LanguageContext';
 
-// ─── SAYFA GENELİ ARKA PLAN AĞI (YÜKSEK PERFORMANS) ───────────────────────────
+// ─── SAYFA GENELİ ARKA PLAN AĞI ────────────────────────────────────────────
 const NetworkBackground = () => {
   const canvasRef = useRef(null);
   useEffect(() => {
@@ -12,7 +13,7 @@ const NetworkBackground = () => {
     const ctx = canvas.getContext('2d');
     let animationFrameId;
     let particles = [];
-    let isVisible = true; 
+    let isVisible = true;
 
     const resize = () => { canvas.width = window.innerWidth; canvas.height = window.innerHeight; };
     window.addEventListener('resize', resize); resize();
@@ -71,7 +72,7 @@ const NetworkBackground = () => {
   return <canvas ref={canvasRef} style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', zIndex: -1, pointerEvents: 'none', background: '#f4f7f2' }} />;
 };
 
-// ─── YAPRAK ANİMASYONU ──────────────────
+// ─── YAPRAK ANİMASYONU ────────────────────────────────────────────────────────
 const HeroAnimation = () => {
   const canvasRef = useRef(null);
 
@@ -151,8 +152,7 @@ const HeroAnimation = () => {
         this.vy *= this.drag;
         this.x += this.vx;
         this.y += this.vy;
-        const target = Math.atan2(this.vy, -this.vx) + Math.PI * 0.08;
-        let diff = target - this.angle;
+        let diff = Math.atan2(this.vy, -this.vx) + Math.PI * 0.08 - this.angle;
         while (diff >  Math.PI) diff -= Math.PI * 2;
         while (diff < -Math.PI) diff += Math.PI * 2;
         this.angVel += diff * 0.006;
@@ -229,357 +229,14 @@ const HeroAnimation = () => {
   );
 };
 
-// ─── CONTACT PAGE (AYNI KALDI) ─────────────────────────────────────────────────────────────
-export function ContactPage() {
-  const [info, setInfo] = useState({});
-  const [formData, setFormData] = useState({ name: '', email: '', subject: '', message: '' });
-  const [sending, setSending] = useState(false);
-  const [status, setStatus] = useState(null);
-
-  useEffect(() => {
-    async function fetchSettings() {
-      const { data } = await supabase.from('settings').select('*');
-      if (data) {
-        const map = {};
-        data.forEach(item => map[item.key] = item.value);
-        setInfo(map);
-      }
-    }
-    fetchSettings();
-  }, []);
-
-  const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setSending(true);
-    setStatus(null);
-    try {
-      const { error } = await supabase.from('contact_messages').insert([formData]);
-      if (error) throw error;
-      setStatus('success');
-      setFormData({ name: '', email: '', subject: '', message: '' });
-    } catch {
-      setStatus('error');
-    } finally {
-      setSending(false);
-    }
-  };
-
-  return (
-    <div className="contact-page">
-      <NetworkBackground />
-
-      {/* ── HERO ───────────────────────────────────────────────────────────── */}
-      <section className="page-header">
-        <HeroAnimation />
-        <div className="hero-noise"></div>
-        <div className="hero-orb orb-1"></div>
-        <div className="hero-orb orb-2"></div>
-        <div className="hero-orb orb-3"></div>
-
-        <div className="container hero-content">
-          <div className="eyebrow reveal active">
-            <span className="eyebrow-dot"></span>İletişim<span className="eyebrow-dot"></span>
-          </div>
-          <h1 className="header-title reveal active">
-            Bize Ulaşın &amp;<br /><em>Yazışalım</em>
-          </h1>
-          <p className="header-subtitle reveal active" style={{ transitionDelay: '0.25s' }}>
-            Sorularınız, önerileriniz veya işbirliği talepleriniz için buradayız.
-          </p>
-          <div className="hero-divider reveal active" style={{ transitionDelay: '0.4s' }}>
-            <span></span><span className="dot"></span><span></span>
-          </div>
-        </div>
-
-        <button
-          className="hero-scroll-btn"
-          onClick={() => document.getElementById('icerik')?.scrollIntoView({ behavior: 'smooth' })}
-          aria-label="İçeriğe git"
-        >
-          <span className="scroll-btn-label">İletişime Geç</span>
-          <span className="scroll-btn-icon"><i className="fas fa-chevron-down"></i></span>
-        </button>
-      </section>
-
-      {/* ── CONTENT ────────────────────────────────────────────────────────── */}
-      <section id="icerik" className="section-padding">
-        <div className="container" style={{ maxWidth: '1100px' }}>
-
-          <div className="section-head">
-            <p className="section-label">Bize Yazın</p>
-            <h2 className="section-title">İletişim Bilgileri & Form</h2>
-          </div>
-
-          <div className="contact-grid">
-
-            {/* ─ SOL: İletişim Bilgileri ─────────────────────────────────── */}
-            <div className="info-card">
-              <h3 className="card-heading">İletişim Bilgileri</h3>
-
-              <ul className="info-list">
-                <li className="info-item">
-                  <div className="info-icon"><i className="fas fa-map-marker-alt"></i></div>
-                  <div>
-                    <span className="info-label">Adres</span>
-                    <span className="info-value">{info.contact_address || '—'}</span>
-                  </div>
-                </li>
-                <li className="info-item">
-                  <div className="info-icon"><i className="fas fa-envelope"></i></div>
-                  <div>
-                    <span className="info-label">E-posta</span>
-                    <a href={`mailto:${info.contact_email}`} className="info-value info-link">
-                      {info.contact_email || '—'}
-                    </a>
-                  </div>
-                </li>
-                <li className="info-item">
-                  <div className="info-icon"><i className="fas fa-phone"></i></div>
-                  <div>
-                    <span className="info-label">Telefon</span>
-                    <span className="info-value">{info.contact_phone || '—'}</span>
-                  </div>
-                </li>
-              </ul>
-
-              {/* Sosyal Medya */}
-              <div className="social-section">
-                <p className="social-heading">Bizi Takip Edin</p>
-                <div className="social-row">
-                  {info.social_facebook && (
-                    <a href={info.social_facebook} target="_blank" rel="noopener noreferrer" className="social-btn" title="Facebook">
-                      <i className="fab fa-facebook-f"></i>
-                    </a>
-                  )}
-                  {info.social_twitter && (
-                    <a href={info.social_twitter} target="_blank" rel="noopener noreferrer" className="social-btn" title="Twitter / X">
-                      <i className="fab fa-twitter"></i>
-                    </a>
-                  )}
-                  {info.social_instagram && (
-                    <a href={info.social_instagram} target="_blank" rel="noopener noreferrer" className="social-btn" title="Instagram">
-                      <i className="fab fa-instagram"></i>
-                    </a>
-                  )}
-                  {!info.social_facebook && !info.social_twitter && !info.social_instagram && (
-                    <span className="social-empty">Henüz eklenmemiş.</span>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            {/* ─ SAĞ: Form ──────────────────────────────────────────────── */}
-            <div className="form-card">
-              <h3 className="card-heading">Mesaj Gönderin</h3>
-
-              {status === 'success' && (
-                <div className="alert alert-success">
-                  <i className="fas fa-check-circle"></i>
-                  Mesajınız başarıyla gönderildi! En kısa sürede dönüş yapacağız.
-                </div>
-              )}
-              {status === 'error' && (
-                <div className="alert alert-error">
-                  <i className="fas fa-exclamation-circle"></i>
-                  Bir hata oluştu. Lütfen daha sonra tekrar deneyiniz.
-                </div>
-              )}
-
-              <form onSubmit={handleSubmit}>
-                <div className="form-row">
-                  <div className="form-group">
-                    <label>Adınız Soyadınız</label>
-                    <input type="text" name="name" required placeholder="Adınız"
-                      value={formData.name} onChange={handleChange} />
-                  </div>
-                  <div className="form-group">
-                    <label>E-posta Adresiniz</label>
-                    <input type="email" name="email" required placeholder="ornek@email.com"
-                      value={formData.email} onChange={handleChange} />
-                  </div>
-                </div>
-                <div className="form-group">
-                  <label>Konu</label>
-                  <input type="text" name="subject" required placeholder="Mesajınızın konusu"
-                    value={formData.subject} onChange={handleChange} />
-                </div>
-                <div className="form-group">
-                  <label>Mesajınız</label>
-                  <textarea name="message" rows={5} required placeholder="Mesajınızı buraya yazın..."
-                    value={formData.message} onChange={handleChange}></textarea>
-                </div>
-
-                <button type="submit" className="submit-btn" disabled={sending}>
-                  {sending ? (
-                    <><i className="fas fa-circle-notch fa-spin"></i> Gönderiliyor…</>
-                  ) : (
-                    <><span>Mesajı Gönder</span><span className="btn-icon"><i className="fas fa-paper-plane"></i></span></>
-                  )}
-                </button>
-              </form>
-            </div>
-
-          </div>
-        </div>
-      </section>
-      <ScrollToTop />
-      <style jsx>{`
-        /* Contact sayfası stilleri aynen korundu */
-        .contact-page {
-          font-family: 'Inter', sans-serif; overflow-x: hidden;
-          --green-deep: #1e9448; --green-mid: #2DB55D; --green-light: #52d47a;
-          --green-pale: #e6f7ed; --cream: #f4f6f8; --primary: #003399;
-          --gold: #c9a84c; --text-dark: #1a1a1a; --text-mid: #3d5448; --text-soft: #6b8277;
-          --card-bg: rgba(255,255,255,0.9); --border: rgba(45,181,93,0.15);
-          --shadow-card: 0 4px 24px rgba(0,0,0,0.06), 0 1px 4px rgba(0,0,0,0.04);
-          --shadow-hover: 0 20px 60px rgba(30,148,72,0.14), 0 4px 16px rgba(0,0,0,0.05);
-          --radius: 20px;
-        }
-        .page-header {
-          position:relative; min-height:100vh; display:flex; flex-direction:column;
-          align-items:center; justify-content:center; text-align:center; overflow:hidden;
-          background: linear-gradient(160deg, #071a0f 0%, #0f3320 35%, #1a5c38 65%, #0d2b1f 100%);
-        }
-        .hero-noise { position:absolute; inset:0; z-index:0; pointer-events:none; opacity:0.6;
-          background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
-          background-size:256px; }
-        .hero-orb { position:absolute; border-radius:50%; pointer-events:none; z-index:0; filter:blur(80px); opacity:0.35; }
-        .orb-1 { width:500px; height:500px; top:-120px; left:-80px; background:radial-gradient(circle,rgba(45,181,93,0.5) 0%,transparent 70%); animation:orbFloat 14s ease-in-out infinite; }
-        .orb-2 { width:400px; height:400px; bottom:-100px; right:-60px; background:radial-gradient(circle,rgba(201,168,76,0.4) 0%,transparent 70%); animation:orbFloat 18s ease-in-out infinite reverse; }
-        .orb-3 { width:300px; height:300px; top:50%; left:55%; background:radial-gradient(circle,rgba(100,220,150,0.3) 0%,transparent 70%); animation:orbFloat 10s ease-in-out infinite 3s; }
-        @keyframes orbFloat { 0%,100%{transform:translateY(0) scale(1);} 50%{transform:translateY(-30px) scale(1.06);} }
-
-        .hero-content { position:relative; z-index:3; }
-        .eyebrow { display:inline-flex; align-items:center; gap:12px; font-size:0.75rem; font-weight:700; letter-spacing:0.2em; text-transform:uppercase; color:var(--gold); margin-bottom:22px; }
-        .eyebrow-dot { display:inline-block; width:5px; height:5px; border-radius:50%; background:var(--gold); }
-        .header-title { font-size:clamp(2.2rem,5vw,3.8rem); font-weight:800; line-height:1.1; color:#fff; margin-bottom:20px; text-shadow:0 2px 20px rgba(0,0,0,0.4); letter-spacing:-0.02em; }
-        .header-title em { font-style:normal; background:linear-gradient(90deg,#6ee8a2,#a8f0c0); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
-        .header-subtitle { font-size:1.05rem; font-weight:400; line-height:1.7; color:rgba(220,240,228,0.75); max-width:500px; margin:0 auto 36px; letter-spacing:0.01em; }
-        .hero-divider { display:flex; align-items:center; justify-content:center; gap:16px; }
-        .hero-divider span { height:1px; width:80px; background:rgba(201,168,76,0.5); }
-        .hero-divider .dot { width:6px; height:6px; border-radius:50%; background:var(--gold); }
-
-        .hero-scroll-btn { position:absolute; bottom:40px; left:50%; transform:translateX(-50%); z-index:3; display:flex; flex-direction:column; align-items:center; gap:10px; background:none; border:none; cursor:pointer; padding:0; }
-        .scroll-btn-label { font-size:0.72rem; font-weight:600; letter-spacing:0.15em; text-transform:uppercase; color:rgba(255,255,255,0.55); transition:color 0.3s ease; }
-        .hero-scroll-btn:hover .scroll-btn-label { color:rgba(255,255,255,0.9); }
-        .scroll-btn-icon { width:44px; height:44px; border-radius:50%; border:1.5px solid rgba(255,255,255,0.25); display:flex; align-items:center; justify-content:center; color:rgba(255,255,255,0.7); font-size:0.9rem; transition:all 0.3s ease; animation:scrollBounce 2.2s ease-in-out infinite; background:rgba(255,255,255,0.05); }
-        .hero-scroll-btn:hover .scroll-btn-icon { border-color:var(--green-mid); background:rgba(45,181,93,0.2); color:#fff; animation-play-state:paused; }
-        @keyframes scrollBounce { 0%,100%{transform:translateY(0);opacity:0.7;} 50%{transform:translateY(7px);opacity:1;} }
-
-        .section-padding { padding:48px 0 80px; position:relative; z-index:1; }
-        .section-head { margin-bottom:36px; }
-        .section-label { font-size:0.75rem; font-weight:600; letter-spacing:0.16em; text-transform:uppercase; color:var(--green-mid); margin-bottom:8px; }
-        .section-title { font-size:2rem; font-weight:800; color:var(--text-dark); letter-spacing:-0.02em; border-left:3px solid var(--green-mid); padding-left:18px; margin:0; }
-        .container { width:100%; padding:0 24px; margin:0 auto; }
-
-        .contact-grid { display:grid; grid-template-columns:1fr 1.5fr; gap:28px; }
-
-        .info-card, .form-card {
-          background:var(--card-bg); backdrop-filter:blur(14px);
-          border-radius:var(--radius); box-shadow:var(--shadow-card);
-          border:1px solid var(--border); padding:36px;
-          transition:box-shadow 0.3s ease;
-        }
-        .info-card:hover, .form-card:hover { box-shadow:var(--shadow-hover); }
-
-        .card-heading { font-size:1.15rem; font-weight:800; color:var(--text-dark); margin:0 0 28px; padding-bottom:16px; border-bottom:1px solid rgba(45,181,93,0.12); }
-
-        .info-list { list-style:none; padding:0; margin:0; display:flex; flex-direction:column; gap:22px; }
-        .info-item { display:flex; align-items:flex-start; gap:16px; }
-        .info-icon {
-          width:42px; height:42px; border-radius:12px; flex-shrink:0;
-          background:var(--green-pale); color:var(--green-deep);
-          display:flex; align-items:center; justify-content:center; font-size:1rem;
-          border:1px solid rgba(45,181,93,0.2);
-        }
-        .info-label { display:block; font-size:0.72rem; font-weight:700; letter-spacing:0.1em; text-transform:uppercase; color:var(--text-soft); margin-bottom:3px; }
-        .info-value { display:block; font-size:0.95rem; color:var(--text-dark); font-weight:500; line-height:1.5; }
-        .info-link { color:var(--green-deep); text-decoration:none; }
-        .info-link:hover { text-decoration:underline; }
-
-        .social-section { margin-top:28px; padding-top:22px; border-top:1px solid rgba(45,181,93,0.12); }
-        .social-heading { font-size:0.72rem; font-weight:700; letter-spacing:0.1em; text-transform:uppercase; color:var(--text-soft); margin:0 0 14px; }
-        .social-row { display:flex; gap:10px; flex-wrap:wrap; }
-        .social-btn {
-          width:42px; height:42px; border-radius:12px;
-          background:var(--green-deep); color:#fff;
-          display:flex; align-items:center; justify-content:center;
-          font-size:1rem; text-decoration:none;
-          transition:transform 0.25s ease, background 0.25s ease, box-shadow 0.25s ease;
-          box-shadow:0 3px 8px rgba(30,148,72,0.2);
-        }
-        .social-btn:hover { transform:translateY(-3px); background:var(--green-mid); box-shadow:0 6px 16px rgba(45,181,93,0.3); }
-        .social-empty { font-size:0.85rem; color:#aaa; font-style:italic; }
-
-        .form-row { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
-        .form-group { margin-bottom:18px; }
-        .form-group label { display:block; margin-bottom:7px; font-size:0.82rem; font-weight:600; color:var(--text-mid); letter-spacing:0.02em; }
-        .form-group input, .form-group textarea {
-          width:100%; padding:11px 14px; box-sizing:border-box;
-          border:1.5px solid rgba(45,181,93,0.2); border-radius:10px;
-          font-family:'Inter',sans-serif; font-size:0.95rem; color:var(--text-dark);
-          background:rgba(248,252,249,0.8);
-          transition:border-color 0.25s, box-shadow 0.25s;
-          outline:none; resize:vertical;
-        }
-        .form-group input:focus, .form-group textarea:focus {
-          border-color:var(--green-mid);
-          box-shadow:0 0 0 3px rgba(45,181,93,0.12);
-          background:#fff;
-        }
-        .form-group input::placeholder, .form-group textarea::placeholder { color:#b0bfb8; }
-
-        .submit-btn {
-          display:inline-flex; align-items:center; justify-content:center; gap:10px;
-          border-radius:10px; overflow:hidden; border:none; cursor:pointer;
-          font-family:'Inter',sans-serif; font-size:0.95rem; font-weight:700;
-          color:#fff; width:100%; margin-top:4px;
-          padding:14px 20px; 
-          background:var(--green-deep); 
-          transition:background 0.3s, transform 0.2s;
-        }
-        .submit-btn:disabled { opacity:0.7; cursor:not-allowed; }
-        .submit-btn span:first-child { flex: none; padding: 0; background: transparent; text-align: center; }
-        .submit-btn .btn-icon { padding: 0; background: transparent; display: flex; align-items: center; justify-content: center; }
-        .submit-btn:not(:disabled):hover { background:#166336; transform: translateY(-2px); }
-        .submit-btn:not(:disabled):hover .btn-icon i { transform: translateX(4px); transition: transform 0.3s; }
-        .submit-btn:disabled span:first-child, .submit-btn:disabled .btn-icon { background:var(--green-deep); }
-
-        .alert { display:flex; align-items:flex-start; gap:10px; padding:14px 16px; border-radius:10px; font-size:0.9rem; font-weight:500; margin-bottom:20px; line-height:1.5; }
-        .alert i { margin-top:2px; flex-shrink:0; }
-        .alert-success { background:rgba(45,181,93,0.1); color:var(--green-deep); border:1px solid rgba(45,181,93,0.25); }
-        .alert-error { background:rgba(231,76,60,0.08); color:#c0392b; border:1px solid rgba(231,76,60,0.2); }
-
-        .reveal { opacity:0; transform:translateY(40px); transition:opacity 0.75s cubic-bezier(0.22,1,0.36,1), transform 0.75s cubic-bezier(0.22,1,0.36,1); }
-        .reveal.active { opacity:1; transform:translateY(0); }
-
-        @media (max-width: 900px) {
-          .contact-grid { grid-template-columns:1fr; }
-          .form-row { grid-template-columns:1fr; }
-        }
-        @media (max-width: 640px) {
-          .page-header { min-height:100svh; }
-          .header-title { font-size:2rem; }
-          .info-card, .form-card { padding:24px; }
-          .hero-scroll-btn { bottom:28px; }
-        }
-      `}</style>
-    </div>
-  );
-}
-
-// ─── YENİ: UZANTI YAKALAMA FONKSİYONU ─────────────────────────────────────────
-// Linkin sonundaki dosya uzantısını alır (örn: PDF, DOCX, ZIP)
+// ─── UZANTI YAKALAMA FONKSİYONU ─────────────────────────────────────────
 const getFileExtension = (url) => {
   if (!url) return '';
   try {
-    const cleanUrl = url.split('?')[0]; // URL'deki parametreleri temizle
+    const cleanUrl = url.split('?')[0]; 
     const parts = cleanUrl.split('.');
     if (parts.length > 1) {
       const ext = parts.pop().toUpperCase();
-      // Eğer uzantı çok uzunsa (nokta yoksa vs.) varsayılan DOC döndür
       return ext.length <= 4 ? ext : 'DOC';
     }
     return 'DOC';
@@ -591,13 +248,16 @@ const getFileExtension = (url) => {
 const getIcon = (type) => {
   if (type === 'video') return 'fa-video';
   if (type === 'app') return 'fa-mobile-alt';
-  return 'fa-file-alt'; // Genel dosya ikonu (Artık pek kullanılmayacak)
+  return 'fa-file-alt'; 
 };
 
 // ─── RESULTS PAGE ─────────────────────────────────────────────────────────────
 export default function ResultsPage() {
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  // ✨ Dil fonksiyonlarını alıyoruz
+  const { language, t } = useLanguage();
 
   useEffect(() => {
     async function fetchData() {
@@ -626,7 +286,7 @@ export default function ResultsPage() {
           <div className="loader-ring">
             <div></div><div></div><div></div><div></div>
           </div>
-          <span className="loader-text">Hazırlanıyor…</span>
+          <span className="loader-text">{t('results.loading')}</span>
         </div>
       ) : (
         <>
@@ -642,15 +302,15 @@ export default function ResultsPage() {
             <div className="container hero-content">
               <div className="eyebrow reveal active">
                 <span className="eyebrow-dot"></span>
-                Proje Çıktıları
+                {t('results.hero.eyebrow')}
                 <span className="eyebrow-dot"></span>
               </div>
               <h1 className="header-title reveal active">
-                Raporlar &amp;<br />
-                <em>Materyaller</em>
+                {t('results.hero.title1')}<br />
+                <em>{t('results.hero.title2')}</em>
               </h1>
               <p className="header-subtitle reveal active" style={{ transitionDelay: '0.25s' }}>
-                Sunumlar, eğitim materyalleri ve tüm proje dosyaları
+                {t('results.hero.desc')}
               </p>
 
               <div className="hero-divider reveal active" style={{ transitionDelay: '0.4s' }}>
@@ -663,7 +323,7 @@ export default function ResultsPage() {
               onClick={() => document.getElementById('icerik')?.scrollIntoView({ behavior: 'smooth' })}
               aria-label="İçeriğe git"
             >
-              <span className="scroll-btn-label">Dosyaları Keşfet</span>
+              <span className="scroll-btn-label">{t('results.hero.scrollBtn')}</span>
               <span className="scroll-btn-icon">
                 <i className="fas fa-chevron-down"></i>
               </span>
@@ -676,36 +336,35 @@ export default function ResultsPage() {
 
               {/* Bölüm başlığı */}
               <div className="section-head reveal">
-                <p className="section-label">Tüm Dosyalar</p>
-                <h2 className="section-title">İndirilebilir Çıktılar</h2>
+                <p className="section-label">{t('results.section.label')}</p>
+                <h2 className="section-title">{t('results.section.title')}</h2>
               </div>
 
               <div className="results-grid">
                 {results.length === 0 ? (
                   <div className="empty-state reveal">
                     <i className="fas fa-folder-open"></i>
-                    <p>Henüz dosya yüklenmemiş.</p>
+                    <p>{t('results.list.empty')}</p>
                   </div>
                 ) : (
                   results.map((item, index) => {
                     const delay = `${(index % 3) * 0.12 + 0.1}s`;
-                    
-                    // ✨ YENİ: İkon kontrolü ve uzantı bulma
                     const isMedia = item.icon === 'video' || item.icon === 'app';
                     const fileExt = getFileExtension(item.link);
 
+                    // ✨ YENİ: Dile göre veritabanından veri çekiyoruz
+                    const displayTitle = language === 'en' && item.title_en ? item.title_en : item.title;
+                    const displayDesc = language === 'en' && item.description_en ? item.description_en : item.description;
+                    const displayStatus = language === 'en' && item.status_en ? item.status_en : item.status;
+
                     return (
                       <article key={item.id} className="result-card reveal" style={{ transitionDelay: delay }}>
-                        {/* Renkli üst şerit */}
                         <div className="card-top-bar"></div>
-
-                        {/* Parlaklık efekti */}
                         <div className="card-shine"></div>
 
                         <div className="card-inner">
                           <div className="icon-wrap">
                             <div className="icon-box">
-                              {/* ✨ YENİ: Video/App ise ikon göster, değilse DİNAMİK UZANTI metnini göster */}
                               {isMedia ? (
                                 <i className={`fas ${getIcon(item.icon)}`}></i>
                               ) : (
@@ -716,14 +375,18 @@ export default function ResultsPage() {
                           </div>
 
                           <div className="card-body">
-                            <h3 className="card-title">{item.title}</h3>
-                            <p className="card-desc">{item.description}</p>
+                            <h3 className="card-title">
+                                {displayTitle}
+                            </h3>
+                            <p className="card-desc">
+                                {displayDesc}
+                            </p>
                           </div>
 
                           <div className="card-footer">
                             <span className="status-tag">
                               <span className="status-dot"></span>
-                              {item.status}
+                              {displayStatus}
                             </span>
 
                             {item.link && (
@@ -734,7 +397,7 @@ export default function ResultsPage() {
                                 rel="noopener noreferrer"
                                 className="download-btn"
                               >
-                                <span>İndir</span>
+                                <span>{t('results.list.download')}</span>
                                 <span className="btn-icon">
                                   <i className="fas fa-arrow-down"></i>
                                 </span>
@@ -753,8 +416,6 @@ export default function ResultsPage() {
       )}
 
       <style jsx>{`
-        /* Fontlar globals.css ile uyumlu — Inter */
-
         .results-page {
           font-family: 'Inter', sans-serif;
           overflow-x: hidden;
@@ -956,7 +617,6 @@ export default function ResultsPage() {
           background: linear-gradient(135deg, rgba(39,174,96,0.22), rgba(39,174,96,0.38));
         }
 
-        /* ✨ YENİ: DİNAMİK UZANTI METNİ STİLİ */
         .dynamic-ext {
           font-family: 'Inter', sans-serif;
           font-size: 1.15rem;

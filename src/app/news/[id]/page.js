@@ -3,12 +3,17 @@ import { useEffect, useState } from 'react';
 import { supabase } from '../../../lib/supabase';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
+// ✨ ESKİ SİSTEM: useLanguage kancası ile 'language' ve 't' fonksiyonunu alıyoruz
+import { useLanguage } from '../../../context/LanguageContext';
 
 export default function NewsDetailPage() {
   const { id } = useParams();
   const router = useRouter();
   const [newsItem, setNewsItem] = useState(null);
   const [loading, setLoading] = useState(true);
+
+  // Sözlük ve dil bilgisini çekiyoruz
+  const { language, t } = useLanguage();
 
   useEffect(() => {
     async function fetchNews() {
@@ -26,12 +31,19 @@ export default function NewsDetailPage() {
   if (loading) {
     return (
       <div style={{ height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f4f7f2' }}>
-        <h3 style={{ color: '#27ae60', fontFamily: 'Inter' }}>Haber Detayı Yükleniyor...</h3>
+        <h3 style={{ color: '#27ae60', fontFamily: 'Inter' }}>
+          {t('news.detail.loading')}
+        </h3>
       </div>
     );
   }
 
   if (!newsItem) return null;
+
+  // ✨ YENİ: Dile göre veritabanından veri çekiyoruz
+  const displayTitle = language === 'en' && newsItem.title_en ? newsItem.title_en : newsItem.title;
+  const displayDesc = language === 'en' && newsItem.description_en ? newsItem.description_en : newsItem.description;
+  const displaySummary = language === 'en' && newsItem.summary_en ? newsItem.summary_en : newsItem.summary;
 
   return (
     <div className="news-detail-page">
@@ -39,8 +51,9 @@ export default function NewsDetailPage() {
       <section className="detail-hero" style={{ backgroundImage: `url(${newsItem.image_url || 'https://images.unsplash.com/photo-1504711434969-e33886168f5c?auto=format&fit=crop&q=80&w=1200'})` }}>
         <div className="hero-overlay"></div>
         <div className="container hero-content">
-          {/* Tarih bölümü buradan kaldırıldı */}
-          <h1 className="news-title">{newsItem.title}</h1>
+          <h1 className="news-title">
+            {displayTitle}
+          </h1>
         </div>
       </section>
 
@@ -76,17 +89,21 @@ export default function NewsDetailPage() {
               e.currentTarget.style.boxShadow = '0 4px 15px rgba(39, 174, 96, 0.4)';
             }}
           >
-            <i className="fas fa-arrow-left"></i> Haberlere Dön
+            <i className="fas fa-arrow-left"></i> {t('news.detail.backBtn')}
           </Link>
 
           <div className="content-box">
              <div className="description-text">
-                {newsItem.description ? (
-                   newsItem.description.split('\n').map((paragraph, idx) => (
-                      <p key={idx}>{paragraph}</p>
+                {displayDesc ? (
+                   displayDesc.split('\n').map((paragraph, idx) => (
+                      <p key={idx}>
+                        {paragraph}
+                      </p>
                    ))
                 ) : (
-                   <p>{newsItem.summary}</p>
+                   <p>
+                     {displaySummary}
+                   </p>
                 )}
              </div>
           </div>

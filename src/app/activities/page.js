@@ -3,6 +3,8 @@ import { useEffect, useState, useRef, useCallback } from 'react';
 import { supabase } from '../../lib/supabase';
 import ScrollToTop from '../../components/ScrollToTop';
 import Link from 'next/link';
+// ✨ ESKİ SİSTEM: useLanguage kancası ile 'language' ve 't' fonksiyonunu alıyoruz
+import { useLanguage } from '../../context/LanguageContext';
 
 const PAGE_SIZE = 6; // Her seferinde kaç faaliyet yüklensin
 
@@ -188,7 +190,9 @@ const HeroAnimation = () => {
 
     mainTimeout = setTimeout(() => {
       for (let i = 0; i < 20; i++) {
-        let t = setTimeout(() => { leaves.push(new Leaf()); }, Math.random() * 3000);
+        let t = setTimeout(() => {
+          leaves.push(new Leaf());
+        }, Math.random() * 3000); 
         spawnTimeouts.push(t);
       }
     }, 500);
@@ -229,6 +233,9 @@ export default function ActivitiesPage() {
   const [page, setPage]                   = useState(0);
 
   const sentinelRef = useRef(null);
+  
+  // Sözlük ve dil bilgisini çekiyoruz
+  const { language, t } = useLanguage();
 
   // ── İlk yükleme ────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -319,7 +326,7 @@ export default function ActivitiesPage() {
           <div className="loader-ring">
             <div></div><div></div><div></div><div></div>
           </div>
-          <span className="loader-text">Faaliyetler Yükleniyor…</span>
+          <span className="loader-text">{t('activities.loading')}</span>
         </div>
       ) : (
         <>
@@ -333,13 +340,13 @@ export default function ActivitiesPage() {
 
             <div className="container hero-content">
               <div className="eyebrow reveal active">
-                <span className="eyebrow-dot"></span>Projeye Dair<span className="eyebrow-dot"></span>
+                <span className="eyebrow-dot"></span>{t('activities.hero.eyebrow')}<span className="eyebrow-dot"></span>
               </div>
               <h1 className="header-title reveal active">
-                Proje <em>Faaliyetleri</em>
+                {t('activities.hero.title1')} <em>{t('activities.hero.title2')}</em>
               </h1>
               <p className="header-subtitle reveal active" style={{ transitionDelay: '0.25s' }}>
-                Sürdürülebilir ve dijital bir gelecek inşa etmek için attığımız adımlar, düzenlediğimiz eğitimler ve toplantılar.
+                {t('activities.hero.desc')}
               </p>
               <div className="hero-divider reveal active" style={{ transitionDelay: '0.4s' }}>
                 <span></span><span className="dot"></span><span></span>
@@ -351,7 +358,7 @@ export default function ActivitiesPage() {
               onClick={() => document.getElementById('icerik')?.scrollIntoView({ behavior: 'smooth' })}
               aria-label="İçeriğe git"
             >
-              <span className="scroll-btn-label">Faaliyetleri Keşfet</span>
+              <span className="scroll-btn-label">{t('activities.hero.scrollBtn')}</span>
               <span className="scroll-btn-icon"><i className="fas fa-chevron-down"></i></span>
             </button>
           </section>
@@ -360,19 +367,26 @@ export default function ActivitiesPage() {
           <section id="icerik" className="section-padding">
             <div className="container" style={{ maxWidth: '1160px' }}>
               <div className="section-head reveal">
-                <p className="section-label">Aksiyonlar ve Etkinlikler</p>
-                <h2 className="section-title">Gerçekleşen Faaliyetler</h2>
+                <p className="section-label">{t('activities.section.label')}</p>
+                <h2 className="section-title">{t('activities.section.title')}</h2>
               </div>
 
               <div className="activities-grid">
                 {activities.length === 0 ? (
                   <div className="empty-state reveal">
                     <i className="far fa-calendar-times"></i>
-                    <p>Henüz bir faaliyet eklenmemiş.</p>
+                    <p>{t('activities.list.empty')}</p>
                   </div>
                 ) : (
                   activities.map((item, index) => {
                     const delay = `${(index % 3) * 0.12 + 0.1}s`;
+                    
+                    // ✨ YENİ: Dile göre veritabanından veri çekiyoruz
+                    const displayTitle = language === 'en' && item.title_en ? item.title_en : item.title;
+                    const displayType = language === 'en' && item.type_en ? item.type_en : item.type;
+                    const displayLocation = language === 'en' && item.location_en ? item.location_en : item.location;
+                    const displaySummary = language === 'en' && item.summary_en ? item.summary_en : item.summary;
+
                     return (
                       <article key={item.id} className="activity-card reveal" style={{ transitionDelay: delay }}>
                         <div className="card-shine"></div>
@@ -380,7 +394,7 @@ export default function ActivitiesPage() {
                         <div className="activity-image-container">
                           <div className="activity-image">
                             {item.image_url ? (
-                              <img src={item.image_url} alt={item.title} loading="lazy" />
+                              <img src={item.image_url} alt={displayTitle} loading="lazy" />
                             ) : (
                               <div className="placeholder-img"><i className="far fa-image"></i></div>
                             )}
@@ -393,14 +407,23 @@ export default function ActivitiesPage() {
 
                         <div className="activity-content">
                           <div className="activity-meta">
-                            <span className="meta-tag type-tag">{item.type}</span>
-                            <span className="meta-tag location-tag"><i className="fas fa-map-marker-alt"></i> {item.location}</span>
+                            <span className="meta-tag type-tag">
+                                {displayType}
+                            </span>
+                            <span className="meta-tag location-tag">
+                                <i className="fas fa-map-marker-alt"></i> 
+                                {displayLocation}
+                            </span>
                           </div>
-                          <h3 className="activity-title">{item.title}</h3>
-                          <p className="activity-desc">{item.summary}</p>
+                          <h3 className="activity-title">
+                              {displayTitle}
+                          </h3>
+                          <p className="activity-desc">
+                              {displaySummary}
+                          </p>
                           <div className="activity-footer">
                             <Link href={`/activities/${item.id}`} className="read-more" style={{ textDecoration: 'none' }}>
-                              Detayları İncele <i className="fas fa-arrow-right"></i>
+                              {t('activities.list.readMore')} <i className="fas fa-arrow-right"></i>
                             </Link>
                           </div>
                         </div>
@@ -418,12 +441,12 @@ export default function ActivitiesPage() {
                   <div className="loader-ring small">
                     <div></div><div></div><div></div><div></div>
                   </div>
-                  <span className="loader-text">Daha fazla yükleniyor…</span>
+                  <span className="loader-text">{t('activities.list.loadMore')}</span>
                 </div>
               )}
 
               {!hasMore && activities.length > 0 && (
-                <p className="end-of-list">Tüm faaliyetler yüklendi.</p>
+                <p className="end-of-list">{t('activities.list.end')}</p>
               )}
             </div>
           </section>

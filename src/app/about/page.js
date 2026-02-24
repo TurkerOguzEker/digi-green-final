@@ -2,7 +2,7 @@
 import { useEffect, useState, useRef } from 'react';
 import Link from 'next/link';
 import { supabase } from '../../lib/supabase';
-// ✨ YENİ: Dil Context hook'umuzu dahil ettik
+// ✨ ESKİ SİSTEM: useLanguage kancasını import ediyoruz
 import { useLanguage } from '../../context/LanguageContext';
 
 // ─── SAYFA GENELİ ARKA PLAN AĞI (YÜKSEK PERFORMANS) ───────────────────────────
@@ -318,7 +318,7 @@ export default function AboutPage() {
   const [content, setContent] = useState({});
   const [loading, setLoading] = useState(true);
 
-  // ✨ YENİ: Dil ve Çeviri fonksiyonlarını alıyoruz
+  // ✨ Dil ve Çeviri fonksiyonlarını alıyoruz
   const { language, t } = useLanguage();
 
   useEffect(() => {
@@ -343,9 +343,12 @@ export default function AboutPage() {
     return () => observer.disconnect();
   }, [loading]);
 
-  // Veritabanı dinamik içerik kontrolü
+  // ✨ YENİ: Veritabanı dinamik içerik kontrolü
   const getDynamicContent = (trKey, defaultTranslationKey) => {
-    return (language === 'tr' && content[trKey]) ? content[trKey] : t(defaultTranslationKey);
+    const enKey = `${trKey}_en`; // Örneğin: about_vision_title_en
+    return (language === 'en' && content[enKey]) 
+            ? content[enKey] 
+            : (content[trKey] || t(defaultTranslationKey));
   };
 
   if (loading) {

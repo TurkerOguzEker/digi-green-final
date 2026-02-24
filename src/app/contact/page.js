@@ -2,8 +2,10 @@
 import { useEffect, useState, useRef } from 'react';
 import { supabase } from '../../lib/supabase';
 import ScrollToTop from '../../components/ScrollToTop';
+// ✨ ESKİ SİSTEM: useLanguage kancası ile 'language' ve 't' fonksiyonunu alıyoruz
+import { useLanguage } from '../../context/LanguageContext';
 
-// ─── SAYFA GENELİ ARKA PLAN (OPTİMİZE EDİLDİ) ─────────────────────────────────
+// ─── SAYFA GENELİ ARKA PLAN AĞI (YÜKSEK PERFORMANS) ───────────────────────────
 const NetworkBackground = () => {
   const canvasRef = useRef(null);
   useEffect(() => {
@@ -11,12 +13,11 @@ const NetworkBackground = () => {
     const ctx = canvas.getContext('2d');
     let animationFrameId;
     let particles = [];
-    let isVisible = true; // ✨ OPTİMİZASYON: Görünürlük kontrolü
+    let isVisible = true; 
 
     const resize = () => { canvas.width = window.innerWidth; canvas.height = window.innerHeight; };
     window.addEventListener('resize', resize); resize();
 
-    // ✨ OPTİMİZASYON: Ekranda değilken animasyonu durdur (Batarya tasarrufu)
     const observer = new IntersectionObserver(([entry]) => {
       isVisible = entry.isIntersecting;
     }, { threshold: 0 });
@@ -43,7 +44,7 @@ const NetworkBackground = () => {
     for (let i = 0; i < 55; i++) particles.push(new Particle());
 
     const animate = () => {
-      if (isVisible) { // Sadece ekrandayken çiz
+      if (isVisible) {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         particles.forEach(p => { p.update(); p.draw(); });
         for (let i = 0; i < particles.length; i++) {
@@ -61,6 +62,7 @@ const NetworkBackground = () => {
       animationFrameId = requestAnimationFrame(animate);
     };
     animate();
+    
     return () => { 
       window.removeEventListener('resize', resize); 
       cancelAnimationFrame(animationFrameId); 
@@ -70,7 +72,7 @@ const NetworkBackground = () => {
   return <canvas ref={canvasRef} style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', zIndex: -1, pointerEvents: 'none', background: '#f4f7f2' }} />;
 };
 
-// ─── YAPRAK ANİMASYONU (500ms GECİKME + YÜKSEK PERFORMANS) ────────────────────
+// ─── YAPRAK ANİMASYONU ────────────────────────────────────────────────────────
 const HeroAnimation = () => {
   const canvasRef = useRef(null);
 
@@ -80,15 +82,17 @@ const HeroAnimation = () => {
     let animationFrameId;
     let leaves = [];
     let windTime = 0;
+    
     let spawnTimeouts = [];
     let mainTimeout;
-    let isVisible = true; // ✨ OPTİMİZASYON
+    let isVisible = true; 
 
     const resize = () => {
       const parent = canvas.parentElement;
       canvas.width  = parent ? parent.offsetWidth : window.innerWidth;
       canvas.height = parent ? parent.offsetHeight : window.innerHeight;
     };
+    
     resize();
     window.addEventListener('resize', resize);
 
@@ -102,19 +106,13 @@ const HeroAnimation = () => {
       Math.sin(y * 0.009 - t * 0.25) * 0.35 +
       Math.sin((x + y) * 0.004 + t * 0.45) * 0.3;
 
-    // ✨ OPTİMİZASYON: Yaprak şekilleri her karede yeniden çizilmek yerine 1 kez hafızaya alınır.
     const leafPaths = [new Path2D(), new Path2D(), new Path2D()];
-    
-    // Varyasyon 0
     leafPaths[0].moveTo(0, -2.0); leafPaths[0].bezierCurveTo(1.6, -1.0, 1.6, 1.0, 0, 2.0); leafPaths[0].bezierCurveTo(-1.6, 1.0, -1.6, -1.0, 0, -2.0);
-    // Varyasyon 1
     leafPaths[1].moveTo(0, -2.4); leafPaths[1].bezierCurveTo(0.9, -0.8, 0.9, 0.8, 0, 2.4); leafPaths[1].bezierCurveTo(-0.9, 0.8, -0.9, -0.8, 0, -2.4);
-    // Varyasyon 2
     leafPaths[2].moveTo(0, -1.5); leafPaths[2].bezierCurveTo(1.8, -0.6, 1.8, 0.6, 0, 1.5); leafPaths[2].bezierCurveTo(-1.8, 0.6, -1.8, -0.6, 0, -1.5);
 
     class Leaf {
       reset() {
-        // ✨ Ekran DIŞINDAN doğma ayarı
         if (Math.random() < 0.75) {
           this.x = canvas.width + 50 + Math.random() * 150; 
           this.y = Math.random() * canvas.height;
@@ -168,22 +166,18 @@ const HeroAnimation = () => {
         ctx.save();
         ctx.translate(this.x, this.y);
         ctx.rotate(this.angle);
-        ctx.scale(this.size, this.size); // Optimize edilmiş scale
-        
+        ctx.scale(this.size, this.size); 
         ctx.globalAlpha = this.opacity;
         
-        // ✨ OPTİMİZASYON: shadowBlur yerine donanım dostu "Fake Shadow"
         ctx.save();
         ctx.translate(0.3, 0.6);
         ctx.fillStyle = 'rgba(0,0,0,0.12)';
         ctx.fill(leafPaths[this.variant]);
         ctx.restore();
 
-        // Yaprak Gövdesi
         ctx.fillStyle = `rgb(${this.r},${this.g},${this.b})`;
         ctx.fill(leafPaths[this.variant]);
 
-        // Yaprak Damarları
         ctx.beginPath();
         ctx.moveTo(0, -1.8); ctx.lineTo(0, 1.8);
         ctx.strokeStyle = 'rgba(255,255,255,0.22)';
@@ -201,13 +195,12 @@ const HeroAnimation = () => {
       }
     }
 
-    // ✨ 500ms GECİKMELİ BAŞLANGIÇ ✨
     mainTimeout = setTimeout(() => {
       for (let i = 0; i < 20; i++) {
-        let t = setTimeout(() => {
+        let tm = setTimeout(() => {
           leaves.push(new Leaf());
         }, Math.random() * 3000); 
-        spawnTimeouts.push(t);
+        spawnTimeouts.push(tm);
       }
     }, 500);
 
@@ -226,7 +219,7 @@ const HeroAnimation = () => {
       cancelAnimationFrame(animationFrameId);
       observer.disconnect();
       clearTimeout(mainTimeout);
-      spawnTimeouts.forEach(t => clearTimeout(t));
+      spawnTimeouts.forEach(tm => clearTimeout(tm));
     };
   }, []);
 
@@ -244,6 +237,9 @@ export default function ContactPage() {
   const [formData, setFormData] = useState({ name: '', email: '', subject: '', message: '' });
   const [sending, setSending] = useState(false);
   const [status, setStatus] = useState(null);
+
+  // Sözlükten çevirileri çekmek için
+  const { language, t } = useLanguage();
 
   useEffect(() => {
     async function fetchSettings() {
@@ -289,13 +285,13 @@ export default function ContactPage() {
 
         <div className="container hero-content">
           <div className="eyebrow reveal active">
-            <span className="eyebrow-dot"></span>İletişim<span className="eyebrow-dot"></span>
+            <span className="eyebrow-dot"></span>{t('contact.hero.eyebrow')}<span className="eyebrow-dot"></span>
           </div>
           <h1 className="header-title reveal active">
-            Bize Ulaşın &amp;<br /><em>Yazışalım</em>
+            {t('contact.hero.title1')}<br /><em>{t('contact.hero.title2')}</em>
           </h1>
           <p className="header-subtitle reveal active" style={{ transitionDelay: '0.25s' }}>
-            Sorularınız, önerileriniz veya işbirliği talepleriniz için buradayız.
+            {t('contact.hero.desc')}
           </p>
           <div className="hero-divider reveal active" style={{ transitionDelay: '0.4s' }}>
             <span></span><span className="dot"></span><span></span>
@@ -307,7 +303,7 @@ export default function ContactPage() {
           onClick={() => document.getElementById('icerik')?.scrollIntoView({ behavior: 'smooth' })}
           aria-label="İçeriğe git"
         >
-          <span className="scroll-btn-label">İletişime Geç</span>
+          <span className="scroll-btn-label">{t('contact.hero.scrollBtn')}</span>
           <span className="scroll-btn-icon"><i className="fas fa-chevron-down"></i></span>
         </button>
       </section>
@@ -317,28 +313,31 @@ export default function ContactPage() {
         <div className="container" style={{ maxWidth: '1100px' }}>
 
           <div className="section-head">
-            <p className="section-label">Bize Yazın</p>
-            <h2 className="section-title">İletişim Bilgileri & Form</h2>
+            <p className="section-label">{t('contact.section.label')}</p>
+            <h2 className="section-title">{t('contact.section.title')}</h2>
           </div>
 
           <div className="contact-grid">
 
             {/* ─ SOL: İletişim Bilgileri ─────────────────────────────────── */}
             <div className="info-card">
-              <h3 className="card-heading">İletişim Bilgileri</h3>
+              <h3 className="card-heading">{t('contact.info.title')}</h3>
 
               <ul className="info-list">
                 <li className="info-item">
                   <div className="info-icon"><i className="fas fa-map-marker-alt"></i></div>
                   <div>
-                    <span className="info-label">Adres</span>
-                    <span className="info-value">{info.contact_address || '—'}</span>
+                    <span className="info-label">{t('contact.info.address')}</span>
+                    {/* Veritabanı verisi: Varsa İngilizce olanı, yoksa Türkçeyi gösterir */}
+                    <span className="info-value">
+                      {(language === 'en' && info.contact_address_en) ? info.contact_address_en : (info.contact_address || '—')}
+                    </span>
                   </div>
                 </li>
                 <li className="info-item">
                   <div className="info-icon"><i className="fas fa-envelope"></i></div>
                   <div>
-                    <span className="info-label">E-posta</span>
+                    <span className="info-label">{t('contact.info.email')}</span>
                     <a href={`mailto:${info.contact_email}`} className="info-value info-link">
                       {info.contact_email || '—'}
                     </a>
@@ -347,7 +346,7 @@ export default function ContactPage() {
                 <li className="info-item">
                   <div className="info-icon"><i className="fas fa-phone"></i></div>
                   <div>
-                    <span className="info-label">Telefon</span>
+                    <span className="info-label">{t('contact.info.phone')}</span>
                     <span className="info-value">{info.contact_phone || '—'}</span>
                   </div>
                 </li>
@@ -355,7 +354,7 @@ export default function ContactPage() {
 
               {/* Sosyal Medya */}
               <div className="social-section">
-                <p className="social-heading">Bizi Takip Edin</p>
+                <p className="social-heading">{t('contact.social.title')}</p>
                 <div className="social-row">
                   {info.social_facebook && (
                     <a href={info.social_facebook} target="_blank" rel="noopener noreferrer" className="social-btn" title="Facebook">
@@ -373,7 +372,7 @@ export default function ContactPage() {
                     </a>
                   )}
                   {!info.social_facebook && !info.social_twitter && !info.social_instagram && (
-                    <span className="social-empty">Henüz eklenmemiş.</span>
+                    <span className="social-empty">{t('contact.social.empty')}</span>
                   )}
                 </div>
               </div>
@@ -381,50 +380,50 @@ export default function ContactPage() {
 
             {/* ─ SAĞ: Form ──────────────────────────────────────────────── */}
             <div className="form-card">
-              <h3 className="card-heading">Mesaj Gönderin</h3>
+              <h3 className="card-heading">{t('contact.form.title')}</h3>
 
               {status === 'success' && (
                 <div className="alert alert-success">
                   <i className="fas fa-check-circle"></i>
-                  Mesajınız başarıyla gönderildi! En kısa sürede dönüş yapacağız.
+                  {t('contact.form.success')}
                 </div>
               )}
               {status === 'error' && (
                 <div className="alert alert-error">
                   <i className="fas fa-exclamation-circle"></i>
-                  Bir hata oluştu. Lütfen daha sonra tekrar deneyiniz.
+                  {t('contact.form.error')}
                 </div>
               )}
 
               <form onSubmit={handleSubmit}>
                 <div className="form-row">
                   <div className="form-group">
-                    <label>Adınız Soyadınız</label>
-                    <input type="text" name="name" required placeholder="Adınız"
+                    <label>{t('contact.form.nameLabel')}</label>
+                    <input type="text" name="name" required placeholder={t('contact.form.namePlaceholder')}
                       value={formData.name} onChange={handleChange} />
                   </div>
                   <div className="form-group">
-                    <label>E-posta Adresiniz</label>
-                    <input type="email" name="email" required placeholder="ornek@email.com"
+                    <label>{t('contact.form.emailLabel')}</label>
+                    <input type="email" name="email" required placeholder={t('contact.form.emailPlaceholder')}
                       value={formData.email} onChange={handleChange} />
                   </div>
                 </div>
                 <div className="form-group">
-                  <label>Konu</label>
-                  <input type="text" name="subject" required placeholder="Mesajınızın konusu"
+                  <label>{t('contact.form.subjectLabel')}</label>
+                  <input type="text" name="subject" required placeholder={t('contact.form.subjectPlaceholder')}
                     value={formData.subject} onChange={handleChange} />
                 </div>
                 <div className="form-group">
-                  <label>Mesajınız</label>
-                  <textarea name="message" rows={5} required placeholder="Mesajınızı buraya yazın..."
+                  <label>{t('contact.form.messageLabel')}</label>
+                  <textarea name="message" rows={5} required placeholder={t('contact.form.messagePlaceholder')}
                     value={formData.message} onChange={handleChange}></textarea>
                 </div>
 
                 <button type="submit" className="submit-btn" disabled={sending}>
                   {sending ? (
-                    <><i className="fas fa-circle-notch fa-spin"></i> Gönderiliyor…</>
+                    <><i className="fas fa-circle-notch fa-spin"></i> {t('contact.form.sending')}</>
                   ) : (
-                    <><span>Mesajı Gönder</span><span className="btn-icon"><i className="fas fa-paper-plane"></i></span></>
+                    <><span>{t('contact.form.sendBtn')}</span><span className="btn-icon"><i className="fas fa-paper-plane"></i></span></>
                   )}
                 </button>
               </form>
@@ -549,24 +548,21 @@ export default function ContactPage() {
         }
         .form-group input::placeholder, .form-group textarea::placeholder { color:#b0bfb8; }
 
-        /* Gönder butonu */
         /* Gönder butonu (Tek Renk Bütünleşik Yapı) */
         .submit-btn {
           display:inline-flex; align-items:center; justify-content:center; gap:10px;
           border-radius:10px; overflow:hidden; border:none; cursor:pointer;
           font-family:'Inter',sans-serif; font-size:0.95rem; font-weight:700;
           color:#fff; width:100%; margin-top:4px;
-          padding:14px 20px; /* Padding artık tüm butona uygulanıyor */
-          background:var(--green-deep); /* Tek renk */
+          padding:14px 20px; 
+          background:var(--green-deep); 
           transition:background 0.3s, transform 0.2s;
         }
         .submit-btn:disabled { opacity:0.7; cursor:not-allowed; }
         
-        /* İçerideki span'ler için eski arka planları ve ekstra boşlukları kaldırıyoruz */
         .submit-btn span:first-child { flex: none; padding: 0; background: transparent; text-align: center; }
         .submit-btn .btn-icon { padding: 0; background: transparent; display: flex; align-items: center; justify-content: center; }
         
-        /* Hover (Üzerine gelince) Efekti */
         .submit-btn:not(:disabled):hover { background:#166336; transform: translateY(-2px); }
         .submit-btn:not(:disabled):hover .btn-icon i { transform: translateX(4px); transition: transform 0.3s; }
         .submit-btn:disabled span:first-child, .submit-btn:disabled .btn-icon { background:var(--green-deep); }

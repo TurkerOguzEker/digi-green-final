@@ -81,7 +81,6 @@ const globalStyle = `
     min-height: 100vh;
   }
 
-  /* ── SIDEBAR ── */
   .adm-sidebar {
     width: var(--sidebar-w);
     background: var(--surface);
@@ -239,7 +238,6 @@ const globalStyle = `
     border-color: rgba(239,68,68,0.4);
   }
 
-  /* ── MAIN CONTENT ── */
   .adm-main {
     margin-left: var(--sidebar-w);
     flex: 1;
@@ -299,7 +297,6 @@ const globalStyle = `
     flex: 1;
   }
 
-  /* ── PAGE HEADER ── */
   .adm-page-header {
     margin-bottom: 28px;
   }
@@ -324,7 +321,6 @@ const globalStyle = `
     margin-top: 4px;
   }
 
-  /* ── SECTION ── */
   .adm-section {
     margin-bottom: 36px;
   }
@@ -360,7 +356,6 @@ const globalStyle = `
     text-transform: uppercase;
   }
 
-  /* ── CARD ── */
   .adm-card {
     background: var(--surface);
     border: 1px solid var(--border);
@@ -402,7 +397,6 @@ const globalStyle = `
     display: block;
   }
 
-  /* ── FIELD ── */
   .adm-field {
     background: var(--surface);
     border: 1px solid var(--border);
@@ -494,7 +488,6 @@ const globalStyle = `
     color: var(--text-muted);
   }
 
-  /* ── BUTTONS ── */
   .adm-btn {
     display: inline-flex;
     align-items: center;
@@ -574,7 +567,6 @@ const globalStyle = `
     box-shadow: none !important;
   }
 
-  /* ── IMAGE FIELD ── */
   .adm-img-field {
     display: flex;
     gap: 8px;
@@ -643,7 +635,6 @@ const globalStyle = `
     height: 100%;
   }
 
-  /* ── ITEMS LIST ── */
   .adm-item-row {
     display: flex;
     align-items: center;
@@ -679,7 +670,6 @@ const globalStyle = `
     align-items: center;
   }
 
-  /* ── FORM CARD ── */
   .adm-form-card {
     background: var(--surface);
     border: 1px solid var(--border);
@@ -697,6 +687,7 @@ const globalStyle = `
     display: flex;
     align-items: center;
     gap: 8px;
+    justify-content: space-between; /* Butonu sağa hizalamak için */
   }
 
   .adm-form-card-title i {
@@ -812,7 +803,6 @@ const globalStyle = `
     box-shadow: 0 6px 18px var(--accent-glow);
   }
 
-  /* ── SLIDER ITEM ── */
   .adm-slider-item {
     display: flex;
     align-items: center;
@@ -884,7 +874,6 @@ const globalStyle = `
     cursor: not-allowed;
   }
 
-  /* ── ECO ITEM ── */
   .adm-eco-item {
     background: var(--surface-2);
     border: 1px solid var(--border);
@@ -913,7 +902,6 @@ const globalStyle = `
     font-family: var(--font-display);
   }
 
-  /* ── SUBTAB ── */
   .adm-subtabs {
     display: flex;
     gap: 6px;
@@ -949,7 +937,6 @@ const globalStyle = `
     font-weight: 600;
   }
 
-  /* ── MESSAGES ── */
   .adm-msg-card {
     background: var(--surface);
     border: 1px solid var(--border);
@@ -992,7 +979,6 @@ const globalStyle = `
     border: 1px solid var(--border);
   }
 
-  /* ── TOAST ── */
   .adm-toast {
     position: fixed;
     top: 20px;
@@ -1061,7 +1047,6 @@ const globalStyle = `
 
   .adm-toast-close:hover { color: var(--text-primary); }
 
-  /* ── MODAL ── */
   .adm-modal-overlay {
     position: fixed;
     inset: 0;
@@ -1128,7 +1113,6 @@ const globalStyle = `
     justify-content: center;
   }
 
-  /* ── LOADING ── */
   .adm-loading {
     height: 100vh;
     display: flex;
@@ -1156,14 +1140,12 @@ const globalStyle = `
     font-size: 0.875rem;
   }
 
-  /* ── DIVIDER ── */
   .adm-divider {
     border: none;
     border-top: 1px dashed var(--border);
     margin: 16px 0;
   }
 
-  /* ── ADD SLIDER AREA ── */
   .adm-slider-add {
     border: 1px dashed var(--border-hover);
     border-radius: var(--radius);
@@ -1182,7 +1164,6 @@ const globalStyle = `
     gap: 6px;
   }
 
-  /* ── EMPTY ── */
   .adm-empty {
     text-align: center;
     padding: 40px;
@@ -1372,11 +1353,14 @@ export default function AdminPage() {
   const [ecoItems, setEcoItems] = useState([]);
   const [heroImages, setHeroImages] = useState([]);
 
-  const [newsForm, setNewsForm] = useState({ id: null, title: '', summary: '', description: '', image_url: '', date: '' });
-  const [activityForm, setActivityForm] = useState({ id: null, title: '', type: 'Toplantı (TPM)', location: '', date: '', summary: '', description: '', image_url: '' });
-  const [partnerForm, setPartnerForm] = useState({ id: null, name: '', country: '', image_url: '', flag_url: '', website: '', description: '', role: 'Ortak' });
-  const [resultForm, setResultForm] = useState({ id: null, title: '', description: '', status: 'Planlanıyor', link: '', icon: 'file' });
+  // Form stateleri
+  const [newsForm, setNewsForm] = useState({ id: null, title: '', title_en: '', summary: '', summary_en: '', description: '', description_en: '', image_url: '', date: '' });
+  const [activityForm, setActivityForm] = useState({ id: null, title: '', title_en: '', type: 'Toplantı (TPM)', type_en: '', location: '', location_en: '', date: '', summary: '', summary_en: '', description: '', description_en: '', image_url: '' });
+  const [partnerForm, setPartnerForm] = useState({ id: null, name: '', name_en: '', country: '', country_en: '', image_url: '', flag_url: '', website: '', description: '', description_en: '', role: 'Ortak', role_en: '' });
+  const [resultForm, setResultForm] = useState({ id: null, title: '', title_en: '', description: '', description_en: '', status: 'Planlanıyor', status_en: '', link: '', icon: 'file' });
+  
   const [isEditing, setIsEditing] = useState(false);
+  const [isTranslating, setIsTranslating] = useState(false);
   const [toast, setToast] = useState(null);
   const [modal, setModal] = useState({ isOpen: false, message: '', onConfirm: null });
 
@@ -1428,6 +1412,78 @@ export default function AdminPage() {
     }
   }
 
+  // ✨ YENİ: OTOMATİK ÇEVİRİ FONKSİYONU
+  const autoTranslateText = async (text) => {
+    if (!text) return '';
+    try {
+        const res = await fetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=tr&tl=en&dt=t&q=${encodeURIComponent(text)}`);
+        const data = await res.json();
+        return data[0].map(item => item[0]).join('');
+    } catch (error) {
+        console.error("Çeviri hatası:", error);
+        return text; 
+    }
+  }
+
+  // Çeviri Tetikleyicileri
+  const handleTranslateNews = async (e) => {
+    e.preventDefault();
+    setIsTranslating(true);
+    showToast('Otomatik çeviri yapılıyor, lütfen bekleyin...', 'success');
+    
+    const t_title = await autoTranslateText(newsForm.title);
+    const t_summary = await autoTranslateText(newsForm.summary);
+    const t_desc = await autoTranslateText(newsForm.description);
+    
+    setNewsForm(prev => ({...prev, title_en: t_title, summary_en: t_summary, description_en: t_desc}));
+    setIsTranslating(false);
+    showToast('Çeviri başarıyla tamamlandı!', 'success');
+  };
+
+  const handleTranslateActivities = async (e) => {
+    e.preventDefault();
+    setIsTranslating(true);
+    showToast('Otomatik çeviri yapılıyor, lütfen bekleyin...', 'success');
+    
+    const t_title = await autoTranslateText(activityForm.title);
+    const t_type = await autoTranslateText(activityForm.type);
+    const t_loc = await autoTranslateText(activityForm.location);
+    const t_summary = await autoTranslateText(activityForm.summary);
+    const t_desc = await autoTranslateText(activityForm.description);
+    
+    setActivityForm(prev => ({...prev, title_en: t_title, type_en: t_type, location_en: t_loc, summary_en: t_summary, description_en: t_desc}));
+    setIsTranslating(false);
+    showToast('Çeviri başarıyla tamamlandı!', 'success');
+  };
+
+  const handleTranslatePartners = async (e) => {
+    e.preventDefault();
+    setIsTranslating(true);
+    showToast('Otomatik çeviri yapılıyor, lütfen bekleyin...', 'success');
+    
+    const t_name = await autoTranslateText(partnerForm.name);
+    const t_country = await autoTranslateText(partnerForm.country);
+    const t_desc = await autoTranslateText(partnerForm.description);
+    
+    setPartnerForm(prev => ({...prev, name_en: t_name, country_en: t_country, description_en: t_desc}));
+    setIsTranslating(false);
+    showToast('Çeviri başarıyla tamamlandı!', 'success');
+  };
+
+  const handleTranslateResults = async (e) => {
+    e.preventDefault();
+    setIsTranslating(true);
+    showToast('Otomatik çeviri yapılıyor, lütfen bekleyin...', 'success');
+    
+    const t_title = await autoTranslateText(resultForm.title);
+    const t_desc = await autoTranslateText(resultForm.description);
+    
+    setResultForm(prev => ({...prev, title_en: t_title, description_en: t_desc}));
+    setIsTranslating(false);
+    showToast('Çeviri başarıyla tamamlandı!', 'success');
+  };
+
+  // Diğer Fonksiyonlar
   const handleEcoChange = (index, field, value) => {
     const newItems = [...ecoItems];
     newItems[index][field] = value;
@@ -1496,18 +1552,19 @@ export default function AdminPage() {
     setIsEditing(false);
     loadAllData();
     showToast('Başarıyla kaydedildi.', 'success');
-    if (table === 'news') setNewsForm({ id: null, title: '', summary: '', description: '', image_url: '', date: '' });
-    if (table === 'activities') setActivityForm({ id: null, title: '', type: 'Toplantı (TPM)', location: '', date: '', summary: '', description: '', image_url: '' });
-    if (table === 'partners') setPartnerForm({ id: null, name: '', country: '', image_url: '', flag_url: '', website: '', description: '', role: 'Ortak' });
-    if (table === 'results') setResultForm({ id: null, title: '', description: '', status: 'Planlanıyor', link: '', icon: 'file' });
+    
+    if (table === 'news') setNewsForm({ id: null, title: '', title_en: '', summary: '', summary_en: '', description: '', description_en: '', image_url: '', date: '' });
+    if (table === 'activities') setActivityForm({ id: null, title: '', title_en: '', type: 'Toplantı (TPM)', type_en: '', location: '', location_en: '', date: '', summary: '', summary_en: '', description: '', description_en: '', image_url: '' });
+    if (table === 'partners') setPartnerForm({ id: null, name: '', name_en: '', country: '', country_en: '', image_url: '', flag_url: '', website: '', description: '', description_en: '', role: 'Ortak', role_en: '' });
+    if (table === 'results') setResultForm({ id: null, title: '', title_en: '', description: '', description_en: '', status: 'Planlanıyor', status_en: '', link: '', icon: 'file' });
   }
 
   function startEdit(item, type) {
     setIsEditing(true);
-    if (type === 'news') setNewsForm({ id: item.id, title: item.title, summary: item.summary || '', description: item.description || '', image_url: item.image_url || '', date: item.date || '' });
-    if (type === 'activities') setActivityForm({ id: item.id, title: item.title, type: item.type || 'Toplantı (TPM)', location: item.location || '', date: item.date || '', summary: item.summary || '', description: item.description || '', image_url: item.image_url || '' });
-    if (type === 'partners') setPartnerForm({ id: item.id, name: item.name, country: item.country, image_url: item.image_url, flag_url: item.flag_url, website: item.website || '', description: item.description || '', role: item.role || 'Ortak' });
-    if (type === 'results') setResultForm(item);
+    if (type === 'news') setNewsForm({ id: item.id, title: item.title, title_en: item.title_en || '', summary: item.summary || '', summary_en: item.summary_en || '', description: item.description || '', description_en: item.description_en || '', image_url: item.image_url || '', date: item.date || '' });
+    if (type === 'activities') setActivityForm({ id: item.id, title: item.title, title_en: item.title_en || '', type: item.type || 'Toplantı (TPM)', type_en: item.type_en || '', location: item.location || '', location_en: item.location_en || '', date: item.date || '', summary: item.summary || '', summary_en: item.summary_en || '', description: item.description || '', description_en: item.description_en || '', image_url: item.image_url || '' });
+    if (type === 'partners') setPartnerForm({ id: item.id, name: item.name, name_en: item.name_en || '', country: item.country, country_en: item.country_en || '', image_url: item.image_url, flag_url: item.flag_url, website: item.website || '', description: item.description || '', description_en: item.description_en || '', role: item.role || 'Ortak', role_en: item.role_en || '' });
+    if (type === 'results') setResultForm({ id: item.id, title: item.title, title_en: item.title_en || '', description: item.description || '', description_en: item.description_en || '', status: item.status || 'Planlanıyor', status_en: item.status_en || '', link: item.link || '', icon: item.icon || 'file' });
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
@@ -1669,8 +1726,14 @@ export default function AdminPage() {
                 {/* 2. HERO */}
                 <div className="adm-section">
                   <SectionHeader num="2" title="Kapak Başlığı & Açıklaması" />
-                  <SettingInput label="Ana Başlık" settingKey="hero_title" {...commonProps} />
-                  <SettingInput label="Açıklama Metni" settingKey="hero_desc" type="textarea" {...commonProps} />
+                  <SettingInput label="Ana Başlık (TR)" settingKey="hero_title" {...commonProps} />
+                  <SettingInput label="Açıklama Metni (TR)" settingKey="hero_desc" type="textarea" {...commonProps} />
+                  
+                  {/* İngilizce Ayarları */}
+                  <div style={{marginTop: '15px', borderTop: '1px dashed var(--border)', paddingTop: '15px'}}>
+                    <SettingInput label="Ana Başlık (EN)" settingKey="hero_title_en" {...commonProps} />
+                    <SettingInput label="Açıklama Metni (EN)" settingKey="hero_desc_en" type="textarea" {...commonProps} />
+                  </div>
                 </div>
 
                 {/* 3. ÖZET KARTLAR */}
@@ -1680,8 +1743,13 @@ export default function AdminPage() {
                     {[1, 2, 3, 4].map(n => (
                       <div key={n} className="adm-card-inner">
                         <div className="adm-card-inner-label">Kart {n}</div>
-                        <SettingInput label="Değer" settingKey={`home_summary_${n}_val`} {...commonProps} />
-                        <SettingInput label="Etiket" settingKey={`home_summary_${n}_label`} {...commonProps} />
+                        <SettingInput label="Değer (TR)" settingKey={`home_summary_${n}_val`} {...commonProps} />
+                        <SettingInput label="Etiket (TR)" settingKey={`home_summary_${n}_label`} {...commonProps} />
+                        
+                        <div style={{marginTop: '10px', borderTop: '1px dashed var(--border)', paddingTop: '10px'}}>
+                          <SettingInput label="Değer (EN)" settingKey={`home_summary_${n}_val_en`} {...commonProps} />
+                          <SettingInput label="Etiket (EN)" settingKey={`home_summary_${n}_label_en`} {...commonProps} />
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -1691,8 +1759,13 @@ export default function AdminPage() {
                 <div className="adm-section">
                   <SectionHeader num="4" title="Hakkında Bölümü" />
                   <SettingInput label="Sol Taraf Görseli" settingKey="home_about_image" type="image" {...commonProps} />
-                  <SettingInput label="Bölüm Başlığı" settingKey="home_about_title" {...commonProps} />
-                  <SettingInput label="Bölüm Metni" settingKey="home_about_text" type="textarea" {...commonProps} />
+                  <SettingInput label="Bölüm Başlığı (TR)" settingKey="home_about_title" {...commonProps} />
+                  <SettingInput label="Bölüm Metni (TR)" settingKey="home_about_text" type="textarea" {...commonProps} />
+                  
+                  <div style={{marginTop: '15px', borderTop: '1px dashed var(--border)', paddingTop: '15px'}}>
+                    <SettingInput label="Bölüm Başlığı (EN)" settingKey="home_about_title_en" {...commonProps} />
+                    <SettingInput label="Bölüm Metni (EN)" settingKey="home_about_text_en" type="textarea" {...commonProps} />
+                  </div>
                 </div>
 
                 {/* 5. HEDEF KİTLE */}
@@ -1701,38 +1774,15 @@ export default function AdminPage() {
                   {[1, 2, 3].map(n => (
                     <div key={n} className="adm-card-inner" style={{marginBottom:'10px'}}>
                       <div className="adm-card-inner-label">Hedef {n}</div>
-                      <SettingInput label="Başlık" settingKey={`home_target_${n}_title`} {...commonProps} />
-                      <SettingInput label="Açıklama" settingKey={`home_target_${n}_desc`} type="textarea" {...commonProps} />
+                      <SettingInput label="Başlık (TR)" settingKey={`home_target_${n}_title`} {...commonProps} />
+                      <SettingInput label="Açıklama (TR)" settingKey={`home_target_${n}_desc`} type="textarea" {...commonProps} />
+                      
+                      <div style={{marginTop: '10px', borderTop: '1px dashed var(--border)', paddingTop: '10px'}}>
+                        <SettingInput label="Başlık (EN)" settingKey={`home_target_${n}_title_en`} {...commonProps} />
+                        <SettingInput label="Açıklama (EN)" settingKey={`home_target_${n}_desc_en`} type="textarea" {...commonProps} />
+                      </div>
                     </div>
                   ))}
-                </div>
-
-                {/* 6. EKOSİSTEM */}
-                <div className="adm-section">
-                  <SectionHeader num="6" title="Dijital Ekosistem (Ağaç Kutuları)" />
-                  {ecoItems.map((item, index) => (
-                    <div key={index} className="adm-eco-item">
-                      <div className="adm-eco-header">
-                        <span className="adm-eco-idx">Kutu #{index + 1}</span>
-                        <button className="adm-btn adm-btn-danger" style={{height:'28px', padding:'0 10px', fontSize:'0.75rem'}}
-                          onClick={() => saveEcoItems(ecoItems.filter((_, i) => i !== index))}>
-                          <i className="fas fa-trash" /> Sil
-                        </button>
-                      </div>
-                      <div style={{display:'flex', gap:'8px', marginBottom:'8px'}}>
-                        <input className="adm-input-full" value={item.title} onChange={e => handleEcoChange(index, 'title', e.target.value)} placeholder="Kart Başlığı" style={{flex:2}} />
-                        <input className="adm-input-full" value={item.icon} onChange={e => handleEcoChange(index, 'icon', e.target.value)} placeholder="İkon (fa-star)" style={{flex:1}} />
-                      </div>
-                      <textarea className="adm-textarea-full" value={item.desc} onChange={e => handleEcoChange(index, 'desc', e.target.value)} placeholder="Açıklama" rows={2} style={{marginBottom:'10px'}} />
-                      <button className="adm-btn adm-btn-save" onClick={() => saveEcoItems(ecoItems)}>
-                        <i className="fas fa-floppy-disk" /> Kaydet
-                      </button>
-                    </div>
-                  ))}
-                  <button className="adm-btn adm-btn-success"
-                    onClick={() => saveEcoItems([...ecoItems, { title: 'Yeni Kutu', desc: 'Açıklama...', icon: 'fa-star' }])}>
-                    <i className="fas fa-plus" /> Yeni Kutu Ekle
-                  </button>
                 </div>
 
                 {/* 7. SAYAÇLAR */}
@@ -1743,7 +1793,8 @@ export default function AdminPage() {
                       <div key={n} className="adm-card-inner">
                         <div className="adm-card-inner-label">Sayaç {n}</div>
                         <SettingInput label="Değer" settingKey={`home_counter_${n}_val`} {...commonProps} />
-                        <SettingInput label="Etiket" settingKey={`home_counter_${n}_label`} {...commonProps} />
+                        <SettingInput label="Etiket (TR)" settingKey={`home_counter_${n}_label`} {...commonProps} />
+                        <SettingInput label="Etiket (EN)" settingKey={`home_counter_${n}_label_en`} {...commonProps} />
                       </div>
                     ))}
                   </div>
@@ -1752,44 +1803,18 @@ export default function AdminPage() {
                 {/* 8. CTA */}
                 <div className="adm-section">
                   <SectionHeader num="8" title="Alt Kapanış (CTA)" />
-                  <SettingInput label="Başlık" settingKey="home_cta_title" {...commonProps} />
-                  <SettingInput label="Metin" settingKey="home_cta_text" type="textarea" {...commonProps} />
+                  <SettingInput label="Başlık (TR)" settingKey="home_cta_title" {...commonProps} />
+                  <SettingInput label="Metin (TR)" settingKey="home_cta_text" type="textarea" {...commonProps} />
+                  
+                  <div style={{marginTop: '15px', borderTop: '1px dashed var(--border)', paddingTop: '15px'}}>
+                    <SettingInput label="Başlık (EN)" settingKey="home_cta_title_en" {...commonProps} />
+                    <SettingInput label="Metin (EN)" settingKey="home_cta_text_en" type="textarea" {...commonProps} />
+                  </div>
                 </div>
               </div>
             )}
 
-            {/* ══ HAKKINDA ══════════════════════════════════════════════ */}
-            {activeTab === 'about' && (
-              <div className="adm-fade-in">
-                <div className="adm-page-header">
-                  <div className="adm-page-title">Hakkında <em>Sayfası</em></div>
-                </div>
-                <div className="adm-subtabs">
-                  {['general', 'strategy', 'consortium', 'plan', 'impact', 'roadmap'].map(t => (
-                    <button key={t} className={`adm-subtab ${subTab === t ? 'active' : ''}`} onClick={() => setAboutSubTab(t)}>{t}</button>
-                  ))}
-                </div>
-                {subTab === 'general' && (
-                  <>
-                    <SettingInput label="Proje Adı" settingKey="about_project_name" {...commonProps} />
-                    <SettingInput label="Proje Kısaltması" settingKey="about_project_code" {...commonProps} />
-                    <SettingInput label="Program" settingKey="about_project_program" {...commonProps} />
-                    <SettingInput label="Süresi" settingKey="about_project_duration" {...commonProps} />
-                    <SettingInput label="Bütçe" settingKey="about_project_budget" {...commonProps} />
-                  </>
-                )}
-                {subTab === 'strategy' && (
-                  <>
-                    <SettingInput label="Sayfa Başlığı" settingKey="about_strategy_title" {...commonProps} />
-                    <SettingInput label="Alt Başlık" settingKey="about_strategy_desc" type="textarea" {...commonProps} />
-                    <SettingInput label="Bölüm A Metni" settingKey="strategy_text_a_1" type="textarea" {...commonProps} />
-                    <SettingInput label="Bölüm B Metni" settingKey="strategy_text_b" type="textarea" {...commonProps} />
-                  </>
-                )}
-              </div>
-            )}
-
-            {/* ══ HABERLer ══════════════════════════════════════════════ */}
+            {/* ══ HABERLER ══════════════════════════════════════════════ */}
             {activeTab === 'news' && (
               <div className="adm-fade-in">
                 <div className="adm-page-header">
@@ -1798,37 +1823,66 @@ export default function AdminPage() {
                 <SettingInput label="Sayfa Başlık Resmi" settingKey="news_header_bg" type="image" {...commonProps} />
                 <div className="adm-form-card">
                   <div className="adm-form-card-title">
-                    <i className={isEditing ? 'fas fa-pen' : 'fas fa-plus'} />
-                    {isEditing ? 'Haberi Düzenle' : 'Yeni Haber Ekle'}
+                    <div>
+                      <i className={isEditing ? 'fas fa-pen' : 'fas fa-plus'} />
+                      {isEditing ? ' Haberi Düzenle' : ' Yeni Haber Ekle'}
+                    </div>
+                    {/* YENİ: OTOMATİK ÇEVİRİ BUTONU */}
+                    <button type="button" className="adm-btn adm-btn-ghost" onClick={handleTranslateNews} disabled={isTranslating} style={{fontSize: '0.75rem', height: '32px'}}>
+                      <i className="fas fa-language"></i> {isTranslating ? 'Çevriliyor...' : 'TR -> EN Otomatik Çevir'}
+                    </button>
                   </div>
                   <form onSubmit={e => saveItem(e, 'news', newsForm, setNewsForm)} style={{display:'grid', gap:'14px'}}>
+                    
                     <div className="adm-form-grid2">
                       <div className="adm-form-item">
-                        <label>Haber Başlığı</label>
+                        <label>Haber Başlığı (TR) *</label>
                         <input className="adm-input-full" placeholder="Başlık..." value={newsForm.title} onChange={e => setNewsForm({...newsForm, title: e.target.value})} required />
                       </div>
                       <div className="adm-form-item">
-                        <label>Tarih</label>
-                        <input type="date" className="adm-input-full" value={newsForm.date || ''} onChange={e => setNewsForm({...newsForm, date: e.target.value})} style={{colorScheme:'dark'}} />
+                        <label>Haber Başlığı (EN)</label>
+                        <input className="adm-input-full" placeholder="Title..." value={newsForm.title_en} onChange={e => setNewsForm({...newsForm, title_en: e.target.value})} />
                       </div>
                     </div>
+                    
+                    <div className="adm-form-item">
+                      <label>Tarih</label>
+                      <input type="date" className="adm-input-full" value={newsForm.date || ''} onChange={e => setNewsForm({...newsForm, date: e.target.value})} style={{colorScheme:'dark', width: '50%'}} />
+                    </div>
+                    
                     <div className="adm-form-item">
                       <label>Görsel</label>
                       <FileInput value={newsForm.image_url} onChange={url => setNewsForm({...newsForm, image_url: url})} placeholder="Haber görseli..." uploadFile={uploadFile} showToast={showToast} />
                     </div>
-                    <div className="adm-form-item">
-                      <label>Kısa Özet (Kartlarda görünür)</label>
-                      <textarea className="adm-textarea-full" placeholder="2-3 cümle özet..." value={newsForm.summary} onChange={e => setNewsForm({...newsForm, summary: e.target.value})} rows={2} />
+                    
+                    <div className="adm-form-grid2">
+                        <div className="adm-form-item">
+                          <label>Kısa Özet (TR)</label>
+                          <textarea className="adm-textarea-full" placeholder="2-3 cümle özet..." value={newsForm.summary} onChange={e => setNewsForm({...newsForm, summary: e.target.value})} rows={3} />
+                        </div>
+                        <div className="adm-form-item">
+                          <label>Kısa Özet (EN)</label>
+                          <textarea className="adm-textarea-full" placeholder="Short summary..." value={newsForm.summary_en} onChange={e => setNewsForm({...newsForm, summary_en: e.target.value})} rows={3} />
+                        </div>
                     </div>
-                    <div className="adm-form-item">
-                      <label>Detaylı İçerik</label>
-                      <textarea className="adm-textarea-full" placeholder="Haberin tam içeriği..." value={newsForm.description} onChange={e => setNewsForm({...newsForm, description: e.target.value})} rows={7} />
+
+                    <div className="adm-form-grid2">
+                        <div className="adm-form-item">
+                          <label>Detaylı İçerik (TR)</label>
+                          <textarea className="adm-textarea-full" placeholder="Haberin tam içeriği..." value={newsForm.description} onChange={e => setNewsForm({...newsForm, description: e.target.value})} rows={7} />
+                        </div>
+                        <div className="adm-form-item">
+                          <label>Detaylı İçerik (EN)</label>
+                          <textarea className="adm-textarea-full" placeholder="Full content..." value={newsForm.description_en} onChange={e => setNewsForm({...newsForm, description_en: e.target.value})} rows={7} />
+                        </div>
                     </div>
+
                     <button type="submit" className="adm-form-submit">
                       {isEditing ? 'Değişiklikleri Kaydet' : '+ Haber Ekle'}
                     </button>
                   </form>
                 </div>
+                
                 <div style={{marginTop:'24px'}}>
                   <div style={{fontSize:'0.8rem', fontWeight:'700', color:'var(--text-muted)', textTransform:'uppercase', letterSpacing:'0.08em', marginBottom:'12px'}}>Mevcut Haberler ({news.length})</div>
                   {news.length === 0 ? (
@@ -1862,45 +1916,87 @@ export default function AdminPage() {
                 <SettingInput label="Sayfa Başlık Resmi" settingKey="activities_header_bg" type="image" {...commonProps} />
                 <div className="adm-form-card">
                   <div className="adm-form-card-title">
-                    <i className={isEditing ? 'fas fa-pen' : 'fas fa-plus'} />
-                    {isEditing ? 'Faaliyeti Düzenle' : 'Yeni Faaliyet Ekle'}
+                    <div>
+                      <i className={isEditing ? 'fas fa-pen' : 'fas fa-plus'} />
+                      {isEditing ? ' Faaliyeti Düzenle' : ' Yeni Faaliyet Ekle'}
+                    </div>
+                    {/* YENİ: OTOMATİK ÇEVİRİ BUTONU */}
+                    <button type="button" className="adm-btn adm-btn-ghost" onClick={handleTranslateActivities} disabled={isTranslating} style={{fontSize: '0.75rem', height: '32px'}}>
+                      <i className="fas fa-language"></i> {isTranslating ? 'Çevriliyor...' : 'TR -> EN Otomatik Çevir'}
+                    </button>
                   </div>
                   <form onSubmit={e => saveItem(e, 'activities', activityForm, setActivityForm)} style={{display:'grid', gap:'14px'}}>
-                    <div className="adm-form-item">
-                      <label>Faaliyet Başlığı</label>
-                      <input className="adm-input-full" placeholder="Başlık..." value={activityForm.title} onChange={e => setActivityForm({...activityForm, title: e.target.value})} required />
+                    
+                    <div className="adm-form-grid2">
+                        <div className="adm-form-item">
+                          <label>Faaliyet Başlığı (TR) *</label>
+                          <input className="adm-input-full" placeholder="Başlık..." value={activityForm.title} onChange={e => setActivityForm({...activityForm, title: e.target.value})} required />
+                        </div>
+                        <div className="adm-form-item">
+                          <label>Faaliyet Başlığı (EN)</label>
+                          <input className="adm-input-full" placeholder="Title..." value={activityForm.title_en} onChange={e => setActivityForm({...activityForm, title_en: e.target.value})} />
+                        </div>
                     </div>
+
+                    <div className="adm-form-grid2">
+                      <div className="adm-form-item">
+                        <label>Türü (TR)</label>
+                        <input className="adm-input-full" placeholder="Toplantı..." value={activityForm.type} onChange={e => setActivityForm({...activityForm, type: e.target.value})} />
+                      </div>
+                      <div className="adm-form-item">
+                        <label>Türü (EN)</label>
+                        <input className="adm-input-full" placeholder="Meeting..." value={activityForm.type_en} onChange={e => setActivityForm({...activityForm, type_en: e.target.value})} />
+                      </div>
+                    </div>
+
                     <div className="adm-form-grid3">
                       <div className="adm-form-item">
-                        <label>Türü</label>
-                        <input className="adm-input-full" placeholder="Toplantı, Eğitim..." value={activityForm.type} onChange={e => setActivityForm({...activityForm, type: e.target.value})} />
+                        <label>Konum (TR)</label>
+                        <input className="adm-input-full" placeholder="İstanbul..." value={activityForm.location} onChange={e => setActivityForm({...activityForm, location: e.target.value})} />
+                      </div>
+                      <div className="adm-form-item">
+                        <label>Konum (EN)</label>
+                        <input className="adm-input-full" placeholder="Istanbul..." value={activityForm.location_en} onChange={e => setActivityForm({...activityForm, location_en: e.target.value})} />
                       </div>
                       <div className="adm-form-item">
                         <label>Tarih</label>
                         <input type="date" className="adm-input-full" value={activityForm.date} onChange={e => setActivityForm({...activityForm, date: e.target.value})} style={{colorScheme:'dark'}} />
                       </div>
-                      <div className="adm-form-item">
-                        <label>Konum</label>
-                        <input className="adm-input-full" placeholder="İstanbul, Çevrimiçi..." value={activityForm.location} onChange={e => setActivityForm({...activityForm, location: e.target.value})} />
-                      </div>
                     </div>
+
                     <div className="adm-form-item">
                       <label>Görsel</label>
                       <FileInput value={activityForm.image_url} onChange={url => setActivityForm({...activityForm, image_url: url})} placeholder="Faaliyet görseli..." uploadFile={uploadFile} showToast={showToast} />
                     </div>
-                    <div className="adm-form-item">
-                      <label>Kısa Özet</label>
-                      <textarea className="adm-textarea-full" placeholder="Kısa açıklama..." value={activityForm.summary} onChange={e => setActivityForm({...activityForm, summary: e.target.value})} rows={2} />
+                    
+                    <div className="adm-form-grid2">
+                        <div className="adm-form-item">
+                          <label>Kısa Özet (TR)</label>
+                          <textarea className="adm-textarea-full" placeholder="Kısa açıklama..." value={activityForm.summary} onChange={e => setActivityForm({...activityForm, summary: e.target.value})} rows={3} />
+                        </div>
+                        <div className="adm-form-item">
+                          <label>Kısa Özet (EN)</label>
+                          <textarea className="adm-textarea-full" placeholder="Short summary..." value={activityForm.summary_en} onChange={e => setActivityForm({...activityForm, summary_en: e.target.value})} rows={3} />
+                        </div>
                     </div>
-                    <div className="adm-form-item">
-                      <label>Detaylı Açıklama</label>
-                      <textarea className="adm-textarea-full" placeholder="Etkinliğin detaylı açıklaması..." value={activityForm.description} onChange={e => setActivityForm({...activityForm, description: e.target.value})} rows={7} />
+
+                    <div className="adm-form-grid2">
+                        <div className="adm-form-item">
+                          <label>Detaylı Açıklama (TR)</label>
+                          <textarea className="adm-textarea-full" placeholder="Detaylı..." value={activityForm.description} onChange={e => setActivityForm({...activityForm, description: e.target.value})} rows={6} />
+                        </div>
+                        <div className="adm-form-item">
+                          <label>Detaylı Açıklama (EN)</label>
+                          <textarea className="adm-textarea-full" placeholder="Detailed..." value={activityForm.description_en} onChange={e => setActivityForm({...activityForm, description_en: e.target.value})} rows={6} />
+                        </div>
                     </div>
+
                     <button type="submit" className="adm-form-submit">
                       {isEditing ? 'Değişiklikleri Kaydet' : '+ Faaliyet Ekle'}
                     </button>
                   </form>
                 </div>
+                
                 <div style={{marginTop:'24px'}}>
                   <div style={{fontSize:'0.8rem', fontWeight:'700', color:'var(--text-muted)', textTransform:'uppercase', letterSpacing:'0.08em', marginBottom:'12px'}}>Mevcut Faaliyetler ({activities.length})</div>
                   {activities.length === 0 ? (
@@ -1938,50 +2034,90 @@ export default function AdminPage() {
                 <SettingInput label="Başlık Resmi" settingKey="partners_header_bg" type="image" {...commonProps} />
                 <div className="adm-form-card">
                   <div className="adm-form-card-title">
-                    <i className={isEditing ? 'fas fa-pen' : 'fas fa-plus'} />
-                    {isEditing ? 'Ortak Düzenle' : 'Yeni Ortak Ekle'}
+                    <div>
+                      <i className={isEditing ? 'fas fa-pen' : 'fas fa-plus'} />
+                      {isEditing ? ' Ortak Düzenle' : ' Yeni Ortak Ekle'}
+                    </div>
+                    {/* YENİ: OTOMATİK ÇEVİRİ BUTONU */}
+                    <button type="button" className="adm-btn adm-btn-ghost" onClick={handleTranslatePartners} disabled={isTranslating} style={{fontSize: '0.75rem', height: '32px'}}>
+                      <i className="fas fa-language"></i> {isTranslating ? 'Çevriliyor...' : 'TR -> EN Otomatik Çevir'}
+                    </button>
                   </div>
                   <form onSubmit={e => saveItem(e, 'partners', partnerForm, setPartnerForm)} style={{display:'grid', gap:'14px'}}>
+                    
                     <div className="adm-form-grid2">
                       <div className="adm-form-item">
-                        <label>Kurum Adı</label>
+                        <label>Kurum Adı (TR) *</label>
                         <input className="adm-input-full" placeholder="Kurum adı..." value={partnerForm.name} onChange={e => setPartnerForm({...partnerForm, name: e.target.value})} required />
                       </div>
-                      <div className="adm-form-grid2">
+                      <div className="adm-form-item">
+                        <label>Kurum Adı (EN)</label>
+                        <input className="adm-input-full" placeholder="Institution name..." value={partnerForm.name_en} onChange={e => setPartnerForm({...partnerForm, name_en: e.target.value})} />
+                      </div>
+                    </div>
+
+                    <div className="adm-form-grid2">
+                      <div className="adm-form-item">
+                        <label>Ülke (TR) *</label>
+                        <input className="adm-input-full" placeholder="Türkiye..." value={partnerForm.country} onChange={e => setPartnerForm({...partnerForm, country: e.target.value})} required />
+                      </div>
+                      <div className="adm-form-item">
+                        <label>Ülke (EN)</label>
+                        <input className="adm-input-full" placeholder="Turkey..." value={partnerForm.country_en} onChange={e => setPartnerForm({...partnerForm, country_en: e.target.value})} />
+                      </div>
+                    </div>
+
+                    <div className="adm-form-grid2">
                         <div className="adm-form-item">
-                          <label>Rol</label>
+                          <label>Rol (TR)</label>
                           <select className="adm-select-full" value={partnerForm.role} onChange={e => setPartnerForm({...partnerForm, role: e.target.value})}>
                             <option value="Ortak">Ortak</option>
                             <option value="Koordinatör">Koordinatör</option>
                           </select>
                         </div>
                         <div className="adm-form-item">
-                          <label>Ülke</label>
-                          <input className="adm-input-full" placeholder="Türkiye..." value={partnerForm.country} onChange={e => setPartnerForm({...partnerForm, country: e.target.value})} required />
+                          <label>Rol (EN)</label>
+                          <select className="adm-select-full" value={partnerForm.role_en} onChange={e => setPartnerForm({...partnerForm, role_en: e.target.value})}>
+                            <option value="">(Otomatik Çeviri Kullan)</option>
+                            <option value="Partner">Partner</option>
+                            <option value="Coordinator">Coordinator</option>
+                          </select>
                         </div>
-                      </div>
                     </div>
-                    <div className="adm-form-item">
-                      <label>Açıklama</label>
-                      <textarea className="adm-textarea-full" placeholder="Kurum hakkında..." value={partnerForm.description} onChange={e => setPartnerForm({...partnerForm, description: e.target.value})} rows={3} />
+
+                    <div className="adm-form-grid2">
+                        <div className="adm-form-item">
+                          <label>Açıklama (TR)</label>
+                          <textarea className="adm-textarea-full" placeholder="Kurum hakkında..." value={partnerForm.description} onChange={e => setPartnerForm({...partnerForm, description: e.target.value})} rows={4} />
+                        </div>
+                        <div className="adm-form-item">
+                          <label>Açıklama (EN)</label>
+                          <textarea className="adm-textarea-full" placeholder="About the institution..." value={partnerForm.description_en} onChange={e => setPartnerForm({...partnerForm, description_en: e.target.value})} rows={4} />
+                        </div>
                     </div>
+
                     <div className="adm-form-item">
                       <label>Web Sitesi</label>
                       <input className="adm-input-full" placeholder="https://..." value={partnerForm.website} onChange={e => setPartnerForm({...partnerForm, website: e.target.value})} />
                     </div>
-                    <div className="adm-form-item">
-                      <label>Kurum Logosu</label>
-                      <FileInput value={partnerForm.image_url} onChange={url => setPartnerForm({...partnerForm, image_url: url})} placeholder="Logo URL..." uploadFile={uploadFile} showToast={showToast} />
+
+                    <div className="adm-form-grid2">
+                        <div className="adm-form-item">
+                          <label>Kurum Logosu</label>
+                          <FileInput value={partnerForm.image_url} onChange={url => setPartnerForm({...partnerForm, image_url: url})} placeholder="Logo URL..." uploadFile={uploadFile} showToast={showToast} />
+                        </div>
+                        <div className="adm-form-item">
+                          <label>Ülke Bayrağı</label>
+                          <FileInput value={partnerForm.flag_url} onChange={url => setPartnerForm({...partnerForm, flag_url: url})} placeholder="Bayrak URL..." uploadFile={uploadFile} showToast={showToast} />
+                        </div>
                     </div>
-                    <div className="adm-form-item">
-                      <label>Ülke Bayrağı</label>
-                      <FileInput value={partnerForm.flag_url} onChange={url => setPartnerForm({...partnerForm, flag_url: url})} placeholder="Bayrak URL..." uploadFile={uploadFile} showToast={showToast} />
-                    </div>
+
                     <button type="submit" className="adm-form-submit">
                       {isEditing ? 'Ortak Bilgilerini Güncelle' : '+ Ortak Ekle'}
                     </button>
                   </form>
                 </div>
+                
                 <div style={{marginTop:'24px'}}>
                   <div style={{fontSize:'0.8rem', fontWeight:'700', color:'var(--text-muted)', textTransform:'uppercase', letterSpacing:'0.08em', marginBottom:'12px'}}>Mevcut Ortaklar ({partners.length})</div>
                   {partners.length === 0 ? (
@@ -2022,13 +2158,57 @@ export default function AdminPage() {
                 <SettingInput label="Başlık Resmi" settingKey="results_header_bg" type="image" {...commonProps} />
                 <div className="adm-form-card">
                   <div className="adm-form-card-title">
-                    <i className="fas fa-plus" /> Yeni Çıktı Ekle
+                    <div>
+                      <i className="fas fa-plus" /> {isEditing ? ' Çıktı Güncelle' : ' Yeni Çıktı Ekle'}
+                    </div>
+                    {/* YENİ: OTOMATİK ÇEVİRİ BUTONU */}
+                    <button type="button" className="adm-btn adm-btn-ghost" onClick={handleTranslateResults} disabled={isTranslating} style={{fontSize: '0.75rem', height: '32px'}}>
+                      <i className="fas fa-language"></i> {isTranslating ? 'Çevriliyor...' : 'TR -> EN Otomatik Çevir'}
+                    </button>
                   </div>
                   <form onSubmit={e => saveItem(e, 'results', resultForm, setResultForm)} style={{display:'grid', gap:'14px'}}>
-                    <div className="adm-form-item">
-                      <label>Başlık</label>
-                      <input className="adm-input-full" placeholder="Çıktı başlığı..." value={resultForm.title} onChange={e => setResultForm({...resultForm, title: e.target.value})} required />
+                    
+                    <div className="adm-form-grid2">
+                        <div className="adm-form-item">
+                          <label>Başlık (TR) *</label>
+                          <input className="adm-input-full" placeholder="Çıktı başlığı..." value={resultForm.title} onChange={e => setResultForm({...resultForm, title: e.target.value})} required />
+                        </div>
+                        <div className="adm-form-item">
+                          <label>Başlık (EN)</label>
+                          <input className="adm-input-full" placeholder="Result title..." value={resultForm.title_en} onChange={e => setResultForm({...resultForm, title_en: e.target.value})} />
+                        </div>
                     </div>
+
+                    <div className="adm-form-grid2">
+                        <div className="adm-form-item">
+                          <label>Açıklama (TR)</label>
+                          <textarea className="adm-textarea-full" placeholder="Açıklama..." value={resultForm.description} onChange={e => setResultForm({...resultForm, description: e.target.value})} rows={3} />
+                        </div>
+                        <div className="adm-form-item">
+                          <label>Açıklama (EN)</label>
+                          <textarea className="adm-textarea-full" placeholder="Description..." value={resultForm.description_en} onChange={e => setResultForm({...resultForm, description_en: e.target.value})} rows={3} />
+                        </div>
+                    </div>
+
+                    <div className="adm-form-grid2">
+                        <div className="adm-form-item">
+                          <label>Durum (TR)</label>
+                          <select className="adm-select-full" value={resultForm.status} onChange={e => setResultForm({...resultForm, status: e.target.value})}>
+                            <option value="Planlanıyor">Planlanıyor</option>
+                            <option value="Devam Ediyor">Devam Ediyor</option>
+                            <option value="Tamamlandı">Tamamlandı</option>
+                          </select>
+                        </div>
+                        <div className="adm-form-item">
+                          <label>Durum (EN)</label>
+                          <select className="adm-select-full" value={resultForm.status_en} onChange={e => setResultForm({...resultForm, status_en: e.target.value})}>
+                            <option value="Planned">Planned</option>
+                            <option value="In Progress">In Progress</option>
+                            <option value="Completed">Completed</option>
+                          </select>
+                        </div>
+                    </div>
+
                     <div className="adm-form-item">
                       <label>Dosya / Link</label>
                       <FileInput value={resultForm.link} onChange={url => setResultForm({...resultForm, link: url})} placeholder="Dosya yükleyin veya URL girin..." uploadFile={uploadFile} showToast={showToast} />
@@ -2038,6 +2218,7 @@ export default function AdminPage() {
                     </button>
                   </form>
                 </div>
+                
                 <div style={{marginTop:'24px'}}>
                   {results.length === 0 ? (
                     <div className="adm-empty"><i className="fas fa-file" />Çıktı bulunamadı.</div>
@@ -2045,17 +2226,23 @@ export default function AdminPage() {
                     <div key={item.id} className="adm-item-row">
                       <div className="adm-item-info">
                         <strong><i className="fas fa-file-circle-check" style={{color:'var(--accent)', marginRight:'8px'}} />{item.title}</strong>
+                        <span>{item.status}</span>
                       </div>
-                      <button className="adm-btn adm-btn-danger" onClick={() => deleteItem('results', item.id)} style={{height:'32px', fontSize:'0.78rem'}}>
-                        <i className="fas fa-trash" />
-                      </button>
+                      <div className="adm-item-actions">
+                        <button className="adm-btn adm-btn-ghost" onClick={() => startEdit(item, 'results')} style={{height:'32px', fontSize:'0.78rem'}}>
+                          <i className="fas fa-pen" /> Düzenle
+                        </button>
+                        <button className="adm-btn adm-btn-danger" onClick={() => deleteItem('results', item.id)} style={{height:'32px', fontSize:'0.78rem'}}>
+                          <i className="fas fa-trash" />
+                        </button>
+                      </div>
                     </div>
                   ))}
                 </div>
               </div>
             )}
 
-            {/* ══ İLETİŞİM ═════════════════════════════════════════════ */}
+            {/* ══ DİĞER SEKMLER (Değişiklik yok) ═════════════════════════ */}
             {activeTab === 'contact' && (
               <div className="adm-fade-in">
                 <div className="adm-page-header">
@@ -2070,7 +2257,6 @@ export default function AdminPage() {
               </div>
             )}
 
-            {/* ══ SİTE AYARLARI ════════════════════════════════════════ */}
             {activeTab === 'site' && (
               <div className="adm-fade-in">
                 <div className="adm-page-header">

@@ -492,7 +492,201 @@ export const translations = {
                 websiteBtn: 'Web Sitesini Ziyaret Et'
             }
         },
+        contact: {
+            hero: {
+                eyebrow: 'İletişim',
+                title1: 'Bize Ulaşın &',
+                title2: 'Yazışalım',
+                desc: 'Sorularınız, önerileriniz veya işbirliği talepleriniz için buradayız.',
+                scrollBtn: 'İletişime Geç'
+            },
+            section: {
+                label: 'Bize Yazın',
+                title: 'İletişim Bilgileri & Form'
+            },
+            info: {
+                title: 'İletişim Bilgileri',
+                address: 'Adres',
+                email: 'E-posta',
+                phone: 'Telefon'
+            },
+            social: {
+                title: 'Bizi Takip Edin',
+                empty: 'Henüz eklenmemiş.'
+            },
+            form: {
+                title: 'Mesaj Gönderin',
+                success: 'Mesajınız başarıyla gönderildi! En kısa sürede dönüş yapacağız.',
+                error: 'Bir hata oluştu. Lütfen daha sonra tekrar deneyiniz.',
+                nameLabel: 'Adınız Soyadınız',
+                namePlaceholder: 'Adınız',
+                emailLabel: 'E-posta Adresiniz',
+                emailPlaceholder: 'ornek@email.com',
+                subjectLabel: 'Konu',
+                subjectPlaceholder: 'Mesajınızın konusu',
+                messageLabel: 'Mesajınız',
+                messagePlaceholder: 'Mesajınızı buraya yazın...',
+                sending: 'Gönderiliyor…',
+                sendBtn: 'Mesajı Gönder'
+            }
+        },
+        news: {
+            loading: 'Hazırlanıyor…',
+            hero: {
+                eyebrow: 'Gelişmeler',
+                title1: 'Haberler &',
+                title2: 'Etkinlikler',
+                desc: 'Projemizle ilgili en güncel gelişmeleri, duyuruları ve etkinlikleri buradan takip edebilirsiniz.',
+                scrollBtn: 'Haberleri Keşfet'
+            },
+            section: {
+                label: 'Medya ve Duyurular',
+                title: 'Güncel Gelişmeler'
+            },
+            list: {
+                empty: 'Henüz bir haber veya etkinlik eklenmemiş.',
+                readMore: 'Devamını Oku',
+                loadMore: 'Daha fazla yükleniyor…',
+                end: 'Tüm haberler yüklendi.'
+            }
+        },
+        results: {
+            loading: 'Hazırlanıyor…',
+            hero: {
+                eyebrow: 'Proje Çıktıları',
+                title1: 'Raporlar &',
+                title2: 'Materyaller',
+                desc: 'Sunumlar, eğitim materyalleri ve tüm proje dosyaları',
+                scrollBtn: 'Dosyaları Keşfet'
+            },
+            section: {
+                label: 'Tüm Dosyalar',
+                title: 'İndirilebilir Çıktılar'
+            },
+            list: {
+                empty: 'Henüz dosya yüklenmemiş.',
+                download: 'İndir'
+            }
+        },
+        about: {
+            loading: 'Yükleniyor...',
+            hero: {
+                eyebrow: 'Hakkımızda',
+                title1: 'Geleceğinize',
+                title2: 'Yeşil Bir',
+                title3: 'İz Bırakın',
+                descDefault: 'DIGI-GREEN projesi, yerel yönetimler ve vatandaşların işbirliği ile sürdürülebilir, dijital ve yeşil bir gelecek inşa etmeyi hedefliyor.'
+            },
+            vision: {
+                label: 'Vizyonumuz',
+                titleDefault: 'Daha Temiz Bir Çevre İçin Yenilikçi Çözümler',
+                textDefault: 'Projemiz, iklim krizine karşı dijital teknolojilerin gücünü kullanarak yetişkinlerin çevre bilincini artırmayı ve sürdürülebilir yaşam pratiklerini yaygınlaştırmayı amaçlamaktadır.',
+                list1: 'Karbon ayak izini azaltmak',
+                list2: 'Dijital dönüşümü teşvik etmek',
+                list3: 'Toplumsal farkındalığı güçlendirmek'
+            },
+            stats: {
+                label: 'Rakamlarla Biz',
+                title: 'Projenin Etkisi',
+                s1: 'Katılımcı',
+                s2: 'Eğitim Oranı',
+                s3: 'Aylık Süre',
+                s4: 'Ortak Ülke'
+            },
+            target: {
+                label: 'Kime Hitap Ediyoruz?',
+                title: 'Hedef Kitlemiz',
+                t1Title: 'Yetişkin Öğrenciler',
+                t1Desc: 'İklim değişikliği farkındalığı kazanacak olan yerel halk ve vatandaşlar.',
+                t2Title: 'Eğitmenler ve Rehberler',
+                t2Desc: 'Dijital yetkinliklerini artırarak topluma rehberlik edecek yetişkin eğitimcileri.',
+                t3Title: 'Karar Alıcılar',
+                t3Desc: 'Yerel yönetimler ve politika yapıcılar için stratejik bilgi aktarımı.'
+            },
+            spec: {
+                label: 'Özet Bilgi',
+                title: 'Proje Künyesi',
+                r1Label: 'Proje Adı',
+                r1Default: 'Yerel Yeşil Gelecek',
+                r2Label: 'Proje Kodu',
+                r2Default: '2024-1-TR01-KA220-ADU',
+                r3Label: 'Program',
+                r3Default: 'Erasmus+ Yetişkin Eğitimi',
+                r4Label: 'Süre',
+                r4Default: '24 Ay',
+                r5Label: 'Bütçe',
+                r5Default: '250.000 €'
+            },
+            cta: {
+                badge: 'Bizimle İletişime Geçin',
+                title1: 'Ortak Geleceğimizi',
+                title2: 'Birlikte İnşa Edelim',
+                desc: 'Daha yeşil bir dünya için projeye dahil olun veya fikirlerinizi paylaşın.',
+                button: 'Bize Ulaşın'
+            }
+        },
+        activities: {
+            detail: {
+                loading: 'Faaliyet Detayı Yükleniyor...',
+                backBtn: 'Faaliyetlere Dön'
+            }
+        },
+        activities: {
+            loading: 'Faaliyetler Yükleniyor…',
+            hero: {
+                eyebrow: 'Projeye Dair',
+                title1: 'Proje',
+                title2: 'Faaliyetleri',
+                desc: 'Sürdürülebilir ve dijital bir gelecek inşa etmek için attığımız adımlar, düzenlediğimiz eğitimler ve toplantılar.',
+                scrollBtn: 'Faaliyetleri Keşfet'
+            },
+            section: {
+                label: 'Aksiyonlar ve Etkinlikler',
+                title: 'Gerçekleşen Faaliyetler'
+            },
+            list: {
+                empty: 'Henüz bir faaliyet eklenmemiş.',
+                readMore: 'Detayları İncele',
+                loadMore: 'Daha fazla yükleniyor…',
+                end: 'Tüm faaliyetler yüklendi.'
+            },
+            detail: {
+                loading: 'Faaliyet Detayı Yükleniyor...',
+                backBtn: 'Faaliyetlere Dön'
+            }
+        },
+        detail: {
+                loading: 'Haber Detayı Yükleniyor...',
+                backBtn: 'Haberlere Dön'
+            },
+            partners: {
+            loading: 'Yükleniyor...',
+            hero: {
+                eyebrow: 'Proje Ortakları',
+                title1: 'Küresel &',
+                title2: 'Güçlü Ağ',
+                desc: 'Farklı ülkelerden gelen uzman kurumlarla sürdürülebilir bir gelecek inşa ediyoruz.',
+                scrollBtn: 'Ortakları Keşfet'
+            },
+            section: {
+                label: 'Ağımız',
+                title: 'Proje Konsorsiyumu'
+            },
+            list: {
+                empty: 'Henüz bir ortak eklenmemiş.',
+                aboutTitle: 'Kurum Hakkında',
+                emptyDesc: 'Bu kurum için henüz bir açıklama girilmemiş.',
+                detailBtn: 'Detayları İncele',
+                websiteBtn: 'Web Sitesini Ziyaret Et',
+                coordinator: 'Koordinatör',
+                partner: 'Ortak'
+            }
+        },
     },
+   //xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx//xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+      //xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx//xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+      //xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx//xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+      //xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx//xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
     en: {
         nav: {
             home: 'Home',
@@ -928,6 +1122,196 @@ export const translations = {
                 emptyDesc: 'No description has been added for this institution yet.',
                 detailBtn: 'View Details',
                 websiteBtn: 'Visit Website'
+            }
+        },
+        contact: {
+            hero: {
+                eyebrow: 'Contact',
+                title1: 'Get in Touch &',
+                title2: "Let's Talk",
+                desc: 'We are here for your questions, suggestions, or collaboration requests.',
+                scrollBtn: 'Contact Us'
+            },
+            section: {
+                label: 'Write to Us',
+                title: 'Contact Info & Form'
+            },
+            info: {
+                title: 'Contact Information',
+                address: 'Address',
+                email: 'Email',
+                phone: 'Phone'
+            },
+            social: {
+                title: 'Follow Us',
+                empty: 'Not added yet.'
+            },
+            form: {
+                title: 'Send a Message',
+                success: 'Your message has been sent successfully! We will get back to you shortly.',
+                error: 'An error occurred. Please try again later.',
+                nameLabel: 'Full Name',
+                namePlaceholder: 'John Doe',
+                emailLabel: 'Email Address',
+                emailPlaceholder: 'example@email.com',
+                subjectLabel: 'Subject',
+                subjectPlaceholder: 'Subject of your message',
+                messageLabel: 'Your Message',
+                messagePlaceholder: 'Write your message here...',
+                sending: 'Sending...',
+                sendBtn: 'Send Message'
+            }
+        },
+        news: {
+            loading: 'Loading...',
+            hero: {
+                eyebrow: 'Updates',
+                title1: 'News &',
+                title2: 'Events',
+                desc: 'You can follow the latest developments, announcements, and events related to our project here.',
+                scrollBtn: 'Discover News'
+            },
+            section: {
+                label: 'Media and Announcements',
+                title: 'Latest Developments'
+            },
+            list: {
+                empty: 'No news or events added yet.',
+                readMore: 'Read More',
+                loadMore: 'Loading more...',
+                end: 'All news loaded.'
+            }
+        },
+        results: {
+            loading: 'Loading...',
+            hero: {
+                eyebrow: 'Project Outputs',
+                title1: 'Reports &',
+                title2: 'Materials',
+                desc: 'Presentations, training materials, and all project files',
+                scrollBtn: 'Discover Files'
+            },
+            section: {
+                label: 'All Files',
+                title: 'Downloadable Outputs'
+            },
+            list: {
+                empty: 'No files uploaded yet.',
+                download: 'Download'
+            }
+        },
+        about: {
+            loading: 'Loading...',
+            hero: {
+                eyebrow: 'About Us',
+                title1: 'Leave a',
+                title2: 'Green Mark on',
+                title3: 'Your Future',
+                descDefault: 'The DIGI-GREEN project aims to build a sustainable, digital, and green future through the cooperation of local governments and citizens.'
+            },
+            vision: {
+                label: 'Our Vision',
+                titleDefault: 'Innovative Solutions for a Cleaner Environment',
+                textDefault: 'Our project aims to raise environmental awareness among adults and promote sustainable living practices by using the power of digital technologies against the climate crisis.',
+                list1: 'Reduce carbon footprint',
+                list2: 'Promote digital transformation',
+                list3: 'Strengthen social awareness'
+            },
+            stats: {
+                label: 'Us in Numbers',
+                title: 'Project Impact',
+                s1: 'Participants',
+                s2: 'Training Rate',
+                s3: 'Months Duration',
+                s4: 'Partner Countries'
+            },
+            target: {
+                label: 'Who Do We Address?',
+                title: 'Our Target Audience',
+                t1Title: 'Adult Learners',
+                t1Desc: 'Local people and citizens who will gain awareness of climate change.',
+                t2Title: 'Trainers and Guides',
+                t2Desc: 'Adult educators who will guide society by increasing their digital competencies.',
+                t3Title: 'Decision Makers',
+                t3Desc: 'Strategic knowledge transfer for local governments and policymakers.'
+            },
+            spec: {
+                label: 'Summary',
+                title: 'Project Credentials',
+                r1Label: 'Project Name',
+                r1Default: 'Local Green Future',
+                r2Label: 'Project Code',
+                r2Default: '2024-1-TR01-KA220-ADU',
+                r3Label: 'Program',
+                r3Default: 'Erasmus+ Adult Education',
+                r4Label: 'Duration',
+                r4Default: '24 Months',
+                r5Label: 'Budget',
+                r5Default: '250,000 €'
+            },
+            cta: {
+                badge: 'Contact Us',
+                title1: 'Let’s Build Our Shared',
+                title2: 'Future Together',
+                desc: 'Get involved in the project for a greener world or share your ideas.',
+                button: 'Contact Us'
+            }
+        },
+        activities: {
+            detail: {
+                loading: 'Loading Activity Details...',
+                backBtn: 'Back to Activities'
+            }
+        },
+        activities: {
+            loading: 'Loading Activities...',
+            hero: {
+                eyebrow: 'About the Project',
+                title1: 'Project',
+                title2: 'Activities',
+                desc: 'The steps we take, the trainings and meetings we organize to build a sustainable and digital future.',
+                scrollBtn: 'Discover Activities'
+            },
+            section: {
+                label: 'Actions and Events',
+                title: 'Completed Activities'
+            },
+            list: {
+                empty: 'No activities added yet.',
+                readMore: 'View Details',
+                loadMore: 'Loading more...',
+                end: 'All activities loaded.'
+            },
+            detail: {
+                loading: 'Loading Activity Details...',
+                backBtn: 'Back to Activities'
+            }
+        },
+        detail: {
+                loading: 'Loading News Details...',
+                backBtn: 'Back to News'
+            },
+            partners: {
+            loading: 'Loading...',
+            hero: {
+                eyebrow: 'Project Partners',
+                title1: 'Global &',
+                title2: 'Strong Network',
+                desc: 'We are building a sustainable future with expert institutions from different countries.',
+                scrollBtn: 'Discover Partners'
+            },
+            section: {
+                label: 'Our Network',
+                title: 'Project Consortium'
+            },
+            list: {
+                empty: 'No partners added yet.',
+                aboutTitle: 'About the Institution',
+                emptyDesc: 'No description entered for this institution yet.',
+                detailBtn: 'View Details',
+                websiteBtn: 'Visit Website',
+                coordinator: 'Coordinator',
+                partner: 'Partner'
             }
         },
     }

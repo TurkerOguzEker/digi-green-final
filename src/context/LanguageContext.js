@@ -21,7 +21,7 @@ export function LanguageProvider({ children }) {
         localStorage.setItem('language', newLang); // Tercihi kaydet
     };
 
-    // Çeviri getirme fonksiyonu (örn: t('nav.home'))
+    // Sözlükten (translations.js) çeviri getirme fonksiyonu
     const t = (key) => {
         const keys = key.split('.');
         let value = translations[language];
