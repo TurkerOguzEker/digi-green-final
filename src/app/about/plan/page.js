@@ -2,6 +2,8 @@
 import { useEffect, useState, useRef } from 'react';
 import { supabase } from '../../../lib/supabase';
 import ScrollToTop from '../../../components/ScrollToTop';
+// ✨ YENİ: Dil Context hook'umuzu dahil ettik
+import { useLanguage } from '../../../context/LanguageContext';
 
 // ─── ARKA PLAN AĞI ─────────────────────────────────────────────────────────────
 const NetworkBackground = () => {
@@ -150,6 +152,9 @@ export default function PlanPage() {
   const [content, setContent] = useState({});
   const [loading, setLoading] = useState(true);
 
+  // ✨ YENİ: Dil ve Çeviri fonksiyonlarını alıyoruz
+  const { language, t } = useLanguage();
+
   useEffect(() => {
     supabase.from('settings').select('*').then(({ data }) => {
       const map = {}; data?.forEach(d => (map[d.key] = d.value));
@@ -167,18 +172,23 @@ export default function PlanPage() {
     return () => obs.disconnect();
   }, [loading, content]);
 
+  // Veritabanı dinamik içerik kontrolü
+  const getDynamicContent = (trKey, defaultTranslationKey) => {
+    return (language === 'tr' && content[trKey]) ? content[trKey] : t(defaultTranslationKey);
+  };
+
   const steps = [
     {
       num: '01', code: 'İP2',
       accent: '#2563eb',
       icon: 'arrowLeftRight',
-      title: content.plan_step_1_title || 'Sınır Ötesi Bilgi Paylaşımı & Eğitim',
-      desc:  content.plan_step_1_desc  || "Letonya ve Portekiz'deki iyi uygulama örneklerini yerinde inceleyerek karşılıklı öğrenme yoluyla belediye personelinin dijital ve çevresel uygulamalar konusundaki bilgi ve deneyimini artırmaktır.",
+      title: getDynamicContent('plan_step_1_title', 'plan.timeline.step1.titleDefault'),
+      desc:  getDynamicContent('plan_step_1_desc', 'plan.timeline.step1.descDefault'),
       pills: [
-        { icon:'map',      label:'Teknik Ziyaretler',       bg:'blue-bg' },
-        { icon:'fileText', label:'SECAP Hazırlığı',          bg:'blue-bg' },
-        { icon:'users',    label:'Odak Grubu Çalışmaları',   bg:'blue-bg' },
-        { icon:'globe',    label:'Uluslararası Deneyim',     bg:'blue-bg' },
+        { icon:'map',      label: t('plan.timeline.step1.pills.0'),      bg:'blue-bg' },
+        { icon:'fileText', label: t('plan.timeline.step1.pills.1'),          bg:'blue-bg' },
+        { icon:'users',    label: t('plan.timeline.step1.pills.2'),   bg:'blue-bg' },
+        { icon:'globe',    label: t('plan.timeline.step1.pills.3'),     bg:'blue-bg' },
       ],
       pillClass: 'blue-pill',
       iconColor: '#2563eb',
@@ -187,13 +197,13 @@ export default function PlanPage() {
       num: '02', code: 'İP3',
       accent: '#16a34a',
       icon: 'smartphone',
-      title: content.plan_step_2_title || 'Mobil Çözümler & Dijital Atık Yönetimi',
-      desc:  content.plan_step_2_desc  || "Dijital dönüşümü hızlandırmak ve vatandaş-belediye etkileşimini güçlendirmek için mobil uygulamalar geliştirmek ve atık yönetimini dijitalleştirmektir.",
+      title: getDynamicContent('plan_step_2_title', 'plan.timeline.step2.titleDefault'),
+      desc:  getDynamicContent('plan_step_2_desc', 'plan.timeline.step2.descDefault'),
       pills: [
-        { icon:'smartphone', label:'Mobil Uygulama',            bg:'green-bg' },
-        { icon:'wifi',       label:'Hava Kalitesi Sensörleri',   bg:'green-bg' },
-        { icon:'cpu',        label:'YZ Destekli Atık Kutuları',  bg:'green-bg' },
-        { icon:'recycle',    label:'Dijital Atık Yönetimi',      bg:'green-bg' },
+        { icon:'smartphone', label: t('plan.timeline.step2.pills.0'),            bg:'green-bg' },
+        { icon:'wifi',       label: t('plan.timeline.step2.pills.1'),   bg:'green-bg' },
+        { icon:'cpu',        label: t('plan.timeline.step2.pills.2'),  bg:'green-bg' },
+        { icon:'recycle',    label: t('plan.timeline.step2.pills.3'),      bg:'green-bg' },
       ],
       pillClass: 'green-pill',
       iconColor: '#16a34a',
@@ -202,13 +212,13 @@ export default function PlanPage() {
       num: '03', code: 'İP4',
       accent: '#ea580c',
       icon: 'graduationCap',
-      title: content.plan_step_3_title || 'Eğitim Seferberliği & E-Öğrenme',
-      desc:  content.plan_step_3_desc  || "Üç belediyede vatandaşlara, saha personeline ve kamu yöneticilerine yönelik kapsamlı iklim ve dijital farkındalık eğitimleri düzenlemektir.",
+      title: getDynamicContent('plan_step_3_title', 'plan.timeline.step3.titleDefault'),
+      desc:  getDynamicContent('plan_step_3_desc', 'plan.timeline.step3.descDefault'),
       pills: [
-        { icon:'users',         label:'Vatandaş Eğitimleri',    bg:'orange-bg' },
-        { icon:'graduationCap', label:'Personel Seminerleri',    bg:'orange-bg' },
-        { icon:'bookOpen',      label:'E-Öğrenme Modülleri',    bg:'orange-bg' },
-        { icon:'fileText',      label:'Eğitim Materyalleri',     bg:'orange-bg' },
+        { icon:'users',         label: t('plan.timeline.step3.pills.0'),    bg:'orange-bg' },
+        { icon:'graduationCap', label: t('plan.timeline.step3.pills.1'),    bg:'orange-bg' },
+        { icon:'bookOpen',      label: t('plan.timeline.step3.pills.2'),    bg:'orange-bg' },
+        { icon:'fileText',      label: t('plan.timeline.step3.pills.3'),     bg:'orange-bg' },
       ],
       pillClass: 'orange-pill',
       iconColor: '#ea580c',
@@ -217,13 +227,13 @@ export default function PlanPage() {
       num: '04', code: 'İP5',
       accent: '#7c3aed',
       icon: 'megaphone',
-      title: content.plan_step_4_title || 'Farkındalık & Görünürlük',
-      desc:  content.plan_step_4_desc  || "Proje çıktılarının tanıtımını yaparak aktif kullanımını teşvik etmek ve toplumsal iklim bilincini artırmaktır.",
+      title: getDynamicContent('plan_step_4_title', 'plan.timeline.step4.titleDefault'),
+      desc:  getDynamicContent('plan_step_4_desc', 'plan.timeline.step4.descDefault'),
       pills: [
-        { icon:'video',  label:'Video İçerikleri',          bg:'purple-bg' },
-        { icon:'globe',  label:'Festival Katılımları',       bg:'purple-bg' },
-        { icon:'hash',   label:'Sosyal Medya Kampanyaları', bg:'purple-bg' },
-        { icon:'share2', label:'Yayılım Etkinlikleri',      bg:'purple-bg' },
+        { icon:'video',  label: t('plan.timeline.step4.pills.0'),          bg:'purple-bg' },
+        { icon:'globe',  label: t('plan.timeline.step4.pills.1'),       bg:'purple-bg' },
+        { icon:'hash',   label: t('plan.timeline.step4.pills.2'), bg:'purple-bg' },
+        { icon:'share2', label: t('plan.timeline.step4.pills.3'),      bg:'purple-bg' },
       ],
       pillClass: 'purple-pill',
       iconColor: '#7c3aed',
@@ -237,7 +247,7 @@ export default function PlanPage() {
       {loading ? (
         <div className="loading-screen">
           <div className="loader-ring"><div/><div/><div/><div/></div>
-          <span className="loader-text">Hazırlanıyor…</span>
+          <span className="loader-text">{t('plan.loading')}</span>
         </div>
       ) : (
         <>
@@ -249,15 +259,15 @@ export default function PlanPage() {
             <div className="orb orb-1"/><div className="orb orb-2"/><div className="orb orb-3"/>
             
             <div className="container hero-content">
-              <div className="eyebrow reveal active"><span className="edot"/> Erasmus+ · DIGI-GREEN FUTURE <span className="edot"/></div>
-              <h1 className="hero-title reveal active">Proje<br/><em>Yol Haritası</em></h1>
+              <div className="eyebrow reveal active"><span className="edot"/> {t('plan.hero.eyebrow')} <span className="edot"/></div>
+              <h1 className="hero-title reveal active">{t('plan.hero.title1')}<br/><em>{t('plan.hero.title2')}</em></h1>
               <p className="hero-sub reveal active" style={{transitionDelay:'.25s'}}>
-                {content.plan_page_desc || 'Amaçlar, Faaliyetler ve Beklenen Sonuçlar'}
+                {getDynamicContent('plan_page_desc', 'plan.hero.descDefault')}
               </p>
               <div className="hero-div reveal active" style={{transitionDelay:'.4s'}}><span/><span className="hdot"/><span/></div>
             </div>
             <button className="scroll-btn" onClick={() => document.getElementById('icerik')?.scrollIntoView({behavior:'smooth'})} aria-label="Aşağı kaydır">
-              <span className="scroll-label">Yol Haritasını Gör</span>
+              <span className="scroll-label">{t('plan.hero.scrollBtn')}</span>
               <span className="scroll-icon"><i className="fas fa-chevron-down"/></span>
             </button>
           </section>
@@ -267,17 +277,17 @@ export default function PlanPage() {
             <div className="container" style={{maxWidth:'940px'}}>
 
               <div className="sec-head reveal-up">
-                <p className="sec-label">III. Bölüm</p>
-                <h2 className="sec-title">Proje Yol Haritası</h2>
+                <p className="sec-label">{t('plan.section.part')}</p>
+                <h2 className="sec-title">{t('plan.section.title')}</h2>
               </div>
 
               {/* İstatistikler */}
               <div className="stats reveal-up" style={{transitionDelay:'.1s'}}>
                 {[
-                  {val:'4',    unit:'',    label:'İş Paketi'},
-                  {val:'24',   unit:'Ay',  label:'Uygulama Süresi'},
-                  {val:'3',    unit:'',    label:'Ülkede Faaliyet'},
-                  {val:'İP2',  unit:'→ İP5', label:'Paket Aralığı'},
+                  {val:'4',    unit:'',  label: t('plan.stats.packages')},
+                  {val:'24',   unit: t('plan.stats.durationUnit'),  label: t('plan.stats.duration')},
+                  {val:'3',    unit:'',  label: t('plan.stats.countries')},
+                  {val:'İP2',  unit: t('plan.stats.rangeUnit'), label: t('plan.stats.range')},
                 ].map((s,i) => (
                   <div className="stat" key={i}>
                     <div className="stat-v">{s.val}<span className="stat-u">{s.unit}</span></div>
@@ -324,7 +334,7 @@ export default function PlanPage() {
                       {/* Faaliyetler */}
                       <div className="tl-pills-label">
                         <div className="tl-pills-dot" style={{background: step.accent}}/>
-                        Temel Faaliyetler
+                        {t('plan.timeline.pillsLabel')}
                       </div>
                       <div className="pill-grid">
                         {step.pills.map((p, pi) => (

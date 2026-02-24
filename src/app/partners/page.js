@@ -3,6 +3,8 @@ import { useEffect, useState, useRef } from 'react';
 import { supabase } from '../../lib/supabase';
 import ScrollToTop from '../../components/ScrollToTop';
 import Link from 'next/link';
+// ✨ YENİ: Dil Context hook'umuzu dahil ettik
+import { useLanguage } from '../../context/LanguageContext';
 
 // ─── SAYFA GENELİ ARKA PLAN AĞI (YÜKSEK PERFORMANS) ───────────────────────────
 const NetworkBackground = () => {
@@ -242,6 +244,9 @@ export default function PartnersPage() {
   const [partners, setPartners] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  // ✨ YENİ: Dil ve Çeviri fonksiyonlarını alıyoruz
+  const { language, t } = useLanguage();
+
   useEffect(() => {
     async function fetchData() {
       const { data: partnersData } = await supabase.from('partners').select('*').order('id');
@@ -267,7 +272,7 @@ export default function PartnersPage() {
       {loading ? (
         <div className="loading-screen">
           <div className="loader-ring"><div></div><div></div><div></div><div></div></div>
-          <span className="loader-text">Hazırlanıyor…</span>
+          <span className="loader-text">{t('partners.loading')}</span>
         </div>
       ) : (
         <>
@@ -280,13 +285,13 @@ export default function PartnersPage() {
 
             <div className="container hero-content">
               <div className="eyebrow reveal active">
-                <span className="eyebrow-dot"></span>Konsorsiyum<span className="eyebrow-dot"></span>
+                <span className="eyebrow-dot"></span>{t('partners.hero.eyebrow')}<span className="eyebrow-dot"></span>
               </div>
               <h1 className="header-title reveal active">
-                Proje Ortakları &amp;<br /><em>Ekipler</em>
+                {t('partners.hero.title1')}<br /><em>{t('partners.hero.title2')}</em>
               </h1>
               <p className="header-subtitle reveal active" style={{ transitionDelay: '0.25s' }}>
-                Projeyi hayata geçiren güçlü ve uluslararası ekibimiz.
+                {t('partners.hero.desc')}
               </p>
               <div className="hero-divider reveal active" style={{ transitionDelay: '0.4s' }}>
                 <span></span><span className="dot"></span><span></span>
@@ -298,7 +303,7 @@ export default function PartnersPage() {
               onClick={() => document.getElementById('icerik')?.scrollIntoView({ behavior: 'smooth' })}
               aria-label="İçeriğe git"
             >
-              <span className="scroll-btn-label">Ortakları Keşfet</span>
+              <span className="scroll-btn-label">{t('partners.hero.scrollBtn')}</span>
               <span className="scroll-btn-icon"><i className="fas fa-chevron-down"></i></span>
             </button>
           </section>
@@ -306,20 +311,27 @@ export default function PartnersPage() {
           <section id="icerik" className="section-padding">
             <div className="container" style={{ maxWidth: '1100px' }}>
               <div className="section-head reveal-up">
-                <p className="section-label">Tüm Ortaklar</p>
-                <h2 className="section-title">Konsorsiyum Üyeleri</h2>
+                <p className="section-label">{t('partners.section.label')}</p>
+                <h2 className="section-title">{t('partners.section.title')}</h2>
               </div>
 
               <div className="partners-list">
                 {partners.length === 0 ? (
                   <div className="empty-state reveal-up">
                     <i className="fas fa-users"></i>
-                    <p>Henüz ortak bilgisi eklenmemiş.</p>
+                    <p>{t('partners.list.empty')}</p>
                   </div>
                 ) : (
                   partners.map((partner, index) => {
                     const isReverse = index % 2 !== 0;
                     const animationClass = isReverse ? 'reveal-right' : 'reveal-left';
+                    
+                    // Rol İngilizce ise 'Koordinatör' -> 'Coordinator', değilse 'Ortak' -> 'Partner' vb.
+                    const isCoordinator = partner.role === 'Koordinatör';
+                    const roleText = isCoordinator 
+                        ? t('partners.list.coordinator') 
+                        : (partner.role || t('partners.list.partner'));
+
                     return (
                       <div key={partner.id} className={`partner-row reveal ${animationClass} ${isReverse ? 'row-reverse' : ''}`}>
                         <div className="card-shine"></div>
@@ -333,9 +345,9 @@ export default function PartnersPage() {
                           <div className="identity-info">
                             <h2 className="partner-name">{partner.name}</h2>
                             <div className="tags-wrapper">
-                              <span className={`status-tag ${partner.role === 'Koordinatör' ? 'coordinator-tag' : ''}`}>
-                                <span className={`status-dot ${partner.role === 'Koordinatör' ? 'coordinator-dot' : ''}`}></span>
-                                {partner.role || 'Ortak'}
+                              <span className={`status-tag ${isCoordinator ? 'coordinator-tag' : ''}`}>
+                                <span className={`status-dot ${isCoordinator ? 'coordinator-dot' : ''}`}></span>
+                                {roleText}
                               </span>
                               <div className="country-tag">
                                 {partner.flag_url && <img src={partner.flag_url} alt={partner.country} />}
@@ -347,22 +359,21 @@ export default function PartnersPage() {
 
                         <div className="partner-content-side">
                           <div className="content-inner">
-                            <h4 className="about-title">Hakkında</h4>
+                            <h4 className="about-title">{t('partners.list.aboutTitle')}</h4>
                             {partner.description
                               ? <p className="partner-desc">{partner.description}</p>
-                              : <p className="partner-desc empty-desc">Bu kurum için henüz bir açıklama eklenmemiştir.</p>}
+                              : <p className="partner-desc empty-desc">{t('partners.list.emptyDesc')}</p>}
                             
-                            {/* DÜZELTME: Buton grubu ortalandı (justifyContent: center) */}
                             <div className="button-group" style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', marginTop: '16px', justifyContent: 'center', width: '100%' }}>
                               
                               <a href={`/ortaklar/${partner.id}`} className="action-btn detail-btn">
-                                <span>Detayları İncele</span>
+                                <span>{t('partners.list.detailBtn')}</span>
                                 <span className="btn-icon"><i className="fas fa-link"></i></span>
                               </a>
 
                               {partner.website && (
                                 <a href={partner.website} target="_blank" rel="noopener noreferrer" className="action-btn">
-                                  <span>Web Sitesini Ziyaret Et</span>
+                                  <span>{t('partners.list.websiteBtn')}</span>
                                   <span className="btn-icon"><i className="fas fa-arrow-right"></i></span>
                                 </a>
                               )}

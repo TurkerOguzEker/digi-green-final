@@ -2,6 +2,8 @@
 import { useEffect, useState, useRef } from 'react';
 import { supabase } from '../../../lib/supabase';
 import ScrollToTop from '../../../components/ScrollToTop';
+// ✨ YENİ: Dil Context hook'umuzu dahil ettik
+import { useLanguage } from '../../../context/LanguageContext';
 
 // ─── ARKA PLAN AĞI ─────────────────────────────────────────────────────────────
 const NetworkBackground = () => {
@@ -134,7 +136,6 @@ const SectionCard = ({ accent, letter, title, children, reverse = false }) => (
   <div className={`sc reveal ${reverse ? 'reveal-right' : 'reveal-left'}`} style={{ '--accent': accent }}>
     <div className="sc-shine" />
     
-    {/* YENİ: Kartın başından sonuna uzanan yatay, saydam renkli başlık şeridi */}
     <div className="sc-head">
       <span className="sc-badge">{letter}.</span>
       <h2 className="sc-title">{title}</h2>
@@ -150,6 +151,9 @@ const SectionCard = ({ accent, letter, title, children, reverse = false }) => (
 export default function StrategyPage() {
   const [content, setContent] = useState({});
   const [loading, setLoading] = useState(true);
+
+  // ✨ YENİ: Dil ve Çeviri fonksiyonlarını alıyoruz
+  const { language, t } = useLanguage();
 
   useEffect(() => {
     supabase.from('settings').select('*').then(({ data }) => {
@@ -168,33 +172,38 @@ export default function StrategyPage() {
     return () => obs.disconnect();
   }, [loading, content]);
 
+  // Veritabanı dinamik içerik kontrolü
+  const getDynamicContent = (trKey, defaultTranslationKey) => {
+    return (language === 'tr' && content[trKey]) ? content[trKey] : t(defaultTranslationKey);
+  };
+
   // Kart A pilleri
   const pillsA = [
-    { icon: 'calendar', label: '1 Kasım 2025 – Başlangıç',  color: '#2563eb' },
-    { icon: 'flag',     label: '31 Ekim 2027 – Bitiş',       color: '#2563eb' },
-    { icon: 'building', label: 'Kapaklı Belediyesi',          color: '#2563eb' },
-    { icon: 'star',     label: 'Erasmus+ Programı',           color: '#2563eb' },
+    { icon: 'calendar', label: t('strategy.cardA.pills.p1'),  color: '#2563eb' },
+    { icon: 'flag',     label: t('strategy.cardA.pills.p2'),       color: '#2563eb' },
+    { icon: 'building', label: t('strategy.cardA.pills.p3'),          color: '#2563eb' },
+    { icon: 'star',     label: t('strategy.cardA.pills.p4'),           color: '#2563eb' },
   ];
 
   // Kart B pilleri
   const pillsB = [
-    { icon: 'leaf',        label: 'İklim Eylemi',              color: '#16a34a' },
-    { icon: 'smartphone',  label: 'Dijital Araçlar',            color: '#16a34a' },
-    { icon: 'recycle',     label: '%24 → %29 Geri Dönüşüm',    color: '#16a34a' },
-    { icon: 'city',        label: 'Yerel Yönetim Odağı',        color: '#16a34a' },
+    { icon: 'leaf',        label: t('strategy.cardB.pills.p1'),              color: '#16a34a' },
+    { icon: 'smartphone',  label: t('strategy.cardB.pills.p2'),            color: '#16a34a' },
+    { icon: 'recycle',     label: t('strategy.cardB.pills.p3'),    color: '#16a34a' },
+    { icon: 'city',        label: t('strategy.cardB.pills.p4'),        color: '#16a34a' },
   ];
 
   // Kart C öncelikleri
   const priorities = [
-    { icon: 'globe',   title: 'Çevre & İklim',          desc: 'SECAP ve atık yönetimi odağı',          color: '#ea580c' },
-    { icon: 'monitor', title: 'Dijital Dönüşüm',         desc: 'Dijital hizmet altyapısı geliştirme',    color: '#ea580c' },
-    { icon: 'users',   title: 'Kuşaklar Arası Öğrenme',  desc: 'Tüm nesiller için fırsat eşitliği',      color: '#ea580c' },
+    { icon: 'globe',   title: t('strategy.cardC.priorities.pr1.title'),          desc: t('strategy.cardC.priorities.pr1.desc'),          color: '#ea580c' },
+    { icon: 'monitor', title: t('strategy.cardC.priorities.pr2.title'),         desc: t('strategy.cardC.priorities.pr2.desc'),    color: '#ea580c' },
+    { icon: 'users',   title: t('strategy.cardC.priorities.pr3.title'),  desc: t('strategy.cardC.priorities.pr3.desc'),      color: '#ea580c' },
   ];
 
   // Kart C pilleri
   const pillsC = [
-    { icon: 'eu',       label: 'AB Yeşil Mutabakatı', color: '#ea580c' },
-    { icon: 'barChart', label: 'SECAP Uyumu',          color: '#ea580c' },
+    { icon: 'eu',       label: t('strategy.cardC.pills.p1'), color: '#ea580c' },
+    { icon: 'barChart', label: t('strategy.cardC.pills.p2'),          color: '#ea580c' },
   ];
 
   return (
@@ -204,7 +213,7 @@ export default function StrategyPage() {
       {loading ? (
         <div className="loading-screen">
           <div className="loader-ring"><div/><div/><div/><div/></div>
-          <span className="loader-text">Hazırlanıyor…</span>
+          <span className="loader-text">{t('strategy.loading')}</span>
         </div>
       ) : (
         <>
@@ -212,17 +221,18 @@ export default function StrategyPage() {
           <section className="hero">
             <HeroAnimation />
             <div className="hero-noise" />
-            {/* Göz yormayan şeffaf ışık hareleri */}
             <div className="orb orb-1"/><div className="orb orb-2"/><div className="orb orb-3"/>
             
             <div className="container hero-content">
-              <div className="eyebrow reveal active"><span className="edot"/> Erasmus+ · DIGI-GREEN FUTURE <span className="edot"/></div>
-              <h1 className="hero-title reveal active">Stratejik<br/><em>Genel Bakış</em></h1>
-              <p className="hero-sub reveal active" style={{transitionDelay:'.25s'}}>{content.about_strategy_desc || 'Vizyon, Gerekçe ve Avrupa Uyumu'}</p>
+              <div className="eyebrow reveal active"><span className="edot"/> {t('strategy.hero.eyebrow')} <span className="edot"/></div>
+              <h1 className="hero-title reveal active">{t('strategy.hero.title1')}<br/><em>{t('strategy.hero.title2')}</em></h1>
+              <p className="hero-sub reveal active" style={{transitionDelay:'.25s'}}>
+                {getDynamicContent('about_strategy_desc', 'strategy.hero.descDefault')}
+              </p>
               <div className="hero-div reveal active" style={{transitionDelay:'.4s'}}><span/><span className="hdot"/><span/></div>
             </div>
             <button className="scroll-btn" onClick={() => document.getElementById('icerik')?.scrollIntoView({behavior:'smooth'})} aria-label="Aşağı kaydır">
-              <span className="scroll-label">Stratejiyi Keşfet</span>
+              <span className="scroll-label">{t('strategy.hero.scrollBtn')}</span>
               <span className="scroll-icon"><i className="fas fa-chevron-down"/></span>
             </button>
           </section>
@@ -232,17 +242,17 @@ export default function StrategyPage() {
             <div className="container" style={{maxWidth:'940px'}}>
 
               <div className="sec-head reveal-up">
-                <p className="sec-label">I. Bölüm</p>
-                <h2 className="sec-title">Stratejik Genel Bakış</h2>
+                <p className="sec-label">{t('strategy.section.part')}</p>
+                <h2 className="sec-title">{t('strategy.section.title')}</h2>
               </div>
 
               {/* İstatistikler */}
               <div className="stats reveal-up" style={{transitionDelay:'.1s'}}>
                 {[
-                  {val:'24',   unit:'Ay',     label:'Proje Süresi'},
-                  {val:'250K', unit:'€',      label:'Toplam Hibe'},
-                  {val:'2025', unit:'→ 2027',  label:'Proje Dönemi'},
-                  {val:'%29',  unit:'',        label:'Geri Dönüşüm Hedefi'},
+                  {val:'24',   unit: t('strategy.stats.durationUnit'),     label: t('strategy.stats.duration')},
+                  {val:'250K', unit:'€',      label: t('strategy.stats.grant')},
+                  {val:'2025', unit:'→ 2027',  label: t('strategy.stats.period')},
+                  {val:'%29',  unit:'',        label: t('strategy.stats.recycle')},
                 ].map((s,i) => (
                   <div className="stat" key={i}>
                     <div className="stat-v">{s.val}<span className="stat-u">{s.unit}</span></div>
@@ -252,9 +262,9 @@ export default function StrategyPage() {
               </div>
 
               {/* ── KART A ── */}
-              <SectionCard accent="#2563eb" letter="A" title={content.strategy_section_a_title || 'Proje Kimliği ve Temel Bilgiler'}>
-                <p className="body-text">{content.strategy_text_a_1 || 'Bu rapor, Kapaklı Belediyesi tarafından sunulan ve Erasmus+ programı kapsamında desteklenen "Vatandaş Odaklı Yerel Yeşil Gelecek için Dijital Dönüşüm" (DIGI-GREEN FUTURE) başlıklı projenin kapsamlı bir sunumunu sağlamak amacıyla hazırlanmıştır.'}</p>
-                <p className="body-text">{content.strategy_text_a_2 || "Toplam 24 ay sürecek olan proje, 1 Kasım 2025 tarihinde başlayıp 31 Ekim 2027 tarihinde sona erecektir. Projenin yürütülmesi için 250.000,00 €'luk sabit bir hibe tahsis edilmiştir."}</p>
+              <SectionCard accent="#2563eb" letter="A" title={getDynamicContent('strategy_section_a_title', 'strategy.cardA.titleDefault')}>
+                <p className="body-text">{getDynamicContent('strategy_text_a_1', 'strategy.cardA.text1Default')}</p>
+                <p className="body-text">{getDynamicContent('strategy_text_a_2', 'strategy.cardA.text2Default')}</p>
                 <div className="pill-grid">
                   {pillsA.map((p,i) => (
                     <div className="pill blue-pill" key={i}>
@@ -266,11 +276,11 @@ export default function StrategyPage() {
               </SectionCard>
 
               {/* ── KART B ── */}
-              <SectionCard accent="#16a34a" letter="B" title={content.strategy_section_b_title || 'Projenin Ruhu: Gerekçe ve Motivasyon'} reverse>
-                <p className="body-text">{content.strategy_text_b || "Projemiz, iklim kriziyle mücadelede yerel yönetimler ve vatandaşların aktif rol alması gerekliliğinden doğmuştur. Kapaklı gibi sanayileşme bölgelerinin hava/su kirliliği ve yetersiz atık yönetimi gibi acil çevresel sorunlarına odaklanmaktadır."}</p>
+              <SectionCard accent="#16a34a" letter="B" title={getDynamicContent('strategy_section_b_title', 'strategy.cardB.titleDefault')} reverse>
+                <p className="body-text">{getDynamicContent('strategy_text_b', 'strategy.cardB.textDefault')}</p>
                 <blockquote className="bq">
                   <span className="bq-mark">"</span>
-                  <p>{content.strategy_quote || 'Temel felsefemiz; dijitalleşmeyi amaç değil, çevresel sürdürülebilirlik hedeflerine ulaşmak için güçlü bir araç olarak kullanmaktır.'}</p>
+                  <p>{getDynamicContent('strategy_quote', 'strategy.cardB.quoteDefault')}</p>
                 </blockquote>
                 <div className="pill-grid">
                   {pillsB.map((p,i) => (
@@ -283,8 +293,8 @@ export default function StrategyPage() {
               </SectionCard>
 
               {/* ── KART C ── */}
-              <SectionCard accent="#ea580c" letter="C" title={content.strategy_section_c_title || 'Avrupa Politikalarıyla Stratejik Uyum'}>
-                <p className="body-text">{content.strategy_text_c || "DIGI-GREEN FUTURE, Erasmus+ programının üç temel yatay önceliğiyle doğrudan uyumludur."}</p>
+              <SectionCard accent="#ea580c" letter="C" title={getDynamicContent('strategy_section_c_title', 'strategy.cardC.titleDefault')}>
+                <p className="body-text">{getDynamicContent('strategy_text_c', 'strategy.cardC.textDefault')}</p>
                 <div className="priority-grid">
                   {priorities.map((p,i) => (
                     <div className="prio-item" key={i}>

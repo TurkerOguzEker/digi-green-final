@@ -2,6 +2,8 @@
 import { useEffect, useState, useRef } from 'react';
 import { supabase } from '../../../lib/supabase';
 import ScrollToTop from '../../../components/ScrollToTop';
+// ✨ YENİ: Çeviri hook'unu içeri aktarıyoruz
+import { useLanguage } from '../../../context/LanguageContext';
 
 // ─── ARKA PLAN AĞI ─────────────────────────────────────────────────────────────
 const NetworkBackground = () => {
@@ -104,6 +106,9 @@ export default function ConsortiumPage() {
   const [content, setContent] = useState({});
   const [loading, setLoading] = useState(true);
 
+  // ✨ YENİ: Dil ve Çeviri (t) fonksiyonlarını alıyoruz
+  const { language, t } = useLanguage();
+
   useEffect(() => {
     supabase.from('settings').select('*').then(({ data }) => {
       const map = {}; data?.forEach(d => (map[d.key] = d.value));
@@ -121,6 +126,11 @@ export default function ConsortiumPage() {
     return () => obs.disconnect();
   }, [loading, content]);
 
+  // Supabase'den gelen veriyi veya translations.js'i kullanmak için küçük bir mantık
+  const getDynamicContent = (trKey, defaultTranslationKey) => {
+    return (language === 'tr' && content[trKey]) ? content[trKey] : t(defaultTranslationKey);
+  };
+
   return (
     <div className="cp">
       <NetworkBackground/>
@@ -128,7 +138,7 @@ export default function ConsortiumPage() {
       {loading ? (
         <div className="loading-screen">
           <div className="loader-ring"><div/><div/><div/><div/></div>
-          <span className="loader-text">Hazırlanıyor…</span>
+          <span className="loader-text">{t('consortium.loading')}</span>
         </div>
       ) : (
         <>
@@ -139,15 +149,15 @@ export default function ConsortiumPage() {
             <div className="orb orb-1"/><div className="orb orb-2"/><div className="orb orb-3"/>
             
             <div className="container hero-content">
-              <div className="eyebrow reveal active"><span className="edot"/> Erasmus+ · DIGI-GREEN FUTURE <span className="edot"/></div>
-              <h1 className="hero-title reveal active">Konsorsiyum<br/><em>Ortaklıkları</em></h1>
+              <div className="eyebrow reveal active"><span className="edot"/> {t('consortium.hero.eyebrow')} <span className="edot"/></div>
+              <h1 className="hero-title reveal active">{t('consortium.hero.title1')}<br/><em>{t('consortium.hero.title2')}</em></h1>
               <p className="hero-sub reveal active" style={{transitionDelay:'.25s'}}>
-                {content.consortium_intro || "Kapaklı Belediyesi koordinatörlüğünde, tamamlayıcı becerilere sahip uluslararası güçlü bir konsorsiyum."}
+                {getDynamicContent('consortium_intro', 'consortium.hero.introDefault')}
               </p>
               <div className="hero-div reveal active" style={{transitionDelay:'.4s'}}><span/><span className="hdot"/><span/></div>
             </div>
             <button className="scroll-btn" onClick={() => document.getElementById('icerik')?.scrollIntoView({behavior:'smooth'})} aria-label="Aşağı kaydır">
-              <span className="scroll-label">Konsorsiyumu Keşfet</span>
+              <span className="scroll-label">{t('consortium.hero.scrollBtn')}</span>
               <span className="scroll-icon"><i className="fas fa-chevron-down"/></span>
             </button>
           </section>
@@ -157,17 +167,17 @@ export default function ConsortiumPage() {
             <div className="container" style={{maxWidth:'940px'}}>
 
               <div className="sec-head reveal-up">
-                <p className="sec-label">II. Bölüm</p>
-                <h2 className="sec-title">Konsorsiyum Ortaklıkları</h2>
+                <p className="sec-label">{t('consortium.section.part')}</p>
+                <h2 className="sec-title">{t('consortium.section.title')}</h2>
               </div>
 
               {/* İstatistikler */}
               <div className="stats reveal-up" style={{transitionDelay:'.1s'}}>
                 {[
-                  {val:'5',    unit:'',       label:'Ortak Kurum'},
-                  {val:'3',    unit:'',       label:'Ülke'},
-                  {val:'150K', unit:'+',      label:'Hizmet Nüfusu'},
-                  {val:'2',    unit:'',       label:'AB Şehri'},
+                  {val:'5',    unit:'',       label: t('consortium.stats.partner')},
+                  {val:'3',    unit:'',       label: t('consortium.stats.country')},
+                  {val:'150K', unit:'+',      label: t('consortium.stats.population')},
+                  {val:'2',    unit:'',       label: t('consortium.stats.euCity')},
                 ].map((s,i) => (
                   <div className="stat" key={i}>
                     <div className="stat-v">{s.val}<span className="stat-u">{s.unit}</span></div>
@@ -177,17 +187,18 @@ export default function ConsortiumPage() {
               </div>
 
               {/* ── KART A – KOORDİNATÖR ── */}
-              <SectionCard accent="#2563eb" letter="A" badge="KOORDİNATÖR"
-                title={content.consortium_section_a_title || 'Başvuru Sahibi: Kapaklı Belediyesi (Türkiye)'}>
+              <SectionCard accent="#2563eb" letter="A" 
+                badge={t('consortium.cardA.badge')}
+                title={getDynamicContent('consortium_section_a_title', 'consortium.cardA.titleDefault')}>
                 <p className="body-text">
-                  {content.consortium_text_a || "Yaklaşık 150.000 kişilik genç nüfusa hizmet veren Kapaklı Belediyesi, yüksek göç ve sanayileşmeden kaynaklanan hava kirliliği ve düşük geri dönüşüm oranları gibi ciddi çevresel sorunlarla mücadele etmektedir. Belediye, ulusal düzeydeki başarılı proje tecrübesiyle projenin yerel uygulayıcısı ve ana öğrenen ortağıdır."}
+                  {getDynamicContent('consortium_text_a', 'consortium.cardA.textDefault')}
                 </p>
                 <div className="pill-grid">
                   {[
-                    { icon:'mapPin',   label:'Kapaklı, Tekirdağ – Türkiye',    cls:'blue-pill', bg:'blue-bg'   },
-                    { icon:'users',    label:'~150.000 Kişi Nüfus',             cls:'blue-pill', bg:'blue-bg'   },
-                    { icon:'factory',  label:'Sanayi Kirliliği Odağı',           cls:'blue-pill', bg:'blue-bg'   },
-                    { icon:'recycle',  label:'Geri Dönüşüm Oranı Artışı Hedefi',cls:'blue-pill', bg:'blue-bg'   },
+                    { icon:'mapPin',   label: t('consortium.cardA.pill1'),  cls:'blue-pill', bg:'blue-bg'   },
+                    { icon:'users',    label: t('consortium.cardA.pill2'),  cls:'blue-pill', bg:'blue-bg'   },
+                    { icon:'factory',  label: t('consortium.cardA.pill3'),  cls:'blue-pill', bg:'blue-bg'   },
+                    { icon:'recycle',  label: t('consortium.cardA.pill4'),  cls:'blue-pill', bg:'blue-bg'   },
                   ].map((p,i) => (
                     <div className={`pill ${p.cls}`} key={i}>
                       <span className={`pill-icon-wrap ${p.bg}`}><Icon name={p.icon} color="#2563eb" size={16}/></span>
@@ -198,36 +209,37 @@ export default function ConsortiumPage() {
               </SectionCard>
 
               {/* ── KART B – AVRUPALI ORTAKLAR ── */}
-              <SectionCard accent="#16a34a" letter="B" badge="AVRUPA ORTAKLARI"
-                title={content.consortium_section_b_title || 'Avrupalı Ortaklar: Avrupa Uzmanlığından Dersler'}
+              <SectionCard accent="#16a34a" letter="B" 
+                badge={t('consortium.cardB.badge')}
+                title={getDynamicContent('consortium_section_b_title', 'consortium.cardB.titleDefault')}
                 reverse>
                 <p className="body-text">
-                  {content.consortium_text_b || "İki Avrupalı ortağımız (Liepāja ve Cascais), projemize kanıtlanmış iklim eylemi ve dijitalleşme modelleri katmaktadır. AB'nin 100 İklim Nötr Şehir Misyonu tecrübesi ve doğa tabanlı çözümler konusundaki uzmanlıklarıyla rehberlik edeceklerdir."}
+                  {getDynamicContent('consortium_text_b', 'consortium.cardB.textDefault')}
                 </p>
                 <div className="partner-cards">
                   <div className="partner-mini green-mini">
                     <div className="pm-icon-wrap green-bg-light"><Icon name="waves" color="#16a34a" size={22}/></div>
                     <div className="pm-info">
-                      <div className="pm-name">Liepāja Belediyesi</div>
-                      <div className="pm-country"><Icon name="mapPin" color="#16a34a" size={12}/> Letonya</div>
-                      <div className="pm-desc">Kıyı kirliliği ve AB iklim nötr misyon deneyimi</div>
+                      <div className="pm-name">{t('consortium.cardB.partner1.name')}</div>
+                      <div className="pm-country"><Icon name="mapPin" color="#16a34a" size={12}/> {t('consortium.cardB.partner1.country')}</div>
+                      <div className="pm-desc">{t('consortium.cardB.partner1.desc')}</div>
                     </div>
                   </div>
                   <div className="partner-mini green-mini">
                     <div className="pm-icon-wrap green-bg-light"><Icon name="sun" color="#16a34a" size={22}/></div>
                     <div className="pm-info">
-                      <div className="pm-name">Cascais Belediyesi</div>
-                      <div className="pm-country"><Icon name="mapPin" color="#16a34a" size={12}/> Portekiz</div>
-                      <div className="pm-desc">Yangın, kuraklık ve doğa tabanlı çözümler uzmanlığı</div>
+                      <div className="pm-name">{t('consortium.cardB.partner2.name')}</div>
+                      <div className="pm-country"><Icon name="mapPin" color="#16a34a" size={12}/> {t('consortium.cardB.partner2.country')}</div>
+                      <div className="pm-desc">{t('consortium.cardB.partner2.desc')}</div>
                     </div>
                   </div>
                 </div>
                 <div className="pill-grid" style={{marginTop:'18px'}}>
                   {[
-                    { icon:'globe',   label:'AB 100 İklim Nötr Şehir Misyonu', cls:'green-pill', bg:'green-bg' },
-                    { icon:'leaf',    label:'Doğa Tabanlı Çözümler',            cls:'green-pill', bg:'green-bg' },
-                    { icon:'monitor', label:'Dijitalleşme Modelleri',            cls:'green-pill', bg:'green-bg' },
-                    { icon:'link',    label:'Karşılıklı Bilgi Transferi',        cls:'green-pill', bg:'green-bg' },
+                    { icon:'globe',   label: t('consortium.cardB.pill1'), cls:'green-pill', bg:'green-bg' },
+                    { icon:'leaf',    label: t('consortium.cardB.pill2'), cls:'green-pill', bg:'green-bg' },
+                    { icon:'monitor', label: t('consortium.cardB.pill3'), cls:'green-pill', bg:'green-bg' },
+                    { icon:'link',    label: t('consortium.cardB.pill4'), cls:'green-pill', bg:'green-bg' },
                   ].map((p,i) => (
                     <div className={`pill ${p.cls}`} key={i}>
                       <span className={`pill-icon-wrap ${p.bg}`}><Icon name={p.icon} color="#16a34a" size={16}/></span>
@@ -238,35 +250,36 @@ export default function ConsortiumPage() {
               </SectionCard>
 
               {/* ── KART C – TÜRK ORTAKLAR ── */}
-              <SectionCard accent="#ea580c" letter="C" badge="TÜRK ORTAKLAR"
-                title={content.consortium_section_c_title || 'Türk Ortaklar: Yerel Uzmanlık ve Bilimsel Titizlik'}>
+              <SectionCard accent="#ea580c" letter="C" 
+                badge={t('consortium.cardC.badge')}
+                title={getDynamicContent('consortium_section_c_title', 'consortium.cardC.titleDefault')}>
                 <p className="body-text">
-                  {content.consortium_text_c || "Tekirdağ Namık Kemal Üniversitesi, projenin akademik ve teknik omurgasını oluştururken; Kampüs Sivil Toplum Derneği, güçlü yerel ağı sayesinde gençlere ve dezavantajlı gruplara ulaşarak aktif vatandaş katılımını sağlayacaktır."}
+                  {getDynamicContent('consortium_text_c', 'consortium.cardC.textDefault')}
                 </p>
                 <div className="partner-cards">
                   <div className="partner-mini orange-mini">
                     <div className="pm-icon-wrap orange-bg-light"><Icon name="graduationCap" color="#ea580c" size={22}/></div>
                     <div className="pm-info">
-                      <div className="pm-name">Tekirdağ Namık Kemal Üniversitesi</div>
-                      <div className="pm-country"><Icon name="mapPin" color="#ea580c" size={12}/> Tekirdağ, Türkiye</div>
-                      <div className="pm-desc">Akademik ve teknik omurga, bilimsel çıktılar</div>
+                      <div className="pm-name">{t('consortium.cardC.partner1.name')}</div>
+                      <div className="pm-country"><Icon name="mapPin" color="#ea580c" size={12}/> {t('consortium.cardC.partner1.country')}</div>
+                      <div className="pm-desc">{t('consortium.cardC.partner1.desc')}</div>
                     </div>
                   </div>
                   <div className="partner-mini orange-mini">
                     <div className="pm-icon-wrap orange-bg-light"><Icon name="heart" color="#ea580c" size={22}/></div>
                     <div className="pm-info">
-                      <div className="pm-name">Kampüs Sivil Toplum Derneği</div>
-                      <div className="pm-country"><Icon name="mapPin" color="#ea580c" size={12}/> Türkiye</div>
-                      <div className="pm-desc">Gençler ve dezavantajlı gruplara erişim</div>
+                      <div className="pm-name">{t('consortium.cardC.partner2.name')}</div>
+                      <div className="pm-country"><Icon name="mapPin" color="#ea580c" size={12}/> {t('consortium.cardC.partner2.country')}</div>
+                      <div className="pm-desc">{t('consortium.cardC.partner2.desc')}</div>
                     </div>
                   </div>
                 </div>
                 <div className="pill-grid" style={{marginTop:'18px'}}>
                   {[
-                    { icon:'bookOpen',      label:'Akademik Uzmanlık',          cls:'orange-pill', bg:'orange-bg' },
-                    { icon:'users',         label:'Aktif Vatandaş Katılımı',     cls:'orange-pill', bg:'orange-bg' },
-                    { icon:'graduationCap', label:'Bilimsel Titizlik',           cls:'orange-pill', bg:'orange-bg' },
-                    { icon:'zap',           label:'Yerel Ağ Gücü',              cls:'orange-pill', bg:'orange-bg' },
+                    { icon:'bookOpen',      label: t('consortium.cardC.pill1'), cls:'orange-pill', bg:'orange-bg' },
+                    { icon:'users',         label: t('consortium.cardC.pill2'), cls:'orange-pill', bg:'orange-bg' },
+                    { icon:'graduationCap', label: t('consortium.cardC.pill3'), cls:'orange-pill', bg:'orange-bg' },
+                    { icon:'zap',           label: t('consortium.cardC.pill4'), cls:'orange-pill', bg:'orange-bg' },
                   ].map((p,i) => (
                     <div className={`pill ${p.cls}`} key={i}>
                       <span className={`pill-icon-wrap ${p.bg}`}><Icon name={p.icon} color="#ea580c" size={16}/></span>
@@ -277,19 +290,20 @@ export default function ConsortiumPage() {
               </SectionCard>
 
               {/* ── KART D – SİNERJİ ── */}
-              <SectionCard accent="#16a34a" letter="D" badge="SİNERJİ"
-                title={content.consortium_section_d_title || 'İşbirliği Sinerjisi: Çeşitli Bir Ortaklığın Katma Değeri'}
+              <SectionCard accent="#16a34a" letter="D" 
+                badge={t('consortium.cardD.badge')}
+                title={getDynamicContent('consortium_section_d_title', 'consortium.cardD.titleDefault')}
                 reverse>
                 <p className="body-text">
-                  {content.consortium_text_d || "Projenin gücü, ortakların sadece coğrafi çeşitliliğinden değil, aynı zamanda farklı çevresel zorlukları deneyimlemesinden gelmektedir. Bu sinerji, bilginin tek yönlü akışını engelleyerek karşılıklı öğrenmeye olanak tanımaktadır."}
+                  {getDynamicContent('consortium_text_d', 'consortium.cardD.textDefault')}
                 </p>
 
                 {/* Şehir karşılaştırma kartları */}
                 <div className="challenge-grid">
                   {[
-                    { icon:'factory',    city:'Kapaklı',  country:'Türkiye',  challenge:'Sanayi Kirliliği',   color:'#2563eb', bg:'rgba(37,99,235,0.08)', border:'rgba(37,99,235,0.2)' },
-                    { icon:'waves',      city:'Liepāja',  country:'Letonya',  challenge:'Kıyı Kirliliği',     color:'#16a34a', bg:'rgba(22,163,74,0.08)',  border:'rgba(22,163,74,0.2)'  },
-                    { icon:'sun',        city:'Cascais',  country:'Portekiz', challenge:'Yangın & Kuraklık',  color:'#ea580c', bg:'rgba(234,88,12,0.08)',  border:'rgba(234,88,12,0.2)'  },
+                    { icon:'factory',  city:'Kapaklı', country: t('consortium.cardD.cities.turkey'),  challenge: t('consortium.cardD.cities.kapakliChallenge'),  color:'#2563eb', bg:'rgba(37,99,235,0.08)', border:'rgba(37,99,235,0.2)' },
+                    { icon:'waves',    city:'Liepāja', country: t('consortium.cardD.cities.latvia'),  challenge: t('consortium.cardD.cities.liepajaChallenge'),  color:'#16a34a', bg:'rgba(22,163,74,0.08)',  border:'rgba(22,163,74,0.2)'  },
+                    { icon:'sun',      city:'Cascais', country: t('consortium.cardD.cities.portugal'),challenge: t('consortium.cardD.cities.cascaisChallenge'), color:'#ea580c', bg:'rgba(234,88,12,0.08)',  border:'rgba(234,88,12,0.2)'  },
                   ].map((c,i) => (
                     <div className="ch-card" key={i} style={{'--cc':c.color,'--cbg':c.bg,'--cborder':c.border}}>
                       <div className="ch-icon-wrap"><Icon name={c.icon} color={c.color} size={24}/></div>
@@ -303,7 +317,7 @@ export default function ConsortiumPage() {
 
                 <div className="synergy-note">
                   <div className="sn-icon"><Icon name="arrowRight" color="#16a34a" size={18}/></div>
-                  <p>Farklı çevresel zorluklar → Karşılıklı öğrenme → Evrensel çözümler</p>
+                  <p>{t('consortium.cardD.synergyNote')}</p>
                 </div>
               </SectionCard>
 

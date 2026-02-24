@@ -2,6 +2,8 @@
 import { useEffect, useState, useRef } from 'react';
 import { supabase } from '../../../lib/supabase';
 import ScrollToTop from '../../../components/ScrollToTop';
+// ✨ YENİ: Dil Context hook'umuzu dahil ettik
+import { useLanguage } from '../../../context/LanguageContext';
 
 // ─── ARKA PLAN AĞI ─────────────────────────────────────────────────────────────
 const NetworkBackground = () => {
@@ -161,6 +163,9 @@ export default function ImpactPage() {
   const [content, setContent] = useState({});
   const [loading, setLoading] = useState(true);
 
+  // ✨ YENİ: Dil ve Çeviri fonksiyonlarını alıyoruz
+  const { language, t } = useLanguage();
+
   useEffect(() => {
     supabase.from('settings').select('*').then(({ data }) => {
       const map = {}; data?.forEach(d => (map[d.key] = d.value));
@@ -178,27 +183,32 @@ export default function ImpactPage() {
     return () => obs.disconnect();
   }, [loading, content]);
 
+  // Veritabanı dinamik içerik kontrolü
+  const getDynamicContent = (trKey, defaultTranslationKey) => {
+    return (language === 'tr' && content[trKey]) ? content[trKey] : t(defaultTranslationKey);
+  };
+
   const impactMetrics = [
-    { icon:'recycle',    val:'%29', label:'Geri Dönüşüm Hedefi',      color:'#16a34a', bg:'green-bg'  },
-    { icon:'users',      val:'150K+', label:'Etkilenen Vatandaş',     color:'#2563eb', bg:'blue-bg'   },
-    { icon:'globe',      val:'3',   label:'Ülkede Uygulama',           color:'#7c3aed', bg:'purple-bg' },
-    { icon:'trendingUp', val:'24',  label:'Ay Sürdürülebilir Etki',    color:'#ea580c', bg:'orange-bg' },
+    { icon:'recycle',    val:'%29', label: t('impact.metrics.recycle'),      color:'#16a34a', bg:'green-bg'  },
+    { icon:'users',      val:'150K+', label: t('impact.metrics.citizens'),     color:'#2563eb', bg:'blue-bg'   },
+    { icon:'globe',      val:'3',   label: t('impact.metrics.countries'),          color:'#7c3aed', bg:'purple-bg' },
+    { icon:'trendingUp', val:'24',  label: t('impact.metrics.months'),     color:'#ea580c', bg:'orange-bg' },
   ];
 
   const highlights = [
-    { icon:'checkCircle', color:'#16a34a', bg:'green-bg',  text: content.impact_h1 || 'Dijital araçların belediye operasyonlarına kalıcı entegrasyonu' },
-    { icon:'checkCircle', color:'#16a34a', bg:'green-bg',  text: content.impact_h2 || 'SECAP hazırlığı ile Avrupa Yeşil Mutabakatı\'na doğrudan katkı' },
-    { icon:'checkCircle', color:'#16a34a', bg:'green-bg',  text: content.impact_h3 || 'Karşılıklı bilgi transferi yoluyla çok yönlü kapasite gelişimi' },
-    { icon:'checkCircle', color:'#16a34a', bg:'green-bg',  text: content.impact_h4 || 'Türk ortaklar (TNKÜ + Kampüs STK) ile güçlendirilmiş yerel katılım' },
+    { icon:'checkCircle', color:'#16a34a', bg:'green-bg',  text: getDynamicContent('impact_h1', 'impact.cardA.h1Default') },
+    { icon:'checkCircle', color:'#16a34a', bg:'green-bg',  text: getDynamicContent('impact_h2', 'impact.cardA.h2Default') },
+    { icon:'checkCircle', color:'#16a34a', bg:'green-bg',  text: getDynamicContent('impact_h3', 'impact.cardA.h3Default') },
+    { icon:'checkCircle', color:'#16a34a', bg:'green-bg',  text: getDynamicContent('impact_h4', 'impact.cardA.h4Default') },
   ];
 
   const visionPillars = [
-    { icon:'leaf',       title:'Yeşil Dönüşüm',     desc:'İklim eylemi ve atık azaltımı',     color:'#16a34a', bg:'green-bg'   },
-    { icon:'smartphone', title:'Dijital Araçlar',    desc:'Mobil uygulama ve sensör altyapısı', color:'#2563eb', bg:'blue-bg'    },
-    { icon:'users',      title:'Vatandaş Odağı',     desc:'Aktif toplumsal katılım',            color:'#ea580c', bg:'orange-bg'  },
-    { icon:'shield',     title:'Sürdürülebilirlik',  desc:'Kalıcı kurumsal entegrasyon',        color:'#7c3aed', bg:'purple-bg'  },
-    { icon:'globe',      title:'Avrupa Uyumu',       desc:'AB Yeşil Mutabakatı ile hizalama',  color:'#16a34a', bg:'green-bg'   },
-    { icon:'award',      title:'Ölçeklenebilirlik',  desc:'Model belediye vizyonu',             color:'#ea580c', bg:'orange-bg'  },
+    { icon:'leaf',       title: t('impact.cardB.pillars.p1.title'),     desc: t('impact.cardB.pillars.p1.desc'),     color:'#16a34a', bg:'green-bg'   },
+    { icon:'smartphone', title: t('impact.cardB.pillars.p2.title'),    desc: t('impact.cardB.pillars.p2.desc'), color:'#2563eb', bg:'blue-bg'    },
+    { icon:'users',      title: t('impact.cardB.pillars.p3.title'),     desc: t('impact.cardB.pillars.p3.desc'),            color:'#ea580c', bg:'orange-bg'  },
+    { icon:'shield',     title: t('impact.cardB.pillars.p4.title'),  desc: t('impact.cardB.pillars.p4.desc'),        color:'#7c3aed', bg:'purple-bg'  },
+    { icon:'globe',      title: t('impact.cardB.pillars.p5.title'),       desc: t('impact.cardB.pillars.p5.desc'),  color:'#16a34a', bg:'green-bg'   },
+    { icon:'award',      title: t('impact.cardB.pillars.p6.title'),  desc: t('impact.cardB.pillars.p6.desc'),             color:'#ea580c', bg:'orange-bg'  },
   ];
 
   return (
@@ -208,7 +218,7 @@ export default function ImpactPage() {
       {loading ? (
         <div className="loading-screen">
           <div className="loader-ring"><div/><div/><div/><div/></div>
-          <span className="loader-text">Hazırlanıyor…</span>
+          <span className="loader-text">{t('impact.loading')}</span>
         </div>
       ) : (
         <>
@@ -220,15 +230,15 @@ export default function ImpactPage() {
             <div className="orb orb-1"/><div className="orb orb-2"/><div className="orb orb-3"/>
             
             <div className="container hero-content">
-              <div className="eyebrow reveal active"><span className="edot"/> Erasmus+ · DIGI-GREEN FUTURE <span className="edot"/></div>
-              <h1 className="hero-title reveal active">Etki ve<br/><em>Sürdürülebilirlik</em></h1>
+              <div className="eyebrow reveal active"><span className="edot"/> {t('impact.hero.eyebrow')} <span className="edot"/></div>
+              <h1 className="hero-title reveal active">{t('impact.hero.title1')}<br/><em>{t('impact.hero.title2')}</em></h1>
               <p className="hero-sub reveal active" style={{transitionDelay:'.25s'}}>
-                {content.impact_page_desc || 'Kalıcı Değer, Yeşil Dönüşüm ve Toplumsal Yaygınlaştırma'}
+                {getDynamicContent('impact_page_desc', 'impact.hero.descDefault')}
               </p>
               <div className="hero-div reveal active" style={{transitionDelay:'.4s'}}><span/><span className="hdot"/><span/></div>
             </div>
             <button className="scroll-btn" onClick={() => document.getElementById('icerik')?.scrollIntoView({behavior:'smooth'})} aria-label="Aşağı kaydır">
-              <span className="scroll-label">Etkiyi Keşfet</span>
+              <span className="scroll-label">{t('impact.hero.scrollBtn')}</span>
               <span className="scroll-icon"><i className="fas fa-chevron-down"/></span>
             </button>
           </section>
@@ -238,8 +248,8 @@ export default function ImpactPage() {
             <div className="container" style={{maxWidth:'940px'}}>
 
               <div className="sec-head reveal-up">
-                <p className="sec-label">IV. Bölüm</p>
-                <h2 className="sec-title">Etki ve Sürdürülebilirlik</h2>
+                <p className="sec-label">{t('impact.section.part')}</p>
+                <h2 className="sec-title">{t('impact.section.title')}</h2>
               </div>
 
               {/* Metrik kartlar */}
@@ -256,10 +266,10 @@ export default function ImpactPage() {
               </div>
 
               {/* ── KART 1: Stratejik Etki ── */}
-              <SectionCard accent="#16a34a" letter="A" badge="STRATEJİK ETKİ"
-                title={content.impact_section_1_title || 'Stratejik Etki ve Çözüm Yaklaşımı'}>
+              <SectionCard accent="#16a34a" letter="A" badge={t('impact.cardA.badge')}
+                title={getDynamicContent('impact_section_1_title', 'impact.cardA.titleDefault')}>
                 <p className="body-text">
-                  {content.impact_section_1_text || "Bu proje, Kapaklı'nın sanayileşme kaynaklı kirlilik ve düşük geri dönüşüm gibi acil sorunlarına, dijitalleşmeyi bir araç olarak kullanarak yanıt vermektedir. Kapaklı Belediyesi koordinatörlüğündeki konsorsiyum, güçlü uluslararası uzmanlığa sahiptir."}
+                  {getDynamicContent('impact_section_1_text', 'impact.cardA.textDefault')}
                 </p>
 
                 {/* Vurgular listesi */}
@@ -279,16 +289,16 @@ export default function ImpactPage() {
                   <div className="note-icon green-bg">
                     <Icon name="droplets" color="#16a34a" size={18}/>
                   </div>
-                  <p>{content.impact_highlight_text || "Türk ortaklar TNKÜ ve Kampüs STK ile desteklenen bu işbirliği, karşılıklı bilgi transferi yoluyla Avrupa Yeşil Mutabakatı'na katkı sağlamakta ve geliştirilen dijital araçların belediye operasyonlarına entegrasyonuyla projenin kalıcı sürdürülebilirliğini güvence altına almaktadır."}</p>
+                  <p>{getDynamicContent('impact_highlight_text', 'impact.cardA.noteDefault')}</p>
                 </div>
               </SectionCard>
 
               {/* ── KART 2: Vizyon ── */}
-              <SectionCard accent="#2563eb" letter="B" badge="VİZYON"
-                title={content.impact_section_2_title || 'DIGI-GREEN FUTURE Projesi'}
+              <SectionCard accent="#2563eb" letter="B" badge={t('impact.cardB.badge')}
+                title={getDynamicContent('impact_section_2_title', 'impact.cardB.titleDefault')}
                 reverse>
                 <p className="body-text">
-                  {content.impact_section_2_text || "Kapaklı Belediyesi liderliğinde, iklim değişikliği ve dijital dönüşüm gibi acil sorunlara karşı kapsamlı ve yenilikçi çözümler sunmaktadır. Mobil uygulamalar, eğitim seferberliği ve sürdürülebilir yönetim anlayışıyla somut çıktılar hedeflenmektedir."}
+                  {getDynamicContent('impact_section_2_text', 'impact.cardB.textDefault')}
                 </p>
 
                 {/* 6'lı vizyon pillars */}
@@ -309,7 +319,7 @@ export default function ImpactPage() {
                   <div className="cb-icon">
                     <Icon name="flag" color="#fff" size={20}/>
                   </div>
-                  <p>{content.impact_closing_msg || "Tüm paydaşlar, yerel, ulusal ve Avrupa düzeyinde kalıcı bir etki oluşturmak üzere bu kapsamlı planı uygulamaya davet edilmektedir."}</p>
+                  <p>{getDynamicContent('impact_closing_msg', 'impact.cardB.closingDefault')}</p>
                 </div>
               </SectionCard>
 

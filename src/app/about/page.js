@@ -2,6 +2,8 @@
 import { useEffect, useState, useRef } from 'react';
 import Link from 'next/link';
 import { supabase } from '../../lib/supabase';
+// ✨ YENİ: Dil Context hook'umuzu dahil ettik
+import { useLanguage } from '../../context/LanguageContext';
 
 // ─── SAYFA GENELİ ARKA PLAN AĞI (YÜKSEK PERFORMANS) ───────────────────────────
 const NetworkBackground = () => {
@@ -251,8 +253,8 @@ const Counter = ({ end, suffix = '', duration = 2000 }) => {
   return <span ref={counterRef}>{count}{suffix}</span>;
 };
 
-// ─── İLETİŞİME GEÇ BUTONU — inline hover, hiçbir CSS ezemez ───
-const ContactButton = ({ href }) => {
+// ─── İLETİŞİME GEÇ BUTONU ───
+const ContactButton = ({ href, text }) => {
   const [hovered, setHovered] = useState(false);
   const [pressed, setPressed] = useState(false);
 
@@ -303,7 +305,7 @@ const ContactButton = ({ href }) => {
       onMouseDown={() => setPressed(true)}
       onMouseUp={() => setPressed(false)}
     >
-      <span>İletişime Geç</span>
+      <span>{text}</span>
       <span style={arrowStyle}>
         <i className="fas fa-arrow-right" style={{ fontSize: '0.85rem' }}></i>
       </span>
@@ -315,6 +317,9 @@ const ContactButton = ({ href }) => {
 export default function AboutPage() {
   const [content, setContent] = useState({});
   const [loading, setLoading] = useState(true);
+
+  // ✨ YENİ: Dil ve Çeviri fonksiyonlarını alıyoruz
+  const { language, t } = useLanguage();
 
   useEffect(() => {
     async function fetchData() {
@@ -338,34 +343,39 @@ export default function AboutPage() {
     return () => observer.disconnect();
   }, [loading]);
 
+  // Veritabanı dinamik içerik kontrolü
+  const getDynamicContent = (trKey, defaultTranslationKey) => {
+    return (language === 'tr' && content[trKey]) ? content[trKey] : t(defaultTranslationKey);
+  };
+
   if (loading) {
     return (
       <div className="loading-screen">
         <div className="spinner"></div>
-        <span>Yükleniyor...</span>
+        <span>{t('about.loading')}</span>
       </div>
     );
   }
 
   const stats = [
-    { value: 500, suffix: '+', label: 'Eğitilen Vatandaş' },
-    { value: 29,  suffix: '%', label: 'Geri Dönüşüm' },
-    { value: 24,  suffix: '',  label: 'Proje Süresi (Ay)' },
-    { value: 3,   suffix: '+', label: 'Ortak Ülke' },
+    { value: 500, suffix: '+', label: t('about.stats.s1') },
+    { value: 29,  suffix: '%', label: t('about.stats.s2') },
+    { value: 24,  suffix: '',  label: t('about.stats.s3') },
+    { value: 3,   suffix: '+', label: t('about.stats.s4') },
   ];
 
   const tableRows = [
-    { label: 'Proje Adı',    key: 'about_project_name',     default: 'Vatandaş Odaklı Yerel Yeşil Gelecek için Dijital Dönüşüm' },
-    { label: 'Kısaltma',     key: 'about_project_code',     default: 'DIGI-GREEN FUTURE' },
-    { label: 'Program',      key: 'about_project_program',  default: 'Erasmus+ Yetişkin Eğitimi Alanında İşbirliği Ortaklıkları (KA220-ADU)' },
-    { label: 'Süre',         key: 'about_project_duration', default: '24 ay (1 Kasım 2025 – 31 Ekim 2027)' },
-    { label: 'Toplam Bütçe', key: 'about_project_budget',   default: '250.000,00 €' },
+    { label: t('about.spec.r1Label'), key: 'about_project_name',     defaultTranslation: 'about.spec.r1Default' },
+    { label: t('about.spec.r2Label'), key: 'about_project_code',     defaultTranslation: 'about.spec.r2Default' },
+    { label: t('about.spec.r3Label'), key: 'about_project_program',  defaultTranslation: 'about.spec.r3Default' },
+    { label: t('about.spec.r4Label'), key: 'about_project_duration', defaultTranslation: 'about.spec.r4Default' },
+    { label: t('about.spec.r5Label'), key: 'about_project_budget',   defaultTranslation: 'about.spec.r5Default' },
   ];
 
   const targets = [
-    { num: '01', title: 'Yerel Halk & Yetişkinler', desc: 'Dijital okuryazarlık ve çevre bilincini artırmak isteyen tüm vatandaşlar.' },
-    { num: '02', title: 'Belediye Personeli',        desc: 'Yeşil dönüşüm süreçlerini yönetecek ve dijital araçları kullanacak çalışanlar.' },
-    { num: '03', title: 'Eğitimciler',               desc: 'Çevre ve dijitalleşme alanında farkındalık yaratmayı hedefleyen kurumlar.' },
+    { num: '01', title: t('about.target.t1Title'), desc: t('about.target.t1Desc') },
+    { num: '02', title: t('about.target.t2Title'), desc: t('about.target.t2Desc') },
+    { num: '03', title: t('about.target.t3Title'), desc: t('about.target.t3Desc') },
   ];
 
   return (
@@ -381,12 +391,12 @@ export default function AboutPage() {
         
         {/* İçerik, canvas'ın üstünde durması için relative ve z-index almalı */}
         <div className="container" style={{ position: 'relative', zIndex: 2 }}>
-          <span className="eyebrow reveal active">Erasmus+ Destekli Proje</span>
+          <span className="eyebrow reveal active">{t('about.hero.eyebrow')}</span>
           <h1 className="hero-title reveal active">
-            Daha Yeşil Bir <br /> Gelecek İçin <span>Dijital Dönüşüm</span>
+            {t('about.hero.title1')} <br /> {t('about.hero.title2')} <span>{t('about.hero.title3')}</span>
           </h1>
           <p className="hero-desc reveal active">
-            {content.about_page_desc || 'Kapaklı Belediyesi öncülüğünde sürdürülebilir, doğa dostu ve teknoloji odaklı bir yarın inşa ediyoruz.'}
+            {getDynamicContent('about_page_desc', 'about.hero.descDefault')}
           </p>
         </div>
       </section>
@@ -395,15 +405,15 @@ export default function AboutPage() {
       <section className="section">
         <div className="container grid-2 align-center">
           <div className="reveal">
-            <span className="section-label">Stratejik Bakış</span>
-            <h2 className="section-title">{content.about_vision_title || 'İklim ve Dijital Dönüşümün Kesişimi'}</h2>
+            <span className="section-label">{t('about.vision.label')}</span>
+            <h2 className="section-title">{getDynamicContent('about_vision_title', 'about.vision.titleDefault')}</h2>
             <p className="section-text">
-              {content.about_vision_text || 'Projemiz, iklim değişikliği ile mücadele ve dijital dönüşüm gerekliliklerini tek bir potada eritmeyi hedefler.'}
+              {getDynamicContent('about_vision_text', 'about.vision.textDefault')}
             </p>
             <ul className="vision-list">
-              <li>Çevre dostu dijital çözümler ve uygulamalar</li>
-              <li>Vatandaş katılımı ile tabandan yukarı farkındalık</li>
-              <li>Ölçülebilir çevresel çıktı ve etki raporlama</li>
+              <li>{t('about.vision.list1')}</li>
+              <li>{t('about.vision.list2')}</li>
+              <li>{t('about.vision.list3')}</li>
             </ul>
           </div>
           <div className="reveal image-wrapper">
@@ -416,8 +426,8 @@ export default function AboutPage() {
       <section className="section bg-light">
         <div className="container">
           <div className="reveal text-center mb-5">
-            <span className="section-label">Rakamlarla Proje</span>
-            <h2 className="section-title">Somut Hedeflerimiz</h2>
+            <span className="section-label">{t('about.stats.label')}</span>
+            <h2 className="section-title">{t('about.stats.title')}</h2>
           </div>
           <div className="stats-grid">
             {stats.map((stat, i) => (
@@ -434,8 +444,8 @@ export default function AboutPage() {
       <section className="section">
         <div className="container">
           <div className="reveal text-center mb-5">
-            <span className="section-label">Odak Noktamız</span>
-            <h2 className="section-title">Kimler İçin Çalışıyoruz?</h2>
+            <span className="section-label">{t('about.target.label')}</span>
+            <h2 className="section-title">{t('about.target.title')}</h2>
           </div>
           <div className="targets-grid">
             {targets.map((kitle, i) => (
@@ -453,14 +463,14 @@ export default function AboutPage() {
       <section className="section">
         <div className="container narrow">
           <div className="reveal mb-5">
-            <span className="section-label">Kimlik Bilgileri</span>
-            <h2 className="section-title" style={{ marginBottom: 0 }}>Proje Künyesi</h2>
+            <span className="section-label">{t('about.spec.label')}</span>
+            <h2 className="section-title" style={{ marginBottom: 0 }}>{t('about.spec.title')}</h2>
           </div>
           <div className="spec-sheet reveal">
             {tableRows.map((row, i) => (
               <div key={i} className="spec-row">
                 <div className="spec-label">{row.label}</div>
-                <div className="spec-value">{content[row.key] || row.default}</div>
+                <div className="spec-value">{getDynamicContent(row.key, row.defaultTranslation)}</div>
               </div>
             ))}
           </div>
@@ -472,15 +482,15 @@ export default function AboutPage() {
         <div className="cta-container">
           <div className="cta-glow"></div>
           <div className="cta-content">
-            <span className="cta-badge">Hemen Katılın</span>
+            <span className="cta-badge">{t('about.cta.badge')}</span>
             <h2 className="cta-title">
-              Dijital ve Yeşil Bir <br /> Geleceği Birlikte İnşa Edelim
+              {t('about.cta.title1')} <br /> {t('about.cta.title2')}
             </h2>
             <p className="cta-desc">
-              Digi-Green Future; yerel yönetimler, sivil toplum kuruluşları ve bireyler için yenilikçi, açık ve sürdürülebilir bir iş birliği platformudur.
+              {t('about.cta.desc')}
             </p>
             <div className="cta-actions">
-              <ContactButton href="/contact" />
+              <ContactButton href="/contact" text={t('about.cta.button')} />
             </div>
           </div>
         </div>
@@ -490,7 +500,6 @@ export default function AboutPage() {
         .about-page {
           font-family: 'Inter', system-ui, sans-serif;
           color: #111827;
-          /* background-color: #ffffff; -> Arka plan animasyonu görünsün diye kaldırıldı */
           line-height: 1.6;
           --primary: #003399;
           --green-mid: #27ae60;
@@ -500,7 +509,6 @@ export default function AboutPage() {
         .container.narrow { max-width: 900px; }
         .section { padding: 120px 0; position: relative; z-index: 2; }
         
-        /* Arka plandaki ağ animasyonu üstte dursun diye hafif saydamlık eklendi */
         .bg-light { 
           background-color: rgba(249, 250, 251, 0.6); 
           backdrop-filter: blur(8px);
@@ -520,9 +528,8 @@ export default function AboutPage() {
         .section-title { font-size: 2.5rem; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 24px; color: #111827; }
         .section-text { font-size: 1.125rem; color: #4b5563; margin-bottom: 32px; }
 
-        /* HERO BÖLÜMÜ GÜNCELLENDİ */
         .hero { 
-          position: relative; /* Yapraklar bunun içinde taşmasın diye */
+          position: relative; 
           padding: 160px 0 100px; 
           text-align: center; 
           background: linear-gradient(to bottom, rgba(249, 250, 251, 0.4), rgba(255, 255, 255, 0.9)); 
@@ -546,14 +553,12 @@ export default function AboutPage() {
         .stat-label { font-size: 1rem; font-weight: 500; color: #6b7280; }
 
         .targets-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 40px; }
-        /* Target kartları cam efekti yapıldı ki ağ arkadan görünsün */
         .target-card { padding: 40px; background: rgba(249, 250, 251, 0.85); backdrop-filter: blur(10px); border-radius: 24px; transition: background 0.3s ease; }
         .target-card:hover { background: rgba(243, 244, 246, 0.95); }
         .target-num { display: block; font-size: 1rem; font-weight: 700; color: #10b981; margin-bottom: 16px; }
         .target-title { font-size: 1.25rem; font-weight: 700; margin-bottom: 12px; }
         .target-desc { color: #4b5563; }
 
-        /* SPEC SHEET için de cam efekti */
         .spec-sheet { border-top: 1px solid rgba(229, 231, 235, 0.6); }
         .spec-row { display: grid; grid-template-columns: 240px 1fr; padding: 32px 24px; border-bottom: 1px solid rgba(229, 231, 235, 0.6); transition: all 0.3s ease; border-left: 4px solid transparent; }
         .spec-row:hover { background-color: rgba(249, 250, 251, 0.7); backdrop-filter: blur(5px); border-left-color: #10b981; }

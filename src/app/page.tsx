@@ -1,8 +1,9 @@
 'use client';
 import { useEffect, useState, useRef } from 'react';
 import { supabase } from '../lib/supabase';
+// ✨ YENİ: Dil Context hook'umuzu dahil ettik
+import { useLanguage } from '../context/LanguageContext';
 
-// ... (Arayüz tanımları ve Counter bileşeni aynı - DEĞİŞİKLİK YOK) ...
 interface ContentState { [key: string]: string; }
 interface CounterProps { end: number; duration?: number; }
 
@@ -49,13 +50,20 @@ export default function Home() {
   const [isLoading, setIsLoading] = useState(true);
   const sliderRef = useRef<HTMLDivElement>(null);
   
+  // ✨ YENİ: Dil hook'umuzu çağırıyoruz
+  const { language, t } = useLanguage();
+  
   // Slider İçin Stateler
   const [currentSlide, setCurrentSlide] = useState(0);
-  
-  // İlk yükleme animasyonunu tetiklemek için state
   const [startAnim, setStartAnim] = useState(false);
 
-  // 1. Veri Çekme Hook'u
+  // Veritabanından TR veri çekmeyi/okumayı sağlayan fonksiyonumuz
+  // Eğer dilde 'tr' seçiliyse ve Supabase'de karşılığı varsa onu gösterir
+  // Değilse (EN seçiliyse) Translations.js dosyasındaki Default çeviriyi okur
+  const getDynamicContent = (trKey: string, defaultTranslationKey: string) => {
+    return (language === 'tr' && content[trKey]) ? content[trKey] : t(defaultTranslationKey);
+  };
+
   useEffect(() => {
     async function fetchSettings() {
       try {
@@ -74,7 +82,6 @@ export default function Home() {
     fetchSettings();
   }, []);
 
-  // Sayfa yüklendikten hemen sonra ilk resmi büyütmeye başla
   useEffect(() => {
       if (!isLoading) {
           const timer = setTimeout(() => {
@@ -84,7 +91,6 @@ export default function Home() {
       }
   }, [isLoading]);
 
-  // 2. Scroll Animasyonları Hook'u
   useEffect(() => {
     if (isLoading) return;
     const handleScroll = () => {
@@ -100,18 +106,18 @@ export default function Home() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, [isLoading]);
 
-  // Veri Hazırlıkları
+  // Veri Hazırlıkları (Çoklu Dil Uyumlu)
   let ecoList: Array<{title: string, desc: string, icon: string}> = [];
-  if (content.home_eco_list) {
+  if (content.home_eco_list && language === 'tr') {
       try { ecoList = JSON.parse(content.home_eco_list); } catch(e) { console.error(e); }
   }
   
   if (ecoList.length === 0) {
       ecoList = [
-          { title: content.home_eco_1_title || 'Mobil Entegrasyon', desc: content.home_eco_1_desc || 'Vatandaşların belediye hizmetlerine tek tıkla ulaşmasını sağlayan entegre mobil çözüm.', icon: 'fa-mobile-screen' },
-          { title: content.home_eco_2_title || 'Yapay Zeka & Atık', desc: content.home_eco_2_desc || 'Yapay zeka destekli sensörler ile atık yönetimini optimize ediyor, doluluk oranlarına göre rota planlıyoruz.', icon: 'fa-recycle' },
-          { title: content.home_eco_3_title || 'E-Öğrenme', desc: content.home_eco_3_desc || 'İklim değişikliği ve dijital okuryazarlık üzerine modüler çevrimiçi eğitimler.', icon: 'fa-graduation-cap' },
-          { title: content.home_eco_4_title || 'Sürdürülebilir Etki', desc: content.home_eco_4_desc || 'Karbon ayak izini azaltan ve kopyalanabilir dijital modeller.', icon: 'fa-leaf' }
+          { title: getDynamicContent('home_eco_1_title', 'home.ecosystem.item1.title'), desc: getDynamicContent('home_eco_1_desc', 'home.ecosystem.item1.desc'), icon: 'fa-mobile-screen' },
+          { title: getDynamicContent('home_eco_2_title', 'home.ecosystem.item2.title'), desc: getDynamicContent('home_eco_2_desc', 'home.ecosystem.item2.desc'), icon: 'fa-recycle' },
+          { title: getDynamicContent('home_eco_3_title', 'home.ecosystem.item3.title'), desc: getDynamicContent('home_eco_3_desc', 'home.ecosystem.item3.desc'), icon: 'fa-graduation-cap' },
+          { title: getDynamicContent('home_eco_4_title', 'home.ecosystem.item4.title'), desc: getDynamicContent('home_eco_4_desc', 'home.ecosystem.item4.desc'), icon: 'fa-leaf' }
       ];
   }
 
@@ -122,7 +128,6 @@ export default function Home() {
       heroImages = [content.hero_bg_image];
   }
 
-  // 3. Slider Otomatik Geçiş Efekti Hook'u
   useEffect(() => {
       if (heroImages.length <= 1) return;
       const interval = setInterval(() => {
@@ -134,7 +139,7 @@ export default function Home() {
   if (isLoading) {
     return (
       <div style={{height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#fff'}}>
-          <div style={{color: '#27ae60', fontSize: '1.2rem', fontWeight: 'bold', fontFamily: 'sans-serif'}}>Yükleniyor...</div>
+          <div style={{color: '#27ae60', fontSize: '1.2rem', fontWeight: 'bold', fontFamily: 'sans-serif'}}>{t('home.loading')}</div>
       </div>
     );
   }
@@ -153,14 +158,11 @@ export default function Home() {
 
   return (
     <main>
-      
       {/* 1. HERO ALANI (SLIDER) */}
       <section style={{position:'relative', height:'100vh', minHeight:'600px', display:'flex', alignItems:'center', justifyContent:'center', textAlign:'center', color:'white', overflow:'hidden'}}>
-
           {heroImages.length > 0 ? (
               heroImages.map((img, index) => {
                   const isActive = currentSlide === index;
-                  
                   const transitionStyle = isActive
                     ? 'opacity 3s ease-in-out 0s, transform 30s linear 0s'
                     : 'opacity 3s ease-in-out 0s, transform 0.1s linear 3.2s';
@@ -194,29 +196,27 @@ export default function Home() {
           
           <div className="container" style={{zIndex:10}}>
               <span className="reveal reveal-up" style={{background:'rgba(255,255,255,0.15)', backdropFilter:'blur(5px)', padding:'10px 25px', borderRadius:'50px', border:'1px solid rgba(255,255,255,0.3)', fontWeight:'bold', letterSpacing:'2px', textTransform:'uppercase', fontSize:'0.9rem'}}>
-                  {content.header_logo_text || 'DIGI-GREEN FUTURE'}
+                  {content.header_logo_text || t('home.hero.eyebrow')}
               </span>
               <h1 className="reveal reveal-up delay-100" style={{fontSize:'clamp(2.5rem, 5vw, 4.5rem)', fontWeight:'800', margin:'25px 0', color: 'white', textShadow:'0 10px 30px rgba(0,0,0,0.3)', lineHeight:1.1}}>
-                  {content.hero_title || 'Yerel Yeşil Gelecek İçin Dijital Dönüşüm'}
+                  {getDynamicContent('hero_title', 'home.hero.title')}
               </h1>
               <p className="reveal reveal-up delay-200" style={{fontSize:'1.25rem', maxWidth:'700px', margin:'0 auto 40px', opacity:0.95, lineHeight:1.6}}>
-                  {content.hero_desc || 'Erasmus+ KA220-ADU kapsamında 3 ülkede sürdürülebilir ve dijital belediyecilik çözümleri geliştiriyoruz.'}
+                  {getDynamicContent('hero_desc', 'home.hero.desc')}
               </p>
               <div className="reveal reveal-up delay-300" style={{display:'flex', justifyContent:'center', gap:'20px', flexWrap:'wrap'}}>
-                  
-                  {/* ✨ GÜNCELLENDİ: Mobil Çözümler butonuna onClick smooth scroll eklendi */}
                   <a 
                       href="#solutions" 
                       className="btn-hero"
                       onClick={(e) => {
-                          e.preventDefault(); // Varsayılan anında zıplamayı engelle
-                          document.getElementById('solutions')?.scrollIntoView({ behavior: 'smooth' }); // Yağ gibi kaydır
+                          e.preventDefault();
+                          document.getElementById('solutions')?.scrollIntoView({ behavior: 'smooth' });
                       }}
                   >
-                      <i className="fas fa-mobile-alt" style={{marginRight:'8px'}}></i>Mobil Çözümler
+                      <i className="fas fa-mobile-alt" style={{marginRight:'8px'}}></i>{t('home.hero.btnMobile')}
                   </a>
                   
-                  <a href="/about" className="btn-hero" style={{background:'white', color:'#27ae60', border:'2px solid white'}}><i className="fas fa-leaf" style={{marginRight:'8px'}}></i>Projeyi İncele</a>
+                  <a href="/about" className="btn-hero" style={{background:'white', color:'#27ae60', border:'2px solid white'}}><i className="fas fa-leaf" style={{marginRight:'8px'}}></i>{t('home.hero.btnExplore')}</a>
               </div>
           </div>
       </section>
@@ -226,10 +226,10 @@ export default function Home() {
           <div className="container">
               <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(250px, 1fr))', gap:'25px'}}>
                   {[
-                      { icon: 'fa-clock', val: content.home_summary_1_val || '24 Ay', label: content.home_summary_1_label || 'Proje Süresi' },
-                      { icon: 'fa-euro-sign', val: content.home_summary_2_val || '250.000€', label: content.home_summary_2_label || 'Toplam Bütçe' },
-                      { icon: 'fa-handshake', val: content.home_summary_3_val || 'KA220-ADU', label: content.home_summary_3_label || 'Program' },
-                      { icon: 'fa-globe', val: content.home_summary_4_val || '3 Ülke', label: content.home_summary_4_label || 'Kapsam' }
+                      { icon: 'fa-clock', val: getDynamicContent('home_summary_1_val', 'home.summary.durationVal'), label: getDynamicContent('home_summary_1_label', 'home.summary.duration') },
+                      { icon: 'fa-euro-sign', val: content.home_summary_2_val || '250.000€', label: getDynamicContent('home_summary_2_label', 'home.summary.budget') },
+                      { icon: 'fa-handshake', val: content.home_summary_3_val || 'KA220-ADU', label: getDynamicContent('home_summary_3_label', 'home.summary.program') },
+                      { icon: 'fa-globe', val: getDynamicContent('home_summary_4_val', 'home.summary.scope'), label: getDynamicContent('home_summary_4_label', 'home.summary.scope') }
                   ].map((item, i) => (
                       <div key={i} className={`glass-card reveal reveal-up delay-${(i+1)*100}`}>
                           <i className={`fas ${item.icon}`} style={{fontSize:'2.5rem', color:'#27ae60'}}></i>
@@ -251,24 +251,24 @@ export default function Home() {
                       </div>
                       <div style={{position:'absolute', bottom:'0', right:'0', background:'#27ae60', color:'white', padding:'30px', borderRadius:'20px', boxShadow:'0 10px 30px rgba(39, 174, 96, 0.3)', maxWidth:'250px'}}>
                           <h4 style={{fontSize:'1.2rem', fontWeight:'bold', margin:0, lineHeight:1.4}}>
-                              {content.home_summary_1_val || '24 Ay'} Sürecek Dijital ve Yeşil Bir Yolculuk
+                              <span style={{fontWeight: 900}}>{getDynamicContent('home_summary_1_val', 'home.summary.durationVal')}</span> {t('home.about.badge')}
                           </h4>
                       </div>
                   </div>
               </div>
               <div className="reveal reveal-right" style={{flex:'1 1 500px'}}>
-                  <h4 style={{color:'#27ae60', fontWeight:'bold', textTransform:'uppercase', letterSpacing:'1px', marginBottom:'10px'}}>Proje Hakkında</h4>
+                  <h4 style={{color:'#27ae60', fontWeight:'bold', textTransform:'uppercase', letterSpacing:'1px', marginBottom:'10px'}}>{t('home.about.eyebrow')}</h4>
                   <h2 style={{fontSize:'2.5rem', fontWeight:'800', color:'#1a1a1a', marginBottom:'25px', lineHeight:1.2}}>
-                      {content.home_about_title || 'Teknoloji ve Doğanın Mükemmel Uyumu'}
+                      {getDynamicContent('home_about_title', 'home.about.title')}
                   </h2>
                   <p style={{color:'#555', fontSize:'1.1rem', lineHeight:1.7, marginBottom:'30px'}}>
-                      {content.home_about_text || 'Kapaklı Belediyesi liderliğinde yürütülen DIGI-GREEN FUTURE, iklim değişikliği ile mücadelede dijital araçları kullanmayı hedefleyen öncü bir Erasmus+ projesidir.'}
+                      {getDynamicContent('home_about_text', 'home.about.text')}
                   </p>
                   <ul style={{display:'grid', gap:'15px'}}>
-                      {['Mobil Uygulama Entegrasyonu', 'Yapay Zeka Destekli Atık Yönetimi', 'Uluslararası İşbirliği Ağı'].map((item, i) => (
+                      {['item1', 'item2', 'item3'].map((key, i) => (
                           <li key={i} style={{display:'flex', alignItems:'center', gap:'15px', background:'#f8f9fa', padding:'15px', borderRadius:'10px'}}>
                               <div style={{width:'30px', height:'30px', background:'#27ae60', borderRadius:'50%', display:'flex', alignItems:'center', justifyContent:'center', color:'white', fontSize:'0.9rem'}}><i className="fas fa-check"></i></div>
-                              <span style={{fontWeight:'600', color:'#333'}}>{item}</span>
+                              <span style={{fontWeight:'600', color:'#333'}}>{t(`home.about.bullets.${i}`)}</span>
                           </li>
                       ))}
                   </ul>
@@ -280,14 +280,14 @@ export default function Home() {
       <section className="section-padding" style={{background:'#f0f4f8'}}>
           <div className="container">
               <div className="reveal reveal-up" style={{textAlign:'center', marginBottom:'50px'}}>
-                  <h2 style={{fontSize:'2.5rem', fontWeight:'800', color:'#333'}}>Projemiz Kimler İçin?</h2>
-                  <p style={{color:'#666'}}>Toplumun her kesimine dokunan çözümler.</p>
+                  <h2 style={{fontSize:'2.5rem', fontWeight:'800', color:'#333'}}>{t('home.target.title')}</h2>
+                  <p style={{color:'#666'}}>{t('home.target.subtitle')}</p>
               </div>
               <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(300px, 1fr))', gap:'30px'}}>
                   {[
-                      {title: content.home_target_1_title || 'Vatandaşlar', desc: content.home_target_1_desc || 'Mobil uygulamalar ile geri dönüşüme katılın, puan kazanın ve şehrinizi güzelleştirin.', icon: 'fa-user'},
-                      {title: content.home_target_2_title || 'Yerel Yönetimler', desc: content.home_target_2_desc || 'Veriye dayalı kararlar alarak, kaynakları verimli kullanın ve operasyonel maliyetleri düşürün.', icon: 'fa-building'},
-                      {title: content.home_target_3_title || 'STK ve Akademik', desc: content.home_target_3_desc || 'Araştırma, eğitim ve toplumsal farkındalık çalışmalarında aktif rol alın.', icon: 'fa-tree'}
+                      {title: getDynamicContent('home_target_1_title', 'home.target.item1.title'), desc: getDynamicContent('home_target_1_desc', 'home.target.item1.desc'), icon: 'fa-user'},
+                      {title: getDynamicContent('home_target_2_title', 'home.target.item2.title'), desc: getDynamicContent('home_target_2_desc', 'home.target.item2.desc'), icon: 'fa-building'},
+                      {title: getDynamicContent('home_target_3_title', 'home.target.item3.title'), desc: getDynamicContent('home_target_3_desc', 'home.target.item3.desc'), icon: 'fa-tree'}
                   ].map((kitle, i) => (
                       <div key={i} className="reveal reveal-up" style={{background:'white', padding:'30px', borderRadius:'15px', textAlign:'center', borderBottom:'4px solid #27ae60', boxShadow:'0 10px 30px rgba(0,0,0,0.05)'}}>
                           <div style={{width:'60px', height:'60px', background:'#e8f5e9', borderRadius:'50%', display:'flex', alignItems:'center', justifyContent:'center', margin:'0 auto 20px', color:'#27ae60', fontSize:'1.5rem'}}>
@@ -306,17 +306,15 @@ export default function Home() {
           <div className="container">
               <div className="reveal reveal-up" style={{textAlign:'center', marginBottom:'40px'}}>
                   <h2 style={{fontSize:'2.5rem', fontWeight:'800', color:'#1a1a1a', marginBottom:'15px'}}>
-                      Dijital <span style={{color:'#27ae60'}}>Ekosistemimiz</span>
+                      {t('home.ecosystem.title1')} <span style={{color:'#27ae60'}}>{t('home.ecosystem.title2')}</span>
                   </h2>
                   <p style={{color:'#666', maxWidth:'600px', margin:'0 auto'}}>
-                      Teknolojiyi doğanın hizmetine sunan entegre çözüm ağımız. <br/>
+                      {t('home.ecosystem.subtitle')} <br/>
                   </p>
               </div>
           </div> 
 
-          {/* Slider Kapsayıcı */}
           <div className="tree-wrapper">
-              
               <div className="tree-line"></div>
               
               <button className="slider-btn prev" onClick={() => scrollSlider('left')} aria-label="Sola Kaydır" style={{left: '30px', zIndex: 50}}>
@@ -350,7 +348,6 @@ export default function Home() {
               <button className="slider-btn next" onClick={() => scrollSlider('right')} aria-label="Sağa Kaydır" style={{right: '30px', zIndex: 50}}>
                   <i className="fas fa-chevron-right"></i>
               </button>
-
           </div>
       </section>
 
@@ -359,10 +356,10 @@ export default function Home() {
           <div className="container">
               <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(200px, 1fr))', gap:'40px', textAlign:'center'}}>
                   {[
-                      { icon: 'fa-euro-sign', val: parseInt(content.home_counter_1_val) || 250000, label: content.home_counter_1_label || 'Toplam Hibe (€)' },
-                      { icon: 'fa-globe-europe', val: parseInt(content.home_counter_2_val) || 3, label: content.home_counter_2_label || 'Ortak Ülke' },
-                      { icon: 'fa-handshake', val: parseInt(content.home_counter_3_val) || 5, label: content.home_counter_3_label || 'Proje Ortağı' },
-                      { icon: 'fa-clock', val: parseInt(content.home_counter_4_val) || 24, label: content.home_counter_4_label || 'Ay Süre' }
+                      { icon: 'fa-euro-sign', val: parseInt(content.home_counter_1_val) || 250000, label: getDynamicContent('home_counter_1_label', 'home.counters.grant') },
+                      { icon: 'fa-globe-europe', val: parseInt(content.home_counter_2_val) || 3, label: getDynamicContent('home_counter_2_label', 'home.counters.countries') },
+                      { icon: 'fa-handshake', val: parseInt(content.home_counter_3_val) || 5, label: getDynamicContent('home_counter_3_label', 'home.counters.partners') },
+                      { icon: 'fa-clock', val: parseInt(content.home_counter_4_val) || 24, label: getDynamicContent('home_counter_4_label', 'home.counters.months') }
                   ].map((stat, i) => (
                       <div key={i} className="reveal reveal-up" style={{transitionDelay: `${i * 0.1}s`}}>
                           <i className={`fas ${stat.icon}`} style={{fontSize:'3rem', color:'#69F0AE', marginBottom:'20px'}}></i>
@@ -382,10 +379,10 @@ export default function Home() {
           <div className="reveal reveal-right" style={{position:'absolute', bottom:'-50px', right:'-50px', width:'300px', height:'300px', borderRadius:'50%', background:'rgba(39, 174, 96, 0.08)'}}></div>
           <div className="container reveal reveal-up" style={{position:'relative', zIndex:5}}>
               <h2 style={{fontSize:'2.5rem', fontWeight:'800', marginBottom:'20px', color: '#1a1a1a'}}>
-                  {content.home_cta_title || 'Geleceği Birlikte Tasarlayalım'}
+                  {getDynamicContent('home_cta_title', 'home.cta.title')}
               </h2>
               <p style={{fontSize:'1.2rem', color:'#666', maxWidth:'700px', margin:'0 auto 40px'}}>
-                  {content.home_cta_text || 'DIGI-GREEN FUTURE projesi hakkında daha fazla bilgi almak, eğitimlere katılmak veya işbirliği yapmak için bize ulaşın.'}
+                  {getDynamicContent('home_cta_text', 'home.cta.desc')}
               </p>
               
               <style dangerouslySetInnerHTML={{__html: `
@@ -409,12 +406,10 @@ export default function Home() {
               `}} />
               
               <a href="/contact" className="btn-contact-hover">
-                  İletişime Geç <i className="fas fa-arrow-right" style={{marginLeft:'8px'}}></i>
+                  {t('home.cta.button')} <i className="fas fa-arrow-right" style={{marginLeft:'8px'}}></i>
               </a>
-
           </div>
       </section>
-
     </main>
   );
 }

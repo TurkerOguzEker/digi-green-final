@@ -2,6 +2,8 @@
 import { useEffect, useState, useRef } from 'react';
 import { supabase } from '../../../lib/supabase';
 import ScrollToTop from '../../../components/ScrollToTop';
+// ✨ YENİ: Dil Context hook'umuzu dahil ettik
+import { useLanguage } from '../../../context/LanguageContext';
 
 // ─── ARKA PLAN AĞI ─────────────────────────────────────────────────────────────
 const NetworkBackground = () => {
@@ -62,6 +64,9 @@ export default function RoadmapPage() {
   const [content, setContent] = useState({});
   const [loading, setLoading] = useState(true);
 
+  // ✨ YENİ: Dil ve Çeviri (t) fonksiyonlarını alıyoruz
+  const { language, t } = useLanguage();
+
   useEffect(() => {
     supabase.from('settings').select('*').then(({ data }) => {
       const map = {};
@@ -81,30 +86,34 @@ export default function RoadmapPage() {
     return () => obs.disconnect();
   }, [loading, content]);
 
-  // ✨ YENİ: Yüzlerce satırlık HTML karmaşası ve yorum hatası (Hydration Error) yerine, 
-  // tüm veriyi modern bir Array (Dizi) yapısına çevirdik. 
+  // Supabase'den gelen veriyi veya translations.js'i kullanmak için
+  const getDynamicContent = (trKey, defaultTranslationKey) => {
+    return (language === 'tr' && content[trKey]) ? content[trKey] : t(defaultTranslationKey);
+  };
+
+  // Dizi yapısındaki verilerin isimlerini çeviriye bağladık
   const roadmapData = [
-    { id: 1, name: "1. Proje Planlama ve Hazırlık Çalışmaları", active: [1] },
-    { id: 2, name: "2. Proje Başlangıç Toplantısı", active: [2] },
-    { id: 3, name: "3. Liepaja'ya Teknik Ziyaret", active: [5, 6] },
-    { id: 4, name: "4. Cascais'e Teknik Ziyaret", active: [8, 9] },
-    { id: 5, name: "5. İyi Uygulama Raporlarının Hazırlanması", active: [7, 10] },
-    { id: 6, name: "6. Ara Raporların Hazırlanması ve Değerlendirme Toplantıları", active: [6, 9, 12, 15, 18, 21] },
-    { id: 7, name: "7. Kapaklı Belediyesi SECAP Atölye Çalışması ve Hazırlık", active: [5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17] },
-    { id: 8, name: "8. Kapaklı Belediyesi SECAP Bilgilendirme Toplantıları", active: [17, 24] },
-    { id: 9, name: "9. NKÜ Hava Kirliliği Cihazı Temini, Montajı ve Ölçümü", active: [3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24] },
-    { id: 10, name: "10. İyi Uygulama Verilerinin İncelenmesi ve E-Öğrenme Modülü", active: [5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20] },
-    { id: 11, name: "11. Kapaklı Mobil Uygulamasının Hazırlanması ve Entegrasyonu", active: [3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20] },
-    { id: 12, name: "12. Liepaja Belediyesi Akıllı Atık Kutuları Temini", active: [4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24] },
-    { id: 13, name: "13. Liepaja Mobil Uygulama Modülü Geliştirme", active: [5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20] },
-    { id: 14, name: "14. Kapaklı Belediyesi Geri Dönüşüm İade Makineleri Kurulumu", active: [5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20] },
-    { id: 15, name: "15. Liepaja Belediyesi E-Öğrenme Kursunun Oluşturulması", active: [5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20] },
-    { id: 16, name: "16. Vatandaşlara Yönelik Farkındalık Artırma Çalışmaları", active: [15, 16, 17, 18, 19, 20, 21, 22, 23, 24] },
-    { id: 17, name: "17. Belediye Personeline Yönelik Farkındalık Artırma (Türkiye)", active: [19, 20, 21, 22, 23, 24] },
-    { id: 18, name: "18. Bilgilendirici Materyallerin Hazırlanması", active: [19, 20, 21, 22, 23, 24] },
-    { id: 19, name: "19. Belediye Saha Personeli İçin Eğitim Seminerleri", active: [19, 20, 21, 22, 23, 24] },
-    { id: 20, name: "20. Vatandaş Etkinlikleri ve Uygulama Teşviki", active: [19, 20, 21, 22, 23, 24] },
-    { id: 21, name: "21. Son Değerlendirme ve Kapanış Toplantısı", active: [24] }
+    { id: 1, name: t('roadmap.tasks.task1'), active: [1] },
+    { id: 2, name: t('roadmap.tasks.task2'), active: [2] },
+    { id: 3, name: t('roadmap.tasks.task3'), active: [5, 6] },
+    { id: 4, name: t('roadmap.tasks.task4'), active: [8, 9] },
+    { id: 5, name: t('roadmap.tasks.task5'), active: [7, 10] },
+    { id: 6, name: t('roadmap.tasks.task6'), active: [6, 9, 12, 15, 18, 21] },
+    { id: 7, name: t('roadmap.tasks.task7'), active: [5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17] },
+    { id: 8, name: t('roadmap.tasks.task8'), active: [17, 24] },
+    { id: 9, name: t('roadmap.tasks.task9'), active: [3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24] },
+    { id: 10, name: t('roadmap.tasks.task10'), active: [5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20] },
+    { id: 11, name: t('roadmap.tasks.task11'), active: [3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20] },
+    { id: 12, name: t('roadmap.tasks.task12'), active: [4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24] },
+    { id: 13, name: t('roadmap.tasks.task13'), active: [5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20] },
+    { id: 14, name: t('roadmap.tasks.task14'), active: [5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20] },
+    { id: 15, name: t('roadmap.tasks.task15'), active: [5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20] },
+    { id: 16, name: t('roadmap.tasks.task16'), active: [15, 16, 17, 18, 19, 20, 21, 22, 23, 24] },
+    { id: 17, name: t('roadmap.tasks.task17'), active: [19, 20, 21, 22, 23, 24] },
+    { id: 18, name: t('roadmap.tasks.task18'), active: [19, 20, 21, 22, 23, 24] },
+    { id: 19, name: t('roadmap.tasks.task19'), active: [19, 20, 21, 22, 23, 24] },
+    { id: 20, name: t('roadmap.tasks.task20'), active: [19, 20, 21, 22, 23, 24] },
+    { id: 21, name: t('roadmap.tasks.task21'), active: [24] }
   ];
 
   return (
@@ -114,7 +123,7 @@ export default function RoadmapPage() {
       {loading ? (
         <div className="loading-screen">
           <div className="loader-ring"><div/><div/><div/><div/></div>
-          <span className="loader-text">Hazırlanıyor…</span>
+          <span className="loader-text">{t('roadmap.loading')}</span>
         </div>
       ) : (
         <>
@@ -126,27 +135,26 @@ export default function RoadmapPage() {
             <div className="orb orb-1"/><div className="orb orb-2"/><div className="orb orb-3"/>
             
             <div className="container hero-content">
-              <div className="eyebrow reveal active"><span className="edot"/> Erasmus+ · DIGI-GREEN FUTURE <span className="edot"/></div>
-              <h1 className="hero-title reveal active">Proje<br/><em>Zaman Çizelgesi</em></h1>
+              <div className="eyebrow reveal active"><span className="edot"/> {t('roadmap.hero.eyebrow')} <span className="edot"/></div>
+              <h1 className="hero-title reveal active">{t('roadmap.hero.title1')}<br/><em>{t('roadmap.hero.title2')}</em></h1>
               <p className="hero-sub reveal active" style={{transitionDelay:'.25s'}}>
-                {content.roadmap_desc || '24 Aylık Kapsamlı Faaliyet ve Uygulama Planı'}
+                {getDynamicContent('roadmap_desc', 'roadmap.hero.descDefault')}
               </p>
               <div className="hero-div reveal active" style={{transitionDelay:'.4s'}}><span/><span className="hdot"/><span/></div>
             </div>
             <button className="scroll-btn" onClick={() => document.getElementById('icerik')?.scrollIntoView({behavior:'smooth'})} aria-label="Aşağı kaydır">
-              <span className="scroll-label">Çizelgeyi İncele</span>
+              <span className="scroll-label">{t('roadmap.hero.scrollBtn')}</span>
               <span className="scroll-icon"><i className="fas fa-chevron-down"/></span>
             </button>
           </section>
 
           {/* ── İÇERİK ── */}
           <section id="icerik" className="content-section">
-            {/* Tablo geniş olduğu için container max-width daha yüksek (1200px) tutuldu */}
             <div className="container" style={{maxWidth:'1200px'}}>
 
               <div className="sec-head reveal-up">
-                <p className="sec-label">V. Bölüm</p>
-                <h2 className="sec-title">Detaylı Faaliyet Planı</h2>
+                <p className="sec-label">{t('roadmap.section.part')}</p>
+                <h2 className="sec-title">{t('roadmap.section.title')}</h2>
               </div>
 
               {/* TABLO ALANI (Glassmorphism kart içine alındı) */}
@@ -155,7 +163,7 @@ export default function RoadmapPage() {
                     <table className="plan-table">
                         <thead>
                             <tr>
-                                <th className="task-header">FAALİYET / AY</th>
+                                <th className="task-header">{t('roadmap.table.header')}</th>
                                 {/* 1'den 24'e kadar otomatik sütun başlığı oluşturur */}
                                 {[...Array(24)].map((_, i) => (
                                     <th key={i + 1}>{i + 1}</th>

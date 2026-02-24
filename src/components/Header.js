@@ -88,14 +88,14 @@ export default function Header({ initialSettings = {} }) {
                         className="logo-text" 
                         style={{
                             fontFamily: "'Caveat', cursive",
-                            fontSize: "clamp(1.1rem, 2vw, 1.4rem)", 
+                            fontSize: "clamp(1rem, 1vw, 1rem)", 
                             fontWeight: "700",
                             color: "#106b21",   
                             textDecoration: "none",
                             letterSpacing: "1px",
                             display: "flex",
                             alignItems: "center",
-                            gap: "8px",
+                            gap: "6px",
                             whiteSpace: "nowrap" 
                         }}
                     >
@@ -164,12 +164,12 @@ export default function Header({ initialSettings = {} }) {
 
                         {/* TR seçeneği */}
                         <span className="lang-option">
-                            <span className="lang-code">TR</span>
+                            <span className={`lang-code ${language === 'tr' ? 'active-text' : ''}`}>TR</span>
                         </span>
 
                         {/* EN seçeneği */}
                         <span className="lang-option">
-                            <span className="lang-code">EN</span>
+                            <span className={`lang-code ${language === 'en' ? 'active-text' : ''}`}>EN</span>
                         </span>
                     </button>
 
@@ -214,7 +214,7 @@ export default function Header({ initialSettings = {} }) {
                 height: 100%;
                 flex: 0 0 auto;
                 min-width: 0;
-                max-width: 200px;
+                max-width: 230px;
                 overflow: hidden;
             }
             .logo-image {
@@ -373,7 +373,7 @@ export default function Header({ initialSettings = {} }) {
             }
 
             /* ============================================
-               ✨ YENİ DİL SWITCHER STILLERI
+               YENİ DİL SWITCHER STILLERI
             ============================================ */
             .lang-switcher {
                 position: relative;
@@ -388,7 +388,6 @@ export default function Header({ initialSettings = {} }) {
                 outline: none;
                 transition: border-color 0.3s ease, box-shadow 0.3s ease;
                 flex-shrink: 0;
-                /* Buton sıfırlama */
                 font-family: inherit;
             }
 
@@ -439,19 +438,13 @@ export default function Header({ initialSettings = {} }) {
                 line-height: 1;
             }
 
-            /* TR aktifken (lang-tr class): ilk option aktif */
-            .lang-switcher.lang-tr .lang-option:first-of-type .lang-code {
+            /* 🎉 Aktif metin yeşil olur (Doğrudan React State üzerinden kontrol ediliyor) */
+            .lang-code.active-text {
                 color: #27ae60;
             }
 
-            /* EN aktifken (lang-en class): ikinci option aktif */
-            .lang-switcher.lang-en .lang-option:last-of-type .lang-code {
-                color: #27ae60;
-            }
-
-            /* Hover efekti — aktif olmayan taraf */
-            .lang-switcher.lang-tr .lang-option:last-of-type:hover .lang-code,
-            .lang-switcher.lang-en .lang-option:first-of-type:hover .lang-code {
+            /* Hover efekti (sadece aktif olmayan seçenekte çalışır) */
+            .lang-option:hover .lang-code:not(.active-text) {
                 color: #555;
             }
 
@@ -460,7 +453,6 @@ export default function Header({ initialSettings = {} }) {
             ============================================ */
             @media (max-width: 992px) {
                 .lang-switcher {
-                    /* Mobilde küçük tut ama bozulmasın */
                     padding: 2px;
                 }
 
@@ -550,7 +542,7 @@ export default function Header({ initialSettings = {} }) {
 
             @media (max-width: 400px) {
                 .lang-code {
-                    display: none; /* Çok dar ekranlarda sadece bayrak */
+                    display: none; 
                 }
                 .lang-option {
                     min-width: 34px;
