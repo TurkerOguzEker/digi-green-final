@@ -1,12 +1,17 @@
 'use client';
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
-import { usePathname } from 'next/navigation'; // ✨ EKLENDİ
+import { usePathname } from 'next/navigation'; 
 import { supabase } from '../lib/supabase';
+// ✨ ESKİ SİSTEM: useLanguage kancasını import ediyoruz
+import { useLanguage } from '../context/LanguageContext';
 
 export default function Footer() {
-  const pathname = usePathname(); // ✨ EKLENDİ
+  const pathname = usePathname();
   const [content, setContent] = useState({});
+  
+  // ✨ Dil ve Çeviri fonksiyonlarını alıyoruz
+  const { language, t } = useLanguage();
 
   useEffect(() => {
     async function fetchData() {
@@ -20,7 +25,20 @@ export default function Footer() {
     fetchData();
   }, []);
 
-  // ✨ YENİ: Eğer sayfa admin paneli veya giriş sayfası ise Footer'ı GİZLE
+  // ✨ YENİ: Kusursuz Fallback (Geri Dönüş) Mantığı
+  const getDynamicContent = (key, defaultTranslationKey) => {
+    // 1. EĞER DİL İNGİLİZCE İSE:
+    if (language === 'en') {
+      // Veritabanında İngilizce sütun doluysa onu ver, boşsa TÜRÇEYİ DEĞİL sözlükteki İNGİLİZCEYİ ver.
+      return content[`${key}_en`] || t(defaultTranslationKey);
+    }
+    
+    // 2. EĞER DİL TÜRKÇE İSE:
+    // Veritabanında Türkçe doluysa onu ver, boşsa sözlükteki TÜRKÇEYİ ver.
+    return content[key] || t(defaultTranslationKey);
+  };
+
+  // Eğer sayfa admin paneli veya giriş sayfası ise Footer'ı GİZLE
   if (pathname && (pathname.startsWith('/admin') || pathname.startsWith('/login'))) {
       return null;
   }
@@ -49,7 +67,7 @@ export default function Footer() {
                   </Link>
                   
                   <p className="footer-desc">
-                      {content.footer_desc || 'Kapaklı Belediyesi liderliğinde yürütülen sürdürülebilir kalkınma projesi.'}
+                      {getDynamicContent('footer_desc', 'footer.defaultDesc')}
                   </p>
                   
                   <div className="social-icons">
@@ -72,17 +90,17 @@ export default function Footer() {
               </div>
               
               <div className="footer-col">
-                  <h4>{content.footer_column2_title || 'Hızlı Menü'}</h4>
+                  <h4>{getDynamicContent('footer_column2_title', 'footer.quickMenu')}</h4>
                   <ul className="footer-links">
-                      <li><Link href="/about">Hakkında</Link></li>
-                      <li><Link href="/partners">Ortaklar</Link></li>
-                      <li><Link href="/results">Dosyalar</Link></li>
-                      <li><Link href="/contact">İletişim</Link></li>
+                      <li><Link href="/about">{t('footer.about')}</Link></li>
+                      <li><Link href="/partners">{t('footer.partners')}</Link></li>
+                      <li><Link href="/results">{t('footer.files')}</Link></li>
+                      <li><Link href="/contact">{t('footer.contact')}</Link></li>
                   </ul>
               </div>
               
               <div className="footer-col">
-                  <h4>{content.footer_column3_title || 'İletişim'}</h4>
+                  <h4>{getDynamicContent('footer_column3_title', 'footer.contactTitle')}</h4>
                   <ul className="contact-list">
                       <li><i className="fas fa-envelope"></i> {content.contact_email || 'info@digigreen.eu'}</li>
                       <li><i className="fas fa-phone"></i> {content.contact_phone || '+90 282 717 10 10'}</li>
@@ -99,7 +117,7 @@ export default function Footer() {
                       onError={(e)=>e.target.style.display='none'} 
                   />
                   <p className="eu-text">
-                      {content.footer_disclaimer || 'Funded by the European Union. Views and opinions expressed are however those of the author(s) only and do not necessarily reflect those of the European Union.'}
+                      {getDynamicContent('footer_disclaimer', 'footer.defaultDisclaimer')}
                   </p>
               </div>
           </div>

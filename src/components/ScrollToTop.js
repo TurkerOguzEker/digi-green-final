@@ -1,8 +1,10 @@
 'use client';
 import { useState, useEffect } from 'react';
+import { usePathname } from 'next/navigation'; // ✨ YENİ: Hangi sayfada olduğumuzu anlamak için eklendi
 
 export default function ScrollToTop() {
   const [isVisible, setIsVisible] = useState(false);
+  const pathname = usePathname(); // ✨ YENİ: Mevcut URL'yi alıyoruz
 
   // Kullanıcı 300px aşağı kaydırdığında butonu göster
   useEffect(() => {
@@ -25,6 +27,11 @@ export default function ScrollToTop() {
       behavior: 'smooth',
     });
   };
+
+  // ✨ YENİ: EĞER URL "/admin" İLE BAŞLIYORSA HİÇBİR ŞEY GÖSTERME
+  if (pathname && pathname.startsWith('/admin')) {
+    return null;
+  }
 
   return (
     <>

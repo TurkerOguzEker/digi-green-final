@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import { supabase } from '../../../lib/supabase';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-// ✨ ESKİ SİSTEM: useLanguage kancası ile 'language' ve 't' fonksiyonunu alıyoruz
+// ✨ ESKİ SİSTEM: Sadece dili alıyoruz
 import { useLanguage } from '../../../context/LanguageContext';
 
 export default function NewsDetailPage() {
@@ -12,8 +12,8 @@ export default function NewsDetailPage() {
   const [newsItem, setNewsItem] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Sözlük ve dil bilgisini çekiyoruz
-  const { language, t } = useLanguage();
+  // Aktif dili çekiyoruz ('tr' veya 'en')
+  const { language } = useLanguage();
 
   useEffect(() => {
     async function fetchNews() {
@@ -32,7 +32,8 @@ export default function NewsDetailPage() {
     return (
       <div style={{ height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f4f7f2' }}>
         <h3 style={{ color: '#27ae60', fontFamily: 'Inter' }}>
-          {t('news.detail.loading')}
+          {/* Sözlük yerine doğrudan dile göre yazdırıyoruz */}
+          {language === 'en' ? 'Loading News Details...' : 'Haber Detayı Yükleniyor...'}
         </h3>
       </div>
     );
@@ -62,34 +63,9 @@ export default function NewsDetailPage() {
         <div className="container" style={{ maxWidth: '900px' }}>
             
           {/* ✨ BUTON BEYAZ KUTUNUN HEMEN ÜSTÜNDE ✨ */}
-          <Link 
-            href="/news" 
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '10px',
-              color: '#ffffff',
-              backgroundColor: '#27ae60',
-              textDecoration: 'none',
-              fontWeight: '700',
-              marginBottom: '25px', 
-              padding: '12px 25px',
-              borderRadius: '50px',
-              boxShadow: '0 4px 15px rgba(39, 174, 96, 0.4)',
-              transition: 'all 0.3s ease'
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.transform = 'translateY(-3px)';
-              e.currentTarget.style.backgroundColor = '#1a5c38';
-              e.currentTarget.style.boxShadow = '0 8px 25px rgba(26, 92, 56, 0.5)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.transform = 'translateY(0)';
-              e.currentTarget.style.backgroundColor = '#27ae60';
-              e.currentTarget.style.boxShadow = '0 4px 15px rgba(39, 174, 96, 0.4)';
-            }}
-          >
-            <i className="fas fa-arrow-left"></i> {t('news.detail.backBtn')}
+          <Link href="/news" className="custom-back-btn">
+            <i className="fas fa-arrow-left"></i> 
+            {language === 'en' ? 'Back to News' : 'Haberlere Dön'}
           </Link>
 
           <div className="content-box">
@@ -170,6 +146,29 @@ export default function NewsDetailPage() {
           .detail-hero { height: auto; padding-top: 150px; padding-bottom: 40px; }
           .content-box { padding: 30px 20px; }
           .news-title { font-size: 2rem; }
+        }
+      `}</style>
+
+      {/* ✨ BUTON İÇİN GLOBAL CSS ✨ */}
+      <style jsx global>{`
+        .custom-back-btn {
+          display: inline-flex !important;
+          align-items: center !important;
+          gap: 10px !important;
+          color: #ffffff !important;
+          background-color: #27ae60 !important;
+          text-decoration: none !important;
+          font-weight: 700 !important;
+          margin-bottom: 25px !important;
+          padding: 12px 25px !important;
+          border-radius: 50px !important;
+          box-shadow: 0 4px 15px rgba(39, 174, 96, 0.4) !important;
+          transition: all 0.3s ease !important;
+        }
+        .custom-back-btn:hover {
+          transform: translateY(-3px) !important;
+          background-color: #1a5c38 !important;
+          box-shadow: 0 8px 25px rgba(26, 92, 56, 0.5) !important;
         }
       `}</style>
     </div>

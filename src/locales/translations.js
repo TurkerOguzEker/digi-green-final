@@ -682,6 +682,16 @@ export const translations = {
                 partner: 'Ortak'
             }
         },
+        footer: {
+            quickMenu: 'Hızlı Menü',
+            about: 'Hakkında',
+            partners: 'Ortaklar',
+            files: 'Dosyalar',
+            contact: 'İletişim',
+            contactTitle: 'İletişim',
+            defaultDesc: 'Kapaklı Belediyesi liderliğinde yürütülen sürdürülebilir kalkınma projesi.',
+            defaultDisclaimer: 'Avrupa Birliği tarafından finanse edilmektedir. Ancak ifade edilen görüşler ve düşünceler yalnızca yazar(lar)a aittir ve Avrupa Birliği\'nin veya Avrupa Eğitim ve Kültür Yürütme Ajansı\'nın (EACEA) görüşlerini yansıtmayabilir. Ne Avrupa Birliği ne de EACEA bunlardan sorumlu tutulamaz.'
+        },
     },
    //xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx//xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
       //xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx//xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
@@ -1313,6 +1323,16 @@ export const translations = {
                 coordinator: 'Coordinator',
                 partner: 'Partner'
             }
+        },
+        footer: {
+            quickMenu: 'Quick Links',
+            about: 'About Us',
+            partners: 'Partners',
+            files: 'Files',
+            contact: 'Contact',
+            contactTitle: 'Contact Us',
+            defaultDesc: 'A sustainable development project led by Kapaklı Municipality.',
+            defaultDisclaimer: 'Funded by the European Union. Views and opinions expressed are however those of the author(s) only and do not necessarily reflect those of the European Union or the European Education and Culture Executive Agency (EACEA). Neither the European Union nor EACEA can be held responsible for them.'
         },
     }
    
