@@ -25,16 +25,12 @@ export default function Footer() {
     fetchData();
   }, []);
 
-  // ✨ YENİ: Kusursuz Fallback (Geri Dönüş) Mantığı
+  // ✨ YENİ: Veritabanı dinamik içerik kontrolü (Önce İngilizce sütunu kontrol eder)
   const getDynamicContent = (key, defaultTranslationKey) => {
-    // 1. EĞER DİL İNGİLİZCE İSE:
-    if (language === 'en') {
-      // Veritabanında İngilizce sütun doluysa onu ver, boşsa TÜRÇEYİ DEĞİL sözlükteki İNGİLİZCEYİ ver.
-      return content[`${key}_en`] || t(defaultTranslationKey);
+    const enKey = `${key}_en`;
+    if (language === 'en' && content[enKey]) {
+      return content[enKey];
     }
-    
-    // 2. EĞER DİL TÜRKÇE İSE:
-    // Veritabanında Türkçe doluysa onu ver, boşsa sözlükteki TÜRKÇEYİ ver.
     return content[key] || t(defaultTranslationKey);
   };
 
@@ -192,7 +188,7 @@ export default function Footer() {
               .disclaimer-content { 
                   display: flex; 
                   align-items: center; 
-                  justify-content: flex-start;
+                  justify-content: center; /* ✨ SOLA YASLAMADAN ORTAYA ALDIK */
                   gap: 20px;
               }
               .eu-flag-img {
@@ -206,7 +202,8 @@ export default function Footer() {
                   font-size: 0.85rem; 
                   color: #9dcfae;
                   line-height: 1.5;
-                  text-align: left;
+                  text-align: center; /* ✨ METNİ DE ORTALADIK */
+                  max-width: 800px; /* ✨ ÇOK UZAMAMASI İÇİN SINIR KOYDUK */
               }
 
               @media (max-width: 768px) {
@@ -217,4 +214,4 @@ export default function Footer() {
           `}</style>
       </footer>
   );
-}
+}   
