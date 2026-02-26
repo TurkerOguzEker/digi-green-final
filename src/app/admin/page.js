@@ -1838,7 +1838,6 @@ export default function AdminPage() {
                       <i className={isEditing ? 'fas fa-pen' : 'fas fa-plus'} />
                       {isEditing ? ' Ortak Düzenle' : ' Yeni Ortak Ekle'}
                     </div>
-                    {/* ✨ Otomatik çeviri butonu tamamen kaldırıldı ✨ */}
                   </div>
                   <form onSubmit={e => saveItem(e, 'partners', partnerForm, setPartnerForm)} style={{display:'grid', gap:'14px'}}>
                     

@@ -2,7 +2,6 @@
 import { useEffect, useState, useRef } from 'react';
 import { supabase } from '../../lib/supabase';
 import ScrollToTop from '../../components/ScrollToTop';
-// ✨ ESKİ SİSTEM: useLanguage kancası ile 'language' ve 't' fonksiyonunu alıyoruz
 import { useLanguage } from '../../context/LanguageContext';
 
 // ─── SAYFA GENELİ ARKA PLAN AĞI ────────────────────────────────────────────
@@ -72,7 +71,7 @@ const NetworkBackground = () => {
   return <canvas ref={canvasRef} style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', zIndex: -1, pointerEvents: 'none', background: '#f4f7f2' }} />;
 };
 
-// ─── YAPRAK ANİMASYONU ────────────────────────────────────────────────────
+// ─── YAPRAK ANİMASYONU ────────────────────────────────────────────────────────
 const HeroAnimation = () => {
   const canvasRef = useRef(null);
 
@@ -85,13 +84,14 @@ const HeroAnimation = () => {
     
     let spawnTimeouts = [];
     let mainTimeout;
-    let isVisible = true;
+    let isVisible = true; 
 
     const resize = () => {
       const parent = canvas.parentElement;
       canvas.width  = parent ? parent.offsetWidth : window.innerWidth;
       canvas.height = parent ? parent.offsetHeight : window.innerHeight;
     };
+    
     resize();
     window.addEventListener('resize', resize);
 
@@ -152,8 +152,7 @@ const HeroAnimation = () => {
         this.vy *= this.drag;
         this.x += this.vx;
         this.y += this.vy;
-        const target = Math.atan2(this.vy, -this.vx) + Math.PI * 0.08;
-        let diff = target - this.angle;
+        let diff = Math.atan2(this.vy, -this.vx) + Math.PI * 0.08 - this.angle;
         while (diff >  Math.PI) diff -= Math.PI * 2;
         while (diff < -Math.PI) diff += Math.PI * 2;
         this.angVel += diff * 0.006;
@@ -232,16 +231,26 @@ const HeroAnimation = () => {
 
 // ─── PARTNERS PAGE ─────────────────────────────────────────────────────────────
 export default function PartnersPage() {
+  const [content, setContent] = useState({});
   const [partners, setPartners] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // ✨ Dil fonksiyonlarını alıyoruz
+  // Dil fonksiyonlarını alıyoruz
   const { language, t } = useLanguage();
 
   useEffect(() => {
     async function fetchData() {
+      // Önce ayarları çek
+      const { data: settingsData } = await supabase.from('settings').select('*');
+      if (settingsData) {
+        const map = {}; settingsData.forEach(item => map[item.key] = item.value);
+        setContent(map);
+      }
+
+      // Sonra ortakları çek
       const { data: partnersData } = await supabase.from('partners').select('*').order('id');
       if (partnersData) setPartners(partnersData);
+      
       setLoading(false);
     }
     fetchData();
@@ -255,6 +264,20 @@ export default function PartnersPage() {
     document.querySelectorAll('.reveal, .reveal-up').forEach(el => observer.observe(el));
     return () => observer.disconnect();
   }, [loading, partners]);
+
+  // ✨ AKILLI YEDEKLEME
+  const getDynamicContent = (trKey, defaultTranslationKey) => {
+    if (language === 'en') {
+      const enKey = `${trKey}_en`;
+      if (content[enKey] !== undefined) return content[enKey];
+      const translation = t(defaultTranslationKey);
+      if (translation !== defaultTranslationKey) return translation;
+      if (content[trKey] !== undefined) return content[trKey];
+    }
+    if (content[trKey] !== undefined) return content[trKey];
+    const translationFallback = t(defaultTranslationKey);
+    return translationFallback === defaultTranslationKey ? '' : translationFallback;
+  };
 
   return (
     <div className="partners-page">
@@ -276,13 +299,13 @@ export default function PartnersPage() {
 
             <div className="container hero-content">
               <div className="eyebrow reveal active">
-                <span className="eyebrow-dot"></span>{t('partners.hero.eyebrow')}<span className="eyebrow-dot"></span>
+                <span className="eyebrow-dot"></span>{getDynamicContent('partners_hero_eyebrow', 'partners.hero.eyebrow')}<span className="eyebrow-dot"></span>
               </div>
               <h1 className="header-title reveal active">
-                {t('partners.hero.title1')}<br /><em>{t('partners.hero.title2')}</em>
+                {getDynamicContent('partners_hero_title1', 'partners.hero.title1')}<br /><em>{getDynamicContent('partners_hero_title2', 'partners.hero.title2')}</em>
               </h1>
               <p className="header-subtitle reveal active" style={{ transitionDelay: '0.25s' }}>
-                {t('partners.hero.desc')}
+                {getDynamicContent('partners_page_desc', 'partners.hero.desc')}
               </p>
               <div className="hero-divider reveal active" style={{ transitionDelay: '0.4s' }}>
                 <span></span><span className="dot"></span><span></span>
@@ -294,7 +317,7 @@ export default function PartnersPage() {
               onClick={() => document.getElementById('icerik')?.scrollIntoView({ behavior: 'smooth' })}
               aria-label="İçeriğe git"
             >
-              <span className="scroll-btn-label">{t('partners.hero.scrollBtn')}</span>
+              <span className="scroll-btn-label">{getDynamicContent('partners_hero_scroll', 'partners.hero.scrollBtn')}</span>
               <span className="scroll-btn-icon"><i className="fas fa-chevron-down"></i></span>
             </button>
           </section>
@@ -302,8 +325,8 @@ export default function PartnersPage() {
           <section id="icerik" className="section-padding">
             <div className="container" style={{ maxWidth: '1100px' }}>
               <div className="section-head reveal-up">
-                <p className="section-label">{t('partners.section.label')}</p>
-                <h2 className="section-title">{t('partners.section.title')}</h2>
+                <p className="section-label">{getDynamicContent('partners_sec_label', 'partners.section.label')}</p>
+                <h2 className="section-title">{getDynamicContent('partners_sec_title', 'partners.section.title')}</h2>
               </div>
 
               <div className="partners-list">
@@ -359,19 +382,16 @@ export default function PartnersPage() {
                               ? <p className="partner-desc">{displayDesc}</p>
                               : <p className="partner-desc empty-desc">{t('partners.list.emptyDesc')}</p>}
                             
-                            <div className="button-group" style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', marginTop: '16px', justifyContent: 'center', width: '100%' }}>
+                            {/* ✨ DÜZELTME: Buton tamamen merkeze (ortaya) hizalandı ✨ */}
+                            <div className="button-group" style={{ display: 'flex', justifyContent: 'center', marginTop: 'auto', width: '100%' }}>
                               
-                              <a href={`/ortaklar/${partner.id}`} className="action-btn detail-btn">
-                                <span>{t('partners.list.detailBtn')}</span>
-                                <span className="btn-icon"><i className="fas fa-link"></i></span>
-                              </a>
-
                               {partner.website && (
                                 <a href={partner.website} target="_blank" rel="noopener noreferrer" className="action-btn">
                                   <span>{t('partners.list.websiteBtn')}</span>
                                   <span className="btn-icon"><i className="fas fa-arrow-right"></i></span>
                                 </a>
                               )}
+                              
                             </div>
                           </div>
                         </div>
@@ -397,13 +417,51 @@ export default function PartnersPage() {
           --radius: 20px;
         }
 
-        /* LOADER */
-        .loading-screen { height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:24px; }
-        .loader-ring { display:inline-block; position:relative; width:60px; height:60px; }
-        .loader-ring div { box-sizing:border-box; display:block; position:absolute; width:46px; height:46px; margin:7px; border:3px solid transparent; border-top-color:var(--green-mid); border-radius:50%; animation:loader-spin 1.2s cubic-bezier(0.5,0,0.5,1) infinite; }
-        .loader-ring div:nth-child(1){animation-delay:-0.45s;} .loader-ring div:nth-child(2){animation-delay:-0.3s;border-top-color:var(--gold);} .loader-ring div:nth-child(3){animation-delay:-0.15s;}
-        .loader-text { font-size:0.9rem; font-weight:600; color:var(--text-soft); letter-spacing:0.1em; text-transform:uppercase; }
-        @keyframes loader-spin { 0%{transform:rotate(0deg);} 100%{transform:rotate(360deg);} }
+      
+       /* LOADER (ZARİF VE ŞEFFAF YAPI) */
+        .loading-screen { 
+          height: 100vh; 
+          display: flex; 
+          flex-direction: column; 
+          align-items: center; 
+          justify-content: center; 
+          gap: 24px;
+          background: transparent; /* Arka planı tamamen şeffaf yaptık ki ağ animasyonu görünsün */
+          position: relative;
+          z-index: 10;
+        }
+        .loader-ring { 
+          display: inline-block; 
+          position: relative; 
+          width: 60px; 
+          height: 60px; 
+        }
+        .loader-ring div { 
+          box-sizing: border-box; 
+          display: block; 
+          position: absolute; 
+          width: 46px; 
+          height: 46px; 
+          margin: 7px; 
+          border: 3px solid transparent; 
+          border-top-color: var(--green-mid); 
+          border-radius: 50%; 
+          animation: loader-spin 1.2s cubic-bezier(0.5,0,0.5,1) infinite; 
+        }
+        .loader-ring div:nth-child(1){ animation-delay: -0.45s; } 
+        .loader-ring div:nth-child(2){ animation-delay: -0.3s; border-top-color: var(--gold); } 
+        .loader-ring div:nth-child(3){ animation-delay: -0.15s; }
+        .loader-text { 
+          font-size: 0.9rem; 
+          font-weight: 600; 
+          color: var(--text-soft); 
+          letter-spacing: 0.1em; 
+          text-transform: uppercase; 
+        }
+        @keyframes loader-spin { 
+          0% { transform: rotate(0deg); } 
+          100% { transform: rotate(360deg); } 
+        }
 
         /* REVEAL */
         .reveal { opacity:0; transition:all 1s cubic-bezier(0.165,0.84,0.44,1); }
@@ -501,10 +559,12 @@ export default function PartnersPage() {
         .country-tag img { width:20px; height:20px; border-radius:50%; object-fit:cover; }
 
         /* İÇERİK TARAF */
-        .partner-content-side { flex:1; display:flex; flex-direction:column; justify-content:center; position:relative; z-index:2; padding: 32px 36px; }
-        .content-inner {}
-        .about-title { font-size:0.78rem; text-transform:uppercase; letter-spacing:2px; color:var(--green-mid); font-weight:800; margin-bottom:12px; }
-        .partner-desc { color:var(--text-soft); font-size:1rem; line-height:1.75; margin-bottom:24px; white-space:pre-wrap; }
+        .partner-content-side { flex:1; display:flex; flex-direction:column; position:relative; z-index:2; padding: 32px 36px; }
+        .content-inner { display: flex; flex-direction: column; height: 100%; }
+        /* ⬇️ BURAYI DÜZELTTİK: Başlık sola yaslı */
+        .about-title { font-size:0.78rem; text-transform:uppercase; letter-spacing:2px; color:var(--green-mid); font-weight:800; margin-bottom:12px; text-align: left; }
+        /* ⬇️ BURAYI DÜZELTTİK: Metin sola yaslı */
+        .partner-desc { color:var(--text-soft); font-size:1rem; line-height:1.75; margin-bottom:24px; white-space:pre-wrap; text-align: left; }
         .empty-desc { font-style:italic; color:#999; }
 
         /* BUTON GRUBU VE BUTONLAR */
@@ -515,13 +575,6 @@ export default function PartnersPage() {
         .action-btn:hover span:first-child { background:#0f3320; }
         .action-btn:hover .btn-icon { background:var(--green-deep); }
         .action-btn:hover .btn-icon i { transform:translateX(4px); }
-
-        .detail-btn span:first-child { background: var(--green-mid); }
-        .detail-btn .btn-icon { background: var(--green-deep); }
-        
-        .detail-btn:hover span:first-child { background: var(--green-deep); }
-        .detail-btn:hover .btn-icon { background: var(--green-mid); }
-        .detail-btn:hover .btn-icon i { transform: scale(1.1); }
 
         .empty-state { text-align:center; padding:60px 40px; color:var(--text-soft); }
         .empty-state i { font-size:3rem; opacity:0.4; margin-bottom:16px; display:block; }
