@@ -3,7 +3,6 @@ import { useEffect, useState } from 'react';
 import { supabase } from '../../../lib/supabase';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-// ✨ ESKİ SİSTEM: useLanguage kancası ile 'language' ve 't' fonksiyonunu alıyoruz
 import { useLanguage } from '../../../context/LanguageContext';
 
 export default function ActivityDetailPage() {
@@ -12,8 +11,8 @@ export default function ActivityDetailPage() {
   const [activity, setActivity] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Sözlük ve dil bilgisini çekiyoruz
-  const { language, t } = useLanguage();
+  // Dil bilgisini çekiyoruz
+  const { language } = useLanguage();
 
   useEffect(() => {
     async function fetchActivity() {
@@ -32,7 +31,7 @@ export default function ActivityDetailPage() {
     return (
       <div style={{ height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f4f7f2' }}>
         <h3 style={{ color: '#27ae60', fontFamily: 'Inter' }}>
-          {t('activities.detail.loading')}
+          {language === 'en' ? 'Loading Activity Details...' : 'Faaliyet Detayı Yükleniyor...'}
         </h3>
       </div>
     );
@@ -51,7 +50,6 @@ export default function ActivityDetailPage() {
       <section className="detail-hero" style={{ backgroundImage: `url(${activity.image_url || 'https://images.unsplash.com/photo-1515162816999-a0c47dc192f7?auto=format&fit=crop&q=80&w=1200'})` }}>
         <div className="hero-overlay"></div>
         <div className="container hero-content">
-          {/* Tür, Tarih ve Konum rozetleri buradan kaldırıldı */}
           <h1 className="activity-title">
             {displayTitle}
           </h1>
@@ -64,7 +62,8 @@ export default function ActivityDetailPage() {
             
           {/* ✨ BUTON RESİM VE KUTU ARASINDAKİ BOŞLUKTA ✨ */}
           <Link href="/activities" className="custom-back-btn">
-            <i className="fas fa-arrow-left"></i> {t('activities.detail.backBtn')}
+            <i className="fas fa-arrow-left"></i> 
+            {language === 'en' ? 'Back to Activities' : 'Faaliyetlere Dön'}
           </Link>
 
           <div className="content-box">
@@ -125,7 +124,6 @@ export default function ActivityDetailPage() {
           line-height: 1.2;
           text-shadow: 0 4px 20px rgba(0,0,0,0.5);
         }
-        /* ✨ GÜNCELLEME: Margin-top kaldırıldı ve resmin altındaki boşluk (padding) eklendi ✨ */
         .detail-content-section {
           padding-top: 40px; 
           position: relative;

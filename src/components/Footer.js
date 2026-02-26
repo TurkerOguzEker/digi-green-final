@@ -3,14 +3,11 @@ import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation'; 
 import { supabase } from '../lib/supabase';
-// ✨ ESKİ SİSTEM: useLanguage kancasını import ediyoruz
 import { useLanguage } from '../context/LanguageContext';
 
 export default function Footer() {
   const pathname = usePathname();
-  const [content, setContent] = useState({});
-  
-  // ✨ Dil ve Çeviri fonksiyonlarını alıyoruz
+  const [content, setContent] = useState(null); // null yaparak verinin yüklenmesini beklediğimizi belirtiyoruz
   const { language, t } = useLanguage();
 
   useEffect(() => {
@@ -20,13 +17,15 @@ export default function Footer() {
         const map = {};
         data.forEach(item => map[item.key] = item.value);
         setContent(map);
+      } else {
+        setContent({});
       }
     }
     fetchData();
   }, []);
 
-  // ✨ YENİ: Veritabanı dinamik içerik kontrolü (Önce İngilizce sütunu kontrol eder)
   const getDynamicContent = (key, defaultTranslationKey) => {
+    if (!content) return ''; // Veri yüklenene kadar boş döndür (Gel-git yapmasını engeller)
     const enKey = `${key}_en`;
     if (language === 'en' && content[enKey]) {
       return content[enKey];
@@ -38,6 +37,9 @@ export default function Footer() {
   if (pathname && (pathname.startsWith('/admin') || pathname.startsWith('/login'))) {
       return null;
   }
+
+  // Veri Supabase'den gelene kadar Footer'ı gizli tut (Flicker/göz kırpma engellemesi)
+  if (!content) return <footer className="site-footer" style={{ minHeight: '300px', backgroundColor: '#1a5c38' }}></footer>;
 
   return (
       <footer className="site-footer">
@@ -88,10 +90,10 @@ export default function Footer() {
               <div className="footer-col">
                   <h4>{getDynamicContent('footer_column2_title', 'footer.quickMenu')}</h4>
                   <ul className="footer-links">
-                      <li><Link href="/about">{t('footer.about')}</Link></li>
-                      <li><Link href="/partners">{t('footer.partners')}</Link></li>
-                      <li><Link href="/results">{t('footer.files')}</Link></li>
-                      <li><Link href="/contact">{t('footer.contact')}</Link></li>
+                      <li><Link href="/about">{getDynamicContent('about_general_title', 'nav.about')}</Link></li>
+                      <li><Link href="/partners">{getDynamicContent('partners_page_title', 'nav.partners')}</Link></li>
+                      <li><Link href="/results">{getDynamicContent('results_page_title', 'nav.files')}</Link></li>
+                      <li><Link href="/contact">{getDynamicContent('contact_page_title', 'nav.contact')}</Link></li>
                   </ul>
               </div>
               
@@ -106,11 +108,11 @@ export default function Footer() {
           
           <div className="eu-disclaimer-bar">
               <div className="container disclaimer-content">
+                  {/* onError silindi, artık resim bozuksa panelden anlayıp değiştirebilirsin */}
                   <img 
-                      src={content.footer_eu_logo || "/assets/css/images/eu-flag.png.png"} 
+                      src={content.footer_eu_logo || "/assets/images/eu-flag.png"} 
                       alt="EU Flag" 
                       className="eu-flag-img"
-                      onError={(e)=>e.target.style.display='none'} 
                   />
                   <p className="eu-text">
                       {getDynamicContent('footer_disclaimer', 'footer.defaultDisclaimer')}
@@ -124,7 +126,14 @@ export default function Footer() {
                   color: #e8f5ee;
                   padding-top: 60px;
                   font-size: 0.95rem;
+                  animation: fadeIn 0.5s ease-in-out;
               }
+              
+              @keyframes fadeIn {
+                  from { opacity: 0; }
+                  to { opacity: 1; }
+              }
+
               .footer-grid {
                   display: grid;
                   grid-template-columns: 1.5fr 1fr 1fr;
@@ -165,11 +174,11 @@ export default function Footer() {
 
               .footer-desc { line-height: 1.6; margin-bottom: 20px; max-width: 90%; opacity: 0.85; }
               .footer-col h4 { color: white; margin-bottom: 20px; font-size: 1.2rem; border-left: 3px solid #6ee8a2; padding-left: 15px; }
-              .footer-links { list-style: none; padding: 0; }
+              .footer-links { list-style: none; padding: 0; margin: 0; }
               .footer-links li { margin-bottom: 10px; }
               .footer-links li a { color: #d4f0de; text-decoration: none; transition: 0.3s; }
               .footer-links li a:hover { color: #a8f0c0; padding-left: 5px; }
-              .contact-list { list-style: none; padding: 0; }
+              .contact-list { list-style: none; padding: 0; margin: 0; }
               .contact-list li { margin-bottom: 12px; display: flex; align-items: center; gap: 10px; }
               .contact-list i { color: #6ee8a2; width: 20px; text-align: center; }
               .social-icons { display: flex; gap: 12px; margin-top: 20px; }
@@ -182,13 +191,15 @@ export default function Footer() {
               
               .eu-disclaimer-bar { 
                   background: #0f3320; 
-                  padding: 20px 0; 
+                  padding: 24px 0; 
                   border-top: 1px solid rgba(255,255,255,0.1); 
               }
+
+              /* ── BAYRAK VE YAZI ORTALANDI (ESKİ HALİNE DÖNDÜ) ── */
               .disclaimer-content { 
                   display: flex; 
                   align-items: center; 
-                  justify-content: center; /* ✨ SOLA YASLAMADAN ORTAYA ALDIK */
+                  justify-content: center; 
                   gap: 20px;
               }
               .eu-flag-img {
@@ -199,19 +210,19 @@ export default function Footer() {
               }
               .eu-text {
                   margin: 0;
-                  font-size: 0.85rem; 
+                  font-size: 0.85rem;
                   color: #9dcfae;
                   line-height: 1.5;
-                  text-align: center; /* ✨ METNİ DE ORTALADIK */
-                  max-width: 800px; /* ✨ ÇOK UZAMAMASI İÇİN SINIR KOYDUK */
+                  text-align: center;
+                  max-width: 800px;
               }
 
               @media (max-width: 768px) {
-                  .footer-grid { grid-template-columns: 1fr; gap: 30px; }
-                  .disclaimer-content { flex-direction: column; text-align: center; justify-content: center; }
+                  .footer-grid { grid-template-columns: 1fr; gap: 40px; }
+                  .disclaimer-content { flex-direction: column; text-align: center; justify-content: center; gap: 15px; }
                   .eu-text { text-align: center; }
               }
           `}</style>
       </footer>
   );
-}   
+}

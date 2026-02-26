@@ -2,7 +2,6 @@
 import { useEffect, useState, useRef } from 'react';
 import { supabase } from '../../../lib/supabase';
 import ScrollToTop from '../../../components/ScrollToTop';
-// ✨ YENİ: Dil Context hook'umuzu dahil ettik
 import { useLanguage } from '../../../context/LanguageContext';
 
 // ─── ARKA PLAN AĞI ─────────────────────────────────────────────────────────────
@@ -64,7 +63,6 @@ export default function RoadmapPage() {
   const [content, setContent] = useState({});
   const [loading, setLoading] = useState(true);
 
-  // ✨ YENİ: Dil ve Çeviri (t) fonksiyonlarını alıyoruz
   const { language, t } = useLanguage();
 
   useEffect(() => {
@@ -86,34 +84,43 @@ export default function RoadmapPage() {
     return () => obs.disconnect();
   }, [loading, content]);
 
-  // Supabase'den gelen veriyi veya translations.js'i kullanmak için
+  // ✨ BOŞ BIRAKILANLARI YÖNETEN AKILLI FONKSİYON
   const getDynamicContent = (trKey, defaultTranslationKey) => {
-    return (language === 'tr' && content[trKey]) ? content[trKey] : t(defaultTranslationKey);
+    if (language === 'en') {
+      const enKey = `${trKey}_en`;
+      if (content[enKey] !== undefined) return content[enKey];
+      const translation = t(defaultTranslationKey);
+      if (translation !== defaultTranslationKey) return translation;
+      if (content[trKey] !== undefined) return content[trKey];
+    }
+    if (content[trKey] !== undefined) return content[trKey];
+    const translationFallback = t(defaultTranslationKey);
+    return translationFallback === defaultTranslationKey ? '' : translationFallback;
   };
 
-  // Dizi yapısındaki verilerin isimlerini çeviriye bağladık
+  // 🎯 TABLO GÖREVLERİ (Artık Admin Panel'den dinamik çekiliyor)
   const roadmapData = [
-    { id: 1, name: t('roadmap.tasks.task1'), active: [1] },
-    { id: 2, name: t('roadmap.tasks.task2'), active: [2] },
-    { id: 3, name: t('roadmap.tasks.task3'), active: [5, 6] },
-    { id: 4, name: t('roadmap.tasks.task4'), active: [8, 9] },
-    { id: 5, name: t('roadmap.tasks.task5'), active: [7, 10] },
-    { id: 6, name: t('roadmap.tasks.task6'), active: [6, 9, 12, 15, 18, 21] },
-    { id: 7, name: t('roadmap.tasks.task7'), active: [5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17] },
-    { id: 8, name: t('roadmap.tasks.task8'), active: [17, 24] },
-    { id: 9, name: t('roadmap.tasks.task9'), active: [3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24] },
-    { id: 10, name: t('roadmap.tasks.task10'), active: [5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20] },
-    { id: 11, name: t('roadmap.tasks.task11'), active: [3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20] },
-    { id: 12, name: t('roadmap.tasks.task12'), active: [4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24] },
-    { id: 13, name: t('roadmap.tasks.task13'), active: [5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20] },
-    { id: 14, name: t('roadmap.tasks.task14'), active: [5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20] },
-    { id: 15, name: t('roadmap.tasks.task15'), active: [5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20] },
-    { id: 16, name: t('roadmap.tasks.task16'), active: [15, 16, 17, 18, 19, 20, 21, 22, 23, 24] },
-    { id: 17, name: t('roadmap.tasks.task17'), active: [19, 20, 21, 22, 23, 24] },
-    { id: 18, name: t('roadmap.tasks.task18'), active: [19, 20, 21, 22, 23, 24] },
-    { id: 19, name: t('roadmap.tasks.task19'), active: [19, 20, 21, 22, 23, 24] },
-    { id: 20, name: t('roadmap.tasks.task20'), active: [19, 20, 21, 22, 23, 24] },
-    { id: 21, name: t('roadmap.tasks.task21'), active: [24] }
+    { id: 1, name: getDynamicContent('roadmap_task_1', 'roadmap.tasks.task1'), active: [1] },
+    { id: 2, name: getDynamicContent('roadmap_task_2', 'roadmap.tasks.task2'), active: [2] },
+    { id: 3, name: getDynamicContent('roadmap_task_3', 'roadmap.tasks.task3'), active: [5, 6] },
+    { id: 4, name: getDynamicContent('roadmap_task_4', 'roadmap.tasks.task4'), active: [8, 9] },
+    { id: 5, name: getDynamicContent('roadmap_task_5', 'roadmap.tasks.task5'), active: [7, 10] },
+    { id: 6, name: getDynamicContent('roadmap_task_6', 'roadmap.tasks.task6'), active: [6, 9, 12, 15, 18, 21] },
+    { id: 7, name: getDynamicContent('roadmap_task_7', 'roadmap.tasks.task7'), active: [5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17] },
+    { id: 8, name: getDynamicContent('roadmap_task_8', 'roadmap.tasks.task8'), active: [17, 24] },
+    { id: 9, name: getDynamicContent('roadmap_task_9', 'roadmap.tasks.task9'), active: [3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24] },
+    { id: 10, name: getDynamicContent('roadmap_task_10', 'roadmap.tasks.task10'), active: [5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20] },
+    { id: 11, name: getDynamicContent('roadmap_task_11', 'roadmap.tasks.task11'), active: [3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20] },
+    { id: 12, name: getDynamicContent('roadmap_task_12', 'roadmap.tasks.task12'), active: [4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24] },
+    { id: 13, name: getDynamicContent('roadmap_task_13', 'roadmap.tasks.task13'), active: [5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20] },
+    { id: 14, name: getDynamicContent('roadmap_task_14', 'roadmap.tasks.task14'), active: [5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20] },
+    { id: 15, name: getDynamicContent('roadmap_task_15', 'roadmap.tasks.task15'), active: [5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20] },
+    { id: 16, name: getDynamicContent('roadmap_task_16', 'roadmap.tasks.task16'), active: [15, 16, 17, 18, 19, 20, 21, 22, 23, 24] },
+    { id: 17, name: getDynamicContent('roadmap_task_17', 'roadmap.tasks.task17'), active: [19, 20, 21, 22, 23, 24] },
+    { id: 18, name: getDynamicContent('roadmap_task_18', 'roadmap.tasks.task18'), active: [19, 20, 21, 22, 23, 24] },
+    { id: 19, name: getDynamicContent('roadmap_task_19', 'roadmap.tasks.task19'), active: [19, 20, 21, 22, 23, 24] },
+    { id: 20, name: getDynamicContent('roadmap_task_20', 'roadmap.tasks.task20'), active: [19, 20, 21, 22, 23, 24] },
+    { id: 21, name: getDynamicContent('roadmap_task_21', 'roadmap.tasks.task21'), active: [24] }
   ];
 
   return (
@@ -131,19 +138,18 @@ export default function RoadmapPage() {
           <section className="hero">
             <HeroAnimation/>
             <div className="hero-noise"/>
-            {/* Göz yormayan şeffaf ışık hareleri */}
             <div className="orb orb-1"/><div className="orb orb-2"/><div className="orb orb-3"/>
             
             <div className="container hero-content">
-              <div className="eyebrow reveal active"><span className="edot"/> {t('roadmap.hero.eyebrow')} <span className="edot"/></div>
-              <h1 className="hero-title reveal active">{t('roadmap.hero.title1')}<br/><em>{t('roadmap.hero.title2')}</em></h1>
+              <div className="eyebrow reveal active"><span className="edot"/> {getDynamicContent('roadmap_hero_eyebrow', 'roadmap.hero.eyebrow')} <span className="edot"/></div>
+              <h1 className="hero-title reveal active">{getDynamicContent('roadmap_hero_title1', 'roadmap.hero.title1')}<br/><em>{getDynamicContent('roadmap_hero_title2', 'roadmap.hero.title2')}</em></h1>
               <p className="hero-sub reveal active" style={{transitionDelay:'.25s'}}>
-                {getDynamicContent('roadmap_desc', 'roadmap.hero.descDefault')}
+                {getDynamicContent('roadmap_page_desc', 'roadmap.hero.descDefault')}
               </p>
               <div className="hero-div reveal active" style={{transitionDelay:'.4s'}}><span/><span className="hdot"/><span/></div>
             </div>
             <button className="scroll-btn" onClick={() => document.getElementById('icerik')?.scrollIntoView({behavior:'smooth'})} aria-label="Aşağı kaydır">
-              <span className="scroll-label">{t('roadmap.hero.scrollBtn')}</span>
+              <span className="scroll-label">{getDynamicContent('roadmap_hero_scroll', 'roadmap.hero.scrollBtn')}</span>
               <span className="scroll-icon"><i className="fas fa-chevron-down"/></span>
             </button>
           </section>
@@ -153,17 +159,17 @@ export default function RoadmapPage() {
             <div className="container" style={{maxWidth:'1200px'}}>
 
               <div className="sec-head reveal-up">
-                <p className="sec-label">{t('roadmap.section.part')}</p>
-                <h2 className="sec-title">{t('roadmap.section.title')}</h2>
+                <p className="sec-label">{getDynamicContent('roadmap_sec_label', 'roadmap.section.part')}</p>
+                <h2 className="sec-title">{getDynamicContent('roadmap_sec_title', 'roadmap.section.title')}</h2>
               </div>
 
-              {/* TABLO ALANI (Glassmorphism kart içine alındı) */}
+              {/* TABLO ALANI */}
               <div className="table-wrapper reveal-up" style={{transitionDelay:'.15s'}}>
                 <div className="table-responsive">
                     <table className="plan-table">
                         <thead>
                             <tr>
-                                <th className="task-header">{t('roadmap.table.header')}</th>
+                                <th className="task-header">{getDynamicContent('roadmap_table_header', 'roadmap.table.header')}</th>
                                 {/* 1'den 24'e kadar otomatik sütun başlığı oluşturur */}
                                 {[...Array(24)].map((_, i) => (
                                     <th key={i + 1}>{i + 1}</th>

@@ -2,7 +2,6 @@
 import { useEffect, useState, useRef } from 'react';
 import { supabase } from '../../../lib/supabase';
 import ScrollToTop from '../../../components/ScrollToTop';
-// ✨ YENİ: Çeviri hook'unu içeri aktarıyoruz
 import { useLanguage } from '../../../context/LanguageContext';
 
 // ─── ARKA PLAN AĞI ─────────────────────────────────────────────────────────────
@@ -87,7 +86,6 @@ const SectionCard = ({ accent, letter, badge, title, children, reverse=false }) 
     <div className="sc-shine"/>
     
     <div className="sc-head">
-      {/* Madde işareti kutucuğu */}
       <span className="sc-badge">{letter}.</span>
       <div className="sc-head-text">
         {badge && <span className="sc-role-badge">{badge}</span>}
@@ -106,7 +104,6 @@ export default function ConsortiumPage() {
   const [content, setContent] = useState({});
   const [loading, setLoading] = useState(true);
 
-  // ✨ YENİ: Dil ve Çeviri (t) fonksiyonlarını alıyoruz
   const { language, t } = useLanguage();
 
   useEffect(() => {
@@ -126,9 +123,17 @@ export default function ConsortiumPage() {
     return () => obs.disconnect();
   }, [loading, content]);
 
-  // Supabase'den gelen veriyi veya translations.js'i kullanmak için küçük bir mantık
+  // ✨ DİNAMİK YEDEKLEME SİSTEMİ
   const getDynamicContent = (trKey, defaultTranslationKey) => {
-    return (language === 'tr' && content[trKey]) ? content[trKey] : t(defaultTranslationKey);
+    if (language === 'en') {
+      const enKey = `${trKey}_en`;
+      if (content[enKey] && content[enKey].trim() !== '') return content[enKey];
+      const translation = t(defaultTranslationKey);
+      if (translation !== defaultTranslationKey) return translation;
+      if (content[trKey] && content[trKey].trim() !== '') return content[trKey];
+    }
+    if (content[trKey] && content[trKey].trim() !== '') return content[trKey];
+    return t(defaultTranslationKey);
   };
 
   return (
@@ -149,15 +154,15 @@ export default function ConsortiumPage() {
             <div className="orb orb-1"/><div className="orb orb-2"/><div className="orb orb-3"/>
             
             <div className="container hero-content">
-              <div className="eyebrow reveal active"><span className="edot"/> {t('consortium.hero.eyebrow')} <span className="edot"/></div>
-              <h1 className="hero-title reveal active">{t('consortium.hero.title1')}<br/><em>{t('consortium.hero.title2')}</em></h1>
+              <div className="eyebrow reveal active"><span className="edot"/> {getDynamicContent('consortium_hero_eyebrow', 'consortium.hero.eyebrow')} <span className="edot"/></div>
+              <h1 className="hero-title reveal active">{getDynamicContent('consortium_hero_title1', 'consortium.hero.title1')}<br/><em>{getDynamicContent('consortium_hero_title2', 'consortium.hero.title2')}</em></h1>
               <p className="hero-sub reveal active" style={{transitionDelay:'.25s'}}>
                 {getDynamicContent('consortium_intro', 'consortium.hero.introDefault')}
               </p>
               <div className="hero-div reveal active" style={{transitionDelay:'.4s'}}><span/><span className="hdot"/><span/></div>
             </div>
             <button className="scroll-btn" onClick={() => document.getElementById('icerik')?.scrollIntoView({behavior:'smooth'})} aria-label="Aşağı kaydır">
-              <span className="scroll-label">{t('consortium.hero.scrollBtn')}</span>
+              <span className="scroll-label">{getDynamicContent('consortium_scroll_btn', 'consortium.hero.scrollBtn')}</span>
               <span className="scroll-icon"><i className="fas fa-chevron-down"/></span>
             </button>
           </section>
@@ -167,17 +172,17 @@ export default function ConsortiumPage() {
             <div className="container" style={{maxWidth:'940px'}}>
 
               <div className="sec-head reveal-up">
-                <p className="sec-label">{t('consortium.section.part')}</p>
-                <h2 className="sec-title">{t('consortium.section.title')}</h2>
+                <p className="sec-label">{getDynamicContent('consortium_sec_label', 'consortium.section.part')}</p>
+                <h2 className="sec-title">{getDynamicContent('consortium_sec_title', 'consortium.section.title')}</h2>
               </div>
 
               {/* İstatistikler */}
               <div className="stats reveal-up" style={{transitionDelay:'.1s'}}>
                 {[
-                  {val:'5',    unit:'',       label: t('consortium.stats.partner')},
-                  {val:'3',    unit:'',       label: t('consortium.stats.country')},
-                  {val:'150K', unit:'+',      label: t('consortium.stats.population')},
-                  {val:'2',    unit:'',       label: t('consortium.stats.euCity')},
+                  {val: getDynamicContent('consortium_stat_1_val', 'consortium.stats.s1_val') || '5',    unit: getDynamicContent('consortium_stat_1_unit', 'consortium.stats.s1_unit') || '',    label: getDynamicContent('consortium_stat_1_label', 'consortium.stats.partner')},
+                  {val: getDynamicContent('consortium_stat_2_val', 'consortium.stats.s2_val') || '3',    unit: getDynamicContent('consortium_stat_2_unit', 'consortium.stats.s2_unit') || '',    label: getDynamicContent('consortium_stat_2_label', 'consortium.stats.country')},
+                  {val: getDynamicContent('consortium_stat_3_val', 'consortium.stats.s3_val') || '150K', unit: getDynamicContent('consortium_stat_3_unit', 'consortium.stats.s3_unit') || '+',   label: getDynamicContent('consortium_stat_3_label', 'consortium.stats.population')},
+                  {val: getDynamicContent('consortium_stat_4_val', 'consortium.stats.s4_val') || '2',    unit: getDynamicContent('consortium_stat_4_unit', 'consortium.stats.s4_unit') || '',    label: getDynamicContent('consortium_stat_4_label', 'consortium.stats.euCity')},
                 ].map((s,i) => (
                   <div className="stat" key={i}>
                     <div className="stat-v">{s.val}<span className="stat-u">{s.unit}</span></div>
@@ -188,17 +193,17 @@ export default function ConsortiumPage() {
 
               {/* ── KART A – KOORDİNATÖR ── */}
               <SectionCard accent="#2563eb" letter="A" 
-                badge={t('consortium.cardA.badge')}
+                badge={getDynamicContent('consortium_badge_a', 'consortium.cardA.badge')}
                 title={getDynamicContent('consortium_section_a_title', 'consortium.cardA.titleDefault')}>
                 <p className="body-text">
                   {getDynamicContent('consortium_text_a', 'consortium.cardA.textDefault')}
                 </p>
                 <div className="pill-grid">
                   {[
-                    { icon:'mapPin',   label: t('consortium.cardA.pill1'),  cls:'blue-pill', bg:'blue-bg'   },
-                    { icon:'users',    label: t('consortium.cardA.pill2'),  cls:'blue-pill', bg:'blue-bg'   },
-                    { icon:'factory',  label: t('consortium.cardA.pill3'),  cls:'blue-pill', bg:'blue-bg'   },
-                    { icon:'recycle',  label: t('consortium.cardA.pill4'),  cls:'blue-pill', bg:'blue-bg'   },
+                    { icon:'mapPin',   label: getDynamicContent('consortium_a_pill1', 'consortium.cardA.pill1'),  cls:'blue-pill', bg:'blue-bg'   },
+                    { icon:'users',    label: getDynamicContent('consortium_a_pill2', 'consortium.cardA.pill2'),  cls:'blue-pill', bg:'blue-bg'   },
+                    { icon:'factory',  label: getDynamicContent('consortium_a_pill3', 'consortium.cardA.pill3'),  cls:'blue-pill', bg:'blue-bg'   },
+                    { icon:'recycle',  label: getDynamicContent('consortium_a_pill4', 'consortium.cardA.pill4'),  cls:'blue-pill', bg:'blue-bg'   },
                   ].map((p,i) => (
                     <div className={`pill ${p.cls}`} key={i}>
                       <span className={`pill-icon-wrap ${p.bg}`}><Icon name={p.icon} color="#2563eb" size={16}/></span>
@@ -210,7 +215,7 @@ export default function ConsortiumPage() {
 
               {/* ── KART B – AVRUPALI ORTAKLAR ── */}
               <SectionCard accent="#16a34a" letter="B" 
-                badge={t('consortium.cardB.badge')}
+                badge={getDynamicContent('consortium_badge_b', 'consortium.cardB.badge')}
                 title={getDynamicContent('consortium_section_b_title', 'consortium.cardB.titleDefault')}
                 reverse>
                 <p className="body-text">
@@ -220,26 +225,26 @@ export default function ConsortiumPage() {
                   <div className="partner-mini green-mini">
                     <div className="pm-icon-wrap green-bg-light"><Icon name="waves" color="#16a34a" size={22}/></div>
                     <div className="pm-info">
-                      <div className="pm-name">{t('consortium.cardB.partner1.name')}</div>
-                      <div className="pm-country"><Icon name="mapPin" color="#16a34a" size={12}/> {t('consortium.cardB.partner1.country')}</div>
-                      <div className="pm-desc">{t('consortium.cardB.partner1.desc')}</div>
+                      <div className="pm-name">{getDynamicContent('consortium_b_p1_name', 'consortium.cardB.partner1.name')}</div>
+                      <div className="pm-country"><Icon name="mapPin" color="#16a34a" size={12}/> {getDynamicContent('consortium_b_p1_country', 'consortium.cardB.partner1.country')}</div>
+                      <div className="pm-desc">{getDynamicContent('consortium_b_p1_desc', 'consortium.cardB.partner1.desc')}</div>
                     </div>
                   </div>
                   <div className="partner-mini green-mini">
                     <div className="pm-icon-wrap green-bg-light"><Icon name="sun" color="#16a34a" size={22}/></div>
                     <div className="pm-info">
-                      <div className="pm-name">{t('consortium.cardB.partner2.name')}</div>
-                      <div className="pm-country"><Icon name="mapPin" color="#16a34a" size={12}/> {t('consortium.cardB.partner2.country')}</div>
-                      <div className="pm-desc">{t('consortium.cardB.partner2.desc')}</div>
+                      <div className="pm-name">{getDynamicContent('consortium_b_p2_name', 'consortium.cardB.partner2.name')}</div>
+                      <div className="pm-country"><Icon name="mapPin" color="#16a34a" size={12}/> {getDynamicContent('consortium_b_p2_country', 'consortium.cardB.partner2.country')}</div>
+                      <div className="pm-desc">{getDynamicContent('consortium_b_p2_desc', 'consortium.cardB.partner2.desc')}</div>
                     </div>
                   </div>
                 </div>
                 <div className="pill-grid" style={{marginTop:'18px'}}>
                   {[
-                    { icon:'globe',   label: t('consortium.cardB.pill1'), cls:'green-pill', bg:'green-bg' },
-                    { icon:'leaf',    label: t('consortium.cardB.pill2'), cls:'green-pill', bg:'green-bg' },
-                    { icon:'monitor', label: t('consortium.cardB.pill3'), cls:'green-pill', bg:'green-bg' },
-                    { icon:'link',    label: t('consortium.cardB.pill4'), cls:'green-pill', bg:'green-bg' },
+                    { icon:'globe',   label: getDynamicContent('consortium_b_pill1', 'consortium.cardB.pill1'), cls:'green-pill', bg:'green-bg' },
+                    { icon:'leaf',    label: getDynamicContent('consortium_b_pill2', 'consortium.cardB.pill2'), cls:'green-pill', bg:'green-bg' },
+                    { icon:'monitor', label: getDynamicContent('consortium_b_pill3', 'consortium.cardB.pill3'), cls:'green-pill', bg:'green-bg' },
+                    { icon:'link',    label: getDynamicContent('consortium_b_pill4', 'consortium.cardB.pill4'), cls:'green-pill', bg:'green-bg' },
                   ].map((p,i) => (
                     <div className={`pill ${p.cls}`} key={i}>
                       <span className={`pill-icon-wrap ${p.bg}`}><Icon name={p.icon} color="#16a34a" size={16}/></span>
@@ -251,7 +256,7 @@ export default function ConsortiumPage() {
 
               {/* ── KART C – TÜRK ORTAKLAR ── */}
               <SectionCard accent="#ea580c" letter="C" 
-                badge={t('consortium.cardC.badge')}
+                badge={getDynamicContent('consortium_badge_c', 'consortium.cardC.badge')}
                 title={getDynamicContent('consortium_section_c_title', 'consortium.cardC.titleDefault')}>
                 <p className="body-text">
                   {getDynamicContent('consortium_text_c', 'consortium.cardC.textDefault')}
@@ -260,26 +265,26 @@ export default function ConsortiumPage() {
                   <div className="partner-mini orange-mini">
                     <div className="pm-icon-wrap orange-bg-light"><Icon name="graduationCap" color="#ea580c" size={22}/></div>
                     <div className="pm-info">
-                      <div className="pm-name">{t('consortium.cardC.partner1.name')}</div>
-                      <div className="pm-country"><Icon name="mapPin" color="#ea580c" size={12}/> {t('consortium.cardC.partner1.country')}</div>
-                      <div className="pm-desc">{t('consortium.cardC.partner1.desc')}</div>
+                      <div className="pm-name">{getDynamicContent('consortium_c_p1_name', 'consortium.cardC.partner1.name')}</div>
+                      <div className="pm-country"><Icon name="mapPin" color="#ea580c" size={12}/> {getDynamicContent('consortium_c_p1_country', 'consortium.cardC.partner1.country')}</div>
+                      <div className="pm-desc">{getDynamicContent('consortium_c_p1_desc', 'consortium.cardC.partner1.desc')}</div>
                     </div>
                   </div>
                   <div className="partner-mini orange-mini">
                     <div className="pm-icon-wrap orange-bg-light"><Icon name="heart" color="#ea580c" size={22}/></div>
                     <div className="pm-info">
-                      <div className="pm-name">{t('consortium.cardC.partner2.name')}</div>
-                      <div className="pm-country"><Icon name="mapPin" color="#ea580c" size={12}/> {t('consortium.cardC.partner2.country')}</div>
-                      <div className="pm-desc">{t('consortium.cardC.partner2.desc')}</div>
+                      <div className="pm-name">{getDynamicContent('consortium_c_p2_name', 'consortium.cardC.partner2.name')}</div>
+                      <div className="pm-country"><Icon name="mapPin" color="#ea580c" size={12}/> {getDynamicContent('consortium_c_p2_country', 'consortium.cardC.partner2.country')}</div>
+                      <div className="pm-desc">{getDynamicContent('consortium_c_p2_desc', 'consortium.cardC.partner2.desc')}</div>
                     </div>
                   </div>
                 </div>
                 <div className="pill-grid" style={{marginTop:'18px'}}>
                   {[
-                    { icon:'bookOpen',      label: t('consortium.cardC.pill1'), cls:'orange-pill', bg:'orange-bg' },
-                    { icon:'users',         label: t('consortium.cardC.pill2'), cls:'orange-pill', bg:'orange-bg' },
-                    { icon:'graduationCap', label: t('consortium.cardC.pill3'), cls:'orange-pill', bg:'orange-bg' },
-                    { icon:'zap',           label: t('consortium.cardC.pill4'), cls:'orange-pill', bg:'orange-bg' },
+                    { icon:'bookOpen',      label: getDynamicContent('consortium_c_pill1', 'consortium.cardC.pill1'), cls:'orange-pill', bg:'orange-bg' },
+                    { icon:'users',         label: getDynamicContent('consortium_c_pill2', 'consortium.cardC.pill2'), cls:'orange-pill', bg:'orange-bg' },
+                    { icon:'graduationCap', label: getDynamicContent('consortium_c_pill3', 'consortium.cardC.pill3'), cls:'orange-pill', bg:'orange-bg' },
+                    { icon:'zap',           label: getDynamicContent('consortium_c_pill4', 'consortium.cardC.pill4'), cls:'orange-pill', bg:'orange-bg' },
                   ].map((p,i) => (
                     <div className={`pill ${p.cls}`} key={i}>
                       <span className={`pill-icon-wrap ${p.bg}`}><Icon name={p.icon} color="#ea580c" size={16}/></span>
@@ -291,7 +296,7 @@ export default function ConsortiumPage() {
 
               {/* ── KART D – SİNERJİ ── */}
               <SectionCard accent="#16a34a" letter="D" 
-                badge={t('consortium.cardD.badge')}
+                badge={getDynamicContent('consortium_badge_d', 'consortium.cardD.badge')}
                 title={getDynamicContent('consortium_section_d_title', 'consortium.cardD.titleDefault')}
                 reverse>
                 <p className="body-text">
@@ -301,9 +306,9 @@ export default function ConsortiumPage() {
                 {/* Şehir karşılaştırma kartları */}
                 <div className="challenge-grid">
                   {[
-                    { icon:'factory',  city:'Kapaklı', country: t('consortium.cardD.cities.turkey'),  challenge: t('consortium.cardD.cities.kapakliChallenge'),  color:'#2563eb', bg:'rgba(37,99,235,0.08)', border:'rgba(37,99,235,0.2)' },
-                    { icon:'waves',    city:'Liepāja', country: t('consortium.cardD.cities.latvia'),  challenge: t('consortium.cardD.cities.liepajaChallenge'),  color:'#16a34a', bg:'rgba(22,163,74,0.08)',  border:'rgba(22,163,74,0.2)'  },
-                    { icon:'sun',      city:'Cascais', country: t('consortium.cardD.cities.portugal'),challenge: t('consortium.cardD.cities.cascaisChallenge'), color:'#ea580c', bg:'rgba(234,88,12,0.08)',  border:'rgba(234,88,12,0.2)'  },
+                    { icon:'factory',  city: getDynamicContent('consortium_d_c1_city', 'consortium.cardD.cities.kapakli'), country: getDynamicContent('consortium_d_c1_country', 'consortium.cardD.cities.turkey'),  challenge: getDynamicContent('consortium_d_c1_challenge', 'consortium.cardD.cities.kapakliChallenge'),  color:'#2563eb', bg:'rgba(37,99,235,0.08)', border:'rgba(37,99,235,0.2)' },
+                    { icon:'waves',    city: getDynamicContent('consortium_d_c2_city', 'consortium.cardD.cities.liepaja'), country: getDynamicContent('consortium_d_c2_country', 'consortium.cardD.cities.latvia'),  challenge: getDynamicContent('consortium_d_c2_challenge', 'consortium.cardD.cities.liepajaChallenge'),  color:'#16a34a', bg:'rgba(22,163,74,0.08)',  border:'rgba(22,163,74,0.2)'  },
+                    { icon:'sun',      city: getDynamicContent('consortium_d_c3_city', 'consortium.cardD.cities.cascais'), country: getDynamicContent('consortium_d_c3_country', 'consortium.cardD.cities.portugal'),challenge: getDynamicContent('consortium_d_c3_challenge', 'consortium.cardD.cities.cascaisChallenge'), color:'#ea580c', bg:'rgba(234,88,12,0.08)',  border:'rgba(234,88,12,0.2)'  },
                   ].map((c,i) => (
                     <div className="ch-card" key={i} style={{'--cc':c.color,'--cbg':c.bg,'--cborder':c.border}}>
                       <div className="ch-icon-wrap"><Icon name={c.icon} color={c.color} size={24}/></div>
@@ -317,7 +322,7 @@ export default function ConsortiumPage() {
 
                 <div className="synergy-note">
                   <div className="sn-icon"><Icon name="arrowRight" color="#16a34a" size={18}/></div>
-                  <p>{t('consortium.cardD.synergyNote')}</p>
+                  <p>{getDynamicContent('consortium_synergy_note', 'consortium.cardD.synergyNote')}</p>
                 </div>
               </SectionCard>
 

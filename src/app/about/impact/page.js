@@ -28,7 +28,7 @@ const NetworkBackground = () => {
     animate();
     return () => { window.removeEventListener('resize', resize); cancelAnimationFrame(raf); obs.disconnect(); };
   }, []);
-  return <canvas ref={canvasRef} style={{ position:'fixed',top:0,left:0,width:'100vw',height:'100vh',zIndex:-1,pointerEvents:'none',background:'#f4f7f2' }} />;
+  return <canvas ref={canvasRef} style={{ position:'fixed', top:0, left:0, width:'100vw', height:'100vh', zIndex:-1, pointerEvents:'none', background:'#f4f7f2' }} />;
 };
 
 // ─── YAPRAK ANİMASYONU ─────────────────────────────────────────────────────────
@@ -62,92 +62,33 @@ const HeroAnimation = () => {
 // ─── SVG İKONLAR ──────────────────────────────────────────────────────────────
 const Icon = ({ name, color='currentColor', size=20 }) => {
   const icons = {
-    droplets:(
-      <svg viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width={size} height={size}>
-        <path d="M7 16.3c2.2 0 4-1.83 4-4.05 0-1.16-.57-2.26-1.71-3.19S7.29 6.75 7 5.3c-.29 1.45-1.14 2.84-2.29 3.76S3 11.1 3 12.25c0 2.22 1.8 4.05 4 4.05z"/><path d="M12.56 6.6A10.97 10.97 0 0 0 14 3.02c.5 2.5 2 4.9 4 6.5s3 3.5 3 5.5a6.98 6.98 0 0 1-11.91 4.97"/>
-      </svg>
-    ),
-    checkCircle:(
-      <svg viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width={size} height={size}>
-        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>
-      </svg>
-    ),
-    trendingUp:(
-      <svg viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width={size} height={size}>
-        <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/>
-      </svg>
-    ),
-    leaf:(
-      <svg viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width={size} height={size}>
-        <path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"/><path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/>
-      </svg>
-    ),
-    recycle:(
-      <svg viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width={size} height={size}>
-        <path d="M7 19H4.815a1.83 1.83 0 0 1-1.57-.881 1.785 1.785 0 0 1-.004-1.784L7.196 9.5"/><path d="M11 19h8.203a1.83 1.83 0 0 0 1.556-.89 1.784 1.784 0 0 0 0-1.775l-1.226-2.12"/><path d="m14 16-3 3 3 3"/><path d="M8.293 13.596 7.196 9.5 3.1 10.598"/><path d="m9.344 5.811 1.093-1.892A1.83 1.83 0 0 1 11.985 3a1.784 1.784 0 0 1 1.546.888l3.943 6.843"/><path d="m13.378 9.633 4.096 1.098 1.097-4.096"/>
-      </svg>
-    ),
-    smartphone:(
-      <svg viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width={size} height={size}>
-        <rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/>
-      </svg>
-    ),
-    globe:(
-      <svg viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width={size} height={size}>
-        <circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
-      </svg>
-    ),
-    users:(
-      <svg viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width={size} height={size}>
-        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-      </svg>
-    ),
-    shield:(
-      <svg viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width={size} height={size}>
-        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-      </svg>
-    ),
-    zap:(
-      <svg viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width={size} height={size}>
-        <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
-      </svg>
-    ),
-    star:(
-      <svg viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width={size} height={size}>
-        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
-      </svg>
-    ),
-    link:(
-      <svg viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width={size} height={size}>
-        <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
-      </svg>
-    ),
-    barChart:(
-      <svg viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width={size} height={size}>
-        <line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/><line x1="2" y1="20" x2="22" y2="20"/>
-      </svg>
-    ),
-    flag:(
-      <svg viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width={size} height={size}>
-        <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/>
-      </svg>
-    ),
-    award:(
-      <svg viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width={size} height={size}>
-        <circle cx="12" cy="8" r="6"/><path d="M15.477 12.89 17 22l-5-3-5 3 1.523-9.11"/>
-      </svg>
-    ),
+    droplets:(<svg viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width={size} height={size}><path d="M7 16.3c2.2 0 4-1.83 4-4.05 0-1.16-.57-2.26-1.71-3.19S7.29 6.75 7 5.3c-.29 1.45-1.14 2.84-2.29 3.76S3 11.1 3 12.25c0 2.22 1.8 4.05 4 4.05z"/><path d="M12.56 6.6A10.97 10.97 0 0 0 14 3.02c.5 2.5 2 4.9 4 6.5s3 3.5 3 5.5a6.98 6.98 0 0 1-11.91 4.97"/></svg>),
+    checkCircle:(<svg viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width={size} height={size}><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>),
+    trendingUp:(<svg viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width={size} height={size}><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>),
+    leaf:(<svg viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width={size} height={size}><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"/><path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/></svg>),
+    recycle:(<svg viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width={size} height={size}><path d="M7 19H4.815a1.83 1.83 0 0 1-1.57-.881 1.785 1.785 0 0 1-.004-1.784L7.196 9.5"/><path d="M11 19h8.203a1.83 1.83 0 0 0 1.556-.89 1.784 1.784 0 0 0 0-1.775l-1.226-2.12"/><path d="m14 16-3 3 3 3"/><path d="M8.293 13.596 7.196 9.5 3.1 10.598"/><path d="m9.344 5.811 1.093-1.892A1.83 1.83 0 0 1 11.985 3a1.784 1.784 0 0 1 1.546.888l3.943 6.843"/><path d="m13.378 9.633 4.096 1.098 1.097-4.096"/></svg>),
+    smartphone:(<svg viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width={size} height={size}><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>),
+    globe:(<svg viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width={size} height={size}><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>),
+    users:(<svg viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width={size} height={size}><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>),
+    shield:(<svg viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width={size} height={size}><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>),
+    zap:(<svg viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width={size} height={size}><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>),
+    star:(<svg viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width={size} height={size}><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>),
+    link:(<svg viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width={size} height={size}><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>),
+    barChart:(<svg viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width={size} height={size}><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/><line x1="2" y1="20" x2="22" y2="20"/></svg>),
+    flag:(<svg viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width={size} height={size}><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>),
+    award:(<svg viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width={size} height={size}><circle cx="12" cy="8" r="6"/><path d="M15.477 12.89 17 22l-5-3-5 3 1.523-9.11"/></svg>),
   };
   return icons[name] || null;
 };
 
-// ─── SECTION CARD ──────────────────────────────────────────────────────────────
+// ─── SECTION CARD (Harf Rozetlerine Nokta Eklendi) ──────────────────────────────
 const SectionCard = ({ accent, letter, badge, title, children, reverse=false }) => (
   <div className={`sc reveal ${reverse ? 'reveal-right' : 'reveal-left'}`} style={{'--accent': accent}}>
     <div className="sc-shine"/>
     <div className="sc-inner">
       <div className="sc-head">
-        <span className="sc-badge">{letter}</span>
+        {/* ✨ BURAYA NOKTA EKLENDİ ✨ */}
+        <span className="sc-badge">{letter}.</span>
         <div className="sc-head-text">
           {badge && <span className="sc-role-badge">{badge}</span>}
           <h2 className="sc-title">{title}</h2>
@@ -163,7 +104,6 @@ export default function ImpactPage() {
   const [content, setContent] = useState({});
   const [loading, setLoading] = useState(true);
 
-  // ✨ YENİ: Dil ve Çeviri fonksiyonlarını alıyoruz
   const { language, t } = useLanguage();
 
   useEffect(() => {
@@ -183,16 +123,24 @@ export default function ImpactPage() {
     return () => obs.disconnect();
   }, [loading, content]);
 
-  // Veritabanı dinamik içerik kontrolü
+  // ✨ DİNAMİK YEDEKLEME SİSTEMİ
   const getDynamicContent = (trKey, defaultTranslationKey) => {
-    return (language === 'tr' && content[trKey]) ? content[trKey] : t(defaultTranslationKey);
+    if (language === 'en') {
+      const enKey = `${trKey}_en`;
+      if (content[enKey] && content[enKey].trim() !== '') return content[enKey];
+      const translation = t(defaultTranslationKey);
+      if (translation !== defaultTranslationKey) return translation;
+      if (content[trKey] && content[trKey].trim() !== '') return content[trKey];
+    }
+    if (content[trKey] && content[trKey].trim() !== '') return content[trKey];
+    return t(defaultTranslationKey);
   };
 
   const impactMetrics = [
-    { icon:'recycle',    val:'%29', label: t('impact.metrics.recycle'),      color:'#16a34a', bg:'green-bg'  },
-    { icon:'users',      val:'150K+', label: t('impact.metrics.citizens'),     color:'#2563eb', bg:'blue-bg'   },
-    { icon:'globe',      val:'3',   label: t('impact.metrics.countries'),          color:'#7c3aed', bg:'purple-bg' },
-    { icon:'trendingUp', val:'24',  label: t('impact.metrics.months'),     color:'#ea580c', bg:'orange-bg' },
+    { icon:'recycle',    val: getDynamicContent('impact_stat_1_val', 'impact.metrics.s1_val') || '%29',    label: getDynamicContent('impact_stat_1_label', 'impact.metrics.recycle'),      color:'#16a34a', bg:'green-bg'  },
+    { icon:'users',      val: getDynamicContent('impact_stat_2_val', 'impact.metrics.s2_val') || '150K+',  label: getDynamicContent('impact_stat_2_label', 'impact.metrics.citizens'),     color:'#2563eb', bg:'blue-bg'   },
+    { icon:'globe',      val: getDynamicContent('impact_stat_3_val', 'impact.metrics.s3_val') || '3',      label: getDynamicContent('impact_stat_3_label', 'impact.metrics.countries'),    color:'#7c3aed', bg:'purple-bg' },
+    { icon:'trendingUp', val: getDynamicContent('impact_stat_4_val', 'impact.metrics.s4_val') || '24',     label: getDynamicContent('impact_stat_4_label', 'impact.metrics.months'),       color:'#ea580c', bg:'orange-bg' },
   ];
 
   const highlights = [
@@ -203,12 +151,12 @@ export default function ImpactPage() {
   ];
 
   const visionPillars = [
-    { icon:'leaf',       title: t('impact.cardB.pillars.p1.title'),     desc: t('impact.cardB.pillars.p1.desc'),     color:'#16a34a', bg:'green-bg'   },
-    { icon:'smartphone', title: t('impact.cardB.pillars.p2.title'),    desc: t('impact.cardB.pillars.p2.desc'), color:'#2563eb', bg:'blue-bg'    },
-    { icon:'users',      title: t('impact.cardB.pillars.p3.title'),     desc: t('impact.cardB.pillars.p3.desc'),            color:'#ea580c', bg:'orange-bg'  },
-    { icon:'shield',     title: t('impact.cardB.pillars.p4.title'),  desc: t('impact.cardB.pillars.p4.desc'),        color:'#7c3aed', bg:'purple-bg'  },
-    { icon:'globe',      title: t('impact.cardB.pillars.p5.title'),       desc: t('impact.cardB.pillars.p5.desc'),  color:'#16a34a', bg:'green-bg'   },
-    { icon:'award',      title: t('impact.cardB.pillars.p6.title'),  desc: t('impact.cardB.pillars.p6.desc'),             color:'#ea580c', bg:'orange-bg'  },
+    { icon:'leaf',       title: getDynamicContent('impact_vp1_title', 'impact.cardB.pillars.p1.title'),   desc: getDynamicContent('impact_vp1_desc', 'impact.cardB.pillars.p1.desc'),      color:'#16a34a', bg:'green-bg'   },
+    { icon:'smartphone', title: getDynamicContent('impact_vp2_title', 'impact.cardB.pillars.p2.title'),   desc: getDynamicContent('impact_vp2_desc', 'impact.cardB.pillars.p2.desc'),      color:'#2563eb', bg:'blue-bg'    },
+    { icon:'users',      title: getDynamicContent('impact_vp3_title', 'impact.cardB.pillars.p3.title'),   desc: getDynamicContent('impact_vp3_desc', 'impact.cardB.pillars.p3.desc'),      color:'#ea580c', bg:'orange-bg'  },
+    { icon:'shield',     title: getDynamicContent('impact_vp4_title', 'impact.cardB.pillars.p4.title'),   desc: getDynamicContent('impact_vp4_desc', 'impact.cardB.pillars.p4.desc'),      color:'#7c3aed', bg:'purple-bg'  },
+    { icon:'globe',      title: getDynamicContent('impact_vp5_title', 'impact.cardB.pillars.p5.title'),   desc: getDynamicContent('impact_vp5_desc', 'impact.cardB.pillars.p5.desc'),      color:'#16a34a', bg:'green-bg'   },
+    { icon:'award',      title: getDynamicContent('impact_vp6_title', 'impact.cardB.pillars.p6.title'),   desc: getDynamicContent('impact_vp6_desc', 'impact.cardB.pillars.p6.desc'),      color:'#ea580c', bg:'orange-bg'  },
   ];
 
   return (
@@ -226,19 +174,18 @@ export default function ImpactPage() {
           <section className="hero">
             <HeroAnimation/>
             <div className="hero-noise"/>
-            {/* Göz yormayan şeffaf ışık hareleri */}
             <div className="orb orb-1"/><div className="orb orb-2"/><div className="orb orb-3"/>
             
             <div className="container hero-content">
-              <div className="eyebrow reveal active"><span className="edot"/> {t('impact.hero.eyebrow')} <span className="edot"/></div>
-              <h1 className="hero-title reveal active">{t('impact.hero.title1')}<br/><em>{t('impact.hero.title2')}</em></h1>
+              <div className="eyebrow reveal active"><span className="edot"/> {getDynamicContent('impact_hero_eyebrow', 'impact.hero.eyebrow')} <span className="edot"/></div>
+              <h1 className="hero-title reveal active">{getDynamicContent('impact_hero_title1', 'impact.hero.title1')}<br/><em>{getDynamicContent('impact_hero_title2', 'impact.hero.title2')}</em></h1>
               <p className="hero-sub reveal active" style={{transitionDelay:'.25s'}}>
                 {getDynamicContent('impact_page_desc', 'impact.hero.descDefault')}
               </p>
               <div className="hero-div reveal active" style={{transitionDelay:'.4s'}}><span/><span className="hdot"/><span/></div>
             </div>
             <button className="scroll-btn" onClick={() => document.getElementById('icerik')?.scrollIntoView({behavior:'smooth'})} aria-label="Aşağı kaydır">
-              <span className="scroll-label">{t('impact.hero.scrollBtn')}</span>
+              <span className="scroll-label">{getDynamicContent('impact_hero_scroll', 'impact.hero.scrollBtn')}</span>
               <span className="scroll-icon"><i className="fas fa-chevron-down"/></span>
             </button>
           </section>
@@ -248,8 +195,8 @@ export default function ImpactPage() {
             <div className="container" style={{maxWidth:'940px'}}>
 
               <div className="sec-head reveal-up">
-                <p className="sec-label">{t('impact.section.part')}</p>
-                <h2 className="sec-title">{t('impact.section.title')}</h2>
+                <p className="sec-label">{getDynamicContent('impact_sec_label', 'impact.section.part')}</p>
+                <h2 className="sec-title">{getDynamicContent('impact_sec_title', 'impact.section.title')}</h2>
               </div>
 
               {/* Metrik kartlar */}
@@ -266,7 +213,7 @@ export default function ImpactPage() {
               </div>
 
               {/* ── KART 1: Stratejik Etki ── */}
-              <SectionCard accent="#16a34a" letter="A" badge={t('impact.cardA.badge')}
+              <SectionCard accent="#16a34a" letter="A" badge={getDynamicContent('impact_badge_a', 'impact.cardA.badge')}
                 title={getDynamicContent('impact_section_1_title', 'impact.cardA.titleDefault')}>
                 <p className="body-text">
                   {getDynamicContent('impact_section_1_text', 'impact.cardA.textDefault')}
@@ -294,7 +241,7 @@ export default function ImpactPage() {
               </SectionCard>
 
               {/* ── KART 2: Vizyon ── */}
-              <SectionCard accent="#2563eb" letter="B" badge={t('impact.cardB.badge')}
+              <SectionCard accent="#2563eb" letter="B" badge={getDynamicContent('impact_badge_b', 'impact.cardB.badge')}
                 title={getDynamicContent('impact_section_2_title', 'impact.cardB.titleDefault')}
                 reverse>
                 <p className="body-text">

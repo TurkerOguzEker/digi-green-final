@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import { supabase } from '../../../lib/supabase';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-// ✨ ESKİ SİSTEM: Sadece dili alıyoruz
+// ✨ YENİ: Dil hook'u
 import { useLanguage } from '../../../context/LanguageContext';
 
 export default function NewsDetailPage() {
@@ -32,7 +32,6 @@ export default function NewsDetailPage() {
     return (
       <div style={{ height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f4f7f2' }}>
         <h3 style={{ color: '#27ae60', fontFamily: 'Inter' }}>
-          {/* Sözlük yerine doğrudan dile göre yazdırıyoruz */}
           {language === 'en' ? 'Loading News Details...' : 'Haber Detayı Yükleniyor...'}
         </h3>
       </div>

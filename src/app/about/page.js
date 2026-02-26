@@ -2,7 +2,6 @@
 import { useEffect, useState, useRef } from 'react';
 import Link from 'next/link';
 import { supabase } from '../../lib/supabase';
-// ✨ ESKİ SİSTEM: useLanguage kancasını import ediyoruz
 import { useLanguage } from '../../context/LanguageContext';
 
 // ─── SAYFA GENELİ ARKA PLAN AĞI (YÜKSEK PERFORMANS) ───────────────────────────
@@ -232,6 +231,7 @@ const Counter = ({ end, suffix = '', duration = 2000 }) => {
   const [count, setCount] = useState(0);
   const [isVisible, setIsVisible] = useState(false);
   const counterRef = useRef(null);
+  
   useEffect(() => {
     const observer = new IntersectionObserver(([entry]) => {
       if (entry.isIntersecting) { setIsVisible(true); observer.disconnect(); }
@@ -239,6 +239,7 @@ const Counter = ({ end, suffix = '', duration = 2000 }) => {
     if (counterRef.current) observer.observe(counterRef.current);
     return () => observer.disconnect();
   }, []);
+  
   useEffect(() => {
     if (!isVisible) return;
     let start = 0;
@@ -250,6 +251,7 @@ const Counter = ({ end, suffix = '', duration = 2000 }) => {
     }, 16);
     return () => clearInterval(timer);
   }, [end, duration, isVisible]);
+  
   return <span ref={counterRef}>{count}{suffix}</span>;
 };
 
@@ -318,7 +320,6 @@ export default function AboutPage() {
   const [content, setContent] = useState({});
   const [loading, setLoading] = useState(true);
 
-  // ✨ Dil ve Çeviri fonksiyonlarını alıyoruz
   const { language, t } = useLanguage();
 
   useEffect(() => {
@@ -343,12 +344,20 @@ export default function AboutPage() {
     return () => observer.disconnect();
   }, [loading]);
 
-  // ✨ YENİ: Veritabanı dinamik içerik kontrolü
+  // ✨ AKILLI YEDEKLEME SİSTEMİ EKLENDİ (Boş kalmasını veya hata vermesini önler)
   const getDynamicContent = (trKey, defaultTranslationKey) => {
-    const enKey = `${trKey}_en`; // Örneğin: about_vision_title_en
-    return (language === 'en' && content[enKey]) 
-            ? content[enKey] 
-            : (content[trKey] || t(defaultTranslationKey));
+    if (language === 'en') {
+      const enKey = `${trKey}_en`;
+      if (content[enKey] && content[enKey].trim() !== '') return content[enKey];
+      
+      const translation = t(defaultTranslationKey);
+      if (translation !== defaultTranslationKey) return translation;
+      
+      if (content[trKey] && content[trKey].trim() !== '') return content[trKey];
+    }
+    
+    if (content[trKey] && content[trKey].trim() !== '') return content[trKey];
+    return t(defaultTranslationKey);
   };
 
   if (loading) {
@@ -360,13 +369,38 @@ export default function AboutPage() {
     );
   }
 
+  // ✨ İSTATİSTİKLER (ARTIK TAMAMEN DİNAMİK)
   const stats = [
-    { value: 500, suffix: '+', label: t('about.stats.s1') },
-    { value: 29,  suffix: '%', label: t('about.stats.s2') },
-    { value: 24,  suffix: '',  label: t('about.stats.s3') },
-    { value: 3,   suffix: '+', label: t('about.stats.s4') },
+    { 
+      value: parseInt(content.about_stat_1_val) || 500, 
+      suffix: getDynamicContent('about_stat_1_suffix', 'about.stats.s1_suffix') || '+', 
+      label: getDynamicContent('about_stat_1_label', 'about.stats.s1') 
+    },
+    { 
+      value: parseInt(content.about_stat_2_val) || 29, 
+      suffix: getDynamicContent('about_stat_2_suffix', 'about.stats.s2_suffix') || '%', 
+      label: getDynamicContent('about_stat_2_label', 'about.stats.s2') 
+    },
+    { 
+      value: parseInt(content.about_stat_3_val) || 24, 
+      suffix: getDynamicContent('about_stat_3_suffix', 'about.stats.s3_suffix') || '', 
+      label: getDynamicContent('about_stat_3_label', 'about.stats.s3') 
+    },
+    { 
+      value: parseInt(content.about_stat_4_val) || 3, 
+      suffix: getDynamicContent('about_stat_4_suffix', 'about.stats.s4_suffix') || '+', 
+      label: getDynamicContent('about_stat_4_label', 'about.stats.s4') 
+    },
   ];
 
+  // ✨ HEDEF KİTLE (ARTIK TAMAMEN DİNAMİK)
+  const targets = [
+    { num: '01', title: getDynamicContent('about_target_1_title', 'about.target.t1Title'), desc: getDynamicContent('about_target_1_desc', 'about.target.t1Desc') },
+    { num: '02', title: getDynamicContent('about_target_2_title', 'about.target.t2Title'), desc: getDynamicContent('about_target_2_desc', 'about.target.t2Desc') },
+    { num: '03', title: getDynamicContent('about_target_3_title', 'about.target.t3Title'), desc: getDynamicContent('about_target_3_desc', 'about.target.t3Desc') },
+  ];
+
+  // ✨ PROJE KÜNYESİ (ARTIK TAMAMEN DİNAMİK)
   const tableRows = [
     { label: t('about.spec.r1Label'), key: 'about_project_name',     defaultTranslation: 'about.spec.r1Default' },
     { label: t('about.spec.r2Label'), key: 'about_project_code',     defaultTranslation: 'about.spec.r2Default' },
@@ -375,28 +409,19 @@ export default function AboutPage() {
     { label: t('about.spec.r5Label'), key: 'about_project_budget',   defaultTranslation: 'about.spec.r5Default' },
   ];
 
-  const targets = [
-    { num: '01', title: t('about.target.t1Title'), desc: t('about.target.t1Desc') },
-    { num: '02', title: t('about.target.t2Title'), desc: t('about.target.t2Desc') },
-    { num: '03', title: t('about.target.t3Title'), desc: t('about.target.t3Desc') },
-  ];
-
   return (
     <div className="about-page">
       
-      {/* ✨ YENİ: ARKA PLAN AĞI */}
       <NetworkBackground />
 
-      {/* 1️⃣ HERO */}
+      {/* 1️⃣ HERO (ARTIK TAMAMEN DİNAMİK) */}
       <section className="hero">
-        {/* ✨ YENİ: YAPRAK ANİMASYONU */}
         <HeroAnimation />
-        
-        {/* İçerik, canvas'ın üstünde durması için relative ve z-index almalı */}
         <div className="container" style={{ position: 'relative', zIndex: 2 }}>
-          <span className="eyebrow reveal active">{t('about.hero.eyebrow')}</span>
+          <span className="eyebrow reveal active">{getDynamicContent('about_hero_eyebrow', 'about.hero.eyebrow')}</span>
           <h1 className="hero-title reveal active">
-            {t('about.hero.title1')} <br /> {t('about.hero.title2')} <span>{t('about.hero.title3')}</span>
+            {getDynamicContent('about_hero_title1', 'about.hero.title1')} <br /> 
+            {getDynamicContent('about_hero_title2', 'about.hero.title2')} <span>{getDynamicContent('about_hero_title3', 'about.hero.title3')}</span>
           </h1>
           <p className="hero-desc reveal active">
             {getDynamicContent('about_page_desc', 'about.hero.descDefault')}
@@ -404,23 +429,23 @@ export default function AboutPage() {
         </div>
       </section>
 
-      {/* 2️⃣ VİZYON */}
+      {/* 2️⃣ VİZYON (ARTIK TAMAMEN DİNAMİK) */}
       <section className="section">
         <div className="container grid-2 align-center">
           <div className="reveal">
-            <span className="section-label">{t('about.vision.label')}</span>
+            <span className="section-label">{getDynamicContent('about_vision_label', 'about.vision.label')}</span>
             <h2 className="section-title">{getDynamicContent('about_vision_title', 'about.vision.titleDefault')}</h2>
             <p className="section-text">
               {getDynamicContent('about_vision_text', 'about.vision.textDefault')}
             </p>
             <ul className="vision-list">
-              <li>{t('about.vision.list1')}</li>
-              <li>{t('about.vision.list2')}</li>
-              <li>{t('about.vision.list3')}</li>
+              <li>{getDynamicContent('about_vision_list1', 'about.vision.list1')}</li>
+              <li>{getDynamicContent('about_vision_list2', 'about.vision.list2')}</li>
+              <li>{getDynamicContent('about_vision_list3', 'about.vision.list3')}</li>
             </ul>
           </div>
           <div className="reveal image-wrapper">
-            <img src="https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?auto=format&fit=crop&q=80&w=800" alt="Yeşil Şehir" />
+            <img src={content.home_about_image || "https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?auto=format&fit=crop&q=80&w=800"} alt="Yeşil Şehir" />
           </div>
         </div>
       </section>
@@ -429,8 +454,8 @@ export default function AboutPage() {
       <section className="section bg-light">
         <div className="container">
           <div className="reveal text-center mb-5">
-            <span className="section-label">{t('about.stats.label')}</span>
-            <h2 className="section-title">{t('about.stats.title')}</h2>
+            <span className="section-label">{getDynamicContent('about_stats_label', 'about.stats.label')}</span>
+            <h2 className="section-title">{getDynamicContent('about_stats_title', 'about.stats.title')}</h2>
           </div>
           <div className="stats-grid">
             {stats.map((stat, i) => (
@@ -447,8 +472,8 @@ export default function AboutPage() {
       <section className="section">
         <div className="container">
           <div className="reveal text-center mb-5">
-            <span className="section-label">{t('about.target.label')}</span>
-            <h2 className="section-title">{t('about.target.title')}</h2>
+            <span className="section-label">{getDynamicContent('about_target_label', 'about.target.label')}</span>
+            <h2 className="section-title">{getDynamicContent('about_target_title', 'about.target.title')}</h2>
           </div>
           <div className="targets-grid">
             {targets.map((kitle, i) => (
@@ -466,8 +491,8 @@ export default function AboutPage() {
       <section className="section">
         <div className="container narrow">
           <div className="reveal mb-5">
-            <span className="section-label">{t('about.spec.label')}</span>
-            <h2 className="section-title" style={{ marginBottom: 0 }}>{t('about.spec.title')}</h2>
+            <span className="section-label">{getDynamicContent('about_spec_label', 'about.spec.label')}</span>
+            <h2 className="section-title" style={{ marginBottom: 0 }}>{getDynamicContent('about_spec_title', 'about.spec.title')}</h2>
           </div>
           <div className="spec-sheet reveal">
             {tableRows.map((row, i) => (
@@ -480,20 +505,20 @@ export default function AboutPage() {
         </div>
       </section>
 
-      {/* 6️⃣ CTA */}
+      {/* 6️⃣ CTA (ARTIK TAMAMEN DİNAMİK) */}
       <section className="cta-section reveal">
         <div className="cta-container">
           <div className="cta-glow"></div>
           <div className="cta-content">
-            <span className="cta-badge">{t('about.cta.badge')}</span>
+            <span className="cta-badge">{getDynamicContent('about_cta_badge', 'about.cta.badge')}</span>
             <h2 className="cta-title">
-              {t('about.cta.title1')} <br /> {t('about.cta.title2')}
+              {getDynamicContent('about_cta_title1', 'about.cta.title1')} <br /> {getDynamicContent('about_cta_title2', 'about.cta.title2')}
             </h2>
-            <p className="cta-desc">
-              {t('about.cta.desc')}
+            <p className="cta-desc" style={{whiteSpace: 'pre-wrap'}}>
+              {getDynamicContent('about_cta_desc', 'about.cta.desc')}
             </p>
             <div className="cta-actions">
-              <ContactButton href="/contact" text={t('about.cta.button')} />
+              <ContactButton href="/contact" text={getDynamicContent('about_cta_button', 'about.cta.button')} />
             </div>
           </div>
         </div>

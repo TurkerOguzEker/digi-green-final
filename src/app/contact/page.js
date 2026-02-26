@@ -2,10 +2,9 @@
 import { useEffect, useState, useRef } from 'react';
 import { supabase } from '../../lib/supabase';
 import ScrollToTop from '../../components/ScrollToTop';
-// ✨ ESKİ SİSTEM: useLanguage kancası ile 'language' ve 't' fonksiyonunu alıyoruz
 import { useLanguage } from '../../context/LanguageContext';
 
-// ─── SAYFA GENELİ ARKA PLAN AĞI (YÜKSEK PERFORMANS) ───────────────────────────
+// ─── SAYFA GENELİ ARKA PLAN AĞI ────────────────────────────────────────────
 const NetworkBackground = () => {
   const canvasRef = useRef(null);
   useEffect(() => {
@@ -153,8 +152,7 @@ const HeroAnimation = () => {
         this.vy *= this.drag;
         this.x += this.vx;
         this.y += this.vy;
-        const target = Math.atan2(this.vy, -this.vx) + Math.PI * 0.08;
-        let diff = target - this.angle;
+        let diff = Math.atan2(this.vy, -this.vx) + Math.PI * 0.08 - this.angle;
         while (diff >  Math.PI) diff -= Math.PI * 2;
         while (diff < -Math.PI) diff += Math.PI * 2;
         this.angVel += diff * 0.006;
@@ -197,10 +195,10 @@ const HeroAnimation = () => {
 
     mainTimeout = setTimeout(() => {
       for (let i = 0; i < 20; i++) {
-        let tm = setTimeout(() => {
+        let t = setTimeout(() => {
           leaves.push(new Leaf());
         }, Math.random() * 3000); 
-        spawnTimeouts.push(tm);
+        spawnTimeouts.push(t);
       }
     }, 500);
 
@@ -219,7 +217,7 @@ const HeroAnimation = () => {
       cancelAnimationFrame(animationFrameId);
       observer.disconnect();
       clearTimeout(mainTimeout);
-      spawnTimeouts.forEach(tm => clearTimeout(tm));
+      spawnTimeouts.forEach(t => clearTimeout(t));
     };
   }, []);
 
@@ -231,14 +229,15 @@ const HeroAnimation = () => {
   );
 };
 
+
 // ─── CONTACT PAGE ─────────────────────────────────────────────────────────────
 export default function ContactPage() {
-  const [info, setInfo] = useState({});
+  const [content, setContent] = useState({});
   const [formData, setFormData] = useState({ name: '', email: '', subject: '', message: '' });
   const [sending, setSending] = useState(false);
   const [status, setStatus] = useState(null);
 
-  // Sözlükten çevirileri çekmek için
+  // Sözlükten ve dilden faydalanmak için
   const { language, t } = useLanguage();
 
   useEffect(() => {
@@ -247,11 +246,20 @@ export default function ContactPage() {
       if (data) {
         const map = {};
         data.forEach(item => map[item.key] = item.value);
-        setInfo(map);
+        setContent(map);
       }
     }
     fetchSettings();
   }, []);
+
+  // Reveal Animasyonu
+  useEffect(() => {
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => { if (entry.isIntersecting) entry.target.classList.add('active'); });
+    }, { threshold: 0.1 });
+    document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+    return () => observer.disconnect();
+  }, [content]);
 
   const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
 
@@ -271,6 +279,20 @@ export default function ContactPage() {
     }
   };
 
+  // ✨ AKILLI YEDEKLEME FONKSİYONU
+  const getDynamicContent = (trKey, defaultTranslationKey) => {
+    if (language === 'en') {
+      const enKey = `${trKey}_en`;
+      if (content[enKey] !== undefined) return content[enKey];
+      const translation = t(defaultTranslationKey);
+      if (translation !== defaultTranslationKey) return translation;
+      if (content[trKey] !== undefined) return content[trKey];
+    }
+    if (content[trKey] !== undefined) return content[trKey];
+    const translationFallback = t(defaultTranslationKey);
+    return translationFallback === defaultTranslationKey ? '' : translationFallback;
+  };
+
   return (
     <div className="contact-page">
       <NetworkBackground />
@@ -285,13 +307,14 @@ export default function ContactPage() {
 
         <div className="container hero-content">
           <div className="eyebrow reveal active">
-            <span className="eyebrow-dot"></span>{t('contact.hero.eyebrow')}<span className="eyebrow-dot"></span>
+            <span className="eyebrow-dot"></span>{getDynamicContent('contact_hero_eyebrow', 'contact.hero.eyebrow')}<span className="eyebrow-dot"></span>
           </div>
           <h1 className="header-title reveal active">
-            {t('contact.hero.title1')}<br /><em>{t('contact.hero.title2')}</em>
+            {getDynamicContent('contact_hero_title1', 'contact.hero.title1')}<br />
+            <em>{getDynamicContent('contact_hero_title2', 'contact.hero.title2')}</em>
           </h1>
           <p className="header-subtitle reveal active" style={{ transitionDelay: '0.25s' }}>
-            {t('contact.hero.desc')}
+            {getDynamicContent('contact_page_desc', 'contact.hero.desc')}
           </p>
           <div className="hero-divider reveal active" style={{ transitionDelay: '0.4s' }}>
             <span></span><span className="dot"></span><span></span>
@@ -303,7 +326,7 @@ export default function ContactPage() {
           onClick={() => document.getElementById('icerik')?.scrollIntoView({ behavior: 'smooth' })}
           aria-label="İçeriğe git"
         >
-          <span className="scroll-btn-label">{t('contact.hero.scrollBtn')}</span>
+          <span className="scroll-btn-label">{getDynamicContent('contact_hero_scroll', 'contact.hero.scrollBtn')}</span>
           <span className="scroll-btn-icon"><i className="fas fa-chevron-down"></i></span>
         </button>
       </section>
@@ -312,25 +335,24 @@ export default function ContactPage() {
       <section id="icerik" className="section-padding">
         <div className="container" style={{ maxWidth: '1100px' }}>
 
-          <div className="section-head">
-            <p className="section-label">{t('contact.section.label')}</p>
-            <h2 className="section-title">{t('contact.section.title')}</h2>
+          <div className="section-head reveal">
+            <p className="section-label">{getDynamicContent('contact_sec_label', 'contact.section.label')}</p>
+            <h2 className="section-title">{getDynamicContent('contact_sec_title', 'contact.section.title')}</h2>
           </div>
 
           <div className="contact-grid">
 
             {/* ─ SOL: İletişim Bilgileri ─────────────────────────────────── */}
-            <div className="info-card">
-              <h3 className="card-heading">{t('contact.info.title')}</h3>
+            <div className="info-card reveal">
+              <h3 className="card-heading">{getDynamicContent('contact_info_title', 'contact.info.title')}</h3>
 
               <ul className="info-list">
                 <li className="info-item">
                   <div className="info-icon"><i className="fas fa-map-marker-alt"></i></div>
                   <div>
                     <span className="info-label">{t('contact.info.address')}</span>
-                    {/* Veritabanı verisi: Varsa İngilizce olanı, yoksa Türkçeyi gösterir */}
                     <span className="info-value">
-                      {(language === 'en' && info.contact_address_en) ? info.contact_address_en : (info.contact_address || '—')}
+                      {(language === 'en' && content.contact_address_en) ? content.contact_address_en : (content.contact_address || '—')}
                     </span>
                   </div>
                 </li>
@@ -338,8 +360,8 @@ export default function ContactPage() {
                   <div className="info-icon"><i className="fas fa-envelope"></i></div>
                   <div>
                     <span className="info-label">{t('contact.info.email')}</span>
-                    <a href={`mailto:${info.contact_email}`} className="info-value info-link">
-                      {info.contact_email || '—'}
+                    <a href={`mailto:${content.contact_email}`} className="info-value info-link">
+                      {content.contact_email || '—'}
                     </a>
                   </div>
                 </li>
@@ -347,31 +369,31 @@ export default function ContactPage() {
                   <div className="info-icon"><i className="fas fa-phone"></i></div>
                   <div>
                     <span className="info-label">{t('contact.info.phone')}</span>
-                    <span className="info-value">{info.contact_phone || '—'}</span>
+                    <span className="info-value">{content.contact_phone || '—'}</span>
                   </div>
                 </li>
               </ul>
 
               {/* Sosyal Medya */}
               <div className="social-section">
-                <p className="social-heading">{t('contact.social.title')}</p>
+                <p className="social-heading">{getDynamicContent('contact_social_title', 'contact.social.title')}</p>
                 <div className="social-row">
-                  {info.social_facebook && (
-                    <a href={info.social_facebook} target="_blank" rel="noopener noreferrer" className="social-btn" title="Facebook">
+                  {content.social_facebook && (
+                    <a href={content.social_facebook} target="_blank" rel="noopener noreferrer" className="social-btn" title="Facebook">
                       <i className="fab fa-facebook-f"></i>
                     </a>
                   )}
-                  {info.social_twitter && (
-                    <a href={info.social_twitter} target="_blank" rel="noopener noreferrer" className="social-btn" title="Twitter / X">
+                  {content.social_twitter && (
+                    <a href={content.social_twitter} target="_blank" rel="noopener noreferrer" className="social-btn" title="Twitter / X">
                       <i className="fab fa-twitter"></i>
                     </a>
                   )}
-                  {info.social_instagram && (
-                    <a href={info.social_instagram} target="_blank" rel="noopener noreferrer" className="social-btn" title="Instagram">
+                  {content.social_instagram && (
+                    <a href={content.social_instagram} target="_blank" rel="noopener noreferrer" className="social-btn" title="Instagram">
                       <i className="fab fa-instagram"></i>
                     </a>
                   )}
-                  {!info.social_facebook && !info.social_twitter && !info.social_instagram && (
+                  {!content.social_facebook && !content.social_twitter && !content.social_instagram && (
                     <span className="social-empty">{t('contact.social.empty')}</span>
                   )}
                 </div>
@@ -379,19 +401,19 @@ export default function ContactPage() {
             </div>
 
             {/* ─ SAĞ: Form ──────────────────────────────────────────────── */}
-            <div className="form-card">
-              <h3 className="card-heading">{t('contact.form.title')}</h3>
+            <div className="form-card reveal">
+              <h3 className="card-heading">{getDynamicContent('contact_form_title', 'contact.form.title')}</h3>
 
               {status === 'success' && (
                 <div className="alert alert-success">
                   <i className="fas fa-check-circle"></i>
-                  {t('contact.form.success')}
+                  {getDynamicContent('contact_form_success', 'contact.form.success')}
                 </div>
               )}
               {status === 'error' && (
                 <div className="alert alert-error">
                   <i className="fas fa-exclamation-circle"></i>
-                  {t('contact.form.error')}
+                  {getDynamicContent('contact_form_error', 'contact.form.error')}
                 </div>
               )}
 
@@ -423,7 +445,7 @@ export default function ContactPage() {
                   {sending ? (
                     <><i className="fas fa-circle-notch fa-spin"></i> {t('contact.form.sending')}</>
                   ) : (
-                    <><span>{t('contact.form.sendBtn')}</span><span className="btn-icon"><i className="fas fa-paper-plane"></i></span></>
+                    <><span>{getDynamicContent('contact_form_btn', 'contact.form.sendBtn')}</span><span className="btn-icon"><i className="fas fa-paper-plane"></i></span></>
                   )}
                 </button>
               </form>

@@ -151,7 +151,7 @@ export default function Header({ initialSettings = {} }) {
                     </ul>
                 </nav>
 
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: '0 0 auto' }}>
+                <div className="header-actions">
                     
                     {/* Dil Switch Butonu */}
                     <button
@@ -162,12 +162,10 @@ export default function Header({ initialSettings = {} }) {
                     >
                         <span className="lang-pill" aria-hidden="true" />
 
-                        {/* TR seçeneği */}
                         <span className="lang-option">
                             <span className={`lang-code ${language === 'tr' ? 'active-text' : ''}`}>TR</span>
                         </span>
 
-                        {/* EN seçeneği */}
                         <span className="lang-option">
                             <span className={`lang-code ${language === 'en' ? 'active-text' : ''}`}>EN</span>
                         </span>
@@ -372,6 +370,13 @@ export default function Header({ initialSettings = {} }) {
                 transform: translateX(0);
             }
 
+            .header-actions {
+                display: flex; 
+                align-items: center; 
+                gap: 12px; 
+                flex: 0 0 auto;
+            }
+
             /* ============================================
                YENİ DİL SWITCHER STILLERI
             ============================================ */
@@ -389,6 +394,7 @@ export default function Header({ initialSettings = {} }) {
                 transition: border-color 0.3s ease, box-shadow 0.3s ease;
                 flex-shrink: 0;
                 font-family: inherit;
+                height: 36px;
             }
 
             .lang-switcher:hover {
@@ -396,7 +402,6 @@ export default function Header({ initialSettings = {} }) {
                 box-shadow: 0 0 0 3px rgba(39, 174, 96, 0.12);
             }
 
-            /* Kayan aktif arka plan */
             .lang-pill {
                 position: absolute;
                 top: 3px;
@@ -411,7 +416,6 @@ export default function Header({ initialSettings = {} }) {
                 z-index: 0;
             }
 
-            /* EN aktifken pill sağa kayar */
             .lang-switcher.lang-en .lang-pill {
                 transform: translateX(100%);
             }
@@ -421,55 +425,52 @@ export default function Header({ initialSettings = {} }) {
                 z-index: 1;
                 display: flex;
                 align-items: center;
-                padding: 5px 14px;
-                border-radius: 50px;
+                padding: 0 12px;
+                height: 100%;
                 transition: all 0.3s ease;
-                min-width: 40px;
                 justify-content: center;
             }
 
             .lang-code {
-                font-size: 0.82rem;
+                font-size: 0.8rem;
                 font-weight: 800;
-                letter-spacing: 0.06em;
+                letter-spacing: 0.05em;
                 color: #888;
                 transition: color 0.3s ease;
-                font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+                font-family: 'Inter', sans-serif;
                 line-height: 1;
             }
 
-            /* 🎉 Aktif metin yeşil olur (Doğrudan React State üzerinden kontrol ediliyor) */
             .lang-code.active-text {
                 color: #27ae60;
             }
 
-            /* Hover efekti (sadece aktif olmayan seçenekte çalışır) */
             .lang-option:hover .lang-code:not(.active-text) {
                 color: #555;
+            }
+
+            .mobile-menu-toggle {
+                display: none;
             }
 
             /* ============================================
                MOBİL
             ============================================ */
             @media (max-width: 992px) {
-                .lang-switcher {
-                    padding: 2px;
+                .header-actions {
+                    gap: 8px;
                 }
-
-                .lang-option {
-                    padding: 4px 10px;
-                    min-width: 36px;
-                }
-
-                .lang-code {
-                    font-size: 0.72rem;
-                }
-
                 .mobile-menu-toggle { 
-                    display: block !important; 
+                    display: flex !important; 
+                    align-items: center;
+                    justify-content: center;
+                    width: 36px;
+                    height: 36px;
                     cursor: pointer; 
-                    font-size: 1.5rem; 
+                    font-size: 1.3rem; 
                     color: #333; 
+                    background: #f0f4f0;
+                    border-radius: 8px;
                 }
                 
                 .main-nav { 
@@ -541,12 +542,15 @@ export default function Header({ initialSettings = {} }) {
             }
 
             @media (max-width: 400px) {
-                .lang-code {
-                    display: none; 
+                .lang-switcher {
+                    padding: 2px;
+                    height: 32px;
                 }
                 .lang-option {
-                    min-width: 34px;
-                    padding: 4px 8px;
+                    padding: 0 8px;
+                }
+                .lang-code {
+                    font-size: 0.75rem;
                 }
             }
             ` }} />

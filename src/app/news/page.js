@@ -3,7 +3,6 @@ import { useEffect, useState, useRef, useCallback } from 'react';
 import { supabase } from '../../lib/supabase';
 import ScrollToTop from '../../components/ScrollToTop';
 import Link from 'next/link';
-// ✨ ESKİ SİSTEM: useLanguage kancası ile 'language' ve 't' fonksiyonunu alıyoruz
 import { useLanguage } from '../../context/LanguageContext';
 
 const PAGE_SIZE = 6; 
@@ -210,32 +209,37 @@ const HeroAnimation = () => {
 
 // ─── NEWS PAGE ─────────────────────────────────────────────────────────────
 export default function NewsPage() {
-  const [news, setNews]           = useState([]);
-  const [loading, setLoading]     = useState(true);      
+  const [content, setContent]       = useState({}); 
+  const [news, setNews]             = useState([]);
+  const [loading, setLoading]       = useState(true);      
   const [loadingMore, setLoadingMore] = useState(false); 
-  const [hasMore, setHasMore]     = useState(true);
-  const [page, setPage]           = useState(0);         
+  const [hasMore, setHasMore]       = useState(true);
+  const [page, setPage]             = useState(0);         
 
   const sentinelRef = useRef(null);
-
-  // ✨ Sözlük ve dil bilgisini çekiyoruz
   const { language, t } = useLanguage();
 
   useEffect(() => {
-    async function fetchFirstPage() {
-      const { data } = await supabase
+    async function fetchInitialData() {
+      const { data: settingsData } = await supabase.from('settings').select('*');
+      if (settingsData) {
+        const map = {}; settingsData.forEach(item => map[item.key] = item.value);
+        setContent(map);
+      }
+
+      const { data: newsData } = await supabase
         .from('news')
         .select('*')
         .order('date', { ascending: false })
         .range(0, PAGE_SIZE - 1);
 
-      if (data) {
-        setNews(data);
-        setHasMore(data.length === PAGE_SIZE);
+      if (newsData) {
+        setNews(newsData);
+        setHasMore(newsData.length === PAGE_SIZE);
       }
       setLoading(false);
     }
-    fetchFirstPage();
+    fetchInitialData();
   }, []);
 
   const loadMore = useCallback(async () => {
@@ -264,7 +268,6 @@ export default function NewsPage() {
 
   useEffect(() => {
     if (loading) return;
-
     const sentinel = sentinelRef.current;
     if (!sentinel) return;
 
@@ -276,7 +279,6 @@ export default function NewsPage() {
       },
       { rootMargin: '200px' } 
     );
-
     observer.observe(sentinel);
     return () => observer.disconnect();
   }, [loading, hasMore, loadingMore, loadMore]);
@@ -298,6 +300,20 @@ export default function NewsPage() {
     return () => revealObserver.disconnect();
   }, [loading, news]); 
 
+  // ✨ AKILLI YEDEKLEME
+  const getDynamicContent = (trKey, defaultTranslationKey) => {
+    if (language === 'en') {
+      const enKey = `${trKey}_en`;
+      if (content[enKey] !== undefined) return content[enKey];
+      const translation = t(defaultTranslationKey);
+      if (translation !== defaultTranslationKey) return translation;
+      if (content[trKey] !== undefined) return content[trKey];
+    }
+    if (content[trKey] !== undefined) return content[trKey];
+    const translationFallback = t(defaultTranslationKey);
+    return translationFallback === defaultTranslationKey ? '' : translationFallback;
+  };
+
   return (
     <div className="news-page">
       <NetworkBackground />
@@ -311,7 +327,7 @@ export default function NewsPage() {
         </div>
       ) : (
         <>
-          {/* ── HERO ─────────────────────────────────────────────────────── */}
+          {/* ── HERO (ESKİ TASARIM BİREBİR KORUNDU) ─────────────────────────── */}
           <section className="page-header">
             <HeroAnimation />
             <div className="hero-noise"></div>
@@ -321,13 +337,13 @@ export default function NewsPage() {
 
             <div className="container hero-content">
               <div className="eyebrow reveal active">
-                <span className="eyebrow-dot"></span>{t('news.hero.eyebrow')}<span className="eyebrow-dot"></span>
+                <span className="eyebrow-dot"></span>{getDynamicContent('news_hero_eyebrow', 'news.hero.eyebrow')}<span className="eyebrow-dot"></span>
               </div>
               <h1 className="header-title reveal active">
-                {t('news.hero.title1')}<br /><em>{t('news.hero.title2')}</em>
+                {getDynamicContent('news_hero_title1', 'news.hero.title1')}<br /><em>{getDynamicContent('news_hero_title2', 'news.hero.title2')}</em>
               </h1>
               <p className="header-subtitle reveal active" style={{ transitionDelay: '0.25s' }}>
-                {t('news.hero.desc')}
+                {getDynamicContent('news_page_desc', 'news.hero.desc')}
               </p>
               <div className="hero-divider reveal active" style={{ transitionDelay: '0.4s' }}>
                 <span></span><span className="dot"></span><span></span>
@@ -339,7 +355,7 @@ export default function NewsPage() {
               onClick={() => document.getElementById('icerik')?.scrollIntoView({ behavior: 'smooth' })}
               aria-label="İçeriğe git"
             >
-              <span className="scroll-btn-label">{t('news.hero.scrollBtn')}</span>
+              <span className="scroll-btn-label">{getDynamicContent('news_hero_scroll', 'news.hero.scrollBtn')}</span>
               <span className="scroll-btn-icon"><i className="fas fa-chevron-down"></i></span>
             </button>
           </section>
@@ -348,8 +364,8 @@ export default function NewsPage() {
           <section id="icerik" className="section-padding">
             <div className="container" style={{ maxWidth: '1160px' }}>
               <div className="section-head reveal">
-                <p className="section-label">{t('news.section.label')}</p>
-                <h2 className="section-title">{t('news.section.title')}</h2>
+                <p className="section-label">{getDynamicContent('news_sec_label', 'news.section.label')}</p>
+                <h2 className="section-title">{getDynamicContent('news_sec_title', 'news.section.title')}</h2>
               </div>
 
               <div className="news-grid">
@@ -364,7 +380,6 @@ export default function NewsPage() {
                     const dateParts = item.date ? item.date.split(' ') : [];
                     const displayDate = dateParts.length >= 2 ? `${dateParts[0]} ${dateParts[1]}` : item.date;
 
-                    // ✨ YENİ: Dile göre veritabanından veri çekiyoruz
                     const displayTitle = language === 'en' && item.title_en ? item.title_en : item.title;
                     const displaySummary = language === 'en' && item.summary_en ? item.summary_en : item.summary;
 
@@ -468,7 +483,7 @@ export default function NewsPage() {
         }
         .reveal.active:not(.news-card) { opacity: 1; transform: translateY(0); }
 
-        /* HERO */
+        /* HERO - ORİJİNAL ARKA PLAN */
         .page-header {
           position: relative; min-height: 100vh; display: flex; flex-direction: column;
           align-items: center; justify-content: center; text-align: center; overflow: hidden;

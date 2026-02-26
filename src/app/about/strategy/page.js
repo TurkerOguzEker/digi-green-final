@@ -2,7 +2,6 @@
 import { useEffect, useState, useRef } from 'react';
 import { supabase } from '../../../lib/supabase';
 import ScrollToTop from '../../../components/ScrollToTop';
-// ✨ YENİ: Dil Context hook'umuzu dahil ettik
 import { useLanguage } from '../../../context/LanguageContext';
 
 // ─── ARKA PLAN AĞI ─────────────────────────────────────────────────────────────
@@ -28,7 +27,7 @@ const NetworkBackground = () => {
     animate();
     return () => { window.removeEventListener('resize', resize); cancelAnimationFrame(raf); obs.disconnect(); };
   }, []);
-  return <canvas ref={canvasRef} style={{ position:'fixed', top:0, left:0, width:'100vw', height:'100vh', zIndex:-1, pointerEvents:'none', background:'#f4f7f2' }} />;
+  return <canvas ref={canvasRef} style={{ position:'fixed',top:0,left:0,width:'100vw',height:'100vh',zIndex:-1,pointerEvents:'none',background:'#f4f7f2' }} />;
 };
 
 // ─── YAPRAK ANİMASYONU ─────────────────────────────────────────────────────────
@@ -62,76 +61,24 @@ const HeroAnimation = () => {
 // ─── CSS ICON BİLEŞENİ ─────────────────────────────────────────────────────────
 const Icon = ({ name, color = 'currentColor', size = 20 }) => {
   const icons = {
-    calendar: (
-      <svg viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width={size} height={size}>
-        <rect x="3" y="4" width="18" height="18" rx="3"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
-      </svg>
-    ),
-    flag: (
-      <svg viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width={size} height={size}>
-        <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/>
-      </svg>
-    ),
-    building: (
-      <svg viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width={size} height={size}>
-        <rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/><rect x="6" y="13" width="2" height="2"/><rect x="11" y="13" width="2" height="2"/><rect x="16" y="13" width="2" height="2"/><rect x="6" y="17" width="2" height="2"/><rect x="16" y="17" width="2" height="2"/>
-      </svg>
-    ),
-    star: (
-      <svg viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width={size} height={size}>
-        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
-      </svg>
-    ),
-    leaf: (
-      <svg viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width={size} height={size}>
-        <path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"/><path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/>
-      </svg>
-    ),
-    smartphone: (
-      <svg viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width={size} height={size}>
-        <rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/>
-      </svg>
-    ),
-    recycle: (
-      <svg viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width={size} height={size}>
-        <path d="M7 19H4.815a1.83 1.83 0 0 1-1.57-.881 1.785 1.785 0 0 1-.004-1.784L7.196 9.5"/><path d="M11 19h8.203a1.83 1.83 0 0 0 1.556-.89 1.784 1.784 0 0 0 0-1.775l-1.226-2.12"/><path d="m14 16-3 3 3 3"/><path d="M8.293 13.596 7.196 9.5 3.1 10.598"/><path d="m9.344 5.811 1.093-1.892A1.83 1.83 0 0 1 11.985 3a1.784 1.784 0 0 1 1.546.888l3.943 6.843"/><path d="m13.378 9.633 4.096 1.098 1.097-4.096"/>
-      </svg>
-    ),
-    city: (
-      <svg viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width={size} height={size}>
-        <line x1="3" y1="22" x2="21" y2="22"/><rect x="2" y="8" width="8" height="14"/><path d="M10 8V5a2 2 0 0 1 2-2h0a2 2 0 0 1 2 2v3"/><rect x="14" y="8" width="8" height="14"/><rect x="5" y="11" width="2" height="2"/><rect x="5" y="15" width="2" height="2"/><rect x="17" y="11" width="2" height="2"/><rect x="17" y="15" width="2" height="2"/><rect x="10" y="11" width="4" height="11"/>
-      </svg>
-    ),
-    globe: (
-      <svg viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width={size} height={size}>
-        <circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
-      </svg>
-    ),
-    monitor: (
-      <svg viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width={size} height={size}>
-        <rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/>
-      </svg>
-    ),
-    users: (
-      <svg viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width={size} height={size}>
-        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-      </svg>
-    ),
-    eu: (
-      <svg viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width={size} height={size}>
-        <circle cx="12" cy="12" r="10"/><path d="M9 12h6"/><path d="M12 8v8"/><circle cx="12" cy="5" r=".8" fill={color}/><circle cx="15.5" cy="6.2" r=".8" fill={color}/><circle cx="17.8" cy="9" r=".8" fill={color}/><circle cx="17.8" cy="15" r=".8" fill={color}/><circle cx="15.5" cy="17.8" r=".8" fill={color}/><circle cx="12" cy="19" r=".8" fill={color}/><circle cx="8.5" cy="17.8" r=".8" fill={color}/><circle cx="6.2" cy="15" r=".8" fill={color}/><circle cx="6.2" cy="9" r=".8" fill={color}/><circle cx="8.5" cy="6.2" r=".8" fill={color}/>
-      </svg>
-    ),
-    barChart: (
-      <svg viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width={size} height={size}>
-        <line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/><line x1="2" y1="20" x2="22" y2="20"/>
-      </svg>
-    ),
+    calendar: (<svg viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width={size} height={size}><rect x="3" y="4" width="18" height="18" rx="3"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>),
+    flag: (<svg viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width={size} height={size}><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>),
+    building: (<svg viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width={size} height={size}><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/><rect x="6" y="13" width="2" height="2"/><rect x="11" y="13" width="2" height="2"/><rect x="16" y="13" width="2" height="2"/><rect x="6" y="17" width="2" height="2"/><rect x="16" y="17" width="2" height="2"/></svg>),
+    star: (<svg viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width={size} height={size}><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>),
+    leaf: (<svg viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width={size} height={size}><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"/><path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/></svg>),
+    smartphone: (<svg viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width={size} height={size}><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>),
+    recycle: (<svg viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width={size} height={size}><path d="M7 19H4.815a1.83 1.83 0 0 1-1.57-.881 1.785 1.785 0 0 1-.004-1.784L7.196 9.5"/><path d="M11 19h8.203a1.83 1.83 0 0 0 1.556-.89 1.784 1.784 0 0 0 0-1.775l-1.226-2.12"/><path d="m14 16-3 3 3 3"/><path d="M8.293 13.596 7.196 9.5 3.1 10.598"/><path d="m9.344 5.811 1.093-1.892A1.83 1.83 0 0 1 11.985 3a1.784 1.784 0 0 1 1.546.888l3.943 6.843"/><path d="m13.378 9.633 4.096 1.098 1.097-4.096"/></svg>),
+    city: (<svg viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width={size} height={size}><line x1="3" y1="22" x2="21" y2="22"/><rect x="2" y="8" width="8" height="14"/><path d="M10 8V5a2 2 0 0 1 2-2h0a2 2 0 0 1 2 2v3"/><rect x="14" y="8" width="8" height="14"/><rect x="5" y="11" width="2" height="2"/><rect x="5" y="15" width="2" height="2"/><rect x="17" y="11" width="2" height="2"/><rect x="17" y="15" width="2" height="2"/><rect x="10" y="11" width="4" height="11"/></svg>),
+    globe: (<svg viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width={size} height={size}><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>),
+    monitor: (<svg viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width={size} height={size}><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>),
+    users: (<svg viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width={size} height={size}><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>),
+    eu: (<svg viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width={size} height={size}><circle cx="12" cy="12" r="10"/><path d="M9 12h6"/><path d="M12 8v8"/><circle cx="12" cy="5" r=".8" fill={color}/><circle cx="15.5" cy="6.2" r=".8" fill={color}/><circle cx="17.8" cy="9" r=".8" fill={color}/><circle cx="17.8" cy="15" r=".8" fill={color}/><circle cx="15.5" cy="17.8" r=".8" fill={color}/><circle cx="12" cy="19" r=".8" fill={color}/><circle cx="8.5" cy="17.8" r=".8" fill={color}/><circle cx="6.2" cy="15" r=".8" fill={color}/><circle cx="6.2" cy="9" r=".8" fill={color}/><circle cx="8.5" cy="6.2" r=".8" fill={color}/></svg>),
+    barChart: (<svg viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width={size} height={size}><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/><line x1="2" y1="20" x2="22" y2="20"/></svg>),
   };
   return icons[name] || null;
 };
 
-// ─── SECTION CARD ──────────────────────────────────────────────────────────────
+// ─── SECTION CARD (Harf Rozetleri Geri Geldi) ──────────────────────────────────
 const SectionCard = ({ accent, letter, title, children, reverse = false }) => (
   <div className={`sc reveal ${reverse ? 'reveal-right' : 'reveal-left'}`} style={{ '--accent': accent }}>
     <div className="sc-shine" />
@@ -152,7 +99,7 @@ export default function StrategyPage() {
   const [content, setContent] = useState({});
   const [loading, setLoading] = useState(true);
 
-  // ✨ YENİ: Dil ve Çeviri fonksiyonlarını alıyoruz
+  // ✨ Dil ve Çeviri fonksiyonlarını alıyoruz
   const { language, t } = useLanguage();
 
   useEffect(() => {
@@ -172,38 +119,47 @@ export default function StrategyPage() {
     return () => obs.disconnect();
   }, [loading, content]);
 
-  // Veritabanı dinamik içerik kontrolü
+  // ✨ AKILLI YEDEKLEME (Boş bırakıldığında kod ismi yerine boş string döndürür)
   const getDynamicContent = (trKey, defaultTranslationKey) => {
-    return (language === 'tr' && content[trKey]) ? content[trKey] : t(defaultTranslationKey);
+    if (language === 'en') {
+      const enKey = `${trKey}_en`;
+      if (content[enKey] !== undefined) return content[enKey];
+      const translation = t(defaultTranslationKey);
+      if (translation !== defaultTranslationKey) return translation;
+      if (content[trKey] !== undefined) return content[trKey];
+    }
+    if (content[trKey] !== undefined) return content[trKey];
+    const translationFallback = t(defaultTranslationKey);
+    return translationFallback === defaultTranslationKey ? '' : translationFallback;
   };
 
   // Kart A pilleri
   const pillsA = [
-    { icon: 'calendar', label: t('strategy.cardA.pills.p1'),  color: '#2563eb' },
-    { icon: 'flag',     label: t('strategy.cardA.pills.p2'),       color: '#2563eb' },
-    { icon: 'building', label: t('strategy.cardA.pills.p3'),          color: '#2563eb' },
-    { icon: 'star',     label: t('strategy.cardA.pills.p4'),           color: '#2563eb' },
+    { icon: 'calendar', label: getDynamicContent('strategy_a_pill1', 'strategy.cardA.pills.p1'), color: '#2563eb' },
+    { icon: 'flag',     label: getDynamicContent('strategy_a_pill2', 'strategy.cardA.pills.p2'), color: '#2563eb' },
+    { icon: 'building', label: getDynamicContent('strategy_a_pill3', 'strategy.cardA.pills.p3'), color: '#2563eb' },
+    { icon: 'star',     label: getDynamicContent('strategy_a_pill4', 'strategy.cardA.pills.p4'), color: '#2563eb' },
   ];
 
   // Kart B pilleri
   const pillsB = [
-    { icon: 'leaf',        label: t('strategy.cardB.pills.p1'),              color: '#16a34a' },
-    { icon: 'smartphone',  label: t('strategy.cardB.pills.p2'),            color: '#16a34a' },
-    { icon: 'recycle',     label: t('strategy.cardB.pills.p3'),    color: '#16a34a' },
-    { icon: 'city',        label: t('strategy.cardB.pills.p4'),        color: '#16a34a' },
+    { icon: 'leaf',       label: getDynamicContent('strategy_b_pill1', 'strategy.cardB.pills.p1'), color: '#16a34a' },
+    { icon: 'smartphone', label: getDynamicContent('strategy_b_pill2', 'strategy.cardB.pills.p2'), color: '#16a34a' },
+    { icon: 'recycle',    label: getDynamicContent('strategy_b_pill3', 'strategy.cardB.pills.p3'), color: '#16a34a' },
+    { icon: 'city',       label: getDynamicContent('strategy_b_pill4', 'strategy.cardB.pills.p4'), color: '#16a34a' },
   ];
 
   // Kart C öncelikleri
   const priorities = [
-    { icon: 'globe',   title: t('strategy.cardC.priorities.pr1.title'),          desc: t('strategy.cardC.priorities.pr1.desc'),          color: '#ea580c' },
-    { icon: 'monitor', title: t('strategy.cardC.priorities.pr2.title'),         desc: t('strategy.cardC.priorities.pr2.desc'),    color: '#ea580c' },
-    { icon: 'users',   title: t('strategy.cardC.priorities.pr3.title'),  desc: t('strategy.cardC.priorities.pr3.desc'),      color: '#ea580c' },
+    { icon: 'globe',   title: getDynamicContent('strategy_c_prio1_title', 'strategy.cardC.priorities.pr1.title'), desc: getDynamicContent('strategy_c_prio1_desc', 'strategy.cardC.priorities.pr1.desc'), color: '#ea580c' },
+    { icon: 'monitor', title: getDynamicContent('strategy_c_prio2_title', 'strategy.cardC.priorities.pr2.title'), desc: getDynamicContent('strategy_c_prio2_desc', 'strategy.cardC.priorities.pr2.desc'), color: '#ea580c' },
+    { icon: 'users',   title: getDynamicContent('strategy_c_prio3_title', 'strategy.cardC.priorities.pr3.title'), desc: getDynamicContent('strategy_c_prio3_desc', 'strategy.cardC.priorities.pr3.desc'), color: '#ea580c' },
   ];
 
   // Kart C pilleri
   const pillsC = [
-    { icon: 'eu',       label: t('strategy.cardC.pills.p1'), color: '#ea580c' },
-    { icon: 'barChart', label: t('strategy.cardC.pills.p2'),          color: '#ea580c' },
+    { icon: 'eu',       label: getDynamicContent('strategy_c_pill1', 'strategy.cardC.pills.p1'), color: '#ea580c' },
+    { icon: 'barChart', label: getDynamicContent('strategy_c_pill2', 'strategy.cardC.pills.p2'), color: '#ea580c' },
   ];
 
   return (
@@ -224,15 +180,15 @@ export default function StrategyPage() {
             <div className="orb orb-1"/><div className="orb orb-2"/><div className="orb orb-3"/>
             
             <div className="container hero-content">
-              <div className="eyebrow reveal active"><span className="edot"/> {t('strategy.hero.eyebrow')} <span className="edot"/></div>
-              <h1 className="hero-title reveal active">{t('strategy.hero.title1')}<br/><em>{t('strategy.hero.title2')}</em></h1>
+              <div className="eyebrow reveal active"><span className="edot"/> {getDynamicContent('strategy_hero_eyebrow', 'strategy.hero.eyebrow')} <span className="edot"/></div>
+              <h1 className="hero-title reveal active">{getDynamicContent('strategy_hero_title1', 'strategy.hero.title1')}<br/><em>{getDynamicContent('strategy_hero_title2', 'strategy.hero.title2')}</em></h1>
               <p className="hero-sub reveal active" style={{transitionDelay:'.25s'}}>
-                {getDynamicContent('about_strategy_desc', 'strategy.hero.descDefault')}
+                {getDynamicContent('strategy_page_desc', 'strategy.hero.descDefault')}
               </p>
               <div className="hero-div reveal active" style={{transitionDelay:'.4s'}}><span/><span className="hdot"/><span/></div>
             </div>
             <button className="scroll-btn" onClick={() => document.getElementById('icerik')?.scrollIntoView({behavior:'smooth'})} aria-label="Aşağı kaydır">
-              <span className="scroll-label">{t('strategy.hero.scrollBtn')}</span>
+              <span className="scroll-label">{getDynamicContent('strategy_hero_scroll', 'strategy.hero.scrollBtn')}</span>
               <span className="scroll-icon"><i className="fas fa-chevron-down"/></span>
             </button>
           </section>
@@ -242,17 +198,17 @@ export default function StrategyPage() {
             <div className="container" style={{maxWidth:'940px'}}>
 
               <div className="sec-head reveal-up">
-                <p className="sec-label">{t('strategy.section.part')}</p>
-                <h2 className="sec-title">{t('strategy.section.title')}</h2>
+                <p className="sec-label">{getDynamicContent('strategy_sec_label', 'strategy.section.part')}</p>
+                <h2 className="sec-title">{getDynamicContent('strategy_sec_title', 'strategy.section.title')}</h2>
               </div>
 
               {/* İstatistikler */}
               <div className="stats reveal-up" style={{transitionDelay:'.1s'}}>
                 {[
-                  {val:'24',   unit: t('strategy.stats.durationUnit'),     label: t('strategy.stats.duration')},
-                  {val:'250K', unit:'€',      label: t('strategy.stats.grant')},
-                  {val:'2025', unit:'→ 2027',  label: t('strategy.stats.period')},
-                  {val:'%29',  unit:'',        label: t('strategy.stats.recycle')},
+                  {val: getDynamicContent('strategy_stat_1_val', 'strategy.stats.s1_val') || '24',   unit: getDynamicContent('strategy_stat_1_unit', 'strategy.stats.durationUnit'), label: getDynamicContent('strategy_stat_1_label', 'strategy.stats.duration')},
+                  {val: getDynamicContent('strategy_stat_2_val', 'strategy.stats.s2_val') || '250K', unit: getDynamicContent('strategy_stat_2_unit', 'strategy.stats.s2_unit') || '€', label: getDynamicContent('strategy_stat_2_label', 'strategy.stats.grant')},
+                  {val: getDynamicContent('strategy_stat_3_val', 'strategy.stats.s3_val') || '2025', unit: getDynamicContent('strategy_stat_3_unit', 'strategy.stats.s3_unit') || '→ 2027', label: getDynamicContent('strategy_stat_3_label', 'strategy.stats.period')},
+                  {val: getDynamicContent('strategy_stat_4_val', 'strategy.stats.s4_val') || '%29',  unit: getDynamicContent('strategy_stat_4_unit', 'strategy.stats.s4_unit') || '', label: getDynamicContent('strategy_stat_4_label', 'strategy.stats.recycle')},
                 ].map((s,i) => (
                   <div className="stat" key={i}>
                     <div className="stat-v">{s.val}<span className="stat-u">{s.unit}</span></div>
@@ -394,8 +350,8 @@ export default function StrategyPage() {
         .stat-u{font-size:.92rem;font-weight:600;color:var(--gm);margin-left:3px;}
         .stat-l{font-size:.75rem;color:var(--ts);margin-top:7px;font-weight:500;}
 
-        /* SECTION CARD */
-        .sc{background:var(--card);backdrop-filter:blur(14px);border-radius:20px;box-shadow:var(--sh);border:1px solid var(--border);border-left:4px solid var(--accent);margin-bottom:28px;position:relative;overflow:hidden;transition:transform .4s ease,box-shadow .4s ease;}
+        /* SECTION CARD (Arayı açmak için margin-bottom eklendi) */
+        .sc{background:var(--card);backdrop-filter:blur(14px);border-radius:20px;box-shadow:var(--sh);border:1px solid var(--border);border-left:4px solid var(--accent);margin-bottom:64px;position:relative;overflow:hidden;transition:transform .4s ease,box-shadow .4s ease;}
         .sc:hover{transform:translateY(-4px);box-shadow:var(--shh);}
         .sc-shine{position:absolute;top:0;left:-120%;width:55%;height:100%;background:linear-gradient(to right,rgba(255,255,255,0),rgba(255,255,255,.32),rgba(255,255,255,0));transform:skewX(-20deg);transition:left .65s ease;pointer-events:none;z-index:1;}
         .sc:hover .sc-shine{left:180%;}

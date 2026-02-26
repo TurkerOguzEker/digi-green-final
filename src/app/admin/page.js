@@ -759,7 +759,11 @@ export default function AdminPage() {
                       
                       {/* --- 1. HERO BÖLÜMÜ --- */}
                       <SectionHeader num="1" title="Hero (Giriş) Bölümü" />
-                      <div className="adm-card-inner">
+                      <div className="adm-form-grid2">
+                        <SettingInput label="Üst Ufak Başlık (TR)" settingKey="about_hero_eyebrow" {...commonProps} />
+                        <SettingInput label="Üst Ufak Başlık (EN)" settingKey="about_hero_eyebrow_en" {...commonProps} />
+                      </div>
+                      <div className="adm-card-inner" style={{marginTop:'15px'}}>
                         <div className="adm-card-inner-label">Başlık Alanı ("Geleceğinize Yeşil Bir İz Bırakın")</div>
                         <div className="adm-form-grid2">
                           <SettingInput label="Satır 1 (TR)" settingKey="about_hero_title1" placeholder="Geleceğinize" {...commonProps} />
@@ -782,7 +786,15 @@ export default function AdminPage() {
                       <div className="adm-divider" />
 
                       {/* --- 2. VİZYON BÖLÜMÜ --- */}
-                      <SectionHeader num="2" title="Vizyon & Misyon" />
+                      <SectionHeader num="2" title="Vizyon & Misyon ve Görsel" />
+                      
+                      {/* RESİM DÜZENLEME ALANI EKLENDİ */}
+                      <SettingInput label="Sağ Taraf Görseli" settingKey="home_about_image" type="image" {...commonProps} />
+                      
+                      <div className="adm-form-grid2" style={{marginTop:'15px'}}>
+                        <SettingInput label="Bölüm Etiketi (TR)" settingKey="about_vision_label" placeholder="Vizyonumuz" {...commonProps} />
+                        <SettingInput label="Bölüm Etiketi (EN)" settingKey="about_vision_label_en" {...commonProps} />
+                      </div>
                       <div className="adm-form-grid2">
                         <SettingInput label="Vizyon Başlık (TR)" settingKey="about_vision_title" {...commonProps} />
                         <SettingInput label="Vizyon Başlık (EN)" settingKey="about_vision_title_en" {...commonProps} />
@@ -808,7 +820,15 @@ export default function AdminPage() {
 
                       {/* --- 3. İSTATİSTİKLER (RAKAMLARLA BİZ) --- */}
                       <SectionHeader num="3" title="Rakamlarla Biz (İstatistikler)" />
-                      <div className="adm-card-grid2" style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:'15px'}}>
+                      <div className="adm-form-grid2">
+                        <SettingInput label="Bölüm Etiketi (TR)" settingKey="about_stats_label" placeholder="Rakamlarla Biz" {...commonProps} />
+                        <SettingInput label="Bölüm Etiketi (EN)" settingKey="about_stats_label_en" {...commonProps} />
+                      </div>
+                      <div className="adm-form-grid2">
+                        <SettingInput label="Bölüm Başlığı (TR)" settingKey="about_stats_title" placeholder="Projenin Etkisi" {...commonProps} />
+                        <SettingInput label="Bölüm Başlığı (EN)" settingKey="about_stats_title_en" {...commonProps} />
+                      </div>
+                      <div className="adm-card-grid2" style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:'15px', marginTop:'15px'}}>
                            {[1, 2, 3, 4].map(n => (
                              <div key={n} className="adm-card-inner">
                                <div className="adm-card-inner-label">Sayaç {n}</div>
@@ -827,28 +847,42 @@ export default function AdminPage() {
                       {/* --- 4. HEDEF KİTLE --- */}
                       <SectionHeader num="4" title="Hedef Kitle Kartları" />
                       <div className="adm-form-grid2">
-                        <SettingInput label="Bölüm Başlığı (TR)" settingKey="about_target_title" {...commonProps} />
+                        <SettingInput label="Bölüm Etiketi (TR)" settingKey="about_target_label" placeholder="Kimin İçin?" {...commonProps} />
+                        <SettingInput label="Bölüm Etiketi (EN)" settingKey="about_target_label_en" {...commonProps} />
+                      </div>
+                      <div className="adm-form-grid2">
+                        <SettingInput label="Bölüm Başlığı (TR)" settingKey="about_target_title" placeholder="Hedef Kitlemiz" {...commonProps} />
                         <SettingInput label="Bölüm Başlığı (EN)" settingKey="about_target_title_en" {...commonProps} />
                       </div>
-                      {[1, 2, 3].map(n => (
-                        <div key={n} className="adm-card-inner" style={{marginBottom:'15px'}}>
-                          <div className="adm-card-inner-label">Hedef Kartı {n}</div>
-                          <div className="adm-form-grid2">
-                            <SettingInput label="Başlık (TR)" settingKey={`about_target_${n}_title`} {...commonProps} />
-                            <SettingInput label="Başlık (EN)" settingKey={`about_target_${n}_title_en`} {...commonProps} />
+                      <div style={{marginTop:'15px'}}>
+                        {[1, 2, 3].map(n => (
+                          <div key={n} className="adm-card-inner" style={{marginBottom:'15px'}}>
+                            <div className="adm-card-inner-label">Hedef Kartı {n}</div>
+                            <div className="adm-form-grid2">
+                              <SettingInput label="Başlık (TR)" settingKey={`about_target_${n}_title`} {...commonProps} />
+                              <SettingInput label="Başlık (EN)" settingKey={`about_target_${n}_title_en`} {...commonProps} />
+                            </div>
+                            <div className="adm-form-grid2">
+                              <SettingInput label="Açıklama (TR)" settingKey={`about_target_${n}_desc`} type="textarea" {...commonProps} />
+                              <SettingInput label="Açıklama (EN)" settingKey={`about_target_${n}_desc_en`} type="textarea" {...commonProps} />
+                            </div>
                           </div>
-                          <div className="adm-form-grid2">
-                            <SettingInput label="Açıklama (TR)" settingKey={`about_target_${n}_desc`} type="textarea" {...commonProps} />
-                            <SettingInput label="Açıklama (EN)" settingKey={`about_target_${n}_desc_en`} type="textarea" {...commonProps} />
-                          </div>
-                        </div>
-                      ))}
+                        ))}
+                      </div>
 
                       <div className="adm-divider" />
 
                       {/* --- 5. PROJE KÜNYESİ --- */}
                       <SectionHeader num="5" title="Proje Künyesi (Tablo)" />
-                      <div className="adm-card-inner">
+                      <div className="adm-form-grid2">
+                        <SettingInput label="Bölüm Etiketi (TR)" settingKey="about_spec_label" placeholder="Teknik Detaylar" {...commonProps} />
+                        <SettingInput label="Bölüm Etiketi (EN)" settingKey="about_spec_label_en" {...commonProps} />
+                      </div>
+                      <div className="adm-form-grid2">
+                        <SettingInput label="Bölüm Başlığı (TR)" settingKey="about_spec_title" placeholder="Proje Künyesi" {...commonProps} />
+                        <SettingInput label="Bölüm Başlığı (EN)" settingKey="about_spec_title_en" {...commonProps} />
+                      </div>
+                      <div className="adm-card-inner" style={{marginTop:'15px'}}>
                         <div className="adm-form-grid2">
                           <SettingInput label="Proje Adı (TR)" settingKey="about_project_name" {...commonProps} />
                           <SettingInput label="Proje Adı (EN)" settingKey="about_project_name_en" {...commonProps} />
@@ -897,51 +931,154 @@ export default function AdminPage() {
                     </div>
                   )}
 
-                  {/* 2. KONSORSİYUM SAYFASI */}
+                 {/* 2. KONSORSİYUM SAYFASI */}
                   {subTab === 'consortium' && (
                     <div className="adm-fade-in">
-                      <SectionHeader num="1" title="Giriş Metni" />
+                      <SectionHeader num="1" title="Sayfa Girişi (Hero)" />
+                      <div className="adm-form-grid2">
+                        <SettingInput label="Üst Ufak Başlık (TR)" settingKey="consortium_hero_eyebrow" {...commonProps} />
+                        <SettingInput label="Üst Ufak Başlık (EN)" settingKey="consortium_hero_eyebrow_en" {...commonProps} />
+                      </div>
+                      <div className="adm-form-grid2">
+                        <SettingInput label="Ana Başlık Satır 1 (TR)" settingKey="consortium_hero_title1" {...commonProps} />
+                        <SettingInput label="Ana Başlık Satır 1 (EN)" settingKey="consortium_hero_title1_en" {...commonProps} />
+                        <SettingInput label="Ana Başlık Satır 2 (TR)" settingKey="consortium_hero_title2" {...commonProps} />
+                        <SettingInput label="Ana Başlık Satır 2 (EN)" settingKey="consortium_hero_title2_en" {...commonProps} />
+                      </div>
                       <div className="adm-form-grid2">
                         <SettingInput label="Giriş Açıklaması (TR)" settingKey="consortium_intro" type="textarea" {...commonProps} />
                         <SettingInput label="Giriş Açıklaması (EN)" settingKey="consortium_intro_en" type="textarea" {...commonProps} />
                       </div>
-                      
+                      <div className="adm-form-grid2" style={{marginTop:'15px'}}>
+                        <SettingInput label="Kaydırma Butonu (TR)" settingKey="consortium_scroll_btn" {...commonProps} />
+                        <SettingInput label="Kaydırma Butonu (EN)" settingKey="consortium_scroll_btn_en" {...commonProps} />
+                      </div>
+
                       <div className="adm-divider" />
-                      <SectionHeader num="2" title="Kart A (Koordinatör)" />
+                      <SectionHeader num="2" title="İstatistikler" />
                       <div className="adm-form-grid2">
+                        <SettingInput label="Bölüm Etiketi (TR)" settingKey="consortium_sec_label" {...commonProps} />
+                        <SettingInput label="Bölüm Etiketi (EN)" settingKey="consortium_sec_label_en" {...commonProps} />
+                        <SettingInput label="Bölüm Başlığı (TR)" settingKey="consortium_sec_title" {...commonProps} />
+                        <SettingInput label="Bölüm Başlığı (EN)" settingKey="consortium_sec_title_en" {...commonProps} />
+                      </div>
+                      <div className="adm-card-grid2" style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:'15px', marginTop:'15px'}}>
+                        {[1,2,3,4].map(n => (
+                          <div key={n} className="adm-card-inner">
+                            <div className="adm-card-inner-label">Sayaç {n}</div>
+                            <SettingInput label="Değer" settingKey={`consortium_stat_${n}_val`} {...commonProps} />
+                            <SettingInput label="İşaret (+, %)" settingKey={`consortium_stat_${n}_unit`} {...commonProps} />
+                            <div style={{marginTop:'10px'}}>
+                              <SettingInput label="Etiket (TR)" settingKey={`consortium_stat_${n}_label`} {...commonProps} />
+                              <SettingInput label="Etiket (EN)" settingKey={`consortium_stat_${n}_label_en`} {...commonProps} />
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+
+                      <div className="adm-divider" />
+                      <SectionHeader num="3" title="Kart A (Koordinatör)" />
+                      <div className="adm-form-grid2">
+                        <SettingInput label="Rozet (TR)" settingKey="consortium_badge_a" {...commonProps} />
+                        <SettingInput label="Rozet (EN)" settingKey="consortium_badge_a_en" {...commonProps} />
                         <SettingInput label="Başlık (TR)" settingKey="consortium_section_a_title" {...commonProps} />
                         <SettingInput label="Başlık (EN)" settingKey="consortium_section_a_title_en" {...commonProps} />
                       </div>
                       <div className="adm-form-grid2">
-                        <SettingInput label="İçerik Metni (TR)" settingKey="consortium_text_a" type="textarea" {...commonProps} />
-                        <SettingInput label="İçerik Metni (EN)" settingKey="consortium_text_a_en" type="textarea" {...commonProps} />
+                        <SettingInput label="Açıklama (TR)" settingKey="consortium_text_a" type="textarea" {...commonProps} />
+                        <SettingInput label="Açıklama (EN)" settingKey="consortium_text_a_en" type="textarea" {...commonProps} />
+                      </div>
+                      <div className="adm-card-inner" style={{marginTop:'15px'}}>
+                        <div className="adm-card-inner-label">Kart A Alt Özellikleri</div>
+                        <div className="adm-form-grid2">
+                          <SettingInput label="Özellik 1 (TR)" settingKey="consortium_a_pill1" {...commonProps} />
+                          <SettingInput label="Özellik 1 (EN)" settingKey="consortium_a_pill1_en" {...commonProps} />
+                          <SettingInput label="Özellik 2 (TR)" settingKey="consortium_a_pill2" {...commonProps} />
+                          <SettingInput label="Özellik 2 (EN)" settingKey="consortium_a_pill2_en" {...commonProps} />
+                          <SettingInput label="Özellik 3 (TR)" settingKey="consortium_a_pill3" {...commonProps} />
+                          <SettingInput label="Özellik 3 (EN)" settingKey="consortium_a_pill3_en" {...commonProps} />
+                          <SettingInput label="Özellik 4 (TR)" settingKey="consortium_a_pill4" {...commonProps} />
+                          <SettingInput label="Özellik 4 (EN)" settingKey="consortium_a_pill4_en" {...commonProps} />
+                        </div>
                       </div>
 
                       <div className="adm-divider" />
-                      <SectionHeader num="3" title="Kart B (Avrupalı Ortaklar)" />
+                      <SectionHeader num="4" title="Kart B (Avrupalı Ortaklar)" />
                       <div className="adm-form-grid2">
+                        <SettingInput label="Rozet (TR)" settingKey="consortium_badge_b" {...commonProps} />
+                        <SettingInput label="Rozet (EN)" settingKey="consortium_badge_b_en" {...commonProps} />
                         <SettingInput label="Başlık (TR)" settingKey="consortium_section_b_title" {...commonProps} />
                         <SettingInput label="Başlık (EN)" settingKey="consortium_section_b_title_en" {...commonProps} />
                       </div>
                       <div className="adm-form-grid2">
-                        <SettingInput label="İçerik Metni (TR)" settingKey="consortium_text_b" type="textarea" {...commonProps} />
-                        <SettingInput label="İçerik Metni (EN)" settingKey="consortium_text_b_en" type="textarea" {...commonProps} />
+                        <SettingInput label="Açıklama (TR)" settingKey="consortium_text_b" type="textarea" {...commonProps} />
+                        <SettingInput label="Açıklama (EN)" settingKey="consortium_text_b_en" type="textarea" {...commonProps} />
+                      </div>
+                      <div className="adm-card-inner" style={{marginTop:'15px'}}>
+                        <div className="adm-card-inner-label">Kart B Ortakları ve Özellikleri</div>
+                        <div className="adm-form-grid2">
+                          <SettingInput label="Ortak 1 Adı" settingKey="consortium_b_p1_name" {...commonProps} />
+                          <SettingInput label="Ortak 1 Ülke" settingKey="consortium_b_p1_country" {...commonProps} />
+                          <SettingInput label="Ortak 1 Kısa Bilgi" settingKey="consortium_b_p1_desc" {...commonProps} />
+                        </div>
+                        <div className="adm-form-grid2" style={{marginTop:'10px'}}>
+                          <SettingInput label="Ortak 2 Adı" settingKey="consortium_b_p2_name" {...commonProps} />
+                          <SettingInput label="Ortak 2 Ülke" settingKey="consortium_b_p2_country" {...commonProps} />
+                          <SettingInput label="Ortak 2 Kısa Bilgi" settingKey="consortium_b_p2_desc" {...commonProps} />
+                        </div>
+                        <div className="adm-form-grid2" style={{marginTop:'15px'}}>
+                          <SettingInput label="Özellik 1 (TR)" settingKey="consortium_b_pill1" {...commonProps} />
+                          <SettingInput label="Özellik 1 (EN)" settingKey="consortium_b_pill1_en" {...commonProps} />
+                          <SettingInput label="Özellik 2 (TR)" settingKey="consortium_b_pill2" {...commonProps} />
+                          <SettingInput label="Özellik 2 (EN)" settingKey="consortium_b_pill2_en" {...commonProps} />
+                          <SettingInput label="Özellik 3 (TR)" settingKey="consortium_b_pill3" {...commonProps} />
+                          <SettingInput label="Özellik 3 (EN)" settingKey="consortium_b_pill3_en" {...commonProps} />
+                          <SettingInput label="Özellik 4 (TR)" settingKey="consortium_b_pill4" {...commonProps} />
+                          <SettingInput label="Özellik 4 (EN)" settingKey="consortium_b_pill4_en" {...commonProps} />
+                        </div>
                       </div>
 
                       <div className="adm-divider" />
-                      <SectionHeader num="4" title="Kart C (Türk Ortaklar)" />
+                      <SectionHeader num="5" title="Kart C (Türk Ortaklar)" />
                       <div className="adm-form-grid2">
+                        <SettingInput label="Rozet (TR)" settingKey="consortium_badge_c" {...commonProps} />
+                        <SettingInput label="Rozet (EN)" settingKey="consortium_badge_c_en" {...commonProps} />
                         <SettingInput label="Başlık (TR)" settingKey="consortium_section_c_title" {...commonProps} />
                         <SettingInput label="Başlık (EN)" settingKey="consortium_section_c_title_en" {...commonProps} />
                       </div>
                       <div className="adm-form-grid2">
-                        <SettingInput label="İçerik Metni (TR)" settingKey="consortium_text_c" type="textarea" {...commonProps} />
-                        <SettingInput label="İçerik Metni (EN)" settingKey="consortium_text_c_en" type="textarea" {...commonProps} />
+                        <SettingInput label="Açıklama (TR)" settingKey="consortium_text_c" type="textarea" {...commonProps} />
+                        <SettingInput label="Açıklama (EN)" settingKey="consortium_text_c_en" type="textarea" {...commonProps} />
+                      </div>
+                      <div className="adm-card-inner" style={{marginTop:'15px'}}>
+                        <div className="adm-card-inner-label">Kart C Ortakları ve Özellikleri</div>
+                        <div className="adm-form-grid2">
+                          <SettingInput label="Ortak 1 Adı" settingKey="consortium_c_p1_name" {...commonProps} />
+                          <SettingInput label="Ortak 1 Ülke" settingKey="consortium_c_p1_country" {...commonProps} />
+                          <SettingInput label="Ortak 1 Kısa Bilgi" settingKey="consortium_c_p1_desc" {...commonProps} />
+                        </div>
+                        <div className="adm-form-grid2" style={{marginTop:'10px'}}>
+                          <SettingInput label="Ortak 2 Adı" settingKey="consortium_c_p2_name" {...commonProps} />
+                          <SettingInput label="Ortak 2 Ülke" settingKey="consortium_c_p2_country" {...commonProps} />
+                          <SettingInput label="Ortak 2 Kısa Bilgi" settingKey="consortium_c_p2_desc" {...commonProps} />
+                        </div>
+                        <div className="adm-form-grid2" style={{marginTop:'15px'}}>
+                          <SettingInput label="Özellik 1 (TR)" settingKey="consortium_c_pill1" {...commonProps} />
+                          <SettingInput label="Özellik 1 (EN)" settingKey="consortium_c_pill1_en" {...commonProps} />
+                          <SettingInput label="Özellik 2 (TR)" settingKey="consortium_c_pill2" {...commonProps} />
+                          <SettingInput label="Özellik 2 (EN)" settingKey="consortium_c_pill2_en" {...commonProps} />
+                          <SettingInput label="Özellik 3 (TR)" settingKey="consortium_c_pill3" {...commonProps} />
+                          <SettingInput label="Özellik 3 (EN)" settingKey="consortium_c_pill3_en" {...commonProps} />
+                          <SettingInput label="Özellik 4 (TR)" settingKey="consortium_c_pill4" {...commonProps} />
+                          <SettingInput label="Özellik 4 (EN)" settingKey="consortium_c_pill4_en" {...commonProps} />
+                        </div>
                       </div>
 
                       <div className="adm-divider" />
-                      <SectionHeader num="5" title="Kart D (Sinerji & Etki)" />
+                      <SectionHeader num="6" title="Kart D (Sinerji & Etki)" />
                       <div className="adm-form-grid2">
+                        <SettingInput label="Rozet (TR)" settingKey="consortium_badge_d" {...commonProps} />
+                        <SettingInput label="Rozet (EN)" settingKey="consortium_badge_d_en" {...commonProps} />
                         <SettingInput label="Başlık (TR)" settingKey="consortium_section_d_title" {...commonProps} />
                         <SettingInput label="Başlık (EN)" settingKey="consortium_section_d_title_en" {...commonProps} />
                       </div>
@@ -949,21 +1086,84 @@ export default function AdminPage() {
                         <SettingInput label="İçerik Metni (TR)" settingKey="consortium_text_d" type="textarea" {...commonProps} />
                         <SettingInput label="İçerik Metni (EN)" settingKey="consortium_text_d_en" type="textarea" {...commonProps} />
                       </div>
+                      <div className="adm-card-inner" style={{marginTop:'15px'}}>
+                        <div className="adm-card-inner-label">Karşılaştırmalı Şehirler</div>
+                        <div className="adm-form-grid3">
+                          <SettingInput label="Şehir 1" settingKey="consortium_d_c1_city" {...commonProps} />
+                          <SettingInput label="Ülke 1" settingKey="consortium_d_c1_country" {...commonProps} />
+                          <SettingInput label="Odak Noktası 1" settingKey="consortium_d_c1_challenge" {...commonProps} />
+                        </div>
+                        <div className="adm-form-grid3" style={{marginTop:'10px'}}>
+                          <SettingInput label="Şehir 2" settingKey="consortium_d_c2_city" {...commonProps} />
+                          <SettingInput label="Ülke 2" settingKey="consortium_d_c2_country" {...commonProps} />
+                          <SettingInput label="Odak Noktası 2" settingKey="consortium_d_c2_challenge" {...commonProps} />
+                        </div>
+                        <div className="adm-form-grid3" style={{marginTop:'10px'}}>
+                          <SettingInput label="Şehir 3" settingKey="consortium_d_c3_city" {...commonProps} />
+                          <SettingInput label="Ülke 3" settingKey="consortium_d_c3_country" {...commonProps} />
+                          <SettingInput label="Odak Noktası 3" settingKey="consortium_d_c3_challenge" {...commonProps} />
+                        </div>
+                      </div>
+                      <div className="adm-form-grid2" style={{marginTop:'15px'}}>
+                        <SettingInput label="Alt Sinerji Notu (TR)" settingKey="consortium_synergy_note" type="textarea" {...commonProps} />
+                        <SettingInput label="Alt Sinerji Notu (EN)" settingKey="consortium_synergy_note_en" type="textarea" {...commonProps} />
+                      </div>
                     </div>
                   )}
 
-                  {/* 3. PROJE ETKİSİ SAYFASI */}
+                 {/* 3. PROJE ETKİSİ SAYFASI */}
                   {subTab === 'impact' && (
                     <div className="adm-fade-in">
-                      <SectionHeader num="1" title="Giriş Metni" />
+                      
+                      {/* --- HERO (GİRİŞ) --- */}
+                      <SectionHeader num="1" title="Hero (Giriş) Bölümü" />
                       <div className="adm-form-grid2">
+                        <SettingInput label="Üst Ufak Başlık (TR)" settingKey="impact_hero_eyebrow" {...commonProps} />
+                        <SettingInput label="Üst Ufak Başlık (EN)" settingKey="impact_hero_eyebrow_en" {...commonProps} />
+                        <SettingInput label="Ana Başlık Satır 1 (TR)" settingKey="impact_hero_title1" {...commonProps} />
+                        <SettingInput label="Ana Başlık Satır 1 (EN)" settingKey="impact_hero_title1_en" {...commonProps} />
+                        <SettingInput label="Vurgulu Başlık Satır 2 (TR)" settingKey="impact_hero_title2" {...commonProps} />
+                        <SettingInput label="Vurgulu Başlık Satır 2 (EN)" settingKey="impact_hero_title2_en" {...commonProps} />
+                      </div>
+                      <div className="adm-form-grid2" style={{marginTop:'10px'}}>
                         <SettingInput label="Giriş Açıklaması (TR)" settingKey="impact_page_desc" type="textarea" {...commonProps} />
                         <SettingInput label="Giriş Açıklaması (EN)" settingKey="impact_page_desc_en" type="textarea" {...commonProps} />
                       </div>
+                      <div className="adm-form-grid2" style={{marginTop:'10px'}}>
+                        <SettingInput label="Kaydırma Butonu (TR)" settingKey="impact_hero_scroll" {...commonProps} />
+                        <SettingInput label="Kaydırma Butonu (EN)" settingKey="impact_hero_scroll_en" {...commonProps} />
+                      </div>
 
                       <div className="adm-divider" />
-                      <SectionHeader num="2" title="Stratejik Etki Kartı" />
+
+                      {/* --- İSTATİSTİKLER --- */}
+                      <SectionHeader num="2" title="Etki İstatistikleri" />
                       <div className="adm-form-grid2">
+                        <SettingInput label="Bölüm Etiketi (TR)" settingKey="impact_sec_label" {...commonProps} />
+                        <SettingInput label="Bölüm Etiketi (EN)" settingKey="impact_sec_label_en" {...commonProps} />
+                        <SettingInput label="Bölüm Başlığı (TR)" settingKey="impact_sec_title" {...commonProps} />
+                        <SettingInput label="Bölüm Başlığı (EN)" settingKey="impact_sec_title_en" {...commonProps} />
+                      </div>
+                      <div className="adm-card-grid2" style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:'15px', marginTop:'15px'}}>
+                        {[1,2,3,4].map(n => (
+                          <div key={n} className="adm-card-inner">
+                            <div className="adm-card-inner-label">Metrik {n}</div>
+                            <SettingInput label="Değer (Sayı / %)" settingKey={`impact_stat_${n}_val`} {...commonProps} />
+                            <div style={{marginTop:'10px'}}>
+                              <SettingInput label="Etiket (TR)" settingKey={`impact_stat_${n}_label`} {...commonProps} />
+                              <SettingInput label="Etiket (EN)" settingKey={`impact_stat_${n}_label_en`} {...commonProps} />
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+
+                      <div className="adm-divider" />
+
+                      {/* --- KART A --- */}
+                      <SectionHeader num="3" title="Stratejik Etki Kartı (Kart A)" />
+                      <div className="adm-form-grid2">
+                        <SettingInput label="Rozet (TR)" settingKey="impact_badge_a" {...commonProps} />
+                        <SettingInput label="Rozet (EN)" settingKey="impact_badge_a_en" {...commonProps} />
                         <SettingInput label="Başlık (TR)" settingKey="impact_section_1_title" {...commonProps} />
                         <SettingInput label="Başlık (EN)" settingKey="impact_section_1_title_en" {...commonProps} />
                       </div>
@@ -971,7 +1171,6 @@ export default function AdminPage() {
                         <SettingInput label="Metin (TR)" settingKey="impact_section_1_text" type="textarea" {...commonProps} />
                         <SettingInput label="Metin (EN)" settingKey="impact_section_1_text_en" type="textarea" {...commonProps} />
                       </div>
-                      
                       <div className="adm-card-inner" style={{marginTop:'15px', marginBottom:'15px'}}>
                         <div className="adm-card-inner-label">Etki Vurguları (Madde İşaretleri)</div>
                         <div className="adm-form-grid2">
@@ -985,15 +1184,18 @@ export default function AdminPage() {
                           <SettingInput label="Vurgu 4 (EN)" settingKey="impact_h4_en" {...commonProps} />
                         </div>
                       </div>
-
                       <div className="adm-form-grid2">
                         <SettingInput label="Alt Vurgu Notu (TR)" settingKey="impact_highlight_text" type="textarea" {...commonProps} />
                         <SettingInput label="Alt Vurgu Notu (EN)" settingKey="impact_highlight_text_en" type="textarea" {...commonProps} />
                       </div>
 
                       <div className="adm-divider" />
-                      <SectionHeader num="3" title="Vizyon Kartı" />
+
+                      {/* --- KART B --- */}
+                      <SectionHeader num="4" title="Vizyon Kartı (Kart B)" />
                       <div className="adm-form-grid2">
+                        <SettingInput label="Rozet (TR)" settingKey="impact_badge_b" {...commonProps} />
+                        <SettingInput label="Rozet (EN)" settingKey="impact_badge_b_en" {...commonProps} />
                         <SettingInput label="Başlık (TR)" settingKey="impact_section_2_title" {...commonProps} />
                         <SettingInput label="Başlık (EN)" settingKey="impact_section_2_title_en" {...commonProps} />
                       </div>
@@ -1001,6 +1203,24 @@ export default function AdminPage() {
                         <SettingInput label="Metin (TR)" settingKey="impact_section_2_text" type="textarea" {...commonProps} />
                         <SettingInput label="Metin (EN)" settingKey="impact_section_2_text_en" type="textarea" {...commonProps} />
                       </div>
+                      
+                      <div className="adm-card-inner" style={{marginTop:'15px', marginBottom:'15px'}}>
+                        <div className="adm-card-inner-label">6'lı Vizyon Sütunları</div>
+                        {[1, 2, 3, 4, 5, 6].map(n => (
+                          <div key={n} style={{marginBottom:'10px', paddingBottom:'10px', borderBottom:'1px solid var(--border)'}}>
+                            <div style={{fontWeight:'bold', fontSize:'0.8rem', color:'var(--text-muted)', marginBottom:'5px'}}>Sütun {n}</div>
+                            <div className="adm-form-grid2">
+                              <SettingInput label="Başlık (TR)" settingKey={`impact_vp${n}_title`} {...commonProps} />
+                              <SettingInput label="Başlık (EN)" settingKey={`impact_vp${n}_title_en`} {...commonProps} />
+                            </div>
+                            <div className="adm-form-grid2" style={{marginTop:'5px'}}>
+                              <SettingInput label="Açıklama (TR)" settingKey={`impact_vp${n}_desc`} type="textarea" {...commonProps} />
+                              <SettingInput label="Açıklama (EN)" settingKey={`impact_vp${n}_desc_en`} type="textarea" {...commonProps} />
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+
                       <div className="adm-form-grid2">
                         <SettingInput label="Kapanış Sloganı (TR)" settingKey="impact_closing_msg" type="textarea" {...commonProps} />
                         <SettingInput label="Kapanış Sloganı (EN)" settingKey="impact_closing_msg_en" type="textarea" {...commonProps} />
@@ -1011,56 +1231,205 @@ export default function AdminPage() {
                   {/* 4. PROJE PLANI SAYFASI */}
                   {subTab === 'plan' && (
                     <div className="adm-fade-in">
-                      <SectionHeader num="1" title="Giriş Metni" />
+                      
+                      {/* --- HERO (GİRİŞ) --- */}
+                      <SectionHeader num="1" title="Hero (Giriş) Bölümü" />
                       <div className="adm-form-grid2">
+                        <SettingInput label="Üst Ufak Başlık (TR)" settingKey="plan_hero_eyebrow" {...commonProps} />
+                        <SettingInput label="Üst Ufak Başlık (EN)" settingKey="plan_hero_eyebrow_en" {...commonProps} />
+                        <SettingInput label="Ana Başlık Satır 1 (TR)" settingKey="plan_hero_title1" {...commonProps} />
+                        <SettingInput label="Ana Başlık Satır 1 (EN)" settingKey="plan_hero_title1_en" {...commonProps} />
+                        <SettingInput label="Vurgulu Başlık Satır 2 (TR)" settingKey="plan_hero_title2" {...commonProps} />
+                        <SettingInput label="Vurgulu Başlık Satır 2 (EN)" settingKey="plan_hero_title2_en" {...commonProps} />
+                      </div>
+                      <div className="adm-form-grid2" style={{marginTop:'10px'}}>
                         <SettingInput label="Giriş Açıklaması (TR)" settingKey="plan_page_desc" type="textarea" {...commonProps} />
                         <SettingInput label="Giriş Açıklaması (EN)" settingKey="plan_page_desc_en" type="textarea" {...commonProps} />
                       </div>
+                      <div className="adm-form-grid2" style={{marginTop:'10px'}}>
+                        <SettingInput label="Kaydırma Butonu (TR)" settingKey="plan_hero_scroll" {...commonProps} />
+                        <SettingInput label="Kaydırma Butonu (EN)" settingKey="plan_hero_scroll_en" {...commonProps} />
+                      </div>
+
+                      <div className="adm-divider" />
+
+                      {/* --- İSTATİSTİKLER --- */}
+                      <SectionHeader num="2" title="Plan İstatistikleri" />
+                      <div className="adm-form-grid2">
+                        <SettingInput label="Bölüm Etiketi (TR)" settingKey="plan_sec_label" {...commonProps} />
+                        <SettingInput label="Bölüm Etiketi (EN)" settingKey="plan_sec_label_en" {...commonProps} />
+                        <SettingInput label="Bölüm Başlığı (TR)" settingKey="plan_sec_title" {...commonProps} />
+                        <SettingInput label="Bölüm Başlığı (EN)" settingKey="plan_sec_title_en" {...commonProps} />
+                      </div>
+                      <div className="adm-card-grid2" style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:'15px', marginTop:'15px'}}>
+                        {[1, 2, 3, 4].map(n => (
+                          <div key={n} className="adm-card-inner">
+                            <div className="adm-card-inner-label">Sayaç {n}</div>
+                            <SettingInput label="Değer" settingKey={`plan_stat_${n}_val`} {...commonProps} />
+                            <SettingInput label="Birim (Ay, İP vb.)" settingKey={`plan_stat_${n}_unit`} {...commonProps} />
+                            <div style={{marginTop:'10px'}}>
+                              <SettingInput label="Etiket (TR)" settingKey={`plan_stat_${n}_label`} {...commonProps} />
+                              <SettingInput label="Etiket (EN)" settingKey={`plan_stat_${n}_label_en`} {...commonProps} />
+                            </div>
+                          </div>
+                        ))}
+                      </div>
                       
                       <div className="adm-divider" />
-                      <SectionHeader num="2" title="Proje Aşamaları (Timeline)" />
-                      {[1, 2, 3, 4].map(step => (
-                        <div key={step} className="adm-card-inner" style={{marginBottom:'15px'}}>
-                          <div className="adm-card-inner-label">Aşama {step} (İP{step+1})</div>
-                          <div className="adm-form-grid2">
-                            <SettingInput label={`Aşama ${step} Başlık (TR)`} settingKey={`plan_step_${step}_title`} {...commonProps} />
-                            <SettingInput label={`Aşama ${step} Başlık (EN)`} settingKey={`plan_step_${step}_title_en`} {...commonProps} />
+
+                      {/* --- TİMELİNE AŞAMALARI --- */}
+                      <SectionHeader num="3" title="Proje Aşamaları (Timeline)" />
+                      <div className="adm-form-grid2">
+                        <SettingInput label="Kart İçi Alt Başlık (Örn: Neler Yapılacak?)" settingKey="plan_timeline_pills_label" {...commonProps} />
+                        <SettingInput label="Kart İçi Alt Başlık (EN)" settingKey="plan_timeline_pills_label_en" {...commonProps} />
+                      </div>
+                      
+                      <div style={{marginTop: '20px'}}>
+                        {[1, 2, 3, 4].map(step => (
+                          <div key={step} className="adm-card-inner" style={{marginBottom:'20px'}}>
+                            <div className="adm-card-inner-label" style={{fontSize:'1rem', color:'var(--accent)'}}>Aşama {step} (İP{step+1})</div>
+                            <div className="adm-form-grid2">
+                              <SettingInput label={`Aşama ${step} Başlık (TR)`} settingKey={`plan_step_${step}_title`} {...commonProps} />
+                              <SettingInput label={`Aşama ${step} Başlık (EN)`} settingKey={`plan_step_${step}_title_en`} {...commonProps} />
+                            </div>
+                            <div className="adm-form-grid2">
+                              <SettingInput label={`Aşama ${step} Metni (TR)`} settingKey={`plan_step_${step}_desc`} type="textarea" {...commonProps} />
+                              <SettingInput label={`Aşama ${step} Metni (EN)`} settingKey={`plan_step_${step}_desc_en`} type="textarea" {...commonProps} />
+                            </div>
+                            
+                            {/* Aşama İçi Etiketler (Pills) */}
+                            <div style={{marginTop:'15px', padding:'10px', background:'var(--surface-1)', borderRadius:'8px', border:'1px solid var(--border)'}}>
+                              <div style={{fontSize:'0.75rem', fontWeight:'bold', marginBottom:'10px'}}>Aşama İçi Etiketler (Pills)</div>
+                              <div className="adm-form-grid2">
+                                <SettingInput label="Etiket 1 (TR)" settingKey={`plan_step_${step}_pill_1`} {...commonProps} />
+                                <SettingInput label="Etiket 1 (EN)" settingKey={`plan_step_${step}_pill_1_en`} {...commonProps} />
+                                <SettingInput label="Etiket 2 (TR)" settingKey={`plan_step_${step}_pill_2`} {...commonProps} />
+                                <SettingInput label="Etiket 2 (EN)" settingKey={`plan_step_${step}_pill_2_en`} {...commonProps} />
+                                <SettingInput label="Etiket 3 (TR)" settingKey={`plan_step_${step}_pill_3`} {...commonProps} />
+                                <SettingInput label="Etiket 3 (EN)" settingKey={`plan_step_${step}_pill_3_en`} {...commonProps} />
+                                <SettingInput label="Etiket 4 (TR)" settingKey={`plan_step_${step}_pill_4`} {...commonProps} />
+                                <SettingInput label="Etiket 4 (EN)" settingKey={`plan_step_${step}_pill_4_en`} {...commonProps} />
+                              </div>
+                            </div>
+
                           </div>
-                          <div className="adm-form-grid2">
-                            <SettingInput label={`Aşama ${step} Metni (TR)`} settingKey={`plan_step_${step}_desc`} type="textarea" {...commonProps} />
-                            <SettingInput label={`Aşama ${step} Metni (EN)`} settingKey={`plan_step_${step}_desc_en`} type="textarea" {...commonProps} />
-                          </div>
-                        </div>
-                      ))}
+                        ))}
+                      </div>
+
                     </div>
                   )}
 
-                  {/* 5. YOL HARİTASI SAYFASI */}
+               {/* 5. YOL HARİTASI SAYFASI */}
                   {subTab === 'roadmap' && (
                     <div className="adm-fade-in">
-                      <SectionHeader num="1" title="Giriş Metni" />
+                      
+                      {/* --- HERO (GİRİŞ) --- */}
+                      <SectionHeader num="1" title="Hero (Giriş) Bölümü" />
                       <div className="adm-form-grid2">
-                        <SettingInput label="Giriş Açıklaması (TR)" settingKey="roadmap_desc" type="textarea" {...commonProps} />
-                        <SettingInput label="Giriş Açıklaması (EN)" settingKey="roadmap_desc_en" type="textarea" {...commonProps} />
+                        <SettingInput label="Üst Ufak Başlık (TR)" settingKey="roadmap_hero_eyebrow" {...commonProps} />
+                        <SettingInput label="Üst Ufak Başlık (EN)" settingKey="roadmap_hero_eyebrow_en" {...commonProps} />
+                        <SettingInput label="Ana Başlık Satır 1 (TR)" settingKey="roadmap_hero_title1" {...commonProps} />
+                        <SettingInput label="Ana Başlık Satır 1 (EN)" settingKey="roadmap_hero_title1_en" {...commonProps} />
+                        <SettingInput label="Vurgulu Başlık Satır 2 (TR)" settingKey="roadmap_hero_title2" {...commonProps} />
+                        <SettingInput label="Vurgulu Başlık Satır 2 (EN)" settingKey="roadmap_hero_title2_en" {...commonProps} />
                       </div>
-                      <div className="adm-empty" style={{marginTop:'15px'}}>
-                        <i className="fas fa-table" />
-                        Tablo görevleri otomatik olarak dil dosyasından (translations.js) çekilmektedir.
+                      <div className="adm-form-grid2" style={{marginTop:'10px'}}>
+                        {/* ✨ DÜZELTME: roadmap_desc yerine roadmap_page_desc yapıldı ✨ */}
+                        <SettingInput label="Giriş Açıklaması (TR)" settingKey="roadmap_page_desc" type="textarea" {...commonProps} />
+                        <SettingInput label="Giriş Açıklaması (EN)" settingKey="roadmap_page_desc_en" type="textarea" {...commonProps} />
                       </div>
+                      <div className="adm-form-grid2" style={{marginTop:'10px'}}>
+                        <SettingInput label="Kaydırma Butonu (TR)" settingKey="roadmap_hero_scroll" {...commonProps} />
+                        <SettingInput label="Kaydırma Butonu (EN)" settingKey="roadmap_hero_scroll_en" {...commonProps} />
+                      </div>
+
+                      <div className="adm-divider" />
+
+                      {/* --- BÖLÜM BAŞLIKLARI --- */}
+                      <SectionHeader num="2" title="Tablo Üst Bilgileri" />
+                      <div className="adm-form-grid2">
+                        <SettingInput label="Bölüm Etiketi (TR)" settingKey="roadmap_sec_label" {...commonProps} />
+                        <SettingInput label="Bölüm Etiketi (EN)" settingKey="roadmap_sec_label_en" {...commonProps} />
+                        <SettingInput label="Bölüm Başlığı (TR)" settingKey="roadmap_sec_title" {...commonProps} />
+                        <SettingInput label="Bölüm Başlığı (EN)" settingKey="roadmap_sec_title_en" {...commonProps} />
+                      </div>
+                      <div className="adm-form-grid2" style={{marginTop:'10px'}}>
+                        <SettingInput label="Tablo Başlığı (Örn: İş Paketleri)" settingKey="roadmap_table_header" {...commonProps} />
+                        <SettingInput label="Tablo Başlığı (EN)" settingKey="roadmap_table_header_en" {...commonProps} />
+                      </div>
+
+                      <div className="adm-divider" />
+
+                      {/* --- TABLO GÖREVLERİ (1-21) --- */}
+                      <SectionHeader num="3" title="Gantt Şeması Görevleri (1-21)" />
+                      <div style={{fontSize:'0.8rem', color:'var(--text-muted)', marginBottom:'15px'}}>
+                        Aşağıdaki 21 adet görevin ismini TR ve EN olarak düzenleyebilirsiniz. Boş bıraktığınız kutularda yedek (eski) çeviriler görünmeye devam edecektir.
+                      </div>
+                      
+                      <div className="adm-card-grid2" style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:'15px'}}>
+                        {[...Array(21)].map((_, i) => (
+                          <div key={i+1} className="adm-card-inner">
+                            <div className="adm-card-inner-label" style={{color:'var(--accent)'}}>Görev {i+1}</div>
+                            <SettingInput label={`Görev ${i+1} Adı (TR)`} settingKey={`roadmap_task_${i+1}`} {...commonProps} />
+                            <SettingInput label={`Görev ${i+1} Adı (EN)`} settingKey={`roadmap_task_${i+1}_en`} {...commonProps} />
+                          </div>
+                        ))}
+                      </div>
+
                     </div>
                   )}
 
                   {/* 6. STRATEJİ SAYFASI */}
                   {subTab === 'strategy' && (
                     <div className="adm-fade-in">
-                      <SectionHeader num="1" title="Giriş Metni" />
-                      <div className="adm-form-grid2">
-                        <SettingInput label="Giriş Açıklaması (TR)" settingKey="about_strategy_desc" type="textarea" {...commonProps} />
-                        <SettingInput label="Giriş Açıklaması (EN)" settingKey="about_strategy_desc_en" type="textarea" {...commonProps} />
-                      </div>
                       
+                      {/* --- HERO (GİRİŞ) --- */}
+                      <SectionHeader num="1" title="Hero (Giriş) Bölümü" />
+                      <div className="adm-form-grid2">
+                        <SettingInput label="Üst Ufak Başlık (TR)" settingKey="strategy_hero_eyebrow" {...commonProps} />
+                        <SettingInput label="Üst Ufak Başlık (EN)" settingKey="strategy_hero_eyebrow_en" {...commonProps} />
+                        <SettingInput label="Ana Başlık Satır 1 (TR)" settingKey="strategy_hero_title1" {...commonProps} />
+                        <SettingInput label="Ana Başlık Satır 1 (EN)" settingKey="strategy_hero_title1_en" {...commonProps} />
+                        <SettingInput label="Vurgulu Başlık Satır 2 (TR)" settingKey="strategy_hero_title2" {...commonProps} />
+                        <SettingInput label="Vurgulu Başlık Satır 2 (EN)" settingKey="strategy_hero_title2_en" {...commonProps} />
+                      </div>
+                      <div className="adm-form-grid2" style={{marginTop:'10px'}}>
+                        <SettingInput label="Giriş Açıklaması (TR)" settingKey="strategy_page_desc" type="textarea" {...commonProps} />
+                        <SettingInput label="Giriş Açıklaması (EN)" settingKey="strategy_page_desc_en" type="textarea" {...commonProps} />
+                      </div>
+                      <div className="adm-form-grid2" style={{marginTop:'10px'}}>
+                        <SettingInput label="Kaydırma Butonu (TR)" settingKey="strategy_hero_scroll" {...commonProps} />
+                        <SettingInput label="Kaydırma Butonu (EN)" settingKey="strategy_hero_scroll_en" {...commonProps} />
+                      </div>
+
                       <div className="adm-divider" />
-                      <SectionHeader num="2" title="Kart A" />
+
+                      {/* --- İSTATİSTİKLER --- */}
+                      <SectionHeader num="2" title="Strateji İstatistikleri" />
+                      <div className="adm-form-grid2">
+                        <SettingInput label="Bölüm Etiketi (TR)" settingKey="strategy_sec_label" {...commonProps} />
+                        <SettingInput label="Bölüm Etiketi (EN)" settingKey="strategy_sec_label_en" {...commonProps} />
+                        <SettingInput label="Bölüm Başlığı (TR)" settingKey="strategy_sec_title" {...commonProps} />
+                        <SettingInput label="Bölüm Başlığı (EN)" settingKey="strategy_sec_title_en" {...commonProps} />
+                      </div>
+                      <div className="adm-card-grid2" style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:'15px', marginTop:'15px'}}>
+                        {[1, 2, 3, 4].map(n => (
+                          <div key={n} className="adm-card-inner">
+                            <div className="adm-card-inner-label">Sayaç {n}</div>
+                            <SettingInput label="Değer" settingKey={`strategy_stat_${n}_val`} {...commonProps} />
+                            <SettingInput label="Birim (Ay, €, vb.)" settingKey={`strategy_stat_${n}_unit`} {...commonProps} />
+                            <div style={{marginTop:'10px'}}>
+                              <SettingInput label="Etiket (TR)" settingKey={`strategy_stat_${n}_label`} {...commonProps} />
+                              <SettingInput label="Etiket (EN)" settingKey={`strategy_stat_${n}_label_en`} {...commonProps} />
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+
+                      <div className="adm-divider" />
+                      
+                      {/* --- KART A --- */}
+                      <SectionHeader num="3" title="Kart A (Zaman Çizelgesi & Hazırlık)" />
                       <div className="adm-form-grid2">
                         <SettingInput label="Başlık (TR)" settingKey="strategy_section_a_title" {...commonProps} />
                         <SettingInput label="Başlık (EN)" settingKey="strategy_section_a_title_en" {...commonProps} />
@@ -1068,14 +1437,27 @@ export default function AdminPage() {
                       <div className="adm-form-grid2">
                         <SettingInput label="Paragraf 1 (TR)" settingKey="strategy_text_a_1" type="textarea" {...commonProps} />
                         <SettingInput label="Paragraf 1 (EN)" settingKey="strategy_text_a_1_en" type="textarea" {...commonProps} />
-                      </div>
-                      <div className="adm-form-grid2">
                         <SettingInput label="Paragraf 2 (TR)" settingKey="strategy_text_a_2" type="textarea" {...commonProps} />
                         <SettingInput label="Paragraf 2 (EN)" settingKey="strategy_text_a_2_en" type="textarea" {...commonProps} />
                       </div>
+                      <div className="adm-card-inner" style={{marginTop:'15px'}}>
+                        <div className="adm-card-inner-label">Kart A Alt Özellikleri (Pills)</div>
+                        <div className="adm-form-grid2">
+                          <SettingInput label="Özellik 1 (TR)" settingKey="strategy_a_pill1" {...commonProps} />
+                          <SettingInput label="Özellik 1 (EN)" settingKey="strategy_a_pill1_en" {...commonProps} />
+                          <SettingInput label="Özellik 2 (TR)" settingKey="strategy_a_pill2" {...commonProps} />
+                          <SettingInput label="Özellik 2 (EN)" settingKey="strategy_a_pill2_en" {...commonProps} />
+                          <SettingInput label="Özellik 3 (TR)" settingKey="strategy_a_pill3" {...commonProps} />
+                          <SettingInput label="Özellik 3 (EN)" settingKey="strategy_a_pill3_en" {...commonProps} />
+                          <SettingInput label="Özellik 4 (TR)" settingKey="strategy_a_pill4" {...commonProps} />
+                          <SettingInput label="Özellik 4 (EN)" settingKey="strategy_a_pill4_en" {...commonProps} />
+                        </div>
+                      </div>
 
                       <div className="adm-divider" />
-                      <SectionHeader num="3" title="Kart B" />
+                      
+                      {/* --- KART B --- */}
+                      <SectionHeader num="4" title="Kart B (Odak Noktası & Felsefe)" />
                       <div className="adm-form-grid2">
                         <SettingInput label="Başlık (TR)" settingKey="strategy_section_b_title" {...commonProps} />
                         <SettingInput label="Başlık (EN)" settingKey="strategy_section_b_title_en" {...commonProps} />
@@ -1088,9 +1470,24 @@ export default function AdminPage() {
                         <SettingInput label="Alıntı Söz (TR)" settingKey="strategy_quote" type="textarea" {...commonProps} />
                         <SettingInput label="Alıntı Söz (EN)" settingKey="strategy_quote_en" type="textarea" {...commonProps} />
                       </div>
+                      <div className="adm-card-inner" style={{marginTop:'15px'}}>
+                        <div className="adm-card-inner-label">Kart B Alt Özellikleri (Pills)</div>
+                        <div className="adm-form-grid2">
+                          <SettingInput label="Özellik 1 (TR)" settingKey="strategy_b_pill1" {...commonProps} />
+                          <SettingInput label="Özellik 1 (EN)" settingKey="strategy_b_pill1_en" {...commonProps} />
+                          <SettingInput label="Özellik 2 (TR)" settingKey="strategy_b_pill2" {...commonProps} />
+                          <SettingInput label="Özellik 2 (EN)" settingKey="strategy_b_pill2_en" {...commonProps} />
+                          <SettingInput label="Özellik 3 (TR)" settingKey="strategy_b_pill3" {...commonProps} />
+                          <SettingInput label="Özellik 3 (EN)" settingKey="strategy_b_pill3_en" {...commonProps} />
+                          <SettingInput label="Özellik 4 (TR)" settingKey="strategy_b_pill4" {...commonProps} />
+                          <SettingInput label="Özellik 4 (EN)" settingKey="strategy_b_pill4_en" {...commonProps} />
+                        </div>
+                      </div>
 
                       <div className="adm-divider" />
-                      <SectionHeader num="4" title="Kart C" />
+                      
+                      {/* --- KART C --- */}
+                      <SectionHeader num="5" title="Kart C (Avrupa Politikaları Uyum)" />
                       <div className="adm-form-grid2">
                         <SettingInput label="Başlık (TR)" settingKey="strategy_section_c_title" {...commonProps} />
                         <SettingInput label="Başlık (EN)" settingKey="strategy_section_c_title_en" {...commonProps} />
@@ -1099,6 +1496,30 @@ export default function AdminPage() {
                         <SettingInput label="Açıklama (TR)" settingKey="strategy_text_c" type="textarea" {...commonProps} />
                         <SettingInput label="Açıklama (EN)" settingKey="strategy_text_c_en" type="textarea" {...commonProps} />
                       </div>
+                      <div className="adm-card-inner" style={{marginTop:'15px'}}>
+                        <div className="adm-card-inner-label">3 Temel Öncelik (Priorities)</div>
+                        {[1, 2, 3].map(n => (
+                          <div key={n} style={{marginBottom:'10px', paddingBottom:'10px', borderBottom:'1px solid var(--border)'}}>
+                            <div style={{fontWeight:'bold', fontSize:'0.8rem', color:'var(--text-muted)'}}>Öncelik {n}</div>
+                            <div className="adm-form-grid2">
+                              <SettingInput label="Başlık (TR)" settingKey={`strategy_c_prio${n}_title`} {...commonProps} />
+                              <SettingInput label="Başlık (EN)" settingKey={`strategy_c_prio${n}_title_en`} {...commonProps} />
+                              <SettingInput label="Açıklama (TR)" settingKey={`strategy_c_prio${n}_desc`} type="textarea" {...commonProps} />
+                              <SettingInput label="Açıklama (EN)" settingKey={`strategy_c_prio${n}_desc_en`} type="textarea" {...commonProps} />
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                      <div className="adm-card-inner" style={{marginTop:'15px'}}>
+                        <div className="adm-card-inner-label">Kart C Alt Özellikleri (Pills)</div>
+                        <div className="adm-form-grid2">
+                          <SettingInput label="Özellik 1 (TR)" settingKey="strategy_c_pill1" {...commonProps} />
+                          <SettingInput label="Özellik 1 (EN)" settingKey="strategy_c_pill1_en" {...commonProps} />
+                          <SettingInput label="Özellik 2 (TR)" settingKey="strategy_c_pill2" {...commonProps} />
+                          <SettingInput label="Özellik 2 (EN)" settingKey="strategy_c_pill2_en" {...commonProps} />
+                        </div>
+                      </div>
+
                     </div>
                   )}
                   
@@ -1106,7 +1527,7 @@ export default function AdminPage() {
               </div>
             )}
 
-            {/* ══ HABERLER ══════════════════════════════════════════════ */}
+           {/* ══ HABERLER ══════════════════════════════════════════════ */}
             {activeTab === 'news' && (
               <div className="adm-fade-in">
                 <div className="adm-page-header">
@@ -1114,15 +1535,32 @@ export default function AdminPage() {
                 </div>
 
                 <div className="adm-section" style={{ background: 'var(--surface-2)', padding: '20px', borderRadius: '14px', border: '1px dashed var(--border)', marginBottom: '30px' }}>
-                  <SectionHeader num="⚙" title="Sayfa Üst Bilgileri" />
-                  <SettingInput label="Sayfa Başlık Resmi" settingKey="news_header_bg" type="image" {...commonProps} />
+                  <SectionHeader num="⚙" title="Sayfa Üst Bilgileri (Hero)" />
                   <div className="adm-form-grid2">
-                    <SettingInput label="Sayfa Başlığı (TR)" settingKey="news_page_title" {...commonProps} />
-                    <SettingInput label="Sayfa Başlığı (EN)" settingKey="news_page_title_en" {...commonProps} />
+                    <SettingInput label="Üst Ufak Başlık (TR)" settingKey="news_hero_eyebrow" {...commonProps} />
+                    <SettingInput label="Üst Ufak Başlık (EN)" settingKey="news_hero_eyebrow_en" {...commonProps} />
+                    <SettingInput label="Ana Başlık Satır 1 (TR)" settingKey="news_hero_title1" {...commonProps} />
+                    <SettingInput label="Ana Başlık Satır 1 (EN)" settingKey="news_hero_title1_en" {...commonProps} />
+                    <SettingInput label="Vurgulu Başlık Satır 2 (TR)" settingKey="news_hero_title2" {...commonProps} />
+                    <SettingInput label="Vurgulu Başlık Satır 2 (EN)" settingKey="news_hero_title2_en" {...commonProps} />
                   </div>
+                  <div className="adm-form-grid2" style={{marginTop:'10px'}}>
+                    <SettingInput label="Giriş Açıklaması (TR)" settingKey="news_page_desc" type="textarea" {...commonProps} />
+                    <SettingInput label="Giriş Açıklaması (EN)" settingKey="news_page_desc_en" type="textarea" {...commonProps} />
+                  </div>
+                  <div className="adm-form-grid2" style={{marginTop:'10px'}}>
+                    <SettingInput label="Kaydırma Butonu (TR)" settingKey="news_hero_scroll" {...commonProps} />
+                    <SettingInput label="Kaydırma Butonu (EN)" settingKey="news_hero_scroll_en" {...commonProps} />
+                  </div>
+
+                  <div className="adm-divider" style={{margin: '20px 0'}} />
+
+                  <SectionHeader num="☰" title="İçerik Bölümü Başlıkları" />
                   <div className="adm-form-grid2">
-                    <SettingInput label="Sayfa Açıklaması (TR)" settingKey="news_page_desc" type="textarea" {...commonProps} />
-                    <SettingInput label="Sayfa Açıklaması (EN)" settingKey="news_page_desc_en" type="textarea" {...commonProps} />
+                    <SettingInput label="Bölüm Etiketi (TR)" settingKey="news_sec_label" {...commonProps} />
+                    <SettingInput label="Bölüm Etiketi (EN)" settingKey="news_sec_label_en" {...commonProps} />
+                    <SettingInput label="Bölüm Başlığı (TR)" settingKey="news_sec_title" {...commonProps} />
+                    <SettingInput label="Bölüm Başlığı (EN)" settingKey="news_sec_title_en" {...commonProps} />
                   </div>
                 </div>
 
@@ -1211,7 +1649,7 @@ export default function AdminPage() {
               </div>
             )}
 
-            {/* ══ FAALİYETLER ═══════════════════════════════════════════ */}
+           {/* ══ FAALİYETLER ═══════════════════════════════════════════ */}
             {activeTab === 'activities' && (
               <div className="adm-fade-in">
                 <div className="adm-page-header">
@@ -1219,15 +1657,32 @@ export default function AdminPage() {
                 </div>
 
                 <div className="adm-section" style={{ background: 'var(--surface-2)', padding: '20px', borderRadius: '14px', border: '1px dashed var(--border)', marginBottom: '30px' }}>
-                  <SectionHeader num="⚙" title="Sayfa Üst Bilgileri" />
-                  <SettingInput label="Sayfa Başlık Resmi" settingKey="activities_header_bg" type="image" {...commonProps} />
+                  <SectionHeader num="⚙" title="Sayfa Üst Bilgileri (Hero)" />
                   <div className="adm-form-grid2">
-                    <SettingInput label="Sayfa Başlığı (TR)" settingKey="activities_page_title" {...commonProps} />
-                    <SettingInput label="Sayfa Başlığı (EN)" settingKey="activities_page_title_en" {...commonProps} />
+                    <SettingInput label="Üst Ufak Başlık (TR)" settingKey="activities_hero_eyebrow" {...commonProps} />
+                    <SettingInput label="Üst Ufak Başlık (EN)" settingKey="activities_hero_eyebrow_en" {...commonProps} />
+                    <SettingInput label="Ana Başlık Satır 1 (TR)" settingKey="activities_hero_title1" {...commonProps} />
+                    <SettingInput label="Ana Başlık Satır 1 (EN)" settingKey="activities_hero_title1_en" {...commonProps} />
+                    <SettingInput label="Vurgulu Başlık Satır 2 (TR)" settingKey="activities_hero_title2" {...commonProps} />
+                    <SettingInput label="Vurgulu Başlık Satır 2 (EN)" settingKey="activities_hero_title2_en" {...commonProps} />
                   </div>
+                  <div className="adm-form-grid2" style={{marginTop:'10px'}}>
+                    <SettingInput label="Giriş Açıklaması (TR)" settingKey="activities_page_desc" type="textarea" {...commonProps} />
+                    <SettingInput label="Giriş Açıklaması (EN)" settingKey="activities_page_desc_en" type="textarea" {...commonProps} />
+                  </div>
+                  <div className="adm-form-grid2" style={{marginTop:'10px'}}>
+                    <SettingInput label="Kaydırma Butonu (TR)" settingKey="activities_hero_scroll" {...commonProps} />
+                    <SettingInput label="Kaydırma Butonu (EN)" settingKey="activities_hero_scroll_en" {...commonProps} />
+                  </div>
+
+                  <div className="adm-divider" style={{margin: '20px 0'}} />
+
+                  <SectionHeader num="☰" title="İçerik Bölümü Başlıkları" />
                   <div className="adm-form-grid2">
-                    <SettingInput label="Sayfa Açıklaması (TR)" settingKey="activities_page_desc" type="textarea" {...commonProps} />
-                    <SettingInput label="Sayfa Açıklaması (EN)" settingKey="activities_page_desc_en" type="textarea" {...commonProps} />
+                    <SettingInput label="Bölüm Etiketi (TR)" settingKey="activities_sec_label" {...commonProps} />
+                    <SettingInput label="Bölüm Etiketi (EN)" settingKey="activities_sec_label_en" {...commonProps} />
+                    <SettingInput label="Bölüm Başlığı (TR)" settingKey="activities_sec_title" {...commonProps} />
+                    <SettingInput label="Bölüm Başlığı (EN)" settingKey="activities_sec_title_en" {...commonProps} />
                   </div>
                 </div>
 
@@ -1340,7 +1795,7 @@ export default function AdminPage() {
               </div>
             )}
 
-            {/* ══ ORTAKLAR ═════════════════════════════════════════════ */}
+           {/* ══ ORTAKLAR ═════════════════════════════════════════════ */}
             {activeTab === 'partners' && (
               <div className="adm-fade-in">
                 <div className="adm-page-header">
@@ -1348,15 +1803,32 @@ export default function AdminPage() {
                 </div>
 
                 <div className="adm-section" style={{ background: 'var(--surface-2)', padding: '20px', borderRadius: '14px', border: '1px dashed var(--border)', marginBottom: '30px' }}>
-                  <SectionHeader num="⚙" title="Sayfa Üst Bilgileri" />
-                  <SettingInput label="Başlık Resmi" settingKey="partners_header_bg" type="image" {...commonProps} />
+                  <SectionHeader num="⚙" title="Sayfa Üst Bilgileri (Hero)" />
                   <div className="adm-form-grid2">
-                    <SettingInput label="Sayfa Başlığı (TR)" settingKey="partners_page_title" {...commonProps} />
-                    <SettingInput label="Sayfa Başlığı (EN)" settingKey="partners_page_title_en" {...commonProps} />
+                    <SettingInput label="Üst Ufak Başlık (TR)" settingKey="partners_hero_eyebrow" {...commonProps} />
+                    <SettingInput label="Üst Ufak Başlık (EN)" settingKey="partners_hero_eyebrow_en" {...commonProps} />
+                    <SettingInput label="Ana Başlık Satır 1 (TR)" settingKey="partners_hero_title1" {...commonProps} />
+                    <SettingInput label="Ana Başlık Satır 1 (EN)" settingKey="partners_hero_title1_en" {...commonProps} />
+                    <SettingInput label="Vurgulu Başlık Satır 2 (TR)" settingKey="partners_hero_title2" {...commonProps} />
+                    <SettingInput label="Vurgulu Başlık Satır 2 (EN)" settingKey="partners_hero_title2_en" {...commonProps} />
                   </div>
+                  <div className="adm-form-grid2" style={{marginTop:'10px'}}>
+                    <SettingInput label="Giriş Açıklaması (TR)" settingKey="partners_page_desc" type="textarea" {...commonProps} />
+                    <SettingInput label="Giriş Açıklaması (EN)" settingKey="partners_page_desc_en" type="textarea" {...commonProps} />
+                  </div>
+                  <div className="adm-form-grid2" style={{marginTop:'10px'}}>
+                    <SettingInput label="Kaydırma Butonu (TR)" settingKey="partners_hero_scroll" {...commonProps} />
+                    <SettingInput label="Kaydırma Butonu (EN)" settingKey="partners_hero_scroll_en" {...commonProps} />
+                  </div>
+
+                  <div className="adm-divider" style={{margin: '20px 0'}} />
+
+                  <SectionHeader num="☰" title="İçerik Bölümü Başlıkları" />
                   <div className="adm-form-grid2">
-                    <SettingInput label="Sayfa Açıklaması (TR)" settingKey="partners_page_desc" type="textarea" {...commonProps} />
-                    <SettingInput label="Sayfa Açıklaması (EN)" settingKey="partners_page_desc_en" type="textarea" {...commonProps} />
+                    <SettingInput label="Bölüm Etiketi (TR)" settingKey="partners_sec_label" {...commonProps} />
+                    <SettingInput label="Bölüm Etiketi (EN)" settingKey="partners_sec_label_en" {...commonProps} />
+                    <SettingInput label="Bölüm Başlığı (TR)" settingKey="partners_sec_title" {...commonProps} />
+                    <SettingInput label="Bölüm Başlığı (EN)" settingKey="partners_sec_title_en" {...commonProps} />
                   </div>
                 </div>
 
@@ -1366,9 +1838,7 @@ export default function AdminPage() {
                       <i className={isEditing ? 'fas fa-pen' : 'fas fa-plus'} />
                       {isEditing ? ' Ortak Düzenle' : ' Yeni Ortak Ekle'}
                     </div>
-                    <button type="button" className="adm-btn adm-btn-ghost" onClick={handleTranslatePartners} disabled={isTranslating} style={{fontSize: '0.75rem', height: '32px'}}>
-                      <i className="fas fa-language"></i> {isTranslating ? 'Çevriliyor...' : 'TR -> EN Otomatik Çevir'}
-                    </button>
+                    {/* ✨ Otomatik çeviri butonu tamamen kaldırıldı ✨ */}
                   </div>
                   <form onSubmit={e => saveItem(e, 'partners', partnerForm, setPartnerForm)} style={{display:'grid', gap:'14px'}}>
                     
@@ -1405,7 +1875,7 @@ export default function AdminPage() {
                         <div className="adm-form-item">
                           <label>Rol (EN)</label>
                           <select className="adm-select-full" value={partnerForm.role_en} onChange={e => setPartnerForm({...partnerForm, role_en: e.target.value})}>
-                            <option value="">(Otomatik Çeviri Kullan)</option>
+                            <option value="">(İngilizce karşılığını girin...)</option>
                             <option value="Partner">Partner</option>
                             <option value="Coordinator">Coordinator</option>
                           </select>
@@ -1475,7 +1945,7 @@ export default function AdminPage() {
               </div>
             )}
 
-            {/* ══ DOSYALAR (ESKİ ÇIKTILAR) ═════════════════════════════════════════════ */}
+           {/* ══ DOSYALAR (ESKİ ÇIKTILAR) ═════════════════════════════════════════════ */}
             {activeTab === 'results' && (
               <div className="adm-fade-in">
                 <div className="adm-page-header">
@@ -1483,15 +1953,32 @@ export default function AdminPage() {
                 </div>
 
                 <div className="adm-section" style={{ background: 'var(--surface-2)', padding: '20px', borderRadius: '14px', border: '1px dashed var(--border)', marginBottom: '30px' }}>
-                  <SectionHeader num="⚙" title="Sayfa Üst Bilgileri (Dosyalar)" />
-                  <SettingInput label="Başlık Resmi" settingKey="results_header_bg" type="image" {...commonProps} />
+                  <SectionHeader num="⚙" title="Sayfa Üst Bilgileri (Hero)" />
                   <div className="adm-form-grid2">
-                    <SettingInput label="Sayfa Başlığı (TR)" settingKey="results_page_title" {...commonProps} />
-                    <SettingInput label="Sayfa Başlığı (EN)" settingKey="results_page_title_en" {...commonProps} />
+                    <SettingInput label="Üst Ufak Başlık (TR)" settingKey="results_hero_eyebrow" {...commonProps} />
+                    <SettingInput label="Üst Ufak Başlık (EN)" settingKey="results_hero_eyebrow_en" {...commonProps} />
+                    <SettingInput label="Ana Başlık Satır 1 (TR)" settingKey="results_hero_title1" {...commonProps} />
+                    <SettingInput label="Ana Başlık Satır 1 (EN)" settingKey="results_hero_title1_en" {...commonProps} />
+                    <SettingInput label="Vurgulu Başlık Satır 2 (TR)" settingKey="results_hero_title2" {...commonProps} />
+                    <SettingInput label="Vurgulu Başlık Satır 2 (EN)" settingKey="results_hero_title2_en" {...commonProps} />
                   </div>
+                  <div className="adm-form-grid2" style={{marginTop:'10px'}}>
+                    <SettingInput label="Giriş Açıklaması (TR)" settingKey="results_page_desc" type="textarea" {...commonProps} />
+                    <SettingInput label="Giriş Açıklaması (EN)" settingKey="results_page_desc_en" type="textarea" {...commonProps} />
+                  </div>
+                  <div className="adm-form-grid2" style={{marginTop:'10px'}}>
+                    <SettingInput label="Kaydırma Butonu (TR)" settingKey="results_hero_scroll" {...commonProps} />
+                    <SettingInput label="Kaydırma Butonu (EN)" settingKey="results_hero_scroll_en" {...commonProps} />
+                  </div>
+
+                  <div className="adm-divider" style={{margin: '20px 0'}} />
+
+                  <SectionHeader num="☰" title="İçerik Bölümü Başlıkları" />
                   <div className="adm-form-grid2">
-                    <SettingInput label="Sayfa Açıklaması (TR)" settingKey="results_page_desc" type="textarea" {...commonProps} />
-                    <SettingInput label="Sayfa Açıklaması (EN)" settingKey="results_page_desc_en" type="textarea" {...commonProps} />
+                    <SettingInput label="Bölüm Etiketi (TR)" settingKey="results_sec_label" {...commonProps} />
+                    <SettingInput label="Bölüm Etiketi (EN)" settingKey="results_sec_label_en" {...commonProps} />
+                    <SettingInput label="Bölüm Başlığı (TR)" settingKey="results_sec_title" {...commonProps} />
+                    <SettingInput label="Bölüm Başlığı (EN)" settingKey="results_sec_title_en" {...commonProps} />
                   </div>
                 </div>
 
@@ -1500,9 +1987,6 @@ export default function AdminPage() {
                     <div>
                       <i className="fas fa-plus" /> {isEditing ? ' Dosya Güncelle' : ' Yeni Dosya Ekle'}
                     </div>
-                    <button type="button" className="adm-btn adm-btn-ghost" onClick={handleTranslateResults} disabled={isTranslating} style={{fontSize: '0.75rem', height: '32px'}}>
-                      <i className="fas fa-language"></i> {isTranslating ? 'Çevriliyor...' : 'TR -> EN Otomatik Çevir'}
-                    </button>
                   </div>
                   <form onSubmit={e => saveItem(e, 'results', resultForm, setResultForm)} style={{display:'grid', gap:'14px'}}>
                     
@@ -1580,21 +2064,163 @@ export default function AdminPage() {
               </div>
             )}
 
-            {/* ══ İLETİŞİM ═════════════════════════ */}
+            {/* ══ İLETİŞİM ═════════════════════════════════════════════ */}
             {activeTab === 'contact' && (
               <div className="adm-fade-in">
                 <div className="adm-page-header">
                   <div className="adm-page-title">İletişim <em>Bilgileri</em></div>
                 </div>
-                <SettingInput label="Sayfa Başlığı" settingKey="contact_page_title" {...commonProps} />
-                <SettingInput label="Başlık Resmi" settingKey="contact_header_bg" type="image" {...commonProps} />
-                <div style={{height:'8px'}} />
-                <SettingInput label="E-posta Adresi" settingKey="contact_email" {...commonProps} />
-                <SettingInput label="Telefon Numarası" settingKey="contact_phone" {...commonProps} />
-                <SettingInput label="Adres" settingKey="contact_address" type="textarea" {...commonProps} />
+
+                {/* --- SAYFA ÜST BİLGİLERİ (HERO) --- */}
+                <div className="adm-section" style={{ background: 'var(--surface-2)', padding: '20px', borderRadius: '14px', border: '1px dashed var(--border)', marginBottom: '30px' }}>
+                  <SectionHeader num="⚙" title="Sayfa Üst Bilgileri (Hero)" />
+                  <div className="adm-form-grid2">
+                    <SettingInput label="Üst Ufak Başlık (TR)" settingKey="contact_hero_eyebrow" {...commonProps} />
+                    <SettingInput label="Üst Ufak Başlık (EN)" settingKey="contact_hero_eyebrow_en" {...commonProps} />
+                    <SettingInput label="Ana Başlık Satır 1 (TR)" settingKey="contact_hero_title1" {...commonProps} />
+                    <SettingInput label="Ana Başlık Satır 1 (EN)" settingKey="contact_hero_title1_en" {...commonProps} />
+                    <SettingInput label="Vurgulu Başlık Satır 2 (TR)" settingKey="contact_hero_title2" {...commonProps} />
+                    <SettingInput label="Vurgulu Başlık Satır 2 (EN)" settingKey="contact_hero_title2_en" {...commonProps} />
+                  </div>
+                  <div className="adm-form-grid2" style={{marginTop:'10px'}}>
+                    <SettingInput label="Giriş Açıklaması (TR)" settingKey="contact_page_desc" type="textarea" {...commonProps} />
+                    <SettingInput label="Giriş Açıklaması (EN)" settingKey="contact_page_desc_en" type="textarea" {...commonProps} />
+                  </div>
+                  <div className="adm-form-grid2" style={{marginTop:'10px'}}>
+                    <SettingInput label="Kaydırma Butonu (TR)" settingKey="contact_hero_scroll" {...commonProps} />
+                    <SettingInput label="Kaydırma Butonu (EN)" settingKey="contact_hero_scroll_en" {...commonProps} />
+                  </div>
+
+                  <div className="adm-divider" style={{margin: '20px 0'}} />
+
+                  <SectionHeader num="☰" title="İçerik Bölümü Başlıkları" />
+                  <div className="adm-form-grid2">
+                    <SettingInput label="Bölüm Etiketi (TR)" settingKey="contact_sec_label" {...commonProps} />
+                    <SettingInput label="Bölüm Etiketi (EN)" settingKey="contact_sec_label_en" {...commonProps} />
+                    <SettingInput label="Bölüm Başlığı (TR)" settingKey="contact_sec_title" {...commonProps} />
+                    <SettingInput label="Bölüm Başlığı (EN)" settingKey="contact_sec_title_en" {...commonProps} />
+                  </div>
+                </div>
+
+                {/* --- İLETİŞİM BİLGİLERİ KARTI --- */}
+                <div className="adm-section" style={{ background: 'var(--surface-2)', padding: '20px', borderRadius: '14px', border: '1px dashed var(--border)', marginBottom: '30px' }}>
+                  <SectionHeader num="📞" title="Kurum İletişim Bilgileri" />
+                  <div className="adm-form-grid2">
+                    <SettingInput label="Sol Kart Başlığı (TR)" settingKey="contact_info_title" {...commonProps} />
+                    <SettingInput label="Sol Kart Başlığı (EN)" settingKey="contact_info_title_en" {...commonProps} />
+                  </div>
+                  <div className="adm-form-grid2" style={{marginTop:'10px'}}>
+                    <SettingInput label="E-posta Adresi" settingKey="contact_email" {...commonProps} />
+                    <SettingInput label="Telefon Numarası" settingKey="contact_phone" {...commonProps} />
+                  </div>
+                  <div className="adm-form-grid2" style={{marginTop:'10px'}}>
+                    <SettingInput label="Açık Adres (TR)" settingKey="contact_address" type="textarea" {...commonProps} />
+                    <SettingInput label="Açık Adres (EN)" settingKey="contact_address_en" type="textarea" {...commonProps} />
+                  </div>
+                  <div className="adm-form-grid2" style={{marginTop:'10px'}}>
+                    <SettingInput label="Sosyal Medya Başlığı (TR)" settingKey="contact_social_title" {...commonProps} />
+                    <SettingInput label="Sosyal Medya Başlığı (EN)" settingKey="contact_social_title_en" {...commonProps} />
+                  </div>
+                  <div style={{fontSize:'0.8rem', color:'var(--text-muted)', marginTop:'5px'}}>
+                    * Sosyal Medya linklerini (URL) sol menüdeki "Header / Footer" sekmesinden değiştirebilirsiniz.
+                  </div>
+                </div>
+
+                {/* --- İLETİŞİM FORMU METİNLERİ --- */}
+                <div className="adm-section" style={{ background: 'var(--surface-2)', padding: '20px', borderRadius: '14px', border: '1px dashed var(--border)' }}>
+                  <SectionHeader num="✉" title="İletişim Formu (Mesajlar) Ayarları" />
+                  <div className="adm-form-grid2">
+                    <SettingInput label="Form Kartı Başlığı (TR)" settingKey="contact_form_title" {...commonProps} />
+                    <SettingInput label="Form Kartı Başlığı (EN)" settingKey="contact_form_title_en" {...commonProps} />
+                    <SettingInput label="Başarılı Mesajı (TR)" settingKey="contact_form_success" {...commonProps} />
+                    <SettingInput label="Başarılı Mesajı (EN)" settingKey="contact_form_success_en" {...commonProps} />
+                    <SettingInput label="Hata Mesajı (TR)" settingKey="contact_form_error" {...commonProps} />
+                    <SettingInput label="Hata Mesajı (EN)" settingKey="contact_form_error_en" {...commonProps} />
+                    <SettingInput label="Gönder Butonu (TR)" settingKey="contact_form_btn" {...commonProps} />
+                    <SettingInput label="Gönder Butonu (EN)" settingKey="contact_form_btn_en" {...commonProps} />
+                  </div>
+                </div>
               </div>
             )}
 
+           {/* ══ İLETİŞİM ═════════════════════════════════════════════ */}
+            {activeTab === 'contact' && (
+              <div className="adm-fade-in">
+                <div className="adm-page-header">
+                  <div className="adm-page-title">İletişim <em>Bilgileri</em></div>
+                </div>
+
+                {/* --- SAYFA ÜST BİLGİLERİ (HERO) --- */}
+                <div className="adm-section" style={{ background: 'var(--surface-2)', padding: '20px', borderRadius: '14px', border: '1px dashed var(--border)', marginBottom: '30px' }}>
+                  <SectionHeader num="⚙" title="Sayfa Üst Bilgileri (Hero)" />
+                  <div className="adm-form-grid2">
+                    <SettingInput label="Üst Ufak Başlık (TR)" settingKey="contact_hero_eyebrow" {...commonProps} />
+                    <SettingInput label="Üst Ufak Başlık (EN)" settingKey="contact_hero_eyebrow_en" {...commonProps} />
+                    <SettingInput label="Ana Başlık Satır 1 (TR)" settingKey="contact_hero_title1" {...commonProps} />
+                    <SettingInput label="Ana Başlık Satır 1 (EN)" settingKey="contact_hero_title1_en" {...commonProps} />
+                    <SettingInput label="Vurgulu Başlık Satır 2 (TR)" settingKey="contact_hero_title2" {...commonProps} />
+                    <SettingInput label="Vurgulu Başlık Satır 2 (EN)" settingKey="contact_hero_title2_en" {...commonProps} />
+                  </div>
+                  <div className="adm-form-grid2" style={{marginTop:'10px'}}>
+                    <SettingInput label="Giriş Açıklaması (TR)" settingKey="contact_page_desc" type="textarea" {...commonProps} />
+                    <SettingInput label="Giriş Açıklaması (EN)" settingKey="contact_page_desc_en" type="textarea" {...commonProps} />
+                  </div>
+                  <div className="adm-form-grid2" style={{marginTop:'10px'}}>
+                    <SettingInput label="Kaydırma Butonu (TR)" settingKey="contact_hero_scroll" {...commonProps} />
+                    <SettingInput label="Kaydırma Butonu (EN)" settingKey="contact_hero_scroll_en" {...commonProps} />
+                  </div>
+
+                  <div className="adm-divider" style={{margin: '20px 0'}} />
+
+                  <SectionHeader num="☰" title="İçerik Bölümü Başlıkları" />
+                  <div className="adm-form-grid2">
+                    <SettingInput label="Bölüm Etiketi (TR)" settingKey="contact_sec_label" {...commonProps} />
+                    <SettingInput label="Bölüm Etiketi (EN)" settingKey="contact_sec_label_en" {...commonProps} />
+                    <SettingInput label="Bölüm Başlığı (TR)" settingKey="contact_sec_title" {...commonProps} />
+                    <SettingInput label="Bölüm Başlığı (EN)" settingKey="contact_sec_title_en" {...commonProps} />
+                  </div>
+                </div>
+
+                {/* --- İLETİŞİM BİLGİLERİ KARTI --- */}
+                <div className="adm-section" style={{ background: 'var(--surface-2)', padding: '20px', borderRadius: '14px', border: '1px dashed var(--border)', marginBottom: '30px' }}>
+                  <SectionHeader num="📞" title="Kurum İletişim Bilgileri" />
+                  <div className="adm-form-grid2">
+                    <SettingInput label="Sol Kart Başlığı (TR)" settingKey="contact_info_title" {...commonProps} />
+                    <SettingInput label="Sol Kart Başlığı (EN)" settingKey="contact_info_title_en" {...commonProps} />
+                  </div>
+                  <div className="adm-form-grid2" style={{marginTop:'10px'}}>
+                    <SettingInput label="E-posta Adresi" settingKey="contact_email" {...commonProps} />
+                    <SettingInput label="Telefon Numarası" settingKey="contact_phone" {...commonProps} />
+                  </div>
+                  <div className="adm-form-grid2" style={{marginTop:'10px'}}>
+                    <SettingInput label="Açık Adres (TR)" settingKey="contact_address" type="textarea" {...commonProps} />
+                    <SettingInput label="Açık Adres (EN)" settingKey="contact_address_en" type="textarea" {...commonProps} />
+                  </div>
+                  <div className="adm-form-grid2" style={{marginTop:'10px'}}>
+                    <SettingInput label="Sosyal Medya Başlığı (TR)" settingKey="contact_social_title" {...commonProps} />
+                    <SettingInput label="Sosyal Medya Başlığı (EN)" settingKey="contact_social_title_en" {...commonProps} />
+                  </div>
+                  <div style={{fontSize:'0.8rem', color:'var(--text-muted)', marginTop:'5px'}}>
+                    * Sosyal Medya linklerini (URL) sol menüdeki "Header / Footer" sekmesinden değiştirebilirsiniz.
+                  </div>
+                </div>
+
+                {/* --- İLETİŞİM FORMU METİNLERİ --- */}
+                <div className="adm-section" style={{ background: 'var(--surface-2)', padding: '20px', borderRadius: '14px', border: '1px dashed var(--border)' }}>
+                  <SectionHeader num="✉" title="İletişim Formu (Mesajlar) Ayarları" />
+                  <div className="adm-form-grid2">
+                    <SettingInput label="Form Kartı Başlığı (TR)" settingKey="contact_form_title" {...commonProps} />
+                    <SettingInput label="Form Kartı Başlığı (EN)" settingKey="contact_form_title_en" {...commonProps} />
+                    <SettingInput label="Başarılı Mesajı (TR)" settingKey="contact_form_success" {...commonProps} />
+                    <SettingInput label="Başarılı Mesajı (EN)" settingKey="contact_form_success_en" {...commonProps} />
+                    <SettingInput label="Hata Mesajı (TR)" settingKey="contact_form_error" {...commonProps} />
+                    <SettingInput label="Hata Mesajı (EN)" settingKey="contact_form_error_en" {...commonProps} />
+                    <SettingInput label="Gönder Butonu (TR)" settingKey="contact_form_btn" {...commonProps} />
+                    <SettingInput label="Gönder Butonu (EN)" settingKey="contact_form_btn_en" {...commonProps} />
+                  </div>
+                </div>
+              </div>
+            )}
             {/* ══ SİTE AYARLARI (HEADER/FOOTER) ═════════════════════════ */}
             {activeTab === 'site' && (
               <div className="adm-fade-in">
@@ -1602,7 +2228,7 @@ export default function AdminPage() {
                   <div className="adm-page-title">Header / <em>Footer</em></div>
                 </div>
 
-                <div className="adm-section">
+                <div className="adm-section" style={{ background: 'var(--surface-2)', padding: '20px', borderRadius: '14px', border: '1px dashed var(--border)', marginBottom: '30px' }}>
                   <SectionHeader num="1" title="Üst Menü & Sekme (Header)" />
                   <div className="adm-form-grid2">
                     <SettingInput label="Favicon (Sekme İkonu)" settingKey="site_favicon" type="image" {...commonProps} />
@@ -1614,7 +2240,7 @@ export default function AdminPage() {
                   </div>
                 </div>
 
-                <div className="adm-section">
+                <div className="adm-section" style={{ background: 'var(--surface-2)', padding: '20px', borderRadius: '14px', border: '1px dashed var(--border)', marginBottom: '30px' }}>
                   <SectionHeader num="2" title="Alt Bilgi (Footer)" />
                   <SettingInput label="AB Logosu / Bayrak" settingKey="footer_eu_logo" type="image" {...commonProps} />
                   <div className="adm-form-grid2">
@@ -1627,7 +2253,7 @@ export default function AdminPage() {
                   </div>
                 </div>
 
-                <div className="adm-section">
+                <div className="adm-section" style={{ background: 'var(--surface-2)', padding: '20px', borderRadius: '14px', border: '1px dashed var(--border)' }}>
                   <SectionHeader num="3" title="Sosyal Medya" />
                   <div className="adm-form-grid3">
                     <SettingInput label="Facebook" settingKey="social_facebook" placeholder="https://facebook.com/..." {...commonProps} />

@@ -2,7 +2,6 @@
 import { useEffect, useState, useRef } from 'react';
 import { supabase } from '../../../lib/supabase';
 import ScrollToTop from '../../../components/ScrollToTop';
-// ✨ YENİ: Dil Context hook'umuzu dahil ettik
 import { useLanguage } from '../../../context/LanguageContext';
 
 // ─── ARKA PLAN AĞI ─────────────────────────────────────────────────────────────
@@ -62,97 +61,30 @@ const HeroAnimation = () => {
 // ─── SVG İKONLAR ──────────────────────────────────────────────────────────────
 const Icon = ({ name, color='currentColor', size=20 }) => {
   const icons = {
-    arrowLeftRight:(
-      <svg viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width={size} height={size}>
-        <path d="M8 3 4 7l4 4"/><path d="M4 7h16"/><path d="m16 21 4-4-4-4"/><path d="M20 17H4"/>
-      </svg>
-    ),
-    smartphone:(
-      <svg viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width={size} height={size}>
-        <rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/>
-      </svg>
-    ),
-    graduationCap:(
-      <svg viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width={size} height={size}>
-        <path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/>
-      </svg>
-    ),
-    megaphone:(
-      <svg viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width={size} height={size}>
-        <path d="m3 11 19-9-9 19-2-8-8-2z"/>
-      </svg>
-    ),
-    globe:(
-      <svg viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width={size} height={size}>
-        <circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
-      </svg>
-    ),
-    map:(
-      <svg viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width={size} height={size}>
-        <polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/>
-        <line x1="9" y1="3" x2="9" y2="18"/><line x1="15" y1="6" x2="15" y2="21"/>
-      </svg>
-    ),
-    fileText:(
-      <svg viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width={size} height={size}>
-        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/>
-      </svg>
-    ),
-    users:(
-      <svg viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width={size} height={size}>
-        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-      </svg>
-    ),
-    recycle:(
-      <svg viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width={size} height={size}>
-        <path d="M7 19H4.815a1.83 1.83 0 0 1-1.57-.881 1.785 1.785 0 0 1-.004-1.784L7.196 9.5"/><path d="M11 19h8.203a1.83 1.83 0 0 0 1.556-.89 1.784 1.784 0 0 0 0-1.775l-1.226-2.12"/><path d="m14 16-3 3 3 3"/><path d="M8.293 13.596 7.196 9.5 3.1 10.598"/><path d="m9.344 5.811 1.093-1.892A1.83 1.83 0 0 1 11.985 3a1.784 1.784 0 0 1 1.546.888l3.943 6.843"/><path d="m13.378 9.633 4.096 1.098 1.097-4.096"/>
-      </svg>
-    ),
-    cpu:(
-      <svg viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width={size} height={size}>
-        <rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/><line x1="9" y1="1" x2="9" y2="4"/><line x1="15" y1="1" x2="15" y2="4"/><line x1="9" y1="20" x2="9" y2="23"/><line x1="15" y1="20" x2="15" y2="23"/><line x1="20" y1="9" x2="23" y2="9"/><line x1="20" y1="14" x2="23" y2="14"/><line x1="1" y1="9" x2="4" y2="9"/><line x1="1" y1="14" x2="4" y2="14"/>
-      </svg>
-    ),
-    wifi:(
-      <svg viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width={size} height={size}>
-        <path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/>
-      </svg>
-    ),
-    bookOpen:(
-      <svg viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width={size} height={size}>
-        <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
-      </svg>
-    ),
-    video:(
-      <svg viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width={size} height={size}>
-        <polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/>
-      </svg>
-    ),
-    share2:(
-      <svg viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width={size} height={size}>
-        <circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
-      </svg>
-    ),
-    hash:(
-      <svg viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width={size} height={size}>
-        <line x1="4" y1="9" x2="20" y2="9"/><line x1="4" y1="15" x2="20" y2="15"/><line x1="10" y1="3" x2="8" y2="21"/><line x1="16" y1="3" x2="14" y2="21"/>
-      </svg>
-    ),
-    clock:(
-      <svg viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width={size} height={size}>
-        <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
-      </svg>
-    ),
+    arrowLeftRight:(<svg viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width={size} height={size}><path d="M8 3 4 7l4 4"/><path d="M4 7h16"/><path d="m16 21 4-4-4-4"/><path d="M20 17H4"/></svg>),
+    smartphone:(<svg viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width={size} height={size}><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>),
+    graduationCap:(<svg viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width={size} height={size}><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>),
+    megaphone:(<svg viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width={size} height={size}><path d="m3 11 19-9-9 19-2-8-8-2z"/></svg>),
+    globe:(<svg viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width={size} height={size}><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>),
+    map:(<svg viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width={size} height={size}><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/><line x1="9" y1="3" x2="9" y2="18"/><line x1="15" y1="6" x2="15" y2="21"/></svg>),
+    fileText:(<svg viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width={size} height={size}><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>),
+    users:(<svg viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width={size} height={size}><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>),
+    recycle:(<svg viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width={size} height={size}><path d="M7 19H4.815a1.83 1.83 0 0 1-1.57-.881 1.785 1.785 0 0 1-.004-1.784L7.196 9.5"/><path d="M11 19h8.203a1.83 1.83 0 0 0 1.556-.89 1.784 1.784 0 0 0 0-1.775l-1.226-2.12"/><path d="m14 16-3 3 3 3"/><path d="M8.293 13.596 7.196 9.5 3.1 10.598"/><path d="m9.344 5.811 1.093-1.892A1.83 1.83 0 0 1 11.985 3a1.784 1.784 0 0 1 1.546.888l3.943 6.843"/><path d="m13.378 9.633 4.096 1.098 1.097-4.096"/></svg>),
+    cpu:(<svg viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width={size} height={size}><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/><line x1="9" y1="1" x2="9" y2="4"/><line x1="15" y1="1" x2="15" y2="4"/><line x1="9" y1="20" x2="9" y2="23"/><line x1="15" y1="20" x2="15" y2="23"/><line x1="20" y1="9" x2="23" y2="9"/><line x1="20" y1="14" x2="23" y2="14"/><line x1="1" y1="9" x2="4" y2="9"/><line x1="1" y1="14" x2="4" y2="14"/></svg>),
+    wifi:(<svg viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width={size} height={size}><path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/></svg>),
+    bookOpen:(<svg viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width={size} height={size}><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>),
+    video:(<svg viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width={size} height={size}><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>),
+    share2:(<svg viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width={size} height={size}><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>),
+    hash:(<svg viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width={size} height={size}><line x1="4" y1="9" x2="20" y2="9"/><line x1="4" y1="15" x2="20" y2="15"/><line x1="10" y1="3" x2="8" y2="21"/><line x1="16" y1="3" x2="14" y2="21"/></svg>),
   };
   return icons[name] || null;
 };
 
-// ─── ANA SAYFA ─────────────────────────────────────────────────────────────────
+// ─── ANA SAYFA BİLEŞENİ ────────────────────────────────────────────────────────
 export default function PlanPage() {
   const [content, setContent] = useState({});
   const [loading, setLoading] = useState(true);
 
-  // ✨ YENİ: Dil ve Çeviri fonksiyonlarını alıyoruz
   const { language, t } = useLanguage();
 
   useEffect(() => {
@@ -172,71 +104,75 @@ export default function PlanPage() {
     return () => obs.disconnect();
   }, [loading, content]);
 
-  // Veritabanı dinamik içerik kontrolü
+  // ✨ BOŞ BIRAKILANLARI YÖNETEN AKILLI FONKSİYON
   const getDynamicContent = (trKey, defaultTranslationKey) => {
-    return (language === 'tr' && content[trKey]) ? content[trKey] : t(defaultTranslationKey);
+    if (language === 'en') {
+      const enKey = `${trKey}_en`;
+      // Veritabanında (boş string olarak bile) kayıtlıysa onu döndür
+      if (content[enKey] !== undefined) return content[enKey];
+      
+      const translation = t(defaultTranslationKey);
+      if (translation !== defaultTranslationKey) return translation;
+      
+      if (content[trKey] !== undefined) return content[trKey];
+    }
+    
+    // Türkçe ise veritabanında var mı bak
+    if (content[trKey] !== undefined) return content[trKey];
+    
+    // Eğer hiçbir yerde yoksa, kod adını yazmak yerine BOŞ döndür
+    const translationFallback = t(defaultTranslationKey);
+    return translationFallback === defaultTranslationKey ? '' : translationFallback;
   };
 
   const steps = [
     {
-      num: '01', code: 'İP2',
-      accent: '#2563eb',
-      icon: 'arrowLeftRight',
+      num: '01', code: 'İP2', accent: '#2563eb', icon: 'arrowLeftRight',
       title: getDynamicContent('plan_step_1_title', 'plan.timeline.step1.titleDefault'),
       desc:  getDynamicContent('plan_step_1_desc', 'plan.timeline.step1.descDefault'),
       pills: [
-        { icon:'map',      label: t('plan.timeline.step1.pills.0'),      bg:'blue-bg' },
-        { icon:'fileText', label: t('plan.timeline.step1.pills.1'),          bg:'blue-bg' },
-        { icon:'users',    label: t('plan.timeline.step1.pills.2'),   bg:'blue-bg' },
-        { icon:'globe',    label: t('plan.timeline.step1.pills.3'),     bg:'blue-bg' },
+        { icon:'map',      label: getDynamicContent('plan_step_1_pill_1', 'plan.timeline.step1.pills.0'), bg:'blue-bg' },
+        { icon:'fileText', label: getDynamicContent('plan_step_1_pill_2', 'plan.timeline.step1.pills.1'), bg:'blue-bg' },
+        { icon:'users',    label: getDynamicContent('plan_step_1_pill_3', 'plan.timeline.step1.pills.2'), bg:'blue-bg' },
+        { icon:'globe',    label: getDynamicContent('plan_step_1_pill_4', 'plan.timeline.step1.pills.3'), bg:'blue-bg' },
       ],
-      pillClass: 'blue-pill',
-      iconColor: '#2563eb',
+      pillClass: 'blue-pill', iconColor: '#2563eb',
     },
     {
-      num: '02', code: 'İP3',
-      accent: '#16a34a',
-      icon: 'smartphone',
+      num: '02', code: 'İP3', accent: '#16a34a', icon: 'smartphone',
       title: getDynamicContent('plan_step_2_title', 'plan.timeline.step2.titleDefault'),
       desc:  getDynamicContent('plan_step_2_desc', 'plan.timeline.step2.descDefault'),
       pills: [
-        { icon:'smartphone', label: t('plan.timeline.step2.pills.0'),            bg:'green-bg' },
-        { icon:'wifi',       label: t('plan.timeline.step2.pills.1'),   bg:'green-bg' },
-        { icon:'cpu',        label: t('plan.timeline.step2.pills.2'),  bg:'green-bg' },
-        { icon:'recycle',    label: t('plan.timeline.step2.pills.3'),      bg:'green-bg' },
+        { icon:'smartphone', label: getDynamicContent('plan_step_2_pill_1', 'plan.timeline.step2.pills.0'), bg:'green-bg' },
+        { icon:'wifi',       label: getDynamicContent('plan_step_2_pill_2', 'plan.timeline.step2.pills.1'), bg:'green-bg' },
+        { icon:'cpu',        label: getDynamicContent('plan_step_2_pill_3', 'plan.timeline.step2.pills.2'), bg:'green-bg' },
+        { icon:'recycle',    label: getDynamicContent('plan_step_2_pill_4', 'plan.timeline.step2.pills.3'), bg:'green-bg' },
       ],
-      pillClass: 'green-pill',
-      iconColor: '#16a34a',
+      pillClass: 'green-pill', iconColor: '#16a34a',
     },
     {
-      num: '03', code: 'İP4',
-      accent: '#ea580c',
-      icon: 'graduationCap',
+      num: '03', code: 'İP4', accent: '#ea580c', icon: 'graduationCap',
       title: getDynamicContent('plan_step_3_title', 'plan.timeline.step3.titleDefault'),
       desc:  getDynamicContent('plan_step_3_desc', 'plan.timeline.step3.descDefault'),
       pills: [
-        { icon:'users',         label: t('plan.timeline.step3.pills.0'),    bg:'orange-bg' },
-        { icon:'graduationCap', label: t('plan.timeline.step3.pills.1'),    bg:'orange-bg' },
-        { icon:'bookOpen',      label: t('plan.timeline.step3.pills.2'),    bg:'orange-bg' },
-        { icon:'fileText',      label: t('plan.timeline.step3.pills.3'),     bg:'orange-bg' },
+        { icon:'users',         label: getDynamicContent('plan_step_3_pill_1', 'plan.timeline.step3.pills.0'), bg:'orange-bg' },
+        { icon:'graduationCap', label: getDynamicContent('plan_step_3_pill_2', 'plan.timeline.step3.pills.1'), bg:'orange-bg' },
+        { icon:'bookOpen',      label: getDynamicContent('plan_step_3_pill_3', 'plan.timeline.step3.pills.2'), bg:'orange-bg' },
+        { icon:'fileText',      label: getDynamicContent('plan_step_3_pill_4', 'plan.timeline.step3.pills.3'), bg:'orange-bg' },
       ],
-      pillClass: 'orange-pill',
-      iconColor: '#ea580c',
+      pillClass: 'orange-pill', iconColor: '#ea580c',
     },
     {
-      num: '04', code: 'İP5',
-      accent: '#7c3aed',
-      icon: 'megaphone',
+      num: '04', code: 'İP5', accent: '#7c3aed', icon: 'megaphone',
       title: getDynamicContent('plan_step_4_title', 'plan.timeline.step4.titleDefault'),
       desc:  getDynamicContent('plan_step_4_desc', 'plan.timeline.step4.descDefault'),
       pills: [
-        { icon:'video',  label: t('plan.timeline.step4.pills.0'),          bg:'purple-bg' },
-        { icon:'globe',  label: t('plan.timeline.step4.pills.1'),       bg:'purple-bg' },
-        { icon:'hash',   label: t('plan.timeline.step4.pills.2'), bg:'purple-bg' },
-        { icon:'share2', label: t('plan.timeline.step4.pills.3'),      bg:'purple-bg' },
+        { icon:'video',  label: getDynamicContent('plan_step_4_pill_1', 'plan.timeline.step4.pills.0'), bg:'purple-bg' },
+        { icon:'globe',  label: getDynamicContent('plan_step_4_pill_2', 'plan.timeline.step4.pills.1'), bg:'purple-bg' },
+        { icon:'hash',   label: getDynamicContent('plan_step_4_pill_3', 'plan.timeline.step4.pills.2'), bg:'purple-bg' },
+        { icon:'share2', label: getDynamicContent('plan_step_4_pill_4', 'plan.timeline.step4.pills.3'), bg:'purple-bg' },
       ],
-      pillClass: 'purple-pill',
-      iconColor: '#7c3aed',
+      pillClass: 'purple-pill', iconColor: '#7c3aed',
     },
   ];
 
@@ -255,19 +191,18 @@ export default function PlanPage() {
           <section className="hero">
             <HeroAnimation/>
             <div className="hero-noise"/>
-            {/* Göz yormayan şeffaf ışık hareleri */}
             <div className="orb orb-1"/><div className="orb orb-2"/><div className="orb orb-3"/>
             
             <div className="container hero-content">
-              <div className="eyebrow reveal active"><span className="edot"/> {t('plan.hero.eyebrow')} <span className="edot"/></div>
-              <h1 className="hero-title reveal active">{t('plan.hero.title1')}<br/><em>{t('plan.hero.title2')}</em></h1>
+              <div className="eyebrow reveal active"><span className="edot"/> {getDynamicContent('plan_hero_eyebrow', 'plan.hero.eyebrow')} <span className="edot"/></div>
+              <h1 className="hero-title reveal active">{getDynamicContent('plan_hero_title1', 'plan.hero.title1')}<br/><em>{getDynamicContent('plan_hero_title2', 'plan.hero.title2')}</em></h1>
               <p className="hero-sub reveal active" style={{transitionDelay:'.25s'}}>
                 {getDynamicContent('plan_page_desc', 'plan.hero.descDefault')}
               </p>
               <div className="hero-div reveal active" style={{transitionDelay:'.4s'}}><span/><span className="hdot"/><span/></div>
             </div>
             <button className="scroll-btn" onClick={() => document.getElementById('icerik')?.scrollIntoView({behavior:'smooth'})} aria-label="Aşağı kaydır">
-              <span className="scroll-label">{t('plan.hero.scrollBtn')}</span>
+              <span className="scroll-label">{getDynamicContent('plan_hero_scroll', 'plan.hero.scrollBtn')}</span>
               <span className="scroll-icon"><i className="fas fa-chevron-down"/></span>
             </button>
           </section>
@@ -277,17 +212,17 @@ export default function PlanPage() {
             <div className="container" style={{maxWidth:'940px'}}>
 
               <div className="sec-head reveal-up">
-                <p className="sec-label">{t('plan.section.part')}</p>
-                <h2 className="sec-title">{t('plan.section.title')}</h2>
+                <p className="sec-label">{getDynamicContent('plan_sec_label', 'plan.section.part')}</p>
+                <h2 className="sec-title">{getDynamicContent('plan_sec_title', 'plan.section.title')}</h2>
               </div>
 
               {/* İstatistikler */}
               <div className="stats reveal-up" style={{transitionDelay:'.1s'}}>
                 {[
-                  {val:'4',    unit:'',  label: t('plan.stats.packages')},
-                  {val:'24',   unit: t('plan.stats.durationUnit'),  label: t('plan.stats.duration')},
-                  {val:'3',    unit:'',  label: t('plan.stats.countries')},
-                  {val:'İP2',  unit: t('plan.stats.rangeUnit'), label: t('plan.stats.range')},
+                  {val: getDynamicContent('plan_stat_1_val', 'plan.stats.s1_val') || '4',    unit: getDynamicContent('plan_stat_1_unit', 'plan.stats.s1_unit'),    label: getDynamicContent('plan_stat_1_label', 'plan.stats.packages') || 'İş Paketi'},
+                  {val: getDynamicContent('plan_stat_2_val', 'plan.stats.s2_val') || '24',   unit: getDynamicContent('plan_stat_2_unit', 'plan.stats.s2_unit'),  label: getDynamicContent('plan_stat_2_label', 'plan.stats.duration') || 'Uygulama Süresi'},
+                  {val: getDynamicContent('plan_stat_3_val', 'plan.stats.s3_val') || '3',    unit: getDynamicContent('plan_stat_3_unit', 'plan.stats.s3_unit'),    label: getDynamicContent('plan_stat_3_label', 'plan.stats.countries') || 'Ülkede Faaliyet'},
+                  {val: getDynamicContent('plan_stat_4_val', 'plan.stats.s4_val') || 'İP2',  unit: getDynamicContent('plan_stat_4_unit', 'plan.stats.s4_unit'), label: getDynamicContent('plan_stat_4_label', 'plan.stats.range') || 'Paket Aralığı'},
                 ].map((s,i) => (
                   <div className="stat" key={i}>
                     <div className="stat-v">{s.val}<span className="stat-u">{s.unit}</span></div>
@@ -298,7 +233,6 @@ export default function PlanPage() {
 
               {/* ── TİMELİNE ── */}
               <div className="timeline">
-                {/* Dikey çizgi */}
                 <div className="tl-line"/>
 
                 {steps.map((step, index) => (
@@ -307,7 +241,6 @@ export default function PlanPage() {
                     className={`tl-item reveal ${index % 2 === 0 ? 'reveal-left' : 'reveal-right'}`}
                     style={{ transitionDelay: `${index * 0.08}s` }}
                   >
-                    {/* Zaman çizgisi düğümü */}
                     <div className="tl-node" style={{'--accent': step.accent}}>
                       <div className="tl-node-icon">
                         <Icon name={step.icon} color={step.accent} size={18}/>
@@ -315,11 +248,9 @@ export default function PlanPage() {
                       <div className="tl-node-code">{step.code}</div>
                     </div>
 
-                    {/* Kart */}
                     <div className="tl-card" style={{'--accent': step.accent}}>
                       <div className="tl-card-shine"/>
 
-                      {/* Kart başlığı */}
                       <div className="tl-card-head">
                         <div className="tl-step-num">{step.num}</div>
                         <div className="tl-head-right">
@@ -328,13 +259,11 @@ export default function PlanPage() {
                         </div>
                       </div>
 
-                      {/* Açıklama */}
                       <p className="tl-desc">{step.desc}</p>
 
-                      {/* Faaliyetler */}
                       <div className="tl-pills-label">
                         <div className="tl-pills-dot" style={{background: step.accent}}/>
-                        {t('plan.timeline.pillsLabel')}
+                        {getDynamicContent('plan_timeline_pills_label', 'plan.timeline.pillsLabel') || 'Temel Faaliyetler'}
                       </div>
                       <div className="pill-grid">
                         {step.pills.map((p, pi) => (
@@ -387,7 +316,7 @@ export default function PlanPage() {
         .reveal-up{opacity:0;transform:translateY(28px);transition:opacity .8s ease,transform .8s ease;}
         .reveal-up.active{opacity:1;transform:translateY(0);}
 
-        /* HERO - Şeffaf ve Temiz Arka Plan */
+        /* HERO */
         .hero{position:relative;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;overflow:hidden;background:transparent;}
         .hero-noise{position:absolute;inset:0;z-index:0;pointer-events:none;opacity:.3;
           background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");

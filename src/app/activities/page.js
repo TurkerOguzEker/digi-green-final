@@ -3,7 +3,6 @@ import { useEffect, useState, useRef, useCallback } from 'react';
 import { supabase } from '../../lib/supabase';
 import ScrollToTop from '../../components/ScrollToTop';
 import Link from 'next/link';
-// ✨ ESKİ SİSTEM: useLanguage kancası ile 'language' ve 't' fonksiyonunu alıyoruz
 import { useLanguage } from '../../context/LanguageContext';
 
 const PAGE_SIZE = 6; // Her seferinde kaç faaliyet yüklensin
@@ -226,33 +225,41 @@ const HeroAnimation = () => {
 
 // ─── ACTIVITIES PAGE ──────────────────────────────────────────────────────────
 export default function ActivitiesPage() {
-  const [activities, setActivities]       = useState([]);
-  const [loading, setLoading]             = useState(true);
-  const [loadingMore, setLoadingMore]     = useState(false);
-  const [hasMore, setHasMore]             = useState(true);
-  const [page, setPage]                   = useState(0);
+  const [content, setContent]           = useState({});
+  const [activities, setActivities]     = useState([]);
+  const [loading, setLoading]           = useState(true);
+  const [loadingMore, setLoadingMore]   = useState(false);
+  const [hasMore, setHasMore]           = useState(true);
+  const [page, setPage]                 = useState(0);
 
   const sentinelRef = useRef(null);
   
-  // Sözlük ve dil bilgisini çekiyoruz
   const { language, t } = useLanguage();
 
   // ── İlk yükleme ────────────────────────────────────────────────────────────
   useEffect(() => {
-    async function fetchFirstPage() {
-      const { data } = await supabase
+    async function fetchInitialData() {
+      // 1. Ayarları Çek
+      const { data: settingsData } = await supabase.from('settings').select('*');
+      if (settingsData) {
+        const map = {}; settingsData.forEach(item => map[item.key] = item.value);
+        setContent(map);
+      }
+
+      // 2. Faaliyetleri Çek
+      const { data: actData } = await supabase
         .from('activities')
         .select('*')
         .order('id', { ascending: false })
         .range(0, PAGE_SIZE - 1);
 
-      if (data) {
-        setActivities(data);
-        setHasMore(data.length === PAGE_SIZE);
+      if (actData) {
+        setActivities(actData);
+        setHasMore(actData.length === PAGE_SIZE);
       }
       setLoading(false);
     }
-    fetchFirstPage();
+    fetchInitialData();
   }, []);
 
   // ── Sonraki sayfaları yükle ─────────────────────────────────────────────────
@@ -317,6 +324,20 @@ export default function ActivitiesPage() {
     return () => revealObserver.disconnect();
   }, [loading, activities]);
 
+  // ✨ AKILLI YEDEKLEME
+  const getDynamicContent = (trKey, defaultTranslationKey) => {
+    if (language === 'en') {
+      const enKey = `${trKey}_en`;
+      if (content[enKey] !== undefined) return content[enKey];
+      const translation = t(defaultTranslationKey);
+      if (translation !== defaultTranslationKey) return translation;
+      if (content[trKey] !== undefined) return content[trKey];
+    }
+    if (content[trKey] !== undefined) return content[trKey];
+    const translationFallback = t(defaultTranslationKey);
+    return translationFallback === defaultTranslationKey ? '' : translationFallback;
+  };
+
   return (
     <div className="activities-page">
       <NetworkBackground />
@@ -330,8 +351,9 @@ export default function ActivitiesPage() {
         </div>
       ) : (
         <>
-          {/* ── HERO ─────────────────────────────────────────────────────── */}
+          {/* ── HERO (ARKA PLAN RESMİ EKLENTİSİ KALDIRILDI) ────────────────── */}
           <section className="page-header">
+            
             <HeroAnimation />
             <div className="hero-noise"></div>
             <div className="hero-orb orb-1"></div>
@@ -340,13 +362,13 @@ export default function ActivitiesPage() {
 
             <div className="container hero-content">
               <div className="eyebrow reveal active">
-                <span className="eyebrow-dot"></span>{t('activities.hero.eyebrow')}<span className="eyebrow-dot"></span>
+                <span className="eyebrow-dot"></span>{getDynamicContent('activities_hero_eyebrow', 'activities.hero.eyebrow')}<span className="eyebrow-dot"></span>
               </div>
               <h1 className="header-title reveal active">
-                {t('activities.hero.title1')} <em>{t('activities.hero.title2')}</em>
+                {getDynamicContent('activities_hero_title1', 'activities.hero.title1')} <em>{getDynamicContent('activities_hero_title2', 'activities.hero.title2')}</em>
               </h1>
               <p className="header-subtitle reveal active" style={{ transitionDelay: '0.25s' }}>
-                {t('activities.hero.desc')}
+                {getDynamicContent('activities_page_desc', 'activities.hero.desc')}
               </p>
               <div className="hero-divider reveal active" style={{ transitionDelay: '0.4s' }}>
                 <span></span><span className="dot"></span><span></span>
@@ -358,7 +380,7 @@ export default function ActivitiesPage() {
               onClick={() => document.getElementById('icerik')?.scrollIntoView({ behavior: 'smooth' })}
               aria-label="İçeriğe git"
             >
-              <span className="scroll-btn-label">{t('activities.hero.scrollBtn')}</span>
+              <span className="scroll-btn-label">{getDynamicContent('activities_hero_scroll', 'activities.hero.scrollBtn')}</span>
               <span className="scroll-btn-icon"><i className="fas fa-chevron-down"></i></span>
             </button>
           </section>
@@ -367,8 +389,8 @@ export default function ActivitiesPage() {
           <section id="icerik" className="section-padding">
             <div className="container" style={{ maxWidth: '1160px' }}>
               <div className="section-head reveal">
-                <p className="section-label">{t('activities.section.label')}</p>
-                <h2 className="section-title">{t('activities.section.title')}</h2>
+                <p className="section-label">{getDynamicContent('activities_sec_label', 'activities.section.label')}</p>
+                <h2 className="section-title">{getDynamicContent('activities_sec_title', 'activities.section.title')}</h2>
               </div>
 
               <div className="activities-grid">
@@ -381,7 +403,6 @@ export default function ActivitiesPage() {
                   activities.map((item, index) => {
                     const delay = `${(index % 3) * 0.12 + 0.1}s`;
                     
-                    // ✨ YENİ: Dile göre veritabanından veri çekiyoruz
                     const displayTitle = language === 'en' && item.title_en ? item.title_en : item.title;
                     const displayType = language === 'en' && item.type_en ? item.type_en : item.type;
                     const displayLocation = language === 'en' && item.location_en ? item.location_en : item.location;
