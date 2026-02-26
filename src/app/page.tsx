@@ -1,11 +1,11 @@
 'use client';
 import { useEffect, useState, useRef } from 'react';
 import { supabase } from '../lib/supabase';
-// ✨ YENİ: Dil Context hook'umuzu dahil ettik
 import { useLanguage } from '../context/LanguageContext';
 
 interface ContentState { [key: string]: string; }
 interface CounterProps { end: number; duration?: number; }
+interface EcoItem { title: string; title_en?: string; desc: string; desc_en?: string; icon: string; }
 
 const Counter = ({ end, duration = 2000 }: CounterProps) => {
   const [count, setCount] = useState(0);
@@ -48,20 +48,28 @@ const Counter = ({ end, duration = 2000 }: CounterProps) => {
 export default function Home() {
   const [content, setContent] = useState<ContentState>({});
   const [isLoading, setIsLoading] = useState(true);
+  const [ecoList, setEcoList] = useState<EcoItem[]>([]);
   const sliderRef = useRef<HTMLDivElement>(null);
   
-  // ✨ YENİ: Dil hook'umuzu çağırıyoruz
   const { language, t } = useLanguage();
   
-  // Slider İçin Stateler
   const [currentSlide, setCurrentSlide] = useState(0);
   const [startAnim, setStartAnim] = useState(false);
 
-  // Veritabanından TR veri çekmeyi/okumayı sağlayan fonksiyonumuz
-  // Eğer dilde 'tr' seçiliyse ve Supabase'de karşılığı varsa onu gösterir
-  // Değilse (EN seçiliyse) Translations.js dosyasındaki Default çeviriyi okur
+  // ✨ AKILLI ÇEVİRİ VE YEDEKLEME SİSTEMİ (Hatalı kodların görünmesini engeller)
   const getDynamicContent = (trKey: string, defaultTranslationKey: string) => {
-    return (language === 'tr' && content[trKey]) ? content[trKey] : t(defaultTranslationKey);
+    if (language === 'en') {
+      const enKey = `${trKey}_en`;
+      if (content[enKey] && content[enKey].trim() !== '') return content[enKey];
+      
+      const translation = t(defaultTranslationKey);
+      if (translation !== defaultTranslationKey) return translation;
+      
+      if (content[trKey] && content[trKey].trim() !== '') return content[trKey];
+    }
+    
+    if (content[trKey] && content[trKey].trim() !== '') return content[trKey];
+    return t(defaultTranslationKey);
   };
 
   useEffect(() => {
@@ -72,6 +80,12 @@ export default function Home() {
           const map: ContentState = {};
           data.forEach((item: { key: string; value: string }) => { map[item.key] = item.value; });
           setContent(map);
+          
+          if (map.home_eco_list) {
+            try { 
+              setEcoList(JSON.parse(map.home_eco_list)); 
+            } catch(e) { console.error("Eco list parse error:", e); }
+          }
         }
       } catch (error) {
         console.error("Veri hatası:", error);
@@ -81,6 +95,17 @@ export default function Home() {
     }
     fetchSettings();
   }, []);
+
+  useEffect(() => {
+    if (!isLoading && ecoList.length === 0) {
+      setEcoList([
+          { title: getDynamicContent('home_eco_1_title', 'home.ecosystem.item1.title'), title_en: getDynamicContent('home_eco_1_title_en', 'home.ecosystem.item1.title'), desc: getDynamicContent('home_eco_1_desc', 'home.ecosystem.item1.desc'), desc_en: getDynamicContent('home_eco_1_desc_en', 'home.ecosystem.item1.desc'), icon: 'fa-mobile-screen' },
+          { title: getDynamicContent('home_eco_2_title', 'home.ecosystem.item2.title'), title_en: getDynamicContent('home_eco_2_title_en', 'home.ecosystem.item2.title'), desc: getDynamicContent('home_eco_2_desc', 'home.ecosystem.item2.desc'), desc_en: getDynamicContent('home_eco_2_desc_en', 'home.ecosystem.item2.desc'), icon: 'fa-recycle' },
+          { title: getDynamicContent('home_eco_3_title', 'home.ecosystem.item3.title'), title_en: getDynamicContent('home_eco_3_title_en', 'home.ecosystem.item3.title'), desc: getDynamicContent('home_eco_3_desc', 'home.ecosystem.item3.desc'), desc_en: getDynamicContent('home_eco_3_desc_en', 'home.ecosystem.item3.desc'), icon: 'fa-graduation-cap' },
+          { title: getDynamicContent('home_eco_4_title', 'home.ecosystem.item4.title'), title_en: getDynamicContent('home_eco_4_title_en', 'home.ecosystem.item4.title'), desc: getDynamicContent('home_eco_4_desc', 'home.ecosystem.item4.desc'), desc_en: getDynamicContent('home_eco_4_desc_en', 'home.ecosystem.item4.desc'), icon: 'fa-leaf' }
+      ]);
+    }
+  }, [isLoading, content, language]); 
 
   useEffect(() => {
       if (!isLoading) {
@@ -105,21 +130,6 @@ export default function Home() {
     handleScroll();
     return () => window.removeEventListener('scroll', handleScroll);
   }, [isLoading]);
-
-  // Veri Hazırlıkları (Çoklu Dil Uyumlu)
-  let ecoList: Array<{title: string, desc: string, icon: string}> = [];
-  if (content.home_eco_list && language === 'tr') {
-      try { ecoList = JSON.parse(content.home_eco_list); } catch(e) { console.error(e); }
-  }
-  
-  if (ecoList.length === 0) {
-      ecoList = [
-          { title: getDynamicContent('home_eco_1_title', 'home.ecosystem.item1.title'), desc: getDynamicContent('home_eco_1_desc', 'home.ecosystem.item1.desc'), icon: 'fa-mobile-screen' },
-          { title: getDynamicContent('home_eco_2_title', 'home.ecosystem.item2.title'), desc: getDynamicContent('home_eco_2_desc', 'home.ecosystem.item2.desc'), icon: 'fa-recycle' },
-          { title: getDynamicContent('home_eco_3_title', 'home.ecosystem.item3.title'), desc: getDynamicContent('home_eco_3_desc', 'home.ecosystem.item3.desc'), icon: 'fa-graduation-cap' },
-          { title: getDynamicContent('home_eco_4_title', 'home.ecosystem.item4.title'), desc: getDynamicContent('home_eco_4_desc', 'home.ecosystem.item4.desc'), icon: 'fa-leaf' }
-      ];
-  }
 
   let heroImages: string[] = [];
   if (content.hero_slider_images) {
@@ -196,7 +206,7 @@ export default function Home() {
           
           <div className="container" style={{zIndex:10}}>
               <span className="reveal reveal-up" style={{background:'rgba(255,255,255,0.15)', backdropFilter:'blur(5px)', padding:'10px 25px', borderRadius:'50px', border:'1px solid rgba(255,255,255,0.3)', fontWeight:'bold', letterSpacing:'2px', textTransform:'uppercase', fontSize:'0.9rem'}}>
-                  {content.header_logo_text || t('home.hero.eyebrow')}
+                  {getDynamicContent('home_hero_eyebrow', 'home.hero.eyebrow')}
               </span>
               <h1 className="reveal reveal-up delay-100" style={{fontSize:'clamp(2.5rem, 5vw, 4.5rem)', fontWeight:'800', margin:'25px 0', color: 'white', textShadow:'0 10px 30px rgba(0,0,0,0.3)', lineHeight:1.1}}>
                   {getDynamicContent('hero_title', 'home.hero.title')}
@@ -213,10 +223,10 @@ export default function Home() {
                           document.getElementById('solutions')?.scrollIntoView({ behavior: 'smooth' });
                       }}
                   >
-                      <i className="fas fa-mobile-alt" style={{marginRight:'8px'}}></i>{t('home.hero.btnMobile')}
+                      <i className="fas fa-mobile-alt" style={{marginRight:'8px'}}></i>{getDynamicContent('home_hero_btn1', 'home.hero.btnMobile')}
                   </a>
                   
-                  <a href="/about" className="btn-hero" style={{background:'white', color:'#27ae60', border:'2px solid white'}}><i className="fas fa-leaf" style={{marginRight:'8px'}}></i>{t('home.hero.btnExplore')}</a>
+                  <a href="/about" className="btn-hero" style={{background:'white', color:'#27ae60', border:'2px solid white'}}><i className="fas fa-leaf" style={{marginRight:'8px'}}></i>{getDynamicContent('home_hero_btn2', 'home.hero.btnExplore')}</a>
               </div>
           </div>
       </section>
@@ -227,9 +237,9 @@ export default function Home() {
               <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(250px, 1fr))', gap:'25px'}}>
                   {[
                       { icon: 'fa-clock', val: getDynamicContent('home_summary_1_val', 'home.summary.durationVal'), label: getDynamicContent('home_summary_1_label', 'home.summary.duration') },
-                      { icon: 'fa-euro-sign', val: content.home_summary_2_val || '250.000€', label: getDynamicContent('home_summary_2_label', 'home.summary.budget') },
-                      { icon: 'fa-handshake', val: content.home_summary_3_val || 'KA220-ADU', label: getDynamicContent('home_summary_3_label', 'home.summary.program') },
-                      { icon: 'fa-globe', val: getDynamicContent('home_summary_4_val', 'home.summary.scope'), label: getDynamicContent('home_summary_4_label', 'home.summary.scope') }
+                      { icon: 'fa-euro-sign', val: getDynamicContent('home_summary_2_val', 'home.summary.budgetVal'), label: getDynamicContent('home_summary_2_label', 'home.summary.budget') },
+                      { icon: 'fa-handshake', val: getDynamicContent('home_summary_3_val', 'home.summary.programVal'), label: getDynamicContent('home_summary_3_label', 'home.summary.program') },
+                      { icon: 'fa-globe', val: getDynamicContent('home_summary_4_val', 'home.summary.scopeVal'), label: getDynamicContent('home_summary_4_label', 'home.summary.scope') }
                   ].map((item, i) => (
                       <div key={i} className={`glass-card reveal reveal-up delay-${(i+1)*100}`}>
                           <i className={`fas ${item.icon}`} style={{fontSize:'2.5rem', color:'#27ae60'}}></i>
@@ -249,15 +259,29 @@ export default function Home() {
                       <div style={{borderRadius:'20px', overflow:'hidden', boxShadow:'0 20px 50px rgba(0,0,0,0.1)', border:'10px solid white'}}>
                           <img src={content.home_about_image || "https://images.unsplash.com/photo-1497366216548-37526070297c?q=80&w=1000"} alt="About" style={{width:'100%', display:'block'}} />
                       </div>
-                      <div style={{position:'absolute', bottom:'0', right:'0', background:'#27ae60', color:'white', padding:'30px', borderRadius:'20px', boxShadow:'0 10px 30px rgba(39, 174, 96, 0.3)', maxWidth:'250px'}}>
-                          <h4 style={{fontSize:'1.2rem', fontWeight:'bold', margin:0, lineHeight:1.4}}>
-                              <span style={{fontWeight: 900}}>{getDynamicContent('home_summary_1_val', 'home.summary.durationVal')}</span> {t('home.about.badge')}
+                      <div style={{
+                          position:'absolute', 
+                          bottom:'-10px', 
+                          right:'-10px', 
+                          background:'#27ae60', 
+                          color:'white', 
+                          padding:'15px 20px', 
+                          borderRadius:'15px', 
+                          boxShadow:'0 8px 25px rgba(39, 174, 96, 0.4)', 
+                          maxWidth:'180px',
+                          zIndex: 10
+                      }}>
+                          <h4 style={{fontSize:'0.9rem', fontWeight:'600', margin:0, lineHeight:1.3}}>
+                              <span style={{fontWeight: 900, display:'block', fontSize:'1.4rem', marginBottom:'3px'}}>{getDynamicContent('home_summary_1_val', 'home.summary.durationVal')}</span> 
+                              {getDynamicContent('home_about_badge', 'home.about.badge')}
                           </h4>
                       </div>
                   </div>
               </div>
-              <div className="reveal reveal-right" style={{flex:'1 1 500px'}}>
-                  <h4 style={{color:'#27ae60', fontWeight:'bold', textTransform:'uppercase', letterSpacing:'1px', marginBottom:'10px'}}>{t('home.about.eyebrow')}</h4>
+              <div className="reveal reveal-right" style={{flex:'1 1 500px', zIndex: 1}}>
+                  <h4 style={{color:'#27ae60', fontWeight:'bold', textTransform:'uppercase', letterSpacing:'1px', marginBottom:'10px'}}>
+                      {getDynamicContent('home_about_eyebrow', 'home.about.eyebrow')}
+                  </h4>
                   <h2 style={{fontSize:'2.5rem', fontWeight:'800', color:'#1a1a1a', marginBottom:'25px', lineHeight:1.2}}>
                       {getDynamicContent('home_about_title', 'home.about.title')}
                   </h2>
@@ -265,10 +289,10 @@ export default function Home() {
                       {getDynamicContent('home_about_text', 'home.about.text')}
                   </p>
                   <ul style={{display:'grid', gap:'15px'}}>
-                      {['item1', 'item2', 'item3'].map((key, i) => (
-                          <li key={i} style={{display:'flex', alignItems:'center', gap:'15px', background:'#f8f9fa', padding:'15px', borderRadius:'10px'}}>
+                      {[1, 2, 3].map((num) => (
+                          <li key={num} style={{display:'flex', alignItems:'center', gap:'15px', background:'#f8f9fa', padding:'15px', borderRadius:'10px'}}>
                               <div style={{width:'30px', height:'30px', background:'#27ae60', borderRadius:'50%', display:'flex', alignItems:'center', justifyContent:'center', color:'white', fontSize:'0.9rem'}}><i className="fas fa-check"></i></div>
-                              <span style={{fontWeight:'600', color:'#333'}}>{t(`home.about.bullets.${i}`)}</span>
+                              <span style={{fontWeight:'600', color:'#333'}}>{getDynamicContent(`home_about_bullet_${num}`, `home.about.bullets.${num-1}`)}</span>
                           </li>
                       ))}
                   </ul>
@@ -280,8 +304,8 @@ export default function Home() {
       <section className="section-padding" style={{background:'#f0f4f8'}}>
           <div className="container">
               <div className="reveal reveal-up" style={{textAlign:'center', marginBottom:'50px'}}>
-                  <h2 style={{fontSize:'2.5rem', fontWeight:'800', color:'#333'}}>{t('home.target.title')}</h2>
-                  <p style={{color:'#666'}}>{t('home.target.subtitle')}</p>
+                  <h2 style={{fontSize:'2.5rem', fontWeight:'800', color:'#333'}}>{getDynamicContent('home_target_main_title', 'home.target.title')}</h2>
+                  <p style={{color:'#666'}}>{getDynamicContent('home_target_main_subtitle', 'home.target.subtitle')}</p>
               </div>
               <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(300px, 1fr))', gap:'30px'}}>
                   {[
@@ -301,15 +325,15 @@ export default function Home() {
           </div>
       </section>
 
-      {/* 5. DİJİTAL EKOSİSTEM (ZİG-ZAG & SLIDER) */}
+      {/* 5. DİJİTAL EKOSİSTEM (AĞAÇ YAPISI - DİNAMİK JSON) */}
       <section id="solutions" className="section-padding bg-grid-green" style={{backgroundColor:'#fff'}}>
           <div className="container">
               <div className="reveal reveal-up" style={{textAlign:'center', marginBottom:'40px'}}>
                   <h2 style={{fontSize:'2.5rem', fontWeight:'800', color:'#1a1a1a', marginBottom:'15px'}}>
-                      {t('home.ecosystem.title1')} <span style={{color:'#27ae60'}}>{t('home.ecosystem.title2')}</span>
+                      {getDynamicContent('home_eco_main_title1', 'home.ecosystem.title1')} <span style={{color:'#27ae60'}}>{getDynamicContent('home_eco_main_title2', 'home.ecosystem.title2')}</span>
                   </h2>
                   <p style={{color:'#666', maxWidth:'600px', margin:'0 auto'}}>
-                      {t('home.ecosystem.subtitle')} <br/>
+                      {getDynamicContent('home_eco_main_subtitle', 'home.ecosystem.subtitle')} <br/>
                   </p>
               </div>
           </div> 
@@ -326,18 +350,21 @@ export default function Home() {
                       const colors = ['#003399', '#27ae60', '#f39c12', '#00acc1', '#8e44ad', '#e74c3c'];
                       const color = colors[index % colors.length];
                       
+                      const itemTitle = language === 'en' && item.title_en ? item.title_en : item.title;
+                      const itemDesc = language === 'en' && item.desc_en ? item.desc_en : item.desc;
+                      
                       return (
                           <div key={index} className={`tree-item reveal reveal-up delay-${((index % 3) + 1) * 100}`}>
-                              <div className="tree-dot"></div>
-                              <div className="tree-card">
+                              <div className="tree-dot" style={{borderColor: color}}></div>
+                              <div className="tree-card" style={{borderBottom: `4px solid ${color}`}}>
                                   <div style={{color: color, fontSize:'2rem', marginBottom:'15px'}}>
-                                      <i className={`fas ${item.icon}`}></i>
+                                      <i className={`fas ${item.icon || 'fa-leaf'}`}></i>
                                   </div>
                                   <h3 style={{fontSize:'1.2rem', fontWeight:'bold', marginBottom:'10px'}}>
-                                      {item.title}
+                                      {itemTitle}
                                   </h3>
                                   <p style={{color:'#666', fontSize:'0.9rem', lineHeight:1.5}}>
-                                      {item.desc}
+                                      {itemDesc}
                                   </p>
                               </div>
                           </div>
@@ -373,7 +400,7 @@ export default function Home() {
           </div>
       </section>
 
-      {/* 7. CTA (Aydınlık Tema ve Kareli Arka Plan) */}
+      {/* 7. CTA */}
       <section className="bg-grid-green" style={{backgroundColor:'#f4f7f2', padding:'100px 0', textAlign:'center', position:'relative', overflow:'hidden'}}>
           <div className="reveal reveal-left" style={{position:'absolute', top:'-50px', left:'-50px', width:'200px', height:'200px', borderRadius:'50%', background:'rgba(39, 174, 96, 0.05)'}}></div>
           <div className="reveal reveal-right" style={{position:'absolute', bottom:'-50px', right:'-50px', width:'300px', height:'300px', borderRadius:'50%', background:'rgba(39, 174, 96, 0.08)'}}></div>
@@ -381,7 +408,7 @@ export default function Home() {
               <h2 style={{fontSize:'2.5rem', fontWeight:'800', marginBottom:'20px', color: '#1a1a1a'}}>
                   {getDynamicContent('home_cta_title', 'home.cta.title')}
               </h2>
-              <p style={{fontSize:'1.2rem', color:'#666', maxWidth:'700px', margin:'0 auto 40px'}}>
+              <p style={{fontSize:'1.2rem', color:'#666', maxWidth:'800px', margin:'0 auto 40px', whiteSpace: 'pre-wrap', lineHeight: 1.6}}>
                   {getDynamicContent('home_cta_text', 'home.cta.desc')}
               </p>
               
@@ -406,7 +433,7 @@ export default function Home() {
               `}} />
               
               <a href="/contact" className="btn-contact-hover">
-                  {t('home.cta.button')} <i className="fas fa-arrow-right" style={{marginLeft:'8px'}}></i>
+                  {getDynamicContent('home_cta_btn', 'home.cta.button')} <i className="fas fa-arrow-right" style={{marginLeft:'8px'}}></i>
               </a>
           </div>
       </section>
