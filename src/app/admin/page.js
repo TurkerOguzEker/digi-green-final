@@ -543,7 +543,7 @@ export default function AdminPage() {
                   </div>
                 </div>
 
-                {/* 4. HAKKINDA */}
+               {/* 4. HAKKINDA */}
                 <div className="adm-section">
                   <SectionHeader num="4" title="Hakkında Bölümü (Görsel & Metinler)" />
                   <SettingInput label="Sol Taraf Görseli" settingKey="home_about_image" type="image" {...commonProps} />
@@ -559,10 +559,18 @@ export default function AdminPage() {
                     <SettingInput label="Açıklama Metni (TR)" settingKey="home_about_text" type="textarea" {...commonProps} />
                     <SettingInput label="Açıklama Metni (EN)" settingKey="home_about_text_en" type="textarea" {...commonProps} />
                   </div>
-                  <div className="adm-form-grid2">
-                    <SettingInput label="Görsel Üstü Rozet Metni (TR)" settingKey="home_about_badge" {...commonProps} />
-                    <SettingInput label="Görsel Üstü Rozet Metni (EN)" settingKey="home_about_badge_en" {...commonProps} />
+
+                  {/* ✨ BURASI GÜNCELLENDİ: Hem Büyük Yazı (24 Ay) Hem Alt Metin Eklendi ✨ */}
+                  <div className="adm-card-inner" style={{marginTop:'15px'}}>
+                      <div className="adm-card-inner-label">Görsel Üstü Rozet (Yeşil Kutu)</div>
+                      <div className="adm-form-grid2">
+                        <SettingInput label="Büyük Rakam/Yazı (TR)" settingKey="home_about_badge_val" placeholder="24 Ay" {...commonProps} />
+                        <SettingInput label="Büyük Rakam/Yazı (EN)" settingKey="home_about_badge_val_en" placeholder="24 Months" {...commonProps} />
+                        <SettingInput label="Alt Açıklama (TR)" settingKey="home_about_badge" placeholder="Sürecek Dijital..." {...commonProps} />
+                        <SettingInput label="Alt Açıklama (EN)" settingKey="home_about_badge_en" placeholder="Digital Journey..." {...commonProps} />
+                      </div>
                   </div>
+                  
                   <div className="adm-card-inner" style={{marginTop:'15px'}}>
                       <div className="adm-card-inner-label">Madde İşaretleri (Tik Listesi)</div>
                       <div className="adm-form-grid2">

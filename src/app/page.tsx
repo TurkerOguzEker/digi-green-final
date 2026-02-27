@@ -272,7 +272,10 @@ export default function Home() {
                           zIndex: 10
                       }}>
                           <h4 style={{fontSize:'0.9rem', fontWeight:'600', margin:0, lineHeight:1.3}}>
-                              <span style={{fontWeight: 900, display:'block', fontSize:'1.4rem', marginBottom:'3px'}}>{getDynamicContent('home_summary_1_val', 'home.summary.durationVal')}</span> 
+                              <span style={{fontWeight: 900, display:'block', fontSize:'1.4rem', marginBottom:'3px'}}>
+                                  {/* BURASI DEĞİŞTİ: Artık kendi özel anahtarını kullanıyor */}
+                                  {getDynamicContent('home_about_badge_val', 'home.about.badgeVal') || '24 Ay'}
+                              </span> 
                               {getDynamicContent('home_about_badge', 'home.about.badge')}
                           </h4>
                       </div>

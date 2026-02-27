@@ -108,7 +108,6 @@ export default function Footer() {
           
           <div className="eu-disclaimer-bar">
               <div className="container disclaimer-content">
-                  {/* onError silindi, artık resim bozuksa panelden anlayıp değiştirebilirsin */}
                   <img 
                       src={content.footer_eu_logo || "/assets/images/eu-flag.png"} 
                       alt="EU Flag" 
@@ -195,15 +194,15 @@ export default function Footer() {
                   border-top: 1px solid rgba(255,255,255,0.1); 
               }
 
-              /* ── BAYRAK VE YAZI ORTALANDI (ESKİ HALİNE DÖNDÜ) ── */
+              /* ── BAYRAK VE YAZI ── */
               .disclaimer-content { 
                   display: flex; 
                   align-items: center; 
                   justify-content: center; 
-                  gap: 20px;
+                  gap: 15px;
               }
               .eu-flag-img {
-                  height: 45px;
+                  height: 32px; /* 45px'den 32px'e düşürüldü */
                   width: auto;
                   object-fit: contain;
                   flex-shrink: 0;
@@ -219,8 +218,9 @@ export default function Footer() {
 
               @media (max-width: 768px) {
                   .footer-grid { grid-template-columns: 1fr; gap: 40px; }
-                  .disclaimer-content { flex-direction: column; text-align: center; justify-content: center; gap: 15px; }
+                  .disclaimer-content { flex-direction: column; text-align: center; justify-content: center; gap: 12px; }
                   .eu-text { text-align: center; }
+                  .eu-flag-img { height: 36px; } /* Mobilde çok azıcık daha belirgin olabilir */
               }
           `}</style>
       </footer>

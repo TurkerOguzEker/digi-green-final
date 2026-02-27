@@ -123,18 +123,36 @@ export default function ConsortiumPage() {
     return () => obs.disconnect();
   }, [loading, content]);
 
-  // ✨ DİNAMİK YEDEKLEME SİSTEMİ
+  // ✨ AKILLI YEDEKLEME SİSTEMİ (BOŞ BIRAKILDIĞINDA SAKLAR)
   const getDynamicContent = (trKey, defaultTranslationKey) => {
     if (language === 'en') {
       const enKey = `${trKey}_en`;
-      if (content[enKey] && content[enKey].trim() !== '') return content[enKey];
+      // DB'de varsa ve sadece boşluk değilse göster (boşluksa boş döndür)
+      if (content[enKey] !== undefined) {
+        return content[enKey].trim() === '' ? '' : content[enKey];
+      }
+      
       const translation = t(defaultTranslationKey);
       if (translation !== defaultTranslationKey) return translation;
-      if (content[trKey] && content[trKey].trim() !== '') return content[trKey];
+      
+      if (content[trKey] !== undefined) {
+        return content[trKey].trim() === '' ? '' : content[trKey];
+      }
     }
-    if (content[trKey] && content[trKey].trim() !== '') return content[trKey];
-    return t(defaultTranslationKey);
+    
+    if (content[trKey] !== undefined) {
+      return content[trKey].trim() === '' ? '' : content[trKey];
+    }
+    
+    const fallback = t(defaultTranslationKey);
+    return fallback === defaultTranslationKey ? '' : fallback;
   };
+
+  // Dinamik Partner İsimleri
+  const bP1Name = getDynamicContent('consortium_b_p1_name', 'consortium.cardB.partner1.name');
+  const bP2Name = getDynamicContent('consortium_b_p2_name', 'consortium.cardB.partner2.name');
+  const cP1Name = getDynamicContent('consortium_c_p1_name', 'consortium.cardC.partner1.name');
+  const cP2Name = getDynamicContent('consortium_c_p2_name', 'consortium.cardC.partner2.name');
 
   return (
     <div className="cp">
@@ -176,14 +194,14 @@ export default function ConsortiumPage() {
                 <h2 className="sec-title">{getDynamicContent('consortium_sec_title', 'consortium.section.title')}</h2>
               </div>
 
-              {/* İstatistikler */}
+              {/* İstatistikler (Eğer değer boş bırakılırsa ekranda görünmez) */}
               <div className="stats reveal-up" style={{transitionDelay:'.1s'}}>
                 {[
                   {val: getDynamicContent('consortium_stat_1_val', 'consortium.stats.s1_val') || '5',    unit: getDynamicContent('consortium_stat_1_unit', 'consortium.stats.s1_unit') || '',    label: getDynamicContent('consortium_stat_1_label', 'consortium.stats.partner')},
                   {val: getDynamicContent('consortium_stat_2_val', 'consortium.stats.s2_val') || '3',    unit: getDynamicContent('consortium_stat_2_unit', 'consortium.stats.s2_unit') || '',    label: getDynamicContent('consortium_stat_2_label', 'consortium.stats.country')},
                   {val: getDynamicContent('consortium_stat_3_val', 'consortium.stats.s3_val') || '150K', unit: getDynamicContent('consortium_stat_3_unit', 'consortium.stats.s3_unit') || '+',   label: getDynamicContent('consortium_stat_3_label', 'consortium.stats.population')},
                   {val: getDynamicContent('consortium_stat_4_val', 'consortium.stats.s4_val') || '2',    unit: getDynamicContent('consortium_stat_4_unit', 'consortium.stats.s4_unit') || '',    label: getDynamicContent('consortium_stat_4_label', 'consortium.stats.euCity')},
-                ].map((s,i) => (
+                ].filter(s => s.val && s.val.trim() !== '').map((s,i) => (
                   <div className="stat" key={i}>
                     <div className="stat-v">{s.val}<span className="stat-u">{s.unit}</span></div>
                     <div className="stat-l">{s.label}</div>
@@ -204,7 +222,7 @@ export default function ConsortiumPage() {
                     { icon:'users',    label: getDynamicContent('consortium_a_pill2', 'consortium.cardA.pill2'),  cls:'blue-pill', bg:'blue-bg'   },
                     { icon:'factory',  label: getDynamicContent('consortium_a_pill3', 'consortium.cardA.pill3'),  cls:'blue-pill', bg:'blue-bg'   },
                     { icon:'recycle',  label: getDynamicContent('consortium_a_pill4', 'consortium.cardA.pill4'),  cls:'blue-pill', bg:'blue-bg'   },
-                  ].map((p,i) => (
+                  ].filter(p => p.label && p.label.trim() !== '').map((p,i) => (
                     <div className={`pill ${p.cls}`} key={i}>
                       <span className={`pill-icon-wrap ${p.bg}`}><Icon name={p.icon} color="#2563eb" size={16}/></span>
                       <span className="pill-text">{p.label}</span>
@@ -222,22 +240,29 @@ export default function ConsortiumPage() {
                   {getDynamicContent('consortium_text_b', 'consortium.cardB.textDefault')}
                 </p>
                 <div className="partner-cards">
-                  <div className="partner-mini green-mini">
-                    <div className="pm-icon-wrap green-bg-light"><Icon name="waves" color="#16a34a" size={22}/></div>
-                    <div className="pm-info">
-                      <div className="pm-name">{getDynamicContent('consortium_b_p1_name', 'consortium.cardB.partner1.name')}</div>
-                      <div className="pm-country"><Icon name="mapPin" color="#16a34a" size={12}/> {getDynamicContent('consortium_b_p1_country', 'consortium.cardB.partner1.country')}</div>
-                      <div className="pm-desc">{getDynamicContent('consortium_b_p1_desc', 'consortium.cardB.partner1.desc')}</div>
+                  
+                  {bP1Name && bP1Name.trim() !== '' && (
+                    <div className="partner-mini green-mini">
+                      <div className="pm-icon-wrap green-bg-light"><Icon name="waves" color="#16a34a" size={22}/></div>
+                      <div className="pm-info">
+                        <div className="pm-name">{bP1Name}</div>
+                        <div className="pm-country"><Icon name="mapPin" color="#16a34a" size={12}/> {getDynamicContent('consortium_b_p1_country', 'consortium.cardB.partner1.country')}</div>
+                        <div className="pm-desc">{getDynamicContent('consortium_b_p1_desc', 'consortium.cardB.partner1.desc')}</div>
+                      </div>
                     </div>
-                  </div>
-                  <div className="partner-mini green-mini">
-                    <div className="pm-icon-wrap green-bg-light"><Icon name="sun" color="#16a34a" size={22}/></div>
-                    <div className="pm-info">
-                      <div className="pm-name">{getDynamicContent('consortium_b_p2_name', 'consortium.cardB.partner2.name')}</div>
-                      <div className="pm-country"><Icon name="mapPin" color="#16a34a" size={12}/> {getDynamicContent('consortium_b_p2_country', 'consortium.cardB.partner2.country')}</div>
-                      <div className="pm-desc">{getDynamicContent('consortium_b_p2_desc', 'consortium.cardB.partner2.desc')}</div>
+                  )}
+
+                  {bP2Name && bP2Name.trim() !== '' && (
+                    <div className="partner-mini green-mini">
+                      <div className="pm-icon-wrap green-bg-light"><Icon name="sun" color="#16a34a" size={22}/></div>
+                      <div className="pm-info">
+                        <div className="pm-name">{bP2Name}</div>
+                        <div className="pm-country"><Icon name="mapPin" color="#16a34a" size={12}/> {getDynamicContent('consortium_b_p2_country', 'consortium.cardB.partner2.country')}</div>
+                        <div className="pm-desc">{getDynamicContent('consortium_b_p2_desc', 'consortium.cardB.partner2.desc')}</div>
+                      </div>
                     </div>
-                  </div>
+                  )}
+
                 </div>
                 <div className="pill-grid" style={{marginTop:'18px'}}>
                   {[
@@ -245,7 +270,7 @@ export default function ConsortiumPage() {
                     { icon:'leaf',    label: getDynamicContent('consortium_b_pill2', 'consortium.cardB.pill2'), cls:'green-pill', bg:'green-bg' },
                     { icon:'monitor', label: getDynamicContent('consortium_b_pill3', 'consortium.cardB.pill3'), cls:'green-pill', bg:'green-bg' },
                     { icon:'link',    label: getDynamicContent('consortium_b_pill4', 'consortium.cardB.pill4'), cls:'green-pill', bg:'green-bg' },
-                  ].map((p,i) => (
+                  ].filter(p => p.label && p.label.trim() !== '').map((p,i) => (
                     <div className={`pill ${p.cls}`} key={i}>
                       <span className={`pill-icon-wrap ${p.bg}`}><Icon name={p.icon} color="#16a34a" size={16}/></span>
                       <span className="pill-text">{p.label}</span>
@@ -262,22 +287,29 @@ export default function ConsortiumPage() {
                   {getDynamicContent('consortium_text_c', 'consortium.cardC.textDefault')}
                 </p>
                 <div className="partner-cards">
-                  <div className="partner-mini orange-mini">
-                    <div className="pm-icon-wrap orange-bg-light"><Icon name="graduationCap" color="#ea580c" size={22}/></div>
-                    <div className="pm-info">
-                      <div className="pm-name">{getDynamicContent('consortium_c_p1_name', 'consortium.cardC.partner1.name')}</div>
-                      <div className="pm-country"><Icon name="mapPin" color="#ea580c" size={12}/> {getDynamicContent('consortium_c_p1_country', 'consortium.cardC.partner1.country')}</div>
-                      <div className="pm-desc">{getDynamicContent('consortium_c_p1_desc', 'consortium.cardC.partner1.desc')}</div>
+                  
+                  {cP1Name && cP1Name.trim() !== '' && (
+                    <div className="partner-mini orange-mini">
+                      <div className="pm-icon-wrap orange-bg-light"><Icon name="graduationCap" color="#ea580c" size={22}/></div>
+                      <div className="pm-info">
+                        <div className="pm-name">{cP1Name}</div>
+                        <div className="pm-country"><Icon name="mapPin" color="#ea580c" size={12}/> {getDynamicContent('consortium_c_p1_country', 'consortium.cardC.partner1.country')}</div>
+                        <div className="pm-desc">{getDynamicContent('consortium_c_p1_desc', 'consortium.cardC.partner1.desc')}</div>
+                      </div>
                     </div>
-                  </div>
-                  <div className="partner-mini orange-mini">
-                    <div className="pm-icon-wrap orange-bg-light"><Icon name="heart" color="#ea580c" size={22}/></div>
-                    <div className="pm-info">
-                      <div className="pm-name">{getDynamicContent('consortium_c_p2_name', 'consortium.cardC.partner2.name')}</div>
-                      <div className="pm-country"><Icon name="mapPin" color="#ea580c" size={12}/> {getDynamicContent('consortium_c_p2_country', 'consortium.cardC.partner2.country')}</div>
-                      <div className="pm-desc">{getDynamicContent('consortium_c_p2_desc', 'consortium.cardC.partner2.desc')}</div>
+                  )}
+
+                  {cP2Name && cP2Name.trim() !== '' && (
+                    <div className="partner-mini orange-mini">
+                      <div className="pm-icon-wrap orange-bg-light"><Icon name="heart" color="#ea580c" size={22}/></div>
+                      <div className="pm-info">
+                        <div className="pm-name">{cP2Name}</div>
+                        <div className="pm-country"><Icon name="mapPin" color="#ea580c" size={12}/> {getDynamicContent('consortium_c_p2_country', 'consortium.cardC.partner2.country')}</div>
+                        <div className="pm-desc">{getDynamicContent('consortium_c_p2_desc', 'consortium.cardC.partner2.desc')}</div>
+                      </div>
                     </div>
-                  </div>
+                  )}
+
                 </div>
                 <div className="pill-grid" style={{marginTop:'18px'}}>
                   {[
@@ -285,7 +317,7 @@ export default function ConsortiumPage() {
                     { icon:'users',         label: getDynamicContent('consortium_c_pill2', 'consortium.cardC.pill2'), cls:'orange-pill', bg:'orange-bg' },
                     { icon:'graduationCap', label: getDynamicContent('consortium_c_pill3', 'consortium.cardC.pill3'), cls:'orange-pill', bg:'orange-bg' },
                     { icon:'zap',           label: getDynamicContent('consortium_c_pill4', 'consortium.cardC.pill4'), cls:'orange-pill', bg:'orange-bg' },
-                  ].map((p,i) => (
+                  ].filter(p => p.label && p.label.trim() !== '').map((p,i) => (
                     <div className={`pill ${p.cls}`} key={i}>
                       <span className={`pill-icon-wrap ${p.bg}`}><Icon name={p.icon} color="#ea580c" size={16}/></span>
                       <span className="pill-text">{p.label}</span>
@@ -309,7 +341,7 @@ export default function ConsortiumPage() {
                     { icon:'factory',  city: getDynamicContent('consortium_d_c1_city', 'consortium.cardD.cities.kapakli'), country: getDynamicContent('consortium_d_c1_country', 'consortium.cardD.cities.turkey'),  challenge: getDynamicContent('consortium_d_c1_challenge', 'consortium.cardD.cities.kapakliChallenge'),  color:'#2563eb', bg:'rgba(37,99,235,0.08)', border:'rgba(37,99,235,0.2)' },
                     { icon:'waves',    city: getDynamicContent('consortium_d_c2_city', 'consortium.cardD.cities.liepaja'), country: getDynamicContent('consortium_d_c2_country', 'consortium.cardD.cities.latvia'),  challenge: getDynamicContent('consortium_d_c2_challenge', 'consortium.cardD.cities.liepajaChallenge'),  color:'#16a34a', bg:'rgba(22,163,74,0.08)',  border:'rgba(22,163,74,0.2)'  },
                     { icon:'sun',      city: getDynamicContent('consortium_d_c3_city', 'consortium.cardD.cities.cascais'), country: getDynamicContent('consortium_d_c3_country', 'consortium.cardD.cities.portugal'),challenge: getDynamicContent('consortium_d_c3_challenge', 'consortium.cardD.cities.cascaisChallenge'), color:'#ea580c', bg:'rgba(234,88,12,0.08)',  border:'rgba(234,88,12,0.2)'  },
-                  ].map((c,i) => (
+                  ].filter(c => c.city && c.city.trim() !== '').map((c,i) => (
                     <div className="ch-card" key={i} style={{'--cc':c.color,'--cbg':c.bg,'--cborder':c.border}}>
                       <div className="ch-icon-wrap"><Icon name={c.icon} color={c.color} size={24}/></div>
                       <div className="ch-city">{c.city}</div>
