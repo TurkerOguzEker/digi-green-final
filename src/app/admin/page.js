@@ -939,7 +939,7 @@ export default function AdminPage() {
                     </div>
                   )}
 
-                 {/* 2. KONSORSİYUM SAYFASI */}
+                {/* 2. KONSORSİYUM SAYFASI */}
                   {subTab === 'consortium' && (
                     <div className="adm-fade-in">
                       <SectionHeader num="1" title="Sayfa Girişi (Hero)" />
@@ -963,6 +963,7 @@ export default function AdminPage() {
                       </div>
 
                       <div className="adm-divider" />
+                      
                       <SectionHeader num="2" title="İstatistikler" />
                       <div className="adm-form-grid2">
                         <SettingInput label="Bölüm Etiketi (TR)" settingKey="consortium_sec_label" {...commonProps} />
@@ -974,9 +975,13 @@ export default function AdminPage() {
                         {[1,2,3,4].map(n => (
                           <div key={n} className="adm-card-inner">
                             <div className="adm-card-inner-label">Sayaç {n}</div>
-                            <SettingInput label="Değer" settingKey={`consortium_stat_${n}_val`} {...commonProps} />
-                            <SettingInput label="İşaret (+, %)" settingKey={`consortium_stat_${n}_unit`} {...commonProps} />
-                            <div style={{marginTop:'10px'}}>
+                            <div className="adm-form-grid2">
+                              <SettingInput label="Değer (TR) Örn: 150K" settingKey={`consortium_stat_${n}_val`} {...commonProps} />
+                              <SettingInput label="Değer (EN)" settingKey={`consortium_stat_${n}_val_en`} {...commonProps} />
+                              <SettingInput label="Birim/İşaret (TR) Örn: +" settingKey={`consortium_stat_${n}_unit`} {...commonProps} />
+                              <SettingInput label="Birim/İşaret (EN)" settingKey={`consortium_stat_${n}_unit_en`} {...commonProps} />
+                            </div>
+                            <div className="adm-form-grid2" style={{marginTop:'10px'}}>
                               <SettingInput label="Etiket (TR)" settingKey={`consortium_stat_${n}_label`} {...commonProps} />
                               <SettingInput label="Etiket (EN)" settingKey={`consortium_stat_${n}_label_en`} {...commonProps} />
                             </div>
@@ -985,6 +990,7 @@ export default function AdminPage() {
                       </div>
 
                       <div className="adm-divider" />
+                      
                       <SectionHeader num="3" title="Kart A (Koordinatör)" />
                       <div className="adm-form-grid2">
                         <SettingInput label="Rozet (TR)" settingKey="consortium_badge_a" {...commonProps} />
@@ -1011,6 +1017,7 @@ export default function AdminPage() {
                       </div>
 
                       <div className="adm-divider" />
+                      
                       <SectionHeader num="4" title="Kart B (Avrupalı Ortaklar)" />
                       <div className="adm-form-grid2">
                         <SettingInput label="Rozet (TR)" settingKey="consortium_badge_b" {...commonProps} />
@@ -1022,19 +1029,34 @@ export default function AdminPage() {
                         <SettingInput label="Açıklama (TR)" settingKey="consortium_text_b" type="textarea" {...commonProps} />
                         <SettingInput label="Açıklama (EN)" settingKey="consortium_text_b_en" type="textarea" {...commonProps} />
                       </div>
+                      
                       <div className="adm-card-inner" style={{marginTop:'15px'}}>
-                        <div className="adm-card-inner-label">Kart B Ortakları ve Özellikleri</div>
+                        <div className="adm-card-inner-label" style={{color:'#16a34a'}}>Ortak 1 (Avrupa)</div>
                         <div className="adm-form-grid2">
-                          <SettingInput label="Ortak 1 Adı" settingKey="consortium_b_p1_name" {...commonProps} />
-                          <SettingInput label="Ortak 1 Ülke" settingKey="consortium_b_p1_country" {...commonProps} />
-                          <SettingInput label="Ortak 1 Kısa Bilgi" settingKey="consortium_b_p1_desc" {...commonProps} />
+                          <SettingInput label="Kurum Adı (TR)" settingKey="consortium_b_p1_name" {...commonProps} />
+                          <SettingInput label="Kurum Adı (EN)" settingKey="consortium_b_p1_name_en" {...commonProps} />
+                          <SettingInput label="Ülke (TR)" settingKey="consortium_b_p1_country" {...commonProps} />
+                          <SettingInput label="Ülke (EN)" settingKey="consortium_b_p1_country_en" {...commonProps} />
+                          <SettingInput label="Kısa Bilgi (TR)" settingKey="consortium_b_p1_desc" {...commonProps} />
+                          <SettingInput label="Kısa Bilgi (EN)" settingKey="consortium_b_p1_desc_en" {...commonProps} />
                         </div>
-                        <div className="adm-form-grid2" style={{marginTop:'10px'}}>
-                          <SettingInput label="Ortak 2 Adı" settingKey="consortium_b_p2_name" {...commonProps} />
-                          <SettingInput label="Ortak 2 Ülke" settingKey="consortium_b_p2_country" {...commonProps} />
-                          <SettingInput label="Ortak 2 Kısa Bilgi" settingKey="consortium_b_p2_desc" {...commonProps} />
+                      </div>
+
+                      <div className="adm-card-inner" style={{marginTop:'15px'}}>
+                        <div className="adm-card-inner-label" style={{color:'#16a34a'}}>Ortak 2 (Avrupa)</div>
+                        <div className="adm-form-grid2">
+                          <SettingInput label="Kurum Adı (TR)" settingKey="consortium_b_p2_name" {...commonProps} />
+                          <SettingInput label="Kurum Adı (EN)" settingKey="consortium_b_p2_name_en" {...commonProps} />
+                          <SettingInput label="Ülke (TR)" settingKey="consortium_b_p2_country" {...commonProps} />
+                          <SettingInput label="Ülke (EN)" settingKey="consortium_b_p2_country_en" {...commonProps} />
+                          <SettingInput label="Kısa Bilgi (TR)" settingKey="consortium_b_p2_desc" {...commonProps} />
+                          <SettingInput label="Kısa Bilgi (EN)" settingKey="consortium_b_p2_desc_en" {...commonProps} />
                         </div>
-                        <div className="adm-form-grid2" style={{marginTop:'15px'}}>
+                      </div>
+
+                      <div className="adm-card-inner" style={{marginTop:'15px'}}>
+                        <div className="adm-card-inner-label">Kart B Alt Özellikleri</div>
+                        <div className="adm-form-grid2">
                           <SettingInput label="Özellik 1 (TR)" settingKey="consortium_b_pill1" {...commonProps} />
                           <SettingInput label="Özellik 1 (EN)" settingKey="consortium_b_pill1_en" {...commonProps} />
                           <SettingInput label="Özellik 2 (TR)" settingKey="consortium_b_pill2" {...commonProps} />
@@ -1047,6 +1069,7 @@ export default function AdminPage() {
                       </div>
 
                       <div className="adm-divider" />
+                      
                       <SectionHeader num="5" title="Kart C (Türk Ortaklar)" />
                       <div className="adm-form-grid2">
                         <SettingInput label="Rozet (TR)" settingKey="consortium_badge_c" {...commonProps} />
@@ -1058,19 +1081,34 @@ export default function AdminPage() {
                         <SettingInput label="Açıklama (TR)" settingKey="consortium_text_c" type="textarea" {...commonProps} />
                         <SettingInput label="Açıklama (EN)" settingKey="consortium_text_c_en" type="textarea" {...commonProps} />
                       </div>
+                      
                       <div className="adm-card-inner" style={{marginTop:'15px'}}>
-                        <div className="adm-card-inner-label">Kart C Ortakları ve Özellikleri</div>
+                        <div className="adm-card-inner-label" style={{color:'#ea580c'}}>Ortak 1 (Türk)</div>
                         <div className="adm-form-grid2">
-                          <SettingInput label="Ortak 1 Adı" settingKey="consortium_c_p1_name" {...commonProps} />
-                          <SettingInput label="Ortak 1 Ülke" settingKey="consortium_c_p1_country" {...commonProps} />
-                          <SettingInput label="Ortak 1 Kısa Bilgi" settingKey="consortium_c_p1_desc" {...commonProps} />
+                          <SettingInput label="Kurum Adı (TR)" settingKey="consortium_c_p1_name" {...commonProps} />
+                          <SettingInput label="Kurum Adı (EN)" settingKey="consortium_c_p1_name_en" {...commonProps} />
+                          <SettingInput label="Ülke (TR)" settingKey="consortium_c_p1_country" {...commonProps} />
+                          <SettingInput label="Ülke (EN)" settingKey="consortium_c_p1_country_en" {...commonProps} />
+                          <SettingInput label="Kısa Bilgi (TR)" settingKey="consortium_c_p1_desc" {...commonProps} />
+                          <SettingInput label="Kısa Bilgi (EN)" settingKey="consortium_c_p1_desc_en" {...commonProps} />
                         </div>
-                        <div className="adm-form-grid2" style={{marginTop:'10px'}}>
-                          <SettingInput label="Ortak 2 Adı" settingKey="consortium_c_p2_name" {...commonProps} />
-                          <SettingInput label="Ortak 2 Ülke" settingKey="consortium_c_p2_country" {...commonProps} />
-                          <SettingInput label="Ortak 2 Kısa Bilgi" settingKey="consortium_c_p2_desc" {...commonProps} />
+                      </div>
+
+                      <div className="adm-card-inner" style={{marginTop:'15px'}}>
+                        <div className="adm-card-inner-label" style={{color:'#ea580c'}}>Ortak 2 (Türk)</div>
+                        <div className="adm-form-grid2">
+                          <SettingInput label="Kurum Adı (TR)" settingKey="consortium_c_p2_name" {...commonProps} />
+                          <SettingInput label="Kurum Adı (EN)" settingKey="consortium_c_p2_name_en" {...commonProps} />
+                          <SettingInput label="Ülke (TR)" settingKey="consortium_c_p2_country" {...commonProps} />
+                          <SettingInput label="Ülke (EN)" settingKey="consortium_c_p2_country_en" {...commonProps} />
+                          <SettingInput label="Kısa Bilgi (TR)" settingKey="consortium_c_p2_desc" {...commonProps} />
+                          <SettingInput label="Kısa Bilgi (EN)" settingKey="consortium_c_p2_desc_en" {...commonProps} />
                         </div>
-                        <div className="adm-form-grid2" style={{marginTop:'15px'}}>
+                      </div>
+
+                      <div className="adm-card-inner" style={{marginTop:'15px'}}>
+                        <div className="adm-card-inner-label">Kart C Alt Özellikleri</div>
+                        <div className="adm-form-grid2">
                           <SettingInput label="Özellik 1 (TR)" settingKey="consortium_c_pill1" {...commonProps} />
                           <SettingInput label="Özellik 1 (EN)" settingKey="consortium_c_pill1_en" {...commonProps} />
                           <SettingInput label="Özellik 2 (TR)" settingKey="consortium_c_pill2" {...commonProps} />
@@ -1083,6 +1121,7 @@ export default function AdminPage() {
                       </div>
 
                       <div className="adm-divider" />
+                      
                       <SectionHeader num="6" title="Kart D (Sinerji & Etki)" />
                       <div className="adm-form-grid2">
                         <SettingInput label="Rozet (TR)" settingKey="consortium_badge_d" {...commonProps} />
@@ -1094,24 +1133,43 @@ export default function AdminPage() {
                         <SettingInput label="İçerik Metni (TR)" settingKey="consortium_text_d" type="textarea" {...commonProps} />
                         <SettingInput label="İçerik Metni (EN)" settingKey="consortium_text_d_en" type="textarea" {...commonProps} />
                       </div>
+
                       <div className="adm-card-inner" style={{marginTop:'15px'}}>
-                        <div className="adm-card-inner-label">Karşılaştırmalı Şehirler</div>
-                        <div className="adm-form-grid3">
-                          <SettingInput label="Şehir 1" settingKey="consortium_d_c1_city" {...commonProps} />
-                          <SettingInput label="Ülke 1" settingKey="consortium_d_c1_country" {...commonProps} />
-                          <SettingInput label="Odak Noktası 1" settingKey="consortium_d_c1_challenge" {...commonProps} />
-                        </div>
-                        <div className="adm-form-grid3" style={{marginTop:'10px'}}>
-                          <SettingInput label="Şehir 2" settingKey="consortium_d_c2_city" {...commonProps} />
-                          <SettingInput label="Ülke 2" settingKey="consortium_d_c2_country" {...commonProps} />
-                          <SettingInput label="Odak Noktası 2" settingKey="consortium_d_c2_challenge" {...commonProps} />
-                        </div>
-                        <div className="adm-form-grid3" style={{marginTop:'10px'}}>
-                          <SettingInput label="Şehir 3" settingKey="consortium_d_c3_city" {...commonProps} />
-                          <SettingInput label="Ülke 3" settingKey="consortium_d_c3_country" {...commonProps} />
-                          <SettingInput label="Odak Noktası 3" settingKey="consortium_d_c3_challenge" {...commonProps} />
+                        <div className="adm-card-inner-label">Şehir 1 (Örn: Kapaklı)</div>
+                        <div className="adm-form-grid2">
+                          <SettingInput label="Şehir Adı (TR)" settingKey="consortium_d_c1_city" {...commonProps} />
+                          <SettingInput label="Şehir Adı (EN)" settingKey="consortium_d_c1_city_en" {...commonProps} />
+                          <SettingInput label="Ülke (TR)" settingKey="consortium_d_c1_country" {...commonProps} />
+                          <SettingInput label="Ülke (EN)" settingKey="consortium_d_c1_country_en" {...commonProps} />
+                          <SettingInput label="Odak Noktası (TR)" settingKey="consortium_d_c1_challenge" {...commonProps} />
+                          <SettingInput label="Odak Noktası (EN)" settingKey="consortium_d_c1_challenge_en" {...commonProps} />
                         </div>
                       </div>
+
+                      <div className="adm-card-inner" style={{marginTop:'15px'}}>
+                        <div className="adm-card-inner-label">Şehir 2 (Örn: Liepāja)</div>
+                        <div className="adm-form-grid2">
+                          <SettingInput label="Şehir Adı (TR)" settingKey="consortium_d_c2_city" {...commonProps} />
+                          <SettingInput label="Şehir Adı (EN)" settingKey="consortium_d_c2_city_en" {...commonProps} />
+                          <SettingInput label="Ülke (TR)" settingKey="consortium_d_c2_country" {...commonProps} />
+                          <SettingInput label="Ülke (EN)" settingKey="consortium_d_c2_country_en" {...commonProps} />
+                          <SettingInput label="Odak Noktası (TR)" settingKey="consortium_d_c2_challenge" {...commonProps} />
+                          <SettingInput label="Odak Noktası (EN)" settingKey="consortium_d_c2_challenge_en" {...commonProps} />
+                        </div>
+                      </div>
+
+                      <div className="adm-card-inner" style={{marginTop:'15px'}}>
+                        <div className="adm-card-inner-label">Şehir 3 (Örn: Cascais)</div>
+                        <div className="adm-form-grid2">
+                          <SettingInput label="Şehir Adı (TR)" settingKey="consortium_d_c3_city" {...commonProps} />
+                          <SettingInput label="Şehir Adı (EN)" settingKey="consortium_d_c3_city_en" {...commonProps} />
+                          <SettingInput label="Ülke (TR)" settingKey="consortium_d_c3_country" {...commonProps} />
+                          <SettingInput label="Ülke (EN)" settingKey="consortium_d_c3_country_en" {...commonProps} />
+                          <SettingInput label="Odak Noktası (TR)" settingKey="consortium_d_c3_challenge" {...commonProps} />
+                          <SettingInput label="Odak Noktası (EN)" settingKey="consortium_d_c3_challenge_en" {...commonProps} />
+                        </div>
+                      </div>
+
                       <div className="adm-form-grid2" style={{marginTop:'15px'}}>
                         <SettingInput label="Alt Sinerji Notu (TR)" settingKey="consortium_synergy_note" type="textarea" {...commonProps} />
                         <SettingInput label="Alt Sinerji Notu (EN)" settingKey="consortium_synergy_note_en" type="textarea" {...commonProps} />
@@ -2228,7 +2286,7 @@ export default function AdminPage() {
                 </div>
               </div>
             )}
-            {/* ══ SİTE AYARLARI (HEADER/FOOTER) ═════════════════════════ */}
+           {/* ══ SİTE AYARLARI (HEADER/FOOTER) ═════════════════════════ */}
             {activeTab === 'site' && (
               <div className="adm-fade-in">
                 <div className="adm-page-header">
@@ -2250,6 +2308,17 @@ export default function AdminPage() {
                 <div className="adm-section" style={{ background: 'var(--surface-2)', padding: '20px', borderRadius: '14px', border: '1px dashed var(--border)', marginBottom: '30px' }}>
                   <SectionHeader num="2" title="Alt Bilgi (Footer)" />
                   <SettingInput label="AB Logosu / Bayrak" settingKey="footer_eu_logo" type="image" {...commonProps} />
+                  
+                  {/* ✨ EKSİK KISIM EKLENDİ: Hızlı Menü ve İletişim Başlıkları ✨ */}
+                  <div className="adm-form-grid2">
+                    <SettingInput label="Orta Sütun Başlığı (TR) (Örn: Hızlı Menü)" settingKey="footer_column2_title" {...commonProps} />
+                    <SettingInput label="Orta Sütun Başlığı (EN)" settingKey="footer_column2_title_en" {...commonProps} />
+                  </div>
+                  <div className="adm-form-grid2">
+                    <SettingInput label="Sağ Sütun Başlığı (TR) (Örn: İletişim)" settingKey="footer_column3_title" {...commonProps} />
+                    <SettingInput label="Sağ Sütun Başlığı (EN)" settingKey="footer_column3_title_en" {...commonProps} />
+                  </div>
+
                   <div className="adm-form-grid2">
                     <SettingInput label="Footer Hakkında Metni (TR)" settingKey="footer_desc" type="textarea" {...commonProps} />
                     <SettingInput label="Footer Hakkında Metni (EN)" settingKey="footer_desc_en" type="textarea" {...commonProps} />
@@ -2270,7 +2339,6 @@ export default function AdminPage() {
                 </div>
               </div>
             )}
-
             {/* ══ KULLANICILAR PANElİ (YENİ EKLENDİ) ═════════════════════════ */}
             {activeTab === 'users' && (
               <div className="adm-fade-in">

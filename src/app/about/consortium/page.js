@@ -81,23 +81,28 @@ const Icon = ({ name, color='currentColor', size=20 }) => {
 };
 
 // ─── SECTION CARD (Arka Planlı Kutucuk Tasarımı) ─────────────────────────────
-const SectionCard = ({ accent, letter, badge, title, children, reverse=false }) => (
-  <div className={`sc reveal ${reverse ? 'reveal-right' : 'reveal-left'}`} style={{ '--accent': accent }}>
-    <div className="sc-shine"/>
-    
-    <div className="sc-head">
-      <span className="sc-badge">{letter}.</span>
-      <div className="sc-head-text">
-        {badge && <span className="sc-role-badge">{badge}</span>}
-        <h2 className="sc-title">{title}</h2>
+const SectionCard = ({ accent, letter, badge, title, children, reverse=false }) => {
+  // Başlık boşsa kutuyu komple gizle
+  if (!title || title.trim() === '') return null;
+  
+  return (
+    <div className={`sc reveal ${reverse ? 'reveal-right' : 'reveal-left'}`} style={{ '--accent': accent }}>
+      <div className="sc-shine"/>
+      
+      <div className="sc-head">
+        <span className="sc-badge">{letter}.</span>
+        <div className="sc-head-text">
+          {badge && <span className="sc-role-badge">{badge}</span>}
+          <h2 className="sc-title">{title}</h2>
+        </div>
+      </div>
+
+      <div className="sc-inner">
+        <div className="sc-body">{children}</div>
       </div>
     </div>
-
-    <div className="sc-inner">
-      <div className="sc-body">{children}</div>
-    </div>
-  </div>
-);
+  );
+};
 
 // ─── ANA SAYFA ─────────────────────────────────────────────────────────────────
 export default function ConsortiumPage() {
@@ -123,7 +128,7 @@ export default function ConsortiumPage() {
     return () => obs.disconnect();
   }, [loading, content]);
 
-  // ✨ AKILLI YEDEKLEME SİSTEMİ (BOŞ BIRAKILDIĞINDA SAKLAR)
+  // ✨ AKILLI YEDEKLEME SİSTEMİ (BOŞ BIRAKILDIĞINDA HİÇBİR ŞEY GÖSTERMEZ)
   const getDynamicContent = (trKey, defaultTranslationKey) => {
     if (language === 'en') {
       const enKey = `${trKey}_en`;
@@ -132,18 +137,22 @@ export default function ConsortiumPage() {
         return content[enKey].trim() === '' ? '' : content[enKey];
       }
       
+      // İngilizce çevirisi varsa ve geçerliyse
       const translation = t(defaultTranslationKey);
-      if (translation !== defaultTranslationKey) return translation;
+      if (translation !== defaultTranslationKey && translation.trim() !== '') return translation;
       
+      // DB'deki Türkçe versiyona bak (fallback)
       if (content[trKey] !== undefined) {
         return content[trKey].trim() === '' ? '' : content[trKey];
       }
     }
     
+    // Türkçe dili için
     if (content[trKey] !== undefined) {
       return content[trKey].trim() === '' ? '' : content[trKey];
     }
     
+    // Fallback Translation
     const fallback = t(defaultTranslationKey);
     return fallback === defaultTranslationKey ? '' : fallback;
   };
@@ -335,7 +344,7 @@ export default function ConsortiumPage() {
                   {getDynamicContent('consortium_text_d', 'consortium.cardD.textDefault')}
                 </p>
 
-                {/* Şehir karşılaştırma kartları */}
+                {/* Şehir karşılaştırma kartları (Eğer şehir ismi boşsa kutuyu gizle) */}
                 <div className="challenge-grid">
                   {[
                     { icon:'factory',  city: getDynamicContent('consortium_d_c1_city', 'consortium.cardD.cities.kapakli'), country: getDynamicContent('consortium_d_c1_country', 'consortium.cardD.cities.turkey'),  challenge: getDynamicContent('consortium_d_c1_challenge', 'consortium.cardD.cities.kapakliChallenge'),  color:'#2563eb', bg:'rgba(37,99,235,0.08)', border:'rgba(37,99,235,0.2)' },
@@ -352,10 +361,13 @@ export default function ConsortiumPage() {
                   ))}
                 </div>
 
-                <div className="synergy-note">
-                  <div className="sn-icon"><Icon name="arrowRight" color="#16a34a" size={18}/></div>
-                  <p>{getDynamicContent('consortium_synergy_note', 'consortium.cardD.synergyNote')}</p>
-                </div>
+                {/* Sinerji Notu (Boş bırakılırsa kutusuyla birlikte gizlenir) */}
+                {getDynamicContent('consortium_synergy_note', 'consortium.cardD.synergyNote') && getDynamicContent('consortium_synergy_note', 'consortium.cardD.synergyNote').trim() !== '' && (
+                  <div className="synergy-note">
+                    <div className="sn-icon"><Icon name="arrowRight" color="#16a34a" size={18}/></div>
+                    <p>{getDynamicContent('consortium_synergy_note', 'consortium.cardD.synergyNote')}</p>
+                  </div>
+                )}
               </SectionCard>
 
             </div>

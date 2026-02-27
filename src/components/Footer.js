@@ -7,7 +7,7 @@ import { useLanguage } from '../context/LanguageContext';
 
 export default function Footer() {
   const pathname = usePathname();
-  const [content, setContent] = useState(null); // null yaparak verinin yüklenmesini beklediğimizi belirtiyoruz
+  const [content, setContent] = useState(null); 
   const { language, t } = useLanguage();
 
   useEffect(() => {
@@ -24,21 +24,33 @@ export default function Footer() {
     fetchData();
   }, []);
 
-  const getDynamicContent = (key, defaultTranslationKey) => {
-    if (!content) return ''; // Veri yüklenene kadar boş döndür (Gel-git yapmasını engeller)
-    const enKey = `${key}_en`;
-    if (language === 'en' && content[enKey]) {
-      return content[enKey];
+  // ✨ AKILLI YEDEKLEME SİSTEMİ (Eksik İngilizce veride Türkçeyi değil, çeviriyi gösterir)
+  const getDynamicContent = (trKey, defaultTranslationKey) => {
+    if (!content) return ''; 
+
+    if (language === 'en') {
+      const enKey = `${trKey}_en`;
+      if (content[enKey] !== undefined && content[enKey].trim() !== '') {
+        return content[enKey];
+      }
+      const translation = t(defaultTranslationKey);
+      if (translation !== defaultTranslationKey && translation.trim() !== '') {
+        return translation;
+      }
     }
-    return content[key] || t(defaultTranslationKey);
+    
+    if (content[trKey] !== undefined && content[trKey].trim() !== '') {
+      return content[trKey];
+    }
+    
+    const fallback = t(defaultTranslationKey);
+    return fallback === defaultTranslationKey ? '' : fallback;
   };
 
-  // Eğer sayfa admin paneli veya giriş sayfası ise Footer'ı GİZLE
   if (pathname && (pathname.startsWith('/admin') || pathname.startsWith('/login'))) {
       return null;
   }
 
-  // Veri Supabase'den gelene kadar Footer'ı gizli tut (Flicker/göz kırpma engellemesi)
   if (!content) return <footer className="site-footer" style={{ minHeight: '300px', backgroundColor: '#1a5c38' }}></footer>;
 
   return (
@@ -194,7 +206,6 @@ export default function Footer() {
                   border-top: 1px solid rgba(255,255,255,0.1); 
               }
 
-              /* ── BAYRAK VE YAZI ── */
               .disclaimer-content { 
                   display: flex; 
                   align-items: center; 
@@ -202,7 +213,7 @@ export default function Footer() {
                   gap: 15px;
               }
               .eu-flag-img {
-                  height: 32px; /* 45px'den 32px'e düşürüldü */
+                  height: 32px; 
                   width: auto;
                   object-fit: contain;
                   flex-shrink: 0;
@@ -220,7 +231,7 @@ export default function Footer() {
                   .footer-grid { grid-template-columns: 1fr; gap: 40px; }
                   .disclaimer-content { flex-direction: column; text-align: center; justify-content: center; gap: 12px; }
                   .eu-text { text-align: center; }
-                  .eu-flag-img { height: 36px; } /* Mobilde çok azıcık daha belirgin olabilir */
+                  .eu-flag-img { height: 36px; } 
               }
           `}</style>
       </footer>
