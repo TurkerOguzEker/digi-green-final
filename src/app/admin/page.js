@@ -1636,9 +1636,7 @@ export default function AdminPage() {
                       <i className={isEditing ? 'fas fa-pen' : 'fas fa-plus'} />
                       {isEditing ? ' Haberi Düzenle' : ' Yeni Haber Ekle'}
                     </div>
-                    <button type="button" className="adm-btn adm-btn-ghost" onClick={handleTranslateNews} disabled={isTranslating} style={{fontSize: '0.75rem', height: '32px'}}>
-                      <i className="fas fa-language"></i> {isTranslating ? 'Çevriliyor...' : 'TR -> EN Otomatik Çevir'}
-                    </button>
+                    {/* ✨ Otomatik çeviri butonu buradan tamamen kaldırıldı ✨ */}
                   </div>
                   <form onSubmit={e => saveItem(e, 'news', newsForm, setNewsForm)} style={{display:'grid', gap:'14px'}}>
                     
@@ -1714,7 +1712,6 @@ export default function AdminPage() {
                 </div>
               </div>
             )}
-
            {/* ══ FAALİYETLER ═══════════════════════════════════════════ */}
             {activeTab === 'activities' && (
               <div className="adm-fade-in">
@@ -1758,9 +1755,7 @@ export default function AdminPage() {
                       <i className={isEditing ? 'fas fa-pen' : 'fas fa-plus'} />
                       {isEditing ? ' Faaliyeti Düzenle' : ' Yeni Faaliyet Ekle'}
                     </div>
-                    <button type="button" className="adm-btn adm-btn-ghost" onClick={handleTranslateActivities} disabled={isTranslating} style={{fontSize: '0.75rem', height: '32px'}}>
-                      <i className="fas fa-language"></i> {isTranslating ? 'Çevriliyor...' : 'TR -> EN Otomatik Çevir'}
-                    </button>
+                    {/* ✨ Otomatik çeviri butonu buradan tamamen kaldırıldı ✨ */}
                   </div>
                   <form onSubmit={e => saveItem(e, 'activities', activityForm, setActivityForm)} style={{display:'grid', gap:'14px'}}>
                     

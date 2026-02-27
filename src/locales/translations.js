@@ -64,7 +64,12 @@ export const translations = {
         },
         results: {
             loading: 'Dosyalar Yükleniyor…',
-            list: { empty: 'Henüz dosya yüklenmemiş.', download: 'İndir' }
+            list: { 
+                empty: 'Henüz dosya yüklenmemiş.', 
+                download: 'İndir',
+                loadMore: 'Daha fazla yükleniyor...',
+                allLoaded: 'Tüm dosyalar yüklendi'
+            }
         },
         footer: {
             quickMenu: 'Hızlı Menü',
@@ -126,7 +131,12 @@ export const translations = {
         },
         results: {
             loading: 'Loading Files…',
-            list: { empty: 'No files uploaded yet.', download: 'Download' }
+            list: { 
+                empty: 'No files uploaded yet.', 
+                download: 'Download',
+                loadMore: 'Loading more files...',
+                allLoaded: 'All files loaded'
+            }
         },
         footer: {
             quickMenu: 'Quick Links', contactTitle: 'Contact Us',

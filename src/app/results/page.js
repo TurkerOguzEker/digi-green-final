@@ -61,10 +61,10 @@ const NetworkBackground = () => {
       animationFrameId = requestAnimationFrame(animate);
     };
     animate();
-
-    return () => {
-      window.removeEventListener('resize', resize);
-      cancelAnimationFrame(animationFrameId);
+    
+    return () => { 
+      window.removeEventListener('resize', resize); 
+      cancelAnimationFrame(animationFrameId); 
       observer.disconnect();
     };
   }, []);
@@ -84,13 +84,14 @@ const HeroAnimation = () => {
     
     let spawnTimeouts = [];
     let mainTimeout;
-    let isVisible = true;
+    let isVisible = true; 
 
     const resize = () => {
       const parent = canvas.parentElement;
       canvas.width  = parent ? parent.offsetWidth : window.innerWidth;
       canvas.height = parent ? parent.offsetHeight : window.innerHeight;
     };
+    
     resize();
     window.addEventListener('resize', resize);
 
@@ -255,6 +256,9 @@ export default function ResultsPage() {
   const [content, setContent] = useState({});
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(true);
+  
+  // ✨ YENİ: Ekranda görünecek maksimum dosya sayısı (Sonsuz kaydırma için)
+  const [visibleCount, setVisibleCount] = useState(9); 
 
   const { language, t } = useLanguage();
 
@@ -274,14 +278,42 @@ export default function ResultsPage() {
     fetchData();
   }, []);
 
+  // Kart Animasyonları Gözlemcisi
   useEffect(() => {
     if (loading) return;
     const observer = new IntersectionObserver((entries) => {
-      entries.forEach(entry => { if (entry.isIntersecting) entry.target.classList.add('active'); });
-    }, { threshold: 0.08 });
-    document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+      entries.forEach(entry => { 
+        if (entry.isIntersecting) {
+          entry.target.classList.add('active');
+          observer.unobserve(entry.target); // Animasyon bitince bir daha tetikleme
+        }
+      });
+    }, { threshold: 0.05, rootMargin: "0px 0px 50px 0px" });
+    
+    // Yalnızca henüz aktif olmayan yeni yüklenmiş öğeleri gözlemle
+    document.querySelectorAll('.reveal:not(.active)').forEach(el => observer.observe(el));
     return () => observer.disconnect();
-  }, [loading, results]);
+  }, [loading, results, visibleCount]);
+
+  // ✨ YENİ: Sayfa Aşağı Kaydıkça Veri Yükleyen Gözlemci (Infinite Scroll)
+  useEffect(() => {
+    if (loading || results.length === 0) return;
+    
+    const sentinel = document.getElementById('load-more-sentinel');
+    if (!sentinel) return;
+
+    const loadMoreObserver = new IntersectionObserver((entries) => {
+      if (entries[0].isIntersecting && visibleCount < results.length) {
+        // Yumuşak bir yüklenme hissi için ufak bir bekleme
+        setTimeout(() => {
+          setVisibleCount(prev => prev + 6); // Her kaydırmada 6 tane daha ekle
+        }, 400);
+      }
+    }, { rootMargin: "0px 0px 200px 0px" }); // Kullanıcı en alta gelmeden 200px önce tetikle
+
+    loadMoreObserver.observe(sentinel);
+    return () => loadMoreObserver.disconnect();
+  }, [loading, visibleCount, results.length]);
 
   const getDynamicContent = (trKey, defaultTranslationKey) => {
     if (language === 'en') {
@@ -301,7 +333,7 @@ export default function ResultsPage() {
       <NetworkBackground />
 
       {loading ? (
-        <div className="loading-screen">
+        <div className="loading-screen" style={{ background: 'transparent' }}>
           <div className="loader-ring">
             <div></div><div></div><div></div><div></div>
           </div>
@@ -313,7 +345,6 @@ export default function ResultsPage() {
           <section className="page-header">
             <HeroAnimation />
             <div className="hero-noise"></div>
-
             <div className="hero-orb orb-1"></div>
             <div className="hero-orb orb-2"></div>
             <div className="hero-orb orb-3"></div>
@@ -366,7 +397,8 @@ export default function ResultsPage() {
                     <p>{t('results.list.empty')}</p>
                   </div>
                 ) : (
-                  results.map((item, index) => {
+                  // ✨ YENİ: Diziyi sadece "visibleCount" (örneğin ilk 9, sonra 15) kadar keserek ekrana basıyoruz
+                  results.slice(0, visibleCount).map((item, index) => {
                     const delay = `${(index % 3) * 0.12 + 0.1}s`;
                     const isMedia = item.icon === 'video' || item.icon === 'app';
                     const fileExt = getFileExtension(item.link);
@@ -393,12 +425,8 @@ export default function ResultsPage() {
                           </div>
 
                           <div className="card-body">
-                            <h3 className="card-title">
-                                {displayTitle}
-                            </h3>
-                            <p className="card-desc">
-                                {displayDesc}
-                            </p>
+                            <h3 className="card-title">{displayTitle}</h3>
+                            <p className="card-desc">{displayDesc}</p>
                           </div>
 
                           <div className="card-footer">
@@ -428,6 +456,42 @@ export default function ResultsPage() {
                   })
                 )}
               </div>
+
+              {/* ✨ YENİ: Sonsuz Kaydırma Tetikleyicisi (Görünmez İzleyici ve Yükleme Simgesi) */}
+              {results.length > 0 && visibleCount < results.length && (
+                <div id="load-more-sentinel" style={{ textAlign: 'center', padding: '40px 0', width: '100%' }}>
+                  <div className="loader-ring small">
+                    <div></div><div></div><div></div><div></div>
+                  </div>
+                  <div style={{ color: 'var(--text-soft)', marginTop: '10px', fontSize: '0.85rem', fontWeight: '600', letterSpacing: '0.05em', textTransform: 'uppercase' }}>
+                    {t('results.list.loadMore')}
+                  </div>
+                </div>
+              )}
+
+              {/* ✨ EKSİK OLAN KISIM: Tümü yüklendiğinde çıkacak mesaj */}
+              {results.length > 0 && visibleCount >= results.length && (
+                <div className="reveal active" style={{ textAlign: 'center', padding: '40px 0', width: '100%' }}>
+                  <div style={{ 
+                    display: 'inline-flex', 
+                    alignItems: 'center', 
+                    gap: '10px',
+                    padding: '10px 20px', 
+                    background: 'var(--green-pale)', 
+                    color: 'var(--green-deep)', 
+                    borderRadius: '50px',
+                    fontSize: '0.85rem', 
+                    fontWeight: '700', 
+                    letterSpacing: '0.05em', 
+                    textTransform: 'uppercase',
+                    border: '1px solid rgba(39,174,96,0.2)'
+                  }}>
+                    <i className="fas fa-check-circle"></i>
+                    {t('results.list.allLoaded')}
+                  </div>
+                </div>
+              )}
+
             </div>
           </section>
         </>
@@ -458,7 +522,7 @@ export default function ResultsPage() {
         .loader-ring { display: inline-block; position: relative; width: 60px; height: 60px; }
         .loader-ring.small { width: 36px; height: 36px; }
         .loader-ring div { box-sizing: border-box; display: block; position: absolute; width: 46px; height: 46px; margin: 7px; border: 3px solid transparent; border-top-color: var(--green-mid); border-radius: 50%; animation: loader-spin 1.2s cubic-bezier(0.5,0,0.5,1) infinite; }
-        .loader-ring.small div { width: 28px; height: 28px; margin: 4px; }
+        .loader-ring.small div { width: 28px; height: 28px; margin: 4px; border-width: 3px; }
         .loader-ring div:nth-child(1) { animation-delay: -0.45s; }
         .loader-ring div:nth-child(2) { animation-delay: -0.3s; border-top-color: var(--gold); }
         .loader-ring div:nth-child(3) { animation-delay: -0.15s; }
