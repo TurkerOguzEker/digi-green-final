@@ -102,11 +102,25 @@ export default function StrategyPage() {
   // ✨ Dil ve Çeviri fonksiyonlarını alıyoruz
   const { language, t } = useLanguage();
 
+  // ✨ GÜVENLİ YÜKLEME SİSTEMİ (Çökme Engelleyici)
   useEffect(() => {
-    supabase.from('settings').select('*').then(({ data }) => {
-      const map = {}; data?.forEach(d => (map[d.key] = d.value));
-      setContent(map); setLoading(false);
-    });
+    async function fetchData() {
+      try {
+        const { data, error } = await supabase.from('settings').select('*');
+        if (error) {
+          console.error("Supabase Hatası:", error);
+        } else {
+          const map = {};
+          data?.forEach(d => (map[d.key] = d.value));
+          setContent(map);
+        }
+      } catch (err) {
+        console.error("Beklenmeyen Hata:", err);
+      } finally {
+        setLoading(false); // Hata olsa da olmasa da yükleme ekranını kaldır.
+      }
+    }
+    fetchData();
   }, []);
 
   useEffect(() => {
@@ -119,47 +133,53 @@ export default function StrategyPage() {
     return () => obs.disconnect();
   }, [loading, content]);
 
-  // ✨ AKILLI YEDEKLEME (Boş bırakıldığında kod ismi yerine boş string döndürür)
+  // ✨ GÜVENLİ AKILLI YEDEKLEME (Undefined.trim Hatası Önleyici)
   const getDynamicContent = (trKey, defaultTranslationKey) => {
     if (language === 'en') {
       const enKey = `${trKey}_en`;
-      if (content[enKey] !== undefined) return content[enKey];
+      if (typeof content[enKey] === 'string' && content[enKey].trim() !== '') return content[enKey];
+      
       const translation = t(defaultTranslationKey);
-      if (translation !== defaultTranslationKey) return translation;
-      if (content[trKey] !== undefined) return content[trKey];
+      if (typeof translation === 'string' && translation !== defaultTranslationKey && translation.trim() !== '') {
+        return translation;
+      }
+      
+      if (typeof content[trKey] === 'string' && content[trKey].trim() !== '') return content[trKey];
     }
-    if (content[trKey] !== undefined) return content[trKey];
+    
+    if (typeof content[trKey] === 'string' && content[trKey].trim() !== '') return content[trKey];
+    
     const translationFallback = t(defaultTranslationKey);
-    return translationFallback === defaultTranslationKey ? '' : translationFallback;
+    return (typeof translationFallback === 'string' && translationFallback !== defaultTranslationKey) ? translationFallback : '';
   };
 
   // Kart A pilleri
   const pillsA = [
-    { icon: 'calendar', label: getDynamicContent('strategy_a_pill1', 'strategy.cardA.pills.p1'), color: '#2563eb' },
-    { icon: 'flag',     label: getDynamicContent('strategy_a_pill2', 'strategy.cardA.pills.p2'), color: '#2563eb' },
-    { icon: 'building', label: getDynamicContent('strategy_a_pill3', 'strategy.cardA.pills.p3'), color: '#2563eb' },
-    { icon: 'star',     label: getDynamicContent('strategy_a_pill4', 'strategy.cardA.pills.p4'), color: '#2563eb' },
+    { icon: 'calendar', label: getDynamicContent('strategy_a_pill1', 'strategy.cardA.pills.p1') || 'Proje Yönetimi', color: '#2563eb' },
+    { icon: 'flag',     label: getDynamicContent('strategy_a_pill2', 'strategy.cardA.pills.p2') || 'Uluslararası Ortaklık', color: '#2563eb' },
+    { icon: 'building', label: getDynamicContent('strategy_a_pill3', 'strategy.cardA.pills.p3') || 'Yerel Yönetim', color: '#2563eb' },
+    { icon: 'star',     label: getDynamicContent('strategy_a_pill4', 'strategy.cardA.pills.p4') || 'Kalite Güvencesi', color: '#2563eb' },
   ];
 
   // Kart B pilleri
   const pillsB = [
-    { icon: 'leaf',       label: getDynamicContent('strategy_b_pill1', 'strategy.cardB.pills.p1'), color: '#16a34a' },
-    { icon: 'smartphone', label: getDynamicContent('strategy_b_pill2', 'strategy.cardB.pills.p2'), color: '#16a34a' },
-    { icon: 'recycle',    label: getDynamicContent('strategy_b_pill3', 'strategy.cardB.pills.p3'), color: '#16a34a' },
-    { icon: 'city',       label: getDynamicContent('strategy_b_pill4', 'strategy.cardB.pills.p4'), color: '#16a34a' },
+    { icon: 'leaf',       label: getDynamicContent('strategy_b_pill1', 'strategy.cardB.pills.p1') || 'Yeşil Dönüşüm', color: '#16a34a' },
+    { icon: 'smartphone', label: getDynamicContent('strategy_b_pill2', 'strategy.cardB.pills.p2') || 'Dijital Araçlar', color: '#16a34a' },
+    { icon: 'recycle',    label: getDynamicContent('strategy_b_pill3', 'strategy.cardB.pills.p3') || 'Atık Yönetimi', color: '#16a34a' },
+    { icon: 'city',       label: getDynamicContent('strategy_b_pill4', 'strategy.cardB.pills.p4') || 'Akıllı Şehirler', color: '#16a34a' },
   ];
 
   // Kart C öncelikleri
   const priorities = [
-    { icon: 'globe',   title: getDynamicContent('strategy_c_prio1_title', 'strategy.cardC.priorities.pr1.title'), desc: getDynamicContent('strategy_c_prio1_desc', 'strategy.cardC.priorities.pr1.desc'), color: '#ea580c' },
-    { icon: 'monitor', title: getDynamicContent('strategy_c_prio2_title', 'strategy.cardC.priorities.pr2.title'), desc: getDynamicContent('strategy_c_prio2_desc', 'strategy.cardC.priorities.pr2.desc'), color: '#ea580c' },
-    { icon: 'users',   title: getDynamicContent('strategy_c_prio3_title', 'strategy.cardC.priorities.pr3.title'), desc: getDynamicContent('strategy_c_prio3_desc', 'strategy.cardC.priorities.pr3.desc'), color: '#ea580c' },
+    { icon: 'globe',   title: getDynamicContent('strategy_c_prio1_title', 'strategy.cardC.priorities.pr1.title') || 'Çevresel Sürdürülebilirlik', desc: getDynamicContent('strategy_c_prio1_desc', 'strategy.cardC.priorities.pr1.desc') || 'İklim kriziyle mücadelede yerel çözümler geliştirmek.', color: '#ea580c' },
+    { icon: 'monitor', title: getDynamicContent('strategy_c_prio2_title', 'strategy.cardC.priorities.pr2.title') || 'Dijital Dönüşüm', desc: getDynamicContent('strategy_c_prio2_desc', 'strategy.cardC.priorities.pr2.desc') || 'Eğitim ve farkındalık süreçlerinde teknolojiyi merkeze almak.', color: '#ea580c' },
+    { icon: 'users',   title: getDynamicContent('strategy_c_prio3_title', 'strategy.cardC.priorities.pr3.title') || 'Sosyal Kapsayıcılık', desc: getDynamicContent('strategy_c_prio3_desc', 'strategy.cardC.priorities.pr3.desc') || 'Tüm vatandaşların bu yeşil harekete katılımını sağlamak.', color: '#ea580c' },
   ];
 
   // Kart C pilleri
   const pillsC = [
-    { icon: 'eu',       label: getDynamicContent('strategy_c_pill1', 'strategy.cardC.pills.p1'), color: '#ea580c' },
-    { icon: 'barChart', label: getDynamicContent('strategy_c_pill2', 'strategy.cardC.pills.p2'), color: '#ea580c' },
+    { icon: 'eu',       label: getDynamicContent('strategy_c_pill1', 'strategy.cardC.pills.p1') || 'Avrupa Yeşil Mutabakatı', color: '#ea580c' },
+    { icon: 'barChart', label: getDynamicContent('strategy_c_pill2', 'strategy.cardC.pills.p2') || 'Dijital Eğitim Eylem Planı', color: '#ea580c' },
   ];
 
   return (
@@ -169,7 +189,7 @@ export default function StrategyPage() {
       {loading ? (
         <div className="loading-screen">
           <div className="loader-ring"><div/><div/><div/><div/></div>
-          <span className="loader-text">{t('strategy.loading')}</span>
+          <span className="loader-text">{t('strategy.loading') || 'Yükleniyor...'}</span>
         </div>
       ) : (
         <>
@@ -180,15 +200,15 @@ export default function StrategyPage() {
             <div className="orb orb-1"/><div className="orb orb-2"/><div className="orb orb-3"/>
             
             <div className="container hero-content">
-              <div className="eyebrow reveal active"><span className="edot"/> {getDynamicContent('strategy_hero_eyebrow', 'strategy.hero.eyebrow')} <span className="edot"/></div>
-              <h1 className="hero-title reveal active">{getDynamicContent('strategy_hero_title1', 'strategy.hero.title1')}<br/><em>{getDynamicContent('strategy_hero_title2', 'strategy.hero.title2')}</em></h1>
+              <div className="eyebrow reveal active"><span className="edot"/> {getDynamicContent('strategy_hero_eyebrow', 'strategy.hero.eyebrow') || 'STRATEJİ RAPORU'} <span className="edot"/></div>
+              <h1 className="hero-title reveal active">{getDynamicContent('strategy_hero_title1', 'strategy.hero.title1') || 'Projenin Temel'} <br/><em>{getDynamicContent('strategy_hero_title2', 'strategy.hero.title2') || 'Stratejisi'}</em></h1>
               <p className="hero-sub reveal active" style={{transitionDelay:'.25s'}}>
-                {getDynamicContent('strategy_page_desc', 'strategy.hero.descDefault')}
+                {getDynamicContent('strategy_page_desc', 'strategy.hero.descDefault') || 'Bu sayfa, projemizin hedeflerini, vizyonunu ve Avrupa politikalarıyla uyumunu detaylandırmaktadır.'}
               </p>
               <div className="hero-div reveal active" style={{transitionDelay:'.4s'}}><span/><span className="hdot"/><span/></div>
             </div>
             <button className="scroll-btn" onClick={() => document.getElementById('icerik')?.scrollIntoView({behavior:'smooth'})} aria-label="Aşağı kaydır">
-              <span className="scroll-label">{getDynamicContent('strategy_hero_scroll', 'strategy.hero.scrollBtn')}</span>
+              <span className="scroll-label">{getDynamicContent('strategy_hero_scroll', 'strategy.hero.scrollBtn') || 'Detayları İncele'}</span>
               <span className="scroll-icon"><i className="fas fa-chevron-down"/></span>
             </button>
           </section>
@@ -198,17 +218,33 @@ export default function StrategyPage() {
             <div className="container" style={{maxWidth:'940px'}}>
 
               <div className="sec-head reveal-up">
-                <p className="sec-label">{getDynamicContent('strategy_sec_label', 'strategy.section.part')}</p>
-                <h2 className="sec-title">{getDynamicContent('strategy_sec_title', 'strategy.section.title')}</h2>
+                <p className="sec-label">{getDynamicContent('strategy_sec_label', 'strategy.section.part') || 'ÖZET BİLGİ'}</p>
+                <h2 className="sec-title">{getDynamicContent('strategy_sec_title', 'strategy.section.title') || 'Strateji İstatistikleri'}</h2>
               </div>
 
               {/* İstatistikler */}
               <div className="stats reveal-up" style={{transitionDelay:'.1s'}}>
                 {[
-                  {val: getDynamicContent('strategy_stat_1_val', 'strategy.stats.s1_val') || '24',   unit: getDynamicContent('strategy_stat_1_unit', 'strategy.stats.durationUnit'), label: getDynamicContent('strategy_stat_1_label', 'strategy.stats.duration')},
-                  {val: getDynamicContent('strategy_stat_2_val', 'strategy.stats.s2_val') || '250K', unit: getDynamicContent('strategy_stat_2_unit', 'strategy.stats.s2_unit') || '€', label: getDynamicContent('strategy_stat_2_label', 'strategy.stats.grant')},
-                  {val: getDynamicContent('strategy_stat_3_val', 'strategy.stats.s3_val') || '2025', unit: getDynamicContent('strategy_stat_3_unit', 'strategy.stats.s3_unit') || '→ 2027', label: getDynamicContent('strategy_stat_3_label', 'strategy.stats.period')},
-                  {val: getDynamicContent('strategy_stat_4_val', 'strategy.stats.s4_val') || '%29',  unit: getDynamicContent('strategy_stat_4_unit', 'strategy.stats.s4_unit') || '', label: getDynamicContent('strategy_stat_4_label', 'strategy.stats.recycle')},
+                  {
+                    val: getDynamicContent('strategy_stat_1_val', 'strategy.stats.s1_val') || '24',   
+                    unit: getDynamicContent('strategy_stat_1_unit', 'strategy.stats.durationUnit') || ' Ay', 
+                    label: getDynamicContent('strategy_stat_1_label', 'strategy.stats.duration') || 'Proje Süresi'
+                  },
+                  {
+                    val: getDynamicContent('strategy_stat_2_val', 'strategy.stats.s2_val') || '250', 
+                    unit: getDynamicContent('strategy_stat_2_unit', 'strategy.stats.s2_unit') || 'K €', 
+                    label: getDynamicContent('strategy_stat_2_label', 'strategy.stats.grant') || 'Toplam Hibe'
+                  },
+                  {
+                    val: getDynamicContent('strategy_stat_3_val', 'strategy.stats.s3_val') || '2025', 
+                    unit: getDynamicContent('strategy_stat_3_unit', 'strategy.stats.s3_unit') || '→ 2027', 
+                    label: getDynamicContent('strategy_stat_3_label', 'strategy.stats.period') || 'Proje Dönemi'
+                  },
+                  {
+                    val: getDynamicContent('strategy_stat_4_val', 'strategy.stats.s4_val') || '3',  
+                    unit: getDynamicContent('strategy_stat_4_unit', 'strategy.stats.s4_unit') || '', 
+                    label: getDynamicContent('strategy_stat_4_label', 'strategy.stats.recycle') || 'Konsorsiyum'
+                  },
                 ].map((s,i) => (
                   <div className="stat" key={i}>
                     <div className="stat-v">{s.val}<span className="stat-u">{s.unit}</span></div>
@@ -218,9 +254,9 @@ export default function StrategyPage() {
               </div>
 
               {/* ── KART A ── */}
-              <SectionCard accent="#2563eb" letter="A" title={getDynamicContent('strategy_section_a_title', 'strategy.cardA.titleDefault')}>
-                <p className="body-text">{getDynamicContent('strategy_text_a_1', 'strategy.cardA.text1Default')}</p>
-                <p className="body-text">{getDynamicContent('strategy_text_a_2', 'strategy.cardA.text2Default')}</p>
+              <SectionCard accent="#2563eb" letter="A" title={getDynamicContent('strategy_section_a_title', 'strategy.cardA.titleDefault') || 'Proje Kimliği ve Temel Bilgiler'}>
+                <p className="body-text">{getDynamicContent('strategy_text_a_1', 'strategy.cardA.text1Default') || 'Bu rapor, Kapaklı Belediyesi tarafından sunulan ve Erasmus+ programı kapsamında desteklenen "Vatandaş Odaklı Yerel Yeşil Gelecek için Dijital Dönüşüm" (DIGI-GREEN FUTURE) başlıklı projenin kapsamlı bir sunumunu sağlamak amacıyla hazırlanmıştır.'}</p>
+                <p className="body-text">{getDynamicContent('strategy_text_a_2', 'strategy.cardA.text2Default') || 'Toplam 24 ay sürecek olan proje, belirlenen takvim aralığında gerçekleştirilecek olup, projenin başarıyla yürütülmesi için sabit bir hibe tahsis edilmiştir.'}</p>
                 <div className="pill-grid">
                   {pillsA.map((p,i) => (
                     <div className="pill blue-pill" key={i}>
@@ -232,11 +268,11 @@ export default function StrategyPage() {
               </SectionCard>
 
               {/* ── KART B ── */}
-              <SectionCard accent="#16a34a" letter="B" title={getDynamicContent('strategy_section_b_title', 'strategy.cardB.titleDefault')} reverse>
-                <p className="body-text">{getDynamicContent('strategy_text_b', 'strategy.cardB.textDefault')}</p>
+              <SectionCard accent="#16a34a" letter="B" title={getDynamicContent('strategy_section_b_title', 'strategy.cardB.titleDefault') || 'Projenin Ruhu: Gerekçe ve Motivasyon'} reverse>
+                <p className="body-text">{getDynamicContent('strategy_text_b', 'strategy.cardB.textDefault') || 'Projemiz, iklim kriziyle mücadelede yerel yönetimler ve vatandaşların aktif rol alması gerekliliğinden doğmuştur. Endüstriyel bölgelerdeki acil çevresel sorunlara odaklanmaktayız.'}</p>
                 <blockquote className="bq">
                   <span className="bq-mark">"</span>
-                  <p>{getDynamicContent('strategy_quote', 'strategy.cardB.quoteDefault')}</p>
+                  <p>{getDynamicContent('strategy_quote', 'strategy.cardB.quoteDefault') || 'Temel felsefemiz; dijitalleşmeyi amaç değil, çevresel sürdürülebilirlik hedeflerine ulaşmak için güçlü bir araç olarak kullanmaktır.'}</p>
                 </blockquote>
                 <div className="pill-grid">
                   {pillsB.map((p,i) => (
@@ -249,8 +285,8 @@ export default function StrategyPage() {
               </SectionCard>
 
               {/* ── KART C ── */}
-              <SectionCard accent="#ea580c" letter="C" title={getDynamicContent('strategy_section_c_title', 'strategy.cardC.titleDefault')}>
-                <p className="body-text">{getDynamicContent('strategy_text_c', 'strategy.cardC.textDefault')}</p>
+              <SectionCard accent="#ea580c" letter="C" title={getDynamicContent('strategy_section_c_title', 'strategy.cardC.titleDefault') || 'Avrupa Politikalarıyla Stratejik Uyum'}>
+                <p className="body-text">{getDynamicContent('strategy_text_c', 'strategy.cardC.textDefault') || 'DIGI-GREEN FUTURE, Erasmus+ programının üç temel yatay önceliğiyle doğrudan uyumlu çalışmaktadır.'}</p>
                 <div className="priority-grid">
                   {priorities.map((p,i) => (
                     <div className="prio-item" key={i}>

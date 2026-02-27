@@ -344,69 +344,94 @@ export default function AboutPage() {
     return () => observer.disconnect();
   }, [loading]);
 
-  // ✨ AKILLI YEDEKLEME SİSTEMİ EKLENDİ (Boş kalmasını veya hata vermesini önler)
   const getDynamicContent = (trKey, defaultTranslationKey) => {
     if (language === 'en') {
       const enKey = `${trKey}_en`;
-      if (content[enKey] && content[enKey].trim() !== '') return content[enKey];
+      if (typeof content[enKey] === 'string' && content[enKey].trim() !== '') return content[enKey];
       
       const translation = t(defaultTranslationKey);
-      if (translation !== defaultTranslationKey) return translation;
+      if (translation !== defaultTranslationKey && translation.trim() !== '') return translation;
       
-      if (content[trKey] && content[trKey].trim() !== '') return content[trKey];
+      if (typeof content[trKey] === 'string' && content[trKey].trim() !== '') return content[trKey];
     }
     
-    if (content[trKey] && content[trKey].trim() !== '') return content[trKey];
-    return t(defaultTranslationKey);
+    if (typeof content[trKey] === 'string' && content[trKey].trim() !== '') return content[trKey];
+    return t(defaultTranslationKey) !== defaultTranslationKey ? t(defaultTranslationKey) : '';
+  };
+
+  const getSuffix = (key, fallback) => {
+    if (language === 'en' && typeof content[`${key}_en`] === 'string') return content[`${key}_en`];
+    if (typeof content[key] === 'string') return content[key];
+    return fallback;
+  };
+
+  // KÜNYE (SPEC) Değerlerini Doğrudan Çeker
+  const getSpecValue = (key, fallback) => {
+    if (language === 'en' && typeof content[`${key}_en`] === 'string' && content[`${key}_en`].trim() !== '') return content[`${key}_en`];
+    if (typeof content[key] === 'string' && content[key].trim() !== '') return content[key];
+    return fallback;
   };
 
   if (loading) {
     return (
       <div className="loading-screen">
         <div className="spinner"></div>
-        <span>{t('about.loading')}</span>
+        <span>{t('about.loading') !== 'about.loading' ? t('about.loading') : 'Yükleniyor...'}</span>
       </div>
     );
   }
 
-  // ✨ İSTATİSTİKLER (ARTIK TAMAMEN DİNAMİK)
   const stats = [
     { 
       value: parseInt(content.about_stat_1_val) || 500, 
-      suffix: getDynamicContent('about_stat_1_suffix', 'about.stats.s1_suffix') || '+', 
-      label: getDynamicContent('about_stat_1_label', 'about.stats.s1') 
+      suffix: getSuffix('about_stat_1_suffix', '+'), 
+      label: getDynamicContent('about_stat_1_label', 'about.stats.s1') || 'Katılımcı'
     },
     { 
       value: parseInt(content.about_stat_2_val) || 29, 
-      suffix: getDynamicContent('about_stat_2_suffix', 'about.stats.s2_suffix') || '%', 
-      label: getDynamicContent('about_stat_2_label', 'about.stats.s2') 
+      suffix: getSuffix('about_stat_2_suffix', '%'), 
+      label: getDynamicContent('about_stat_2_label', 'about.stats.s2') || 'Eğitim Oranı'
     },
     { 
       value: parseInt(content.about_stat_3_val) || 24, 
-      suffix: getDynamicContent('about_stat_3_suffix', 'about.stats.s3_suffix') || '', 
-      label: getDynamicContent('about_stat_3_label', 'about.stats.s3') 
+      suffix: getSuffix('about_stat_3_suffix', ''), 
+      label: getDynamicContent('about_stat_3_label', 'about.stats.s3') || 'Aylık Süre'
     },
     { 
       value: parseInt(content.about_stat_4_val) || 3, 
-      suffix: getDynamicContent('about_stat_4_suffix', 'about.stats.s4_suffix') || '+', 
-      label: getDynamicContent('about_stat_4_label', 'about.stats.s4') 
+      suffix: getSuffix('about_stat_4_suffix', '+'), 
+      label: getDynamicContent('about_stat_4_label', 'about.stats.s4') || 'Ortak Ülke'
     },
   ];
 
-  // ✨ HEDEF KİTLE (ARTIK TAMAMEN DİNAMİK)
   const targets = [
     { num: '01', title: getDynamicContent('about_target_1_title', 'about.target.t1Title'), desc: getDynamicContent('about_target_1_desc', 'about.target.t1Desc') },
     { num: '02', title: getDynamicContent('about_target_2_title', 'about.target.t2Title'), desc: getDynamicContent('about_target_2_desc', 'about.target.t2Desc') },
     { num: '03', title: getDynamicContent('about_target_3_title', 'about.target.t3Title'), desc: getDynamicContent('about_target_3_desc', 'about.target.t3Desc') },
   ];
 
-  // ✨ PROJE KÜNYESİ (ARTIK TAMAMEN DİNAMİK)
+  // ✨ KÜNYE: HEM SOL TARAF (LABEL) HEM SAĞ TARAF (VALUE) DİNAMİK YAPILDI ✨
   const tableRows = [
-    { label: t('about.spec.r1Label'), key: 'about_project_name',     defaultTranslation: 'about.spec.r1Default' },
-    { label: t('about.spec.r2Label'), key: 'about_project_code',     defaultTranslation: 'about.spec.r2Default' },
-    { label: t('about.spec.r3Label'), key: 'about_project_program',  defaultTranslation: 'about.spec.r3Default' },
-    { label: t('about.spec.r4Label'), key: 'about_project_duration', defaultTranslation: 'about.spec.r4Default' },
-    { label: t('about.spec.r5Label'), key: 'about_project_budget',   defaultTranslation: 'about.spec.r5Default' },
+    { 
+      label: getSpecValue('about_project_name_label', 'Proje Adı'), 
+      value: getSpecValue('about_project_name', 'DIGI-GREEN FUTURE') 
+    },
+    { 
+      label: getSpecValue('about_project_code_label', 'Proje Kodu'), 
+      value: getSpecValue('about_project_code', '2023-1-TR01-KA220-ADU-00015421') 
+    },
+    { 
+      label: getSpecValue('about_project_program_label', 'Program'), 
+      value: getSpecValue('about_project_program', 'Erasmus+ Yetişkin Eğitimi') 
+    },
+    { 
+      label: getSpecValue('about_project_duration_label', 'Süre'), 
+      value: getSpecValue('about_project_duration', '24 Ay (Aralık 2023 - Kasım 2025)') 
+    },
+    { 
+      label: getSpecValue('about_project_budget_label', 'Bütçe'), 
+      value: getSpecValue('about_project_budget', '250.000 €') 
+    },
   ];
 
   return (
@@ -414,7 +439,7 @@ export default function AboutPage() {
       
       <NetworkBackground />
 
-      {/* 1️⃣ HERO (ARTIK TAMAMEN DİNAMİK) */}
+      {/* 1️⃣ HERO */}
       <section className="hero">
         <HeroAnimation />
         <div className="container" style={{ position: 'relative', zIndex: 2 }}>
@@ -429,7 +454,7 @@ export default function AboutPage() {
         </div>
       </section>
 
-      {/* 2️⃣ VİZYON (ARTIK TAMAMEN DİNAMİK) */}
+      {/* 2️⃣ VİZYON */}
       <section className="section">
         <div className="container grid-2 align-center">
           <div className="reveal">
@@ -445,7 +470,7 @@ export default function AboutPage() {
             </ul>
           </div>
           <div className="reveal image-wrapper">
-            <img src={content.home_about_image || "https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?auto=format&fit=crop&q=80&w=800"} alt="Yeşil Şehir" />
+            <img src={content.about_vision_image || "https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?auto=format&fit=crop&q=80&w=800"} alt="Yeşil Şehir" />
           </div>
         </div>
       </section>
@@ -487,25 +512,26 @@ export default function AboutPage() {
         </div>
       </section>
 
-      {/* 5️⃣ PROJE KÜNYESİ */}
+      {/* 5️⃣ PROJE KÜNYESİ (Güncellenen Kısım) */}
       <section className="section">
         <div className="container narrow">
           <div className="reveal mb-5">
-            <span className="section-label">{getDynamicContent('about_spec_label', 'about.spec.label')}</span>
-            <h2 className="section-title" style={{ marginBottom: 0 }}>{getDynamicContent('about_spec_title', 'about.spec.title')}</h2>
+            <span className="section-label">{getDynamicContent('about_spec_label', 'about.spec.label') || 'ÖZET BİLGİ'}</span>
+            <h2 className="section-title" style={{ marginBottom: 0 }}>{getDynamicContent('about_spec_title', 'about.spec.title') || 'Proje Künyesi'}</h2>
           </div>
           <div className="spec-sheet reveal">
             {tableRows.map((row, i) => (
               <div key={i} className="spec-row">
+                {/* SOL TARAF VE SAĞ TARAF İÇİN YENİ YAPI */}
                 <div className="spec-label">{row.label}</div>
-                <div className="spec-value">{getDynamicContent(row.key, row.defaultTranslation)}</div>
+                <div className="spec-value">{row.value}</div>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* 6️⃣ CTA (ARTIK TAMAMEN DİNAMİK) */}
+      {/* 6️⃣ CTA */}
       <section className="cta-section reveal">
         <div className="cta-container">
           <div className="cta-glow"></div>
@@ -518,7 +544,7 @@ export default function AboutPage() {
               {getDynamicContent('about_cta_desc', 'about.cta.desc')}
             </p>
             <div className="cta-actions">
-              <ContactButton href="/contact" text={getDynamicContent('about_cta_button', 'about.cta.button')} />
+              <ContactButton href="/contact" text={getDynamicContent('about_cta_button', 'about.cta.button') || 'İletişime Geç'} />
             </div>
           </div>
         </div>
