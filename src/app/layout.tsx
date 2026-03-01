@@ -25,11 +25,28 @@ export async function generateMetadata() {
     ? `${settings['header_logo_image']}?v=${new Date().getTime()}` 
     : '/favicon.ico';
 
+  // ✨ GOOGLE SEO ve SOSYAL MEDYA (OPENGRAPH) ETİKETLERİ EKLENDİ ✨
   return {
-    title: 'DIGI-GREEN FUTURE | Kapaklı Belediyesi',
-    description: 'Vatandaş Odaklı Yerel Yeşil Gelecek için Dijital Dönüşüm - Erasmus+ Projesi',
+    title: 'DIGI-GREEN FUTURE | Dijital Yeşil Dönüşüm',
+    description: 'Kapaklı Belediyesi liderliğinde yürütülen, iklim değişikliği ile mücadelede dijital araçları kullanmayı hedefleyen Erasmus+ projesi.',
+    keywords: 'çevre, dijital dönüşüm, sürdürülebilirlik, erasmus+, kapaklı belediyesi, yeşil gelecek',
     icons: {
       icon: logoUrl,
+    },
+    openGraph: {
+      title: 'DIGI-GREEN FUTURE',
+      description: 'Vatandaş Odaklı Yerel Yeşil Gelecek İçin Dijital Dönüşüm Projesi',
+      url: 'https://digigreenfuture.eu', // Canlıya aldığında buraya kendi alan adını yazarsın
+      siteName: 'DIGI-GREEN FUTURE',
+      images: [
+        {
+          url: '/assets/images/eu-flag.png', // Sosyal medyada paylaşıldığında çıkacak resim
+          width: 800,
+          height: 600,
+        },
+      ],
+      locale: 'tr_TR',
+      type: 'website',
     },
   }
 }
