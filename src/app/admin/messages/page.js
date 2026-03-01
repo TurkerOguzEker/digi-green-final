@@ -77,8 +77,7 @@ export default function MessagesPage() {
   const showConfirm = (message, onConfirm) => setModal({ isOpen: true, message, onConfirm });
   const closeConfirm = () => setModal({ ...modal, isOpen: false });
   const handleConfirmAction = () => { if (modal.onConfirm) modal.onConfirm(); closeConfirm(); };
-
-  useEffect(() => {
+useEffect(() => {
     async function checkSessionAndLoad() {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) { router.push('/login'); return; }
@@ -94,9 +93,15 @@ export default function MessagesPage() {
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'contact_messages' },
         (payload) => {
+          console.log("🚨 SİSTEME YENİ MESAJ DÜŞTÜ:", payload.new); // Gizli kontrol noktası
           showToast('🔔 Yeni bir iletişim mesajı aldınız!', 'success');
-          // Yeni mesajı listenin en başına ekle
-          setMessages(prev => [payload.new, ...prev]);
+          
+          // Yeni mesajı listenin en başına ekle (Tüm listeyi koruyarak)
+          setMessages(prev => {
+            // Eğer mesaj zaten listedeyse (çift tetiklenmeyi önlemek için) ekleme
+            if (prev.find(m => m.id === payload.new.id)) return prev;
+            return [payload.new, ...prev];
+          });
         }
       )
       .subscribe();
