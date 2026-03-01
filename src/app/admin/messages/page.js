@@ -78,36 +78,46 @@ export default function MessagesPage() {
   const closeConfirm = () => setModal({ ...modal, isOpen: false });
   const handleConfirmAction = () => { if (modal.onConfirm) modal.onConfirm(); closeConfirm(); };
 useEffect(() => {
-    async function checkSessionAndLoad() {
+    let messageChannel;
+
+    async function initPage() {
+      // 1. Önce kullanıcının giriş yaptığından (Oturumdan) %100 emin oluyoruz
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) { router.push('/login'); return; }
+      
       setCurrentUser(session.user);
-      await fetchInitialData();
-    }
-    checkSessionAndLoad();
 
-    // ✨ ADIM 6: CANLI MESAJ BİLDİRİMLERİ (REALTIME) ✨
-    const messageChannel = supabase
-      .channel('messages-channel')
-      .on(
-        'postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'contact_messages' },
-        (payload) => {
-          console.log("🚨 SİSTEME YENİ MESAJ DÜŞTÜ:", payload.new); // Gizli kontrol noktası
-          showToast('🔔 Yeni bir iletişim mesajı aldınız!', 'success');
-          
-          // Yeni mesajı listenin en başına ekle (Tüm listeyi koruyarak)
-          setMessages(prev => {
-            // Eğer mesaj zaten listedeyse (çift tetiklenmeyi önlemek için) ekleme
-            if (prev.find(m => m.id === payload.new.id)) return prev;
-            return [payload.new, ...prev];
-          });
-        }
-      )
-      .subscribe();
+      // ✨ VERCEL İÇİN SİHİRLİ YAMA: Token'ı canlı yayına zorla iletiyoruz!
+      supabase.realtime.setAuth(session.access_token);
+
+      await fetchInitialData();
+
+      // 2. Oturum doğrulandıktan SONRA Canlı Yayına (Realtime) bağlanıyoruz
+      messageChannel = supabase
+        .channel('messages-channel')
+        .on(
+          'postgres_changes',
+          { event: 'INSERT', schema: 'public', table: 'contact_messages' },
+          (payload) => {
+            console.log("CANLI YAYIN: YENİ MESAJ GELDİ!", payload.new);
+            showToast('Yeni bir iletişim mesajı aldınız!', 'success');
+            
+            setMessages(prev => {
+              // Çift eklemeyi önlemek için kontrol
+              if (prev.find(m => m.id === payload.new.id)) return prev;
+              return [payload.new, ...prev];
+            });
+          }
+        )
+        .subscribe((status) => {
+          console.log("📡 Mesajlar Sayfası Realtime Durumu:", status);
+        });
+    }
+
+    initPage();
 
     return () => {
-      supabase.removeChannel(messageChannel);
+      if (messageChannel) supabase.removeChannel(messageChannel);
     };
   }, [router]);
 

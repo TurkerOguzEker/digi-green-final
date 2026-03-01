@@ -262,25 +262,40 @@ const [currentUser, setCurrentUser] = useState(null);
   const closeConfirm = () => setModal({ ...modal, isOpen: false });
   const handleConfirmAction = () => { if (modal.onConfirm) modal.onConfirm(); closeConfirm(); };
   
- useEffect(() => { 
-    checkSessionAndLoad(); 
+useEffect(() => { 
+    let messageChannel;
 
-    // ✨ ADIM 6: CANLI MESAJ BİLDİRİMLERİ (REALTIME) ✨
-    const messageChannel = supabase
-      .channel('custom-insert-channel')
-      .on(
-        'postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'contact_messages' },
-        (payload) => {
-          showToast('🔔 Yeni bir iletişim mesajı aldınız!', 'success');
-          // Sol menüdeki rozet ve Mesajlar tablosu anında güncellensin
-          setMessages(prev => [payload.new, ...prev]);
-        }
-      )
-      .subscribe();
+    async function initRealtime() {
+      // 1. Önce tüm verileri ve oturumu yüklemesini bekle
+      await checkSessionAndLoad(); 
+
+      // ✨ VERCEL İÇİN SİHİRLİ YAMA ✨
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) supabase.realtime.setAuth(session.access_token);
+
+      // 2. İşlem bitince Canlı Yayına bağlan
+      messageChannel = supabase
+        .channel('admin-global-messages')
+        .on(
+          'postgres_changes',
+          { event: 'INSERT', schema: 'public', table: 'contact_messages' },
+          (payload) => {
+            showToast('Yeni bir iletişim mesajı aldınız!', 'success');
+            setMessages(prev => {
+              if (prev.find(m => m.id === payload.new.id)) return prev;
+              return [payload.new, ...prev];
+            });
+          }
+        )
+        .subscribe((status) => {
+           console.log("📡 Ana Panel Realtime Durumu:", status);
+        });
+    }
+
+    initRealtime();
 
     return () => {
-      supabase.removeChannel(messageChannel);
+      if (messageChannel) supabase.removeChannel(messageChannel);
     };
   }, []);
 
