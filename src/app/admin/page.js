@@ -4,10 +4,11 @@ import { useRouter } from 'next/navigation';
 import { supabase } from '../../lib/supabase';
 import Link from 'next/link';
 import '../globals.css';
-// ✨ YENİ: Zengin Metin Editörü İçin Eklendi
+
+// ✨ ZENGİN METİN EDİTÖRÜ (REACT QUILL) EKLENDİ ✨
 import dynamic from 'next/dynamic';
-import 'react-quill/dist/quill.snow.css';
-const ReactQuill = dynamic(() => import('react-quill'), { ssr: false });
+import 'react-quill-new/dist/quill.snow.css';
+const ReactQuill = dynamic(() => import('react-quill-new'), { ssr: false });
 
 const quillModules = {
   toolbar: [
@@ -51,7 +52,6 @@ const DEFAULTS = {
   home_cta_title: "Geleceği Birlikte Tasarlayalım",
   home_cta_text: "Daha fazla bilgi almak için bize ulaşın.",
   
-  // HAKKINDA ALT SAYFALARI
   about_general_title: "Hakkımızda", about_general_title_en: "About Us",
   about_consortium_title: "Konsorsiyum", about_consortium_title_en: "Consortium",
   about_impact_title: "Proje Etkisi", about_impact_title_en: "Project Impact",
@@ -59,7 +59,6 @@ const DEFAULTS = {
   about_roadmap_title: "Yol Haritası", about_roadmap_title_en: "Roadmap",
   about_strategy_title: "Strateji", about_strategy_title_en: "Strategy",
 
-  // STRATEJİ (Gerçek metinler)
   about_strategy_desc: "Bu rapor, Kapaklı Belediyesi tarafından sunulan ve Erasmus+ programı kapsamında desteklenen projenin kapsamlı bir sunumudur.",
   about_strategy_desc_en: "This report provides a comprehensive presentation of the project supported by the Erasmus+ program.",
   strategy_section_a_title: "A. Proje Kimliği ve Temel Bilgiler",
@@ -263,7 +262,27 @@ const [currentUser, setCurrentUser] = useState(null);
   const closeConfirm = () => setModal({ ...modal, isOpen: false });
   const handleConfirmAction = () => { if (modal.onConfirm) modal.onConfirm(); closeConfirm(); };
   
-  useEffect(() => { checkSessionAndLoad(); }, []);
+ useEffect(() => { 
+    checkSessionAndLoad(); 
+
+    // ✨ ADIM 6: CANLI MESAJ BİLDİRİMLERİ (REALTIME) ✨
+    const messageChannel = supabase
+      .channel('custom-insert-channel')
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'contact_messages' },
+        (payload) => {
+          showToast('🔔 Yeni bir iletişim mesajı aldınız!', 'success');
+          // Sol menüdeki rozet ve Mesajlar tablosu anında güncellensin
+          setMessages(prev => [payload.new, ...prev]);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(messageChannel);
+    };
+  }, []);
 
 async function checkSessionAndLoad() {
     const { data: { session } } = await supabase.auth.getSession();
@@ -285,54 +304,56 @@ async function checkSessionAndLoad() {
   }
 
   async function loadAllData() {
-    const s = await supabase.from('settings').select('*').order('id');
-    const n = await supabase.from('news').select('*').order('date', { ascending: false });
-    const a = await supabase.from('activities').select('*').order('id', { ascending: false });
-    const p = await supabase.from('partners').select('*').order('id');
-    const r = await supabase.from('results').select('*').order('id');
-    
-    // YENİ EKLENEN: Ana menüde hala mesaj sayısını (badge) göstermek için çekiyoruz.
-    const m = await supabase.from('contact_messages').select('*');
-
-   // Gerçek logları veritabanından çekiyoruz
-    const { data: logData, error: logError } = await supabase
-      .from('admin_logs')
-      .select('*')
-      .order('created_at', { ascending: false })
-      .limit(50);
+    try {
+      const s = await supabase.from('settings').select('*').order('id');
+      const n = await supabase.from('news').select('*').order('date', { ascending: false });
+      const a = await supabase.from('activities').select('*').order('id', { ascending: false });
+      const p = await supabase.from('partners').select('*').order('id');
+      const r = await supabase.from('results').select('*').order('id');
       
-    if (logError) {
-      console.error("Supabase Log ÇEKME Hatası:", logError.message);
-    }
-      
-    setLogs(logData || []);
+      const { data: mData, error: mError } = await supabase.from('contact_messages').select('*');
+      if (mError) console.warn("Contact Messages tablosu henüz yok, boş geçiliyor.");
 
-    const existingSettings = s.data || [];
-    setSettings(existingSettings);
-    setNews(n.data || []);
-    setActivities(a.data || []);
-    setPartners(p.data || []);
-    setResults(r.data || []);
-    setMessages(m.data || []); // YENİ EKLENEN
+      const { data: logData, error: logError } = await supabase
+        .from('admin_logs')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(50);
+        
+      if (logError) console.error("Supabase Log ÇEKME Hatası:", logError.message);
+        
+      setLogs(logData || []);
 
-    const heroSliderStr = existingSettings.find(x => x.key === 'hero_slider_images')?.value;
-    if (heroSliderStr) { try { setHeroImages(JSON.parse(heroSliderStr)); } catch(e){} }
-    else {
-      const oldHeroBg = existingSettings.find(x => x.key === 'hero_bg_image')?.value;
-      if (oldHeroBg) setHeroImages([oldHeroBg]);
-    }
+      const existingSettings = s.data || [];
+      setSettings(existingSettings);
+      setNews(n.data || []);
+      setActivities(a.data || []);
+      setPartners(p.data || []);
+      setResults(r.data || []);
+      setMessages(mData || []); 
 
-    // AĞAÇ YAPISI VERİSİNİ ÇEKME
-    const ecoStr = existingSettings.find(x => x.key === 'home_eco_list')?.value;
-    if (ecoStr) { 
-        try { setEcoItems(JSON.parse(ecoStr)); } catch(e){} 
-    } else {
-        setEcoItems([
-            { title: 'Mobil Uygulama', desc: 'Vatandaşlara yönelik dijital araçlar.', icon: 'fa-mobile-screen' },
-            { title: 'Geri Dönüşüm', desc: 'Çevre dostu alışkanlıklar.', icon: 'fa-recycle' },
-            { title: 'Eğitim', desc: 'Farkındalık ve kapasite geliştirme.', icon: 'fa-graduation-cap' },
-            { title: 'Doğa', desc: 'Sürdürülebilir yaşam pratikleri.', icon: 'fa-leaf' }
-        ]);
+      const heroSliderStr = existingSettings.find(x => x.key === 'hero_slider_images')?.value;
+      if (heroSliderStr) { try { setHeroImages(JSON.parse(heroSliderStr)); } catch(e){} }
+      else {
+        const oldHeroBg = existingSettings.find(x => x.key === 'hero_bg_image')?.value;
+        if (oldHeroBg) setHeroImages([oldHeroBg]);
+      }
+
+      const ecoStr = existingSettings.find(x => x.key === 'home_eco_list')?.value;
+      if (ecoStr) { 
+          try { setEcoItems(JSON.parse(ecoStr)); } catch(e){} 
+      } else {
+          setEcoItems([
+              { title: 'Mobil Uygulama', desc: 'Vatandaşlara yönelik dijital araçlar.', icon: 'fa-mobile-screen' },
+              { title: 'Geri Dönüşüm', desc: 'Çevre dostu alışkanlıklar.', icon: 'fa-recycle' },
+              { title: 'Eğitim', desc: 'Farkındalık ve kapasite geliştirme.', icon: 'fa-graduation-cap' },
+              { title: 'Doğa', desc: 'Sürdürülebilir yaşam pratikleri.', icon: 'fa-leaf' }
+          ]);
+      }
+    } catch (error) {
+      console.error("Veriler yüklenirken genel bir hata oluştu:", error);
+    } finally {
+      setLoading(false);
     }
   }
 
@@ -879,7 +900,7 @@ async function checkSessionAndLoad() {
                   {subTab === 'general' && (
                     <div className="adm-fade-in">
                       
-                      {/* --- 1. HERO BÖLÜMÜ --- */}
+                      {/* --- 1. HERO BÖLÜM --- */}
                       <SectionHeader num="1" title="Hero (Giriş) Bölümü" />
                       <div className="adm-form-grid2">
                         <SettingInput label="Üst Ufak Başlık (TR)" settingKey="about_hero_eyebrow" {...commonProps} />
@@ -1833,15 +1854,20 @@ async function checkSessionAndLoad() {
                         </div>
                     </div>
 
-                    <div className="adm-form-grid2">
+                  {/* ✨ HABERLER ZENGİN METİN EDİTÖRÜ ✨ */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
                         <div className="adm-form-item">
                           <label>Detaylı İçerik (TR)</label>
-                          <textarea className="adm-textarea-full" placeholder="Haberin tam içeriği..." value={newsForm.description} onChange={e => setNewsForm({...newsForm, description: e.target.value})} rows={7} />
+                          <div style={{ borderRadius: '8px', overflow: 'hidden' }}>
+                            <ReactQuill theme="snow" modules={quillModules} value={newsForm.description || ''} onChange={val => setNewsForm({...newsForm, description: val})} />
+                          </div>
                         </div>
                         <div className="adm-form-item">
-                          <label>Detaylı İçerik (EN)</label>
-                          <textarea className="adm-textarea-full" placeholder="Full content..." value={newsForm.description_en} onChange={e => setNewsForm({...newsForm, description_en: e.target.value})} rows={7} />
-                        </div>
+  <label>Detaylı İçerik (EN)</label>
+  <div style={{ borderRadius: '8px', overflow: 'hidden' }}>
+   <ReactQuill theme="snow" modules={quillModules} value={newsForm.description_en || ''} onChange={val => setNewsForm({...newsForm, description_en: val})} />
+</div>
+</div>
                     </div>
 
                     <button type="submit" className="adm-form-submit">
@@ -1972,15 +1998,20 @@ async function checkSessionAndLoad() {
                         </div>
                     </div>
 
-                    <div className="adm-form-grid2">
+                    {/* ✨ FAALİYETLER ZENGİN METİN EDİTÖRÜ ✨ */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
                         <div className="adm-form-item">
                           <label>Detaylı Açıklama (TR)</label>
-                          <textarea className="adm-textarea-full" placeholder="Detaylı..." value={activityForm.description} onChange={e => setActivityForm({...activityForm, description: e.target.value})} rows={6} />
+                          <div style={{ borderRadius: '8px', overflow: 'hidden' }}>
+                            <ReactQuill theme="snow" modules={quillModules} value={activityForm.description || ''} onChange={val => setActivityForm({...activityForm, description: val})} />
+                          </div>
                         </div>
                         <div className="adm-form-item">
-                          <label>Detaylı Açıklama (EN)</label>
-                          <textarea className="adm-textarea-full" placeholder="Detailed..." value={activityForm.description_en} onChange={e => setActivityForm({...activityForm, description_en: e.target.value})} rows={6} />
-                        </div>
+  <label>Detaylı Açıklama (EN)</label>
+  <div style={{ borderRadius: '8px', overflow: 'hidden' }}>
+   <ReactQuill theme="snow" modules={quillModules} value={activityForm.description_en || ''} onChange={val => setActivityForm({...activityForm, description_en: val})} />
+</div>
+</div>
                     </div>
 
                     <button type="submit" className="adm-form-submit">

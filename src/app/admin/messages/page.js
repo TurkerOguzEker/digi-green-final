@@ -1,3 +1,4 @@
+// src/app/admin/messages/page.js
 'use client';
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
@@ -85,6 +86,24 @@ export default function MessagesPage() {
       await fetchInitialData();
     }
     checkSessionAndLoad();
+
+    // ✨ ADIM 6: CANLI MESAJ BİLDİRİMLERİ (REALTIME) ✨
+    const messageChannel = supabase
+      .channel('messages-channel')
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'contact_messages' },
+        (payload) => {
+          showToast('🔔 Yeni bir iletişim mesajı aldınız!', 'success');
+          // Yeni mesajı listenin en başına ekle
+          setMessages(prev => [payload.new, ...prev]);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(messageChannel);
+    };
   }, [router]);
 
   async function fetchInitialData() {

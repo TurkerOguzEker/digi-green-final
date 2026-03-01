@@ -35,19 +35,10 @@ export default function ActivityDetailClient({ activity }) {
           </Link>
 
           <div className="content-box">
-             <div className="description-text">
-                {displayDesc ? (
-                   displayDesc.split('\n').map((paragraph, idx) => (
-                      <p key={idx}>
-                        {paragraph}
-                      </p>
-                   ))
-                ) : (
-                   <p>
-                     {displaySummary}
-                   </p>
-                )}
-             </div>
+             <div 
+                className="description-text quill-content" 
+                dangerouslySetInnerHTML={{ __html: displayDesc || displaySummary }} 
+             />
           </div>
         </div>
       </section>
