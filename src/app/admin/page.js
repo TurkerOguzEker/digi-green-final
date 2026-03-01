@@ -100,6 +100,7 @@ const Toast = ({ message, type, onClose }) => {
     </div>
   );
 };
+
 /* ─── KULLANILABİLİR İKONLAR LİSTESİ ─── */
 const AVAILABLE_ICONS = [
   { value: 'fa-leaf', label: 'Yaprak / Doğa' },
@@ -121,6 +122,7 @@ const AVAILABLE_ICONS = [
   { value: 'fa-bolt', label: 'Enerji / Hız' },
   { value: 'fa-bullhorn', label: 'Duyuru / Kampanya' }
 ];
+
 /* ─── CONFIRM MODAL ──────────────────────────────────────────────────── */
 const ConfirmModal = ({ isOpen, message, onConfirm, onCancel }) => {
   if (!isOpen) return null;
@@ -269,9 +271,18 @@ export default function AdminPage() {
     // YENİ EKLENEN: Ana menüde hala mesaj sayısını (badge) göstermek için çekiyoruz.
     const m = await supabase.from('contact_messages').select('*');
 
-    setLogs([
-      { id: 1, action: "Admin Paneline Giriş Yapıldı", date: new Date().toLocaleString('tr-TR'), ip: "192.168.1.1" }
-    ]);
+   // Gerçek logları veritabanından çekiyoruz
+    const { data: logData, error: logError } = await supabase
+      .from('admin_logs')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .limit(50);
+      
+    if (logError) {
+      console.error("Supabase Log ÇEKME Hatası:", logError.message);
+    }
+      
+    setLogs(logData || []);
 
     const existingSettings = s.data || [];
     setSettings(existingSettings);
@@ -343,9 +354,17 @@ export default function AdminPage() {
 
   async function uploadFile(file) {
     if (!file) return null;
-    const fileName = `${Date.now()}_${Math.random().toString(36).substring(2)}.${file.name.split('.').pop()}`;
+    
+    // Math.random yerine çok daha güvenli olan crypto.randomUUID() kullanıyoruz.
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${Date.now()}_${crypto.randomUUID()}.${fileExt}`;
+    
     const { error } = await supabase.storage.from('images').upload(fileName, file);
-    if (error) { showToast('Yükleme Hatası: ' + error.message, 'error'); return null; }
+    if (error) { 
+      showToast('Yükleme Hatası: ' + error.message, 'error'); 
+      return null; 
+    }
+    
     const { data: { publicUrl } } = supabase.storage.from('images').getPublicUrl(fileName);
     return publicUrl;
   }
@@ -363,10 +382,49 @@ export default function AdminPage() {
     if (error) showToast('Hata: ' + error.message, 'error'); else showToast('Ayar kaydedildi.', 'success');
   }
 
-  async function deleteItem(table, id) {
+ // LOG FONKSİYONU
+  async function logAction(actionDescription) {
+    if (!currentUser) return;
+    
+    const { error } = await supabase.from('admin_logs').insert([
+      { 
+        action: actionDescription, 
+        user_email: currentUser.email 
+      }
+    ]);
+    
+    if (error) {
+      console.error("Supabase Log KAYDETME Hatası:", error.message);
+    }
+  }
+
+  async function deleteItem(table, id, fileUrls = []) {
     showConfirm('Bu öğeyi kalıcı olarak silmek istediğinizden emin misiniz?', async () => {
+      
+      // 1. Önce bu öğeye ait resim/dosya varsa onları Supabase Storage'dan silelim
+      if (fileUrls && fileUrls.length > 0) {
+        const fileNamesToDelete = fileUrls
+          .filter(url => url) // Boş olmayan URL'leri al
+          .map(url => {
+            const parts = url.split('/images/');
+            return parts.length > 1 ? parts[1] : null;
+          })
+          .filter(name => name); // null olanları temizle
+
+        if (fileNamesToDelete.length > 0) {
+          try {
+            await supabase.storage.from('images').remove(fileNamesToDelete);
+          } catch (err) {
+            console.error("Storage'dan dosya silinirken hata oluştu:", err);
+          }
+        }
+      }
+
+      // 2. Ardından veritabanından satırı kalıcı olarak sil
       await supabase.from(table).delete().eq('id', id);
-      loadAllData(); showToast('Başarıyla silindi.', 'success');
+      loadAllData(); 
+      showToast('Başarıyla silindi.', 'success');
+      await logAction(`${table} tablosundan bir kayıt silindi. (ID: ${id})`);
     });
   }
 
@@ -376,6 +434,7 @@ export default function AdminPage() {
     let result = id ? await supabase.from(table).update(data).eq('id', id) : await supabase.from(table).insert([data]);
     if (result?.error) { showToast('Hata: ' + result.error.message, 'error'); return; }
     setIsEditing(false); loadAllData(); showToast('Başarıyla kaydedildi.', 'success');
+    await logAction(`${table} tablosunda işlem yapıldı. (Ekleme/Güncelleme)`);
     if (table === 'news') setNewsForm({ id: null, title: '', title_en: '', summary: '', summary_en: '', description: '', description_en: '', image_url: '', date: '' });
     if (table === 'activities') setActivityForm({ id: null, title: '', title_en: '', type: 'Toplantı (TPM)', type_en: '', location: '', location_en: '', date: '', summary: '', summary_en: '', description: '', description_en: '', image_url: '' });
     if (table === 'partners') setPartnerForm({ id: null, name: '', name_en: '', country: '', country_en: '', image_url: '', flag_url: '', website: '', description: '', description_en: '', role: 'Ortak', role_en: '' });
@@ -935,7 +994,7 @@ export default function AdminPage() {
                           <SettingInput label="3. Satır DEĞER (EN)" settingKey="about_project_program_en" placeholder="Erasmus+ Adult Education" {...commonProps} />
                         </div>
 
-                       
+                        
                         <div className="adm-card-inner-label" style={{color:'var(--accent)'}}>4. Satır (Örn: Süre)</div>
                         <div className="adm-form-grid2">
                           <SettingInput label="4. Satır BAŞLIK (TR)" settingKey="about_project_duration_label" placeholder="Süre" {...commonProps} />
@@ -944,7 +1003,7 @@ export default function AdminPage() {
                           <SettingInput label="4. Satır DEĞER (EN)" settingKey="about_project_duration_en" placeholder="24 Months" {...commonProps} />
                         </div>
 
-                       
+                        
 
                         <div className="adm-card-inner-label" style={{color:'var(--accent)'}}>5. Satır (Örn: Bütçe)</div>
                         <div className="adm-form-grid2">
@@ -1364,7 +1423,7 @@ export default function AdminPage() {
 
                       <div className="adm-divider" />
 
-                     {/* --- İSTATİSTİKLER --- */}
+                      {/* --- İSTATİSTİKLER --- */}
                       <SectionHeader num="2" title="Plan İstatistikleri" />
                       <div className="adm-form-grid2">
                         <SettingInput label="Bölüm Etiketi (TR)" settingKey="plan_sec_label" {...commonProps} />
@@ -1526,7 +1585,7 @@ export default function AdminPage() {
 
                       <div className="adm-divider" />
 
-                     {/* --- İSTATİSTİKLER --- */}
+                      {/* --- İSTATİSTİKLER --- */}
                       <SectionHeader num="2" title="Strateji İstatistikleri" />
                       <div className="adm-form-grid2">
                         <SettingInput label="Bölüm Etiketi (TR)" settingKey="strategy_sec_label" {...commonProps} />
@@ -1700,7 +1759,6 @@ export default function AdminPage() {
                       <i className={isEditing ? 'fas fa-pen' : 'fas fa-plus'} />
                       {isEditing ? ' Haberi Düzenle' : ' Yeni Haber Ekle'}
                     </div>
-                    {/* ✨ Otomatik çeviri butonu buradan tamamen kaldırıldı ✨ */}
                   </div>
                   <form onSubmit={e => saveItem(e, 'news', newsForm, setNewsForm)} style={{display:'grid', gap:'14px'}}>
                     
@@ -1767,7 +1825,7 @@ export default function AdminPage() {
                         <button className="adm-btn adm-btn-ghost" onClick={() => startEdit(item, 'news')} style={{height:'32px', fontSize:'0.78rem'}}>
                           <i className="fas fa-pen" /> Düzenle
                         </button>
-                        <button className="adm-btn adm-btn-danger" onClick={() => deleteItem('news', item.id)} style={{height:'32px', fontSize:'0.78rem'}}>
+                        <button className="adm-btn adm-btn-danger" onClick={() => deleteItem('news', item.id, [item.image_url])}>
                           <i className="fas fa-trash" />
                         </button>
                       </div>
@@ -1819,7 +1877,6 @@ export default function AdminPage() {
                       <i className={isEditing ? 'fas fa-pen' : 'fas fa-plus'} />
                       {isEditing ? ' Faaliyeti Düzenle' : ' Yeni Faaliyet Ekle'}
                     </div>
-                    {/* ✨ Otomatik çeviri butonu buradan tamamen kaldırıldı ✨ */}
                   </div>
                   <form onSubmit={e => saveItem(e, 'activities', activityForm, setActivityForm)} style={{display:'grid', gap:'14px'}}>
                     
@@ -1910,7 +1967,7 @@ export default function AdminPage() {
                         <button className="adm-btn adm-btn-ghost" onClick={() => startEdit(item, 'activities')} style={{height:'32px', fontSize:'0.78rem'}}>
                           <i className="fas fa-pen" /> Düzenle
                         </button>
-                        <button className="adm-btn adm-btn-danger" onClick={() => deleteItem('activities', item.id)} style={{height:'32px', fontSize:'0.78rem'}}>
+                        <button className="adm-btn adm-btn-danger" onClick={() => deleteItem('activities', item.id, [item.image_url])}>
                           <i className="fas fa-trash" />
                         </button>
                       </div>
@@ -2059,7 +2116,7 @@ export default function AdminPage() {
                         <button className="adm-btn adm-btn-ghost" onClick={() => startEdit(item, 'partners')} style={{height:'32px', fontSize:'0.78rem'}}>
                           <i className="fas fa-pen" /> Düzenle
                         </button>
-                        <button className="adm-btn adm-btn-danger" onClick={() => deleteItem('partners', item.id)} style={{height:'32px', fontSize:'0.78rem'}}>
+                        <button className="adm-btn adm-btn-danger" onClick={() => deleteItem('partners', item.id, [item.image_url, item.flag_url])}>
                           <i className="fas fa-trash" />
                         </button>
                       </div>
@@ -2178,7 +2235,7 @@ export default function AdminPage() {
                         <button className="adm-btn adm-btn-ghost" onClick={() => startEdit(item, 'results')} style={{height:'32px', fontSize:'0.78rem'}}>
                           <i className="fas fa-pen" /> Düzenle
                         </button>
-                        <button className="adm-btn adm-btn-danger" onClick={() => deleteItem('results', item.id)} style={{height:'32px', fontSize:'0.78rem'}}>
+                        <button className="adm-btn adm-btn-danger" onClick={() => deleteItem('results', item.id, [item.link])}>
                           <i className="fas fa-trash" />
                         </button>
                       </div>
@@ -2250,7 +2307,7 @@ export default function AdminPage() {
                   </div>
                 </div>
 
-                {/* --- İLETİŞİM FORMU METİNLERİ --- */}
+                {/* --- İLETİŞİM FORMU METİNLER --- */}
                 <div className="adm-section" style={{ background: 'var(--surface-2)', padding: '20px', borderRadius: '14px', border: '1px dashed var(--border)' }}>
                   <SectionHeader num="✉" title="İletişim Formu (Mesajlar) Ayarları" />
                   <div className="adm-form-grid2">
@@ -2373,14 +2430,21 @@ export default function AdminPage() {
                        </tr>
                      </thead>
                      <tbody>
-                       {logs.map((log, i) => (
-                         <tr key={i} style={{borderBottom: '1px solid var(--border)'}}>
-                           <td style={{padding: '16px 20px', fontSize:'0.85rem', color:'var(--text-secondary)'}}>{log.date}</td>
+                       {logs.length === 0 ? (
+                         <tr><td colSpan="3" style={{padding: '20px', textAlign: 'center', color: 'var(--text-muted)'}}>Henüz bir işlem logu bulunmuyor.</td></tr>
+                       ) : logs.map((log) => (
+                         <tr key={log.id} style={{borderBottom: '1px solid var(--border)'}}>
+                           <td style={{padding: '16px 20px', fontSize:'0.85rem', color:'var(--text-secondary)'}}>
+                             {new Date(log.created_at).toLocaleString('tr-TR')}
+                           </td>
                            <td style={{padding: '16px 20px', fontWeight: '500', color: 'var(--text-primary)'}}>
                               <i className="fas fa-check-circle" style={{marginRight:'8px', color:'var(--accent)'}}></i>
                               {log.action}
                            </td>
-                           <td style={{padding: '16px 20px', fontSize:'0.85rem', fontFamily:'monospace', color:'var(--text-muted)'}}>{log.ip}</td>
+                           <td style={{padding: '16px 20px', fontSize:'0.85rem', color:'var(--text-muted)'}}>
+                             <i className="fas fa-user" style={{marginRight:'5px'}}></i>
+                             {log.user_email}
+                           </td>
                          </tr>
                        ))}
                      </tbody>
