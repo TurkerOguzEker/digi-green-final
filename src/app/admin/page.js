@@ -4,6 +4,19 @@ import { useRouter } from 'next/navigation';
 import { supabase } from '../../lib/supabase';
 import Link from 'next/link';
 import '../globals.css';
+// ✨ YENİ: Zengin Metin Editörü İçin Eklendi
+import dynamic from 'next/dynamic';
+import 'react-quill/dist/quill.snow.css';
+const ReactQuill = dynamic(() => import('react-quill'), { ssr: false });
+
+const quillModules = {
+  toolbar: [
+    [{ 'header': [1, 2, 3, false] }],
+    ['bold', 'italic', 'underline', 'strike'],
+    [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+    ['link', 'clean']
+  ],
+};
 
 /* ─── DEFAULTS ──────── */
 const DEFAULTS = {
@@ -220,10 +233,10 @@ export default function AdminPage() {
   const [subTab, setAboutSubTab] = useState('strategy'); 
   const [loading, setLoading] = useState(true);
   
-  // Auth ve Güvenlik States
-  const [currentUser, setCurrentUser] = useState(null);
+const [currentUser, setCurrentUser] = useState(null);
   const [newPassword, setNewPassword] = useState('');
   const [logs, setLogs] = useState([]);
+  const [userIp, setUserIp] = useState('Bilinmiyor'); // YENİ EKLENDİ
 
   // Data States
   const [settings, setSettings] = useState([]);
@@ -252,11 +265,21 @@ export default function AdminPage() {
   
   useEffect(() => { checkSessionAndLoad(); }, []);
 
-  async function checkSessionAndLoad() {
+async function checkSessionAndLoad() {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) { router.push('/login'); return; }
     
     setCurrentUser(session.user);
+
+    // YENİ EKLENDİ: Kullanıcının IP adresini anlık olarak alıyoruz
+    try {
+      const res = await fetch('https://api.ipify.org?format=json');
+      const data = await res.json();
+      setUserIp(data.ip);
+    } catch (error) {
+      console.error('IP alınamadı:', error);
+    }
+
     await loadAllData();
     setLoading(false);
   }
@@ -379,17 +402,26 @@ export default function AdminPage() {
 
   async function updateSetting(key, value) {
     const { error } = await supabase.from('settings').upsert({ key, value }, { onConflict: 'key' });
-    if (error) showToast('Hata: ' + error.message, 'error'); else showToast('Ayar kaydedildi.', 'success');
+    if (error) {
+      showToast('Hata: ' + error.message, 'error'); 
+    } else {
+      showToast('Ayar kaydedildi.', 'success');
+      // DÜZELTME 1: Ayar kaydedildiğinde de log atmasını söyledik
+      await logAction(`Sistem ayarı güncellendi: ${key}`);
+      loadAllData(); // Logların ekrana anında düşmesi için listeyi tazeledik
+    }
   }
 
- // LOG FONKSİYONU
+// LOG FONKSİYONU GÜNCELLENDİ
   async function logAction(actionDescription) {
     if (!currentUser) return;
     
     const { error } = await supabase.from('admin_logs').insert([
       { 
         action: actionDescription, 
-        user_email: currentUser.email 
+        user_email: currentUser.email,
+        page_section: activeTab, // İşlemin yapıldığı sekmenin adı (home, news, vb.)
+        ip_address: userIp       // Kullanıcının IP adresi
       }
     ]);
     
@@ -422,9 +454,11 @@ export default function AdminPage() {
 
       // 2. Ardından veritabanından satırı kalıcı olarak sil
       await supabase.from(table).delete().eq('id', id);
+      
+      // DÜZELTME 2: Önce Logu kaydet, SONRA verileri yenile.
+      await logAction(`${table} tablosundan bir kayıt silindi. (ID: ${id})`);
       loadAllData(); 
       showToast('Başarıyla silindi.', 'success');
-      await logAction(`${table} tablosundan bir kayıt silindi. (ID: ${id})`);
     });
   }
 
@@ -433,8 +467,13 @@ export default function AdminPage() {
     const { id, ...data } = form;
     let result = id ? await supabase.from(table).update(data).eq('id', id) : await supabase.from(table).insert([data]);
     if (result?.error) { showToast('Hata: ' + result.error.message, 'error'); return; }
-    setIsEditing(false); loadAllData(); showToast('Başarıyla kaydedildi.', 'success');
+    setIsEditing(false); 
+    
+    // DÜZELTME 2: Önce Logu kaydet, SONRA verileri yenile.
     await logAction(`${table} tablosunda işlem yapıldı. (Ekleme/Güncelleme)`);
+    loadAllData(); 
+    showToast('Başarıyla kaydedildi.', 'success');
+    
     if (table === 'news') setNewsForm({ id: null, title: '', title_en: '', summary: '', summary_en: '', description: '', description_en: '', image_url: '', date: '' });
     if (table === 'activities') setActivityForm({ id: null, title: '', title_en: '', type: 'Toplantı (TPM)', type_en: '', location: '', location_en: '', date: '', summary: '', summary_en: '', description: '', description_en: '', image_url: '' });
     if (table === 'partners') setPartnerForm({ id: null, name: '', name_en: '', country: '', country_en: '', image_url: '', flag_url: '', website: '', description: '', description_en: '', role: 'Ortak', role_en: '' });
@@ -2421,29 +2460,33 @@ export default function AdminPage() {
                   <div className="adm-page-desc">Admin paneli üzerinde gerçekleştirilen son etkinlikler (Veritabanında admin_logs tablosu oluşturulmalıdır).</div>
                 </div>
                 <div className="adm-card" style={{padding: '0'}}>
-                  <table style={{width: '100%', textAlign: 'left', borderCollapse: 'collapse'}}>
+                 <table style={{width: '100%', textAlign: 'left', borderCollapse: 'collapse'}}>
                      <thead>
                        <tr style={{borderBottom: '1px solid var(--border)', background: 'var(--surface-2)', color: 'var(--text-secondary)', fontSize:'0.75rem', textTransform:'uppercase', letterSpacing:'0.05em'}}>
                          <th style={{padding: '16px 20px'}}>İşlem Tarihi</th>
+                         <th style={{padding: '16px 20px'}}>Sayfa / Sekme</th>
                          <th style={{padding: '16px 20px'}}>İşlem Tipi</th>
-                         <th style={{padding: '16px 20px'}}>IP Adresi / Cihaz</th>
+                         <th style={{padding: '16px 20px'}}>Kullanıcı & IP Adresi</th>
                        </tr>
                      </thead>
                      <tbody>
                        {logs.length === 0 ? (
-                         <tr><td colSpan="3" style={{padding: '20px', textAlign: 'center', color: 'var(--text-muted)'}}>Henüz bir işlem logu bulunmuyor.</td></tr>
+                         <tr><td colSpan="4" style={{padding: '20px', textAlign: 'center', color: 'var(--text-muted)'}}>Henüz bir işlem logu bulunmuyor.</td></tr>
                        ) : logs.map((log) => (
                          <tr key={log.id} style={{borderBottom: '1px solid var(--border)'}}>
                            <td style={{padding: '16px 20px', fontSize:'0.85rem', color:'var(--text-secondary)'}}>
                              {new Date(log.created_at).toLocaleString('tr-TR')}
+                           </td>
+                           <td style={{padding: '16px 20px'}}>
+                             <span className="adm-badge adm-badge-blue" style={{textTransform:'uppercase'}}>{log.page_section || 'Genel'}</span>
                            </td>
                            <td style={{padding: '16px 20px', fontWeight: '500', color: 'var(--text-primary)'}}>
                               <i className="fas fa-check-circle" style={{marginRight:'8px', color:'var(--accent)'}}></i>
                               {log.action}
                            </td>
                            <td style={{padding: '16px 20px', fontSize:'0.85rem', color:'var(--text-muted)'}}>
-                             <i className="fas fa-user" style={{marginRight:'5px'}}></i>
-                             {log.user_email}
+                             <div style={{color:'var(--text-primary)', marginBottom:'4px'}}><i className="fas fa-user" style={{marginRight:'5px'}}></i>{log.user_email}</div>
+                             <div style={{fontSize:'0.75rem', opacity:0.7}}><i className="fas fa-network-wired" style={{marginRight:'5px'}}></i>{log.ip_address || 'Bilinmiyor'}</div>
                            </td>
                          </tr>
                        ))}
