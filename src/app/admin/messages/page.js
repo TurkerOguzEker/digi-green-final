@@ -1,4 +1,3 @@
-// src/app/admin/messages/page.js
 'use client';
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
@@ -6,7 +5,7 @@ import { supabase } from '../../../lib/supabase';
 import Link from 'next/link';
 import '../../globals.css';
 
-/* ─── TOAST (BİLDİRİM) BİLEŞENİ ─── */
+/* ─── TOAST (BILDIRIM) BILESENI ─── */
 const Toast = ({ message, type, onClose }) => {
   if (!message) return null;
   return (
@@ -15,7 +14,7 @@ const Toast = ({ message, type, onClose }) => {
         <i className={type === 'error' ? 'fas fa-xmark' : 'fas fa-check'} />
       </div>
       <div className="adm-toast-text">
-        <strong>{type === 'error' ? 'Hata' : 'Başarılı'}</strong>
+        <strong>{type === 'error' ? 'Hata' : 'Basarili'}</strong>
         <span>{message}</span>
       </div>
       <button className="adm-toast-close" onClick={onClose}>
@@ -35,7 +34,7 @@ const ConfirmModal = ({ isOpen, message, onConfirm, onCancel }) => {
         <h3>Emin misiniz?</h3>
         <p>{message}</p>
         <div className="adm-modal-btns">
-          <button className="adm-btn adm-btn-ghost" onClick={onCancel}>Vazgeç</button>
+          <button className="adm-btn adm-btn-ghost" onClick={onCancel}>Vazgec</button>
           <button className="adm-btn adm-btn-danger" style={{background:'#ef4444', color:'white', border:'none'}} onClick={onConfirm}>Evet, Onayla</button>
         </div>
       </div>
@@ -43,13 +42,11 @@ const ConfirmModal = ({ isOpen, message, onConfirm, onCancel }) => {
   );
 };
 
-// Sonsuz kaydırma için sayfa başı çekilecek mesaj sayısı
 const PAGE_SIZE = 15;
 
 export default function MessagesPage() {
   const router = useRouter();
   
-  // States
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
@@ -66,69 +63,22 @@ export default function MessagesPage() {
   const [toast, setToast] = useState(null);
   const [modal, setModal] = useState({ isOpen: false, message: '', onConfirm: null });
 
-  // Observer referansı
   const sentinelRef = useRef(null);
 
-  const showToast = (message, type = 'success') => {
+  const showToast = useCallback((message, type = 'success') => {
     setToast({ message, type });
     setTimeout(() => setToast(null), 3500);
-  };
+  }, []);
 
   const showConfirm = (message, onConfirm) => setModal({ isOpen: true, message, onConfirm });
   const closeConfirm = () => setModal({ ...modal, isOpen: false });
   const handleConfirmAction = () => { if (modal.onConfirm) modal.onConfirm(); closeConfirm(); };
-useEffect(() => {
-    let messageChannel;
 
-    async function initPage() {
-      // 1. Önce kullanıcının giriş yaptığından (Oturumdan) %100 emin oluyoruz
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) { router.push('/login'); return; }
-      
-      setCurrentUser(session.user);
+  // 1. DATA CEKME (SAYFA 0)
+  const fetchInitialData = useCallback(async () => {
+    const { data: bData } = await supabase.from('blocked_emails').select('*').order('created_at', { ascending: false });
+    if (bData) setBlockedEmails(bData);
 
-      // ✨ VERCEL İÇİN SİHİRLİ YAMA: Token'ı canlı yayına zorla iletiyoruz!
-      supabase.realtime.setAuth(session.access_token);
-
-      await fetchInitialData();
-
-      // 2. Oturum doğrulandıktan SONRA Canlı Yayına (Realtime) bağlanıyoruz
-      messageChannel = supabase
-        .channel('messages-channel')
-        .on(
-          'postgres_changes',
-          { event: 'INSERT', schema: 'public', table: 'contact_messages' },
-          (payload) => {
-            console.log("CANLI YAYIN: YENİ MESAJ GELDİ!", payload.new);
-            showToast('Yeni bir iletişim mesajı aldınız!', 'success');
-            
-            setMessages(prev => {
-              // Çift eklemeyi önlemek için kontrol
-              if (prev.find(m => m.id === payload.new.id)) return prev;
-              return [payload.new, ...prev];
-            });
-          }
-        )
-        .subscribe((status) => {
-          console.log("📡 Mesajlar Sayfası Realtime Durumu:", status);
-        });
-    }
-
-    initPage();
-
-    return () => {
-      if (messageChannel) supabase.removeChannel(messageChannel);
-    };
-  }, [router]);
-
-  async function fetchInitialData() {
-    setLoading(true);
-    
-    // 1. Engellenen emailleri çek
-    const { data: blockedData } = await supabase.from('blocked_emails').select('*').order('created_at', { ascending: false });
-    if (blockedData) setBlockedEmails(blockedData);
-
-    // 2. Mesajların ilk sayfasını çek (0 - 14)
     const { data: msgData, error } = await supabase
       .from('contact_messages')
       .select('*')
@@ -138,12 +88,64 @@ useEffect(() => {
     if (!error && msgData) {
       setMessages(msgData);
       setHasMore(msgData.length === PAGE_SIZE); 
+      setPageIndex(0);
     }
-    
     setLoading(false);
-  }
+  }, []);
 
-  // ✨ YENİ: Sonsuz Kaydırma Fonksiyonu
+  // 2. OTURUM VE REALTIME KANALI KURULUMU
+  useEffect(() => {
+    let isMounted = true;
+    let channel;
+
+    async function loadSession() {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) { router.push('/login'); return; }
+      
+      if (isMounted) {
+        setCurrentUser(session.user);
+        await fetchInitialData();
+      }
+
+      // KESIN COZUM: Supabase auth token'ı manuel olarak aktar
+      supabase.realtime.setAuth(session.access_token);
+
+      // REALTIME KANALI (Daha once hata veren abonelikleri engellemek icin rastgele isim)
+      const channelName = `messages-channel-${Date.now()}`;
+      channel = supabase
+        .channel(channelName)
+        .on(
+          'postgres_changes',
+          { event: 'INSERT', schema: 'public', table: 'contact_messages' },
+          (payload) => {
+            console.log("[REALTIME] YENI MESAJ:", payload.new);
+            showToast('Yeni bir iletisim mesaji aldiniz!', 'success');
+            
+            // Yeni mesaji listeye doğrudan ekle (Tüm datayi bastan cekmeye gerek kalmadan)
+            setMessages(prev => {
+              if (prev.some(m => m.id === payload.new.id)) return prev;
+              return [payload.new, ...prev];
+            });
+          }
+        )
+        .subscribe((status, err) => {
+          if (err) console.error("[REALTIME] Hata:", err);
+          else console.log(`[REALTIME] Durum: ${status}`);
+        });
+    }
+
+    loadSession();
+
+    return () => {
+      isMounted = false;
+      if (channel) {
+        supabase.removeChannel(channel);
+      }
+    };
+  }, [router, fetchInitialData, showToast]);
+
+
+  // 3. SONSUZ KAYDIRMA (INFINITE SCROLL) MANTIGI
   const loadMoreMessages = useCallback(async () => {
     if (loadingMore || !hasMore) return;
     setLoadingMore(true);
@@ -159,7 +161,11 @@ useEffect(() => {
       .range(from, to);
 
     if (!error && data && data.length > 0) {
-      setMessages(prev => [...prev, ...data]);
+      setMessages(prev => {
+        // Çift verileri önle
+        const newData = data.filter(d => !prev.some(p => p.id === d.id));
+        return [...prev, ...newData];
+      });
       setPageIndex(nextPageIndex);
       setHasMore(data.length === PAGE_SIZE);
     } else {
@@ -169,7 +175,6 @@ useEffect(() => {
     setLoadingMore(false);
   }, [pageIndex, loadingMore, hasMore]);
 
-  // Observer Kurulumu (Sayfanın altına geldiğini anlamak için)
   useEffect(() => {
     if (loading) return;
     const sentinel = sentinelRef.current;
@@ -186,10 +191,10 @@ useEffect(() => {
   }, [loading, hasMore, loadingMore, loadMoreMessages, searchQuery]);
 
 
-  // EYLEM FONKSİYONLARI
+  // ─── EYLEM FONKSIYONLARI ───
   function deleteMessage(id, e) {
     e.stopPropagation();
-    showConfirm('Bu mesajı kalıcı olarak silmek istediğinize emin misiniz?', async () => {
+    showConfirm('Bu mesaji kalici olarak silmek istediginize emin misiniz?', async () => {
       setMessages(prev => prev.filter(m => m.id !== id));
       if (expandedId === id) setExpandedId(null);
       const { error } = await supabase.from('contact_messages').delete().eq('id', id);
@@ -217,29 +222,19 @@ useEffect(() => {
     const newStatus = !msg.is_replied;
     setMessages(prev => prev.map(m => m.id === msg.id ? { ...m, is_replied: newStatus } : m));
     const { error } = await supabase.from('contact_messages').update({ is_replied: newStatus }).eq('id', msg.id);
-    if (!error) showToast(newStatus ? 'Yanıtlandı olarak işaretlendi.' : 'Yanıt durumu kaldırıldı.', 'success');
-  }
-
-  async function markAllRead() {
-    const unread = messages.filter(m => !m.is_read);
-    if (!unread.length) return showToast('Okunmamış mesaj yok.', 'success');
-    setMessages(prev => prev.map(m => ({ ...m, is_read: true })));
-    await supabase.from('contact_messages').update({ is_read: true }).in('id', unread.map(m => m.id));
-    showToast('Tüm mesajlar okundu olarak işaretlendi.', 'success');
+    if (!error) showToast(newStatus ? 'Yanitlandi olarak isaretlendi.' : 'Yanit durumu kaldirildi.', 'success');
   }
 
   function handleBlockEmail(email, e) {
     e.stopPropagation();
-    showConfirm(`${email} adresini SPAM olarak engellemek istiyor musunuz? Bu e-postadan gelen mevcut tüm mesajlar da silinecektir.`, async () => {
+    showConfirm(`${email} adresini SPAM olarak engellemek istiyor musunuz? Bu e-postadan gelen mevcut tum mesajlar da silinecektir.`, async () => {
       const { error } = await supabase.from('blocked_emails').insert([{ email }]);
-      if (error && error.code !== '23505') {
-        showToast('Hata: ' + error.message, 'error');
-        return;
-      }
+      if (error && error.code !== '23505') { showToast('Hata: ' + error.message, 'error'); return; }
+      
       setMessages(prev => prev.filter(m => m.email !== email));
       if (expandedId && messages.find(m => m.id === expandedId)?.email === email) setExpandedId(null);
       await supabase.from('contact_messages').delete().eq('email', email);
-      showToast(`${email} engellendi ve mesajları silindi!`, 'success');
+      showToast(`${email} engellendi!`, 'success');
       
       const { data } = await supabase.from('blocked_emails').select('*').order('created_at', { ascending: false });
       if (data) setBlockedEmails(data);
@@ -249,24 +244,22 @@ useEffect(() => {
   async function handleUnblockEmail(email) {
     const { error } = await supabase.from('blocked_emails').delete().eq('email', email);
     if (!error) {
-      showToast(`${email} engeli kaldırıldı.`, 'success');
+      showToast(`${email} engeli kaldirildi.`, 'success');
       setBlockedEmails(prev => prev.filter(b => b.email !== email));
     }
   }
 
-  // ✨ YENİ: ID Kopyalama Fonksiyonu (Sadece Sayıyı Kopyalar)
   const copyToClipboard = (id, e) => {
     e.stopPropagation();
     navigator.clipboard.writeText(id.toString());
-    showToast(`ID Kopyalandı: ${id}`, 'success');
+    showToast(`ID Kopyalandi: ${id}`, 'success');
   }
 
-  // SAYAÇLAR
+  // SAYACLAR & FILTRELEME
   const unreadCount = messages.filter(m => !m.is_read).length;
   const starredCount = messages.filter(m => m.is_starred).length; 
   const repliedCount = messages.filter(m => m.is_replied).length; 
   
-  // FİLTRELEME
   const filteredMessages = messages.filter(msg => {
     const searchVal = searchQuery.toLowerCase();
     const matchSearch = !searchQuery ||
@@ -274,7 +267,7 @@ useEffect(() => {
       msg.email?.toLowerCase().includes(searchVal) ||
       msg.subject?.toLowerCase().includes(searchVal) ||
       msg.message?.toLowerCase().includes(searchVal) ||
-      msg.id.toString().includes(searchQuery.replace(/[^0-9]/g, '')); // Arama kısmına sayı yazılırsa ID'lerde arar
+      msg.id.toString().includes(searchQuery.replace(/[^0-9]/g, ''));
     
     if (currentView === 'all') return matchSearch;
     if (currentView === 'unread') return matchSearch && !msg.is_read;
@@ -288,11 +281,10 @@ useEffect(() => {
     !searchQuery || b.email.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  // TARİH FORMATLARI
   function formatShortDate(dateStr) {
     const d = new Date(dateStr); const now = new Date(); const diff = Math.floor((now - d) / 1000);
-    if (diff < 60) return 'Az önce'; if (diff < 3600) return `${Math.floor(diff / 60)} dk önce`;
-    if (diff < 86400) return `${Math.floor(diff / 3600)} sa önce`; if (diff < 604800) return `${Math.floor(diff / 86400)} gün önce`;
+    if (diff < 60) return 'Az once'; if (diff < 3600) return `${Math.floor(diff / 60)} dk once`;
+    if (diff < 86400) return `${Math.floor(diff / 3600)} sa once`; if (diff < 604800) return `${Math.floor(diff / 86400)} gun once`;
     return d.toLocaleDateString('tr-TR', { day: 'numeric', month: 'short', year: 'numeric' });
   }
 
@@ -358,9 +350,6 @@ useEffect(() => {
         .msg-search-input { width: 100%; background: #111318; border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 10px 14px 10px 38px; color: #e2e8f0; font-size: 0.875rem; font-family: 'DM Sans', sans-serif; outline: none; transition: border-color 0.2s; box-sizing: border-box; }
         .msg-search-input:focus { border-color: rgba(34,197,94,0.4); }
 
-        .msg-mark-all-btn { background: none; border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 10px 16px; color: #6b7280; font-size: 0.82rem; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 7px; margin-left: auto; }
-        .msg-mark-all-btn:hover { color: #d1d5db; border-color: rgba(255,255,255,0.15); }
-
         .msg-list { background: #111318; border: 1px solid rgba(255,255,255,0.07); border-radius: 16px; overflow: hidden; }
         .msg-item { border-bottom: 1px solid rgba(255,255,255,0.05); cursor: pointer; transition: background 0.2s; }
         .msg-item:last-child { border-bottom: none; }
@@ -376,7 +365,6 @@ useEffect(() => {
         .msg-new-badge { background: #22c55e; color: #000; font-size: 0.6rem; font-weight: 700; letter-spacing: 0.5px; padding: 2px 7px; border-radius: 6px; text-transform: uppercase; }
         .msg-replied-badge { background: rgba(59, 130, 246, 0.15); color: #3b82f6; font-size: 0.6rem; font-weight: 700; letter-spacing: 0.5px; padding: 2px 7px; border-radius: 6px; text-transform: uppercase; border: 1px solid rgba(59, 130, 246, 0.3); }
         
-        /* ✨ YENİ: Ticket ID CSS */
         .msg-ticket-id { font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; color: #9ca3af; background: rgba(255,255,255,0.05); padding: 3px 8px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.08); transition: all 0.2s; cursor: pointer; display: inline-block; }
         .msg-ticket-id:hover { color: #f9fafb; background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.2); }
 
@@ -434,7 +422,6 @@ useEffect(() => {
         .adm-btn-ghost { background: transparent; border: 1px solid #374151; color: #d1d5db; }
         .adm-btn-ghost:hover { background: rgba(255,255,255,0.05); }
 
-        /* Loader Ring for Infinite Scroll */
         .loader-ring { display: inline-block; position: relative; width: 30px; height: 30px; }
         .loader-ring div { box-sizing: border-box; display: block; position: absolute; width: 24px; height: 24px; margin: 3px; border: 2px solid #22c55e; border-radius: 50%; animation: loader-spin 1.2s cubic-bezier(0.5,0,0.5,1) infinite; border-color: #22c55e transparent transparent transparent; }
         .loader-ring div:nth-child(1) { animation-delay: -0.45s; }
@@ -450,7 +437,7 @@ useEffect(() => {
       {loading ? (
         <div className="msg-loading">
           <div className="msg-spinner" />
-          <p>Sistem yükleniyor…</p>
+          <p>Sistem yukleniyor...</p>
         </div>
       ) : (
         <div className="msg-layout">
@@ -458,21 +445,20 @@ useEffect(() => {
           <Toast message={toast?.message} type={toast?.type} onClose={() => setToast(null)} />
           <ConfirmModal isOpen={modal.isOpen} message={modal.message} onConfirm={handleConfirmAction} onCancel={closeConfirm} />
 
-          {/* ── SIDEBAR ── */}
           <aside className="msg-sidebar">
             <div className="msg-brand">
               <div className="msg-brand-logo">
                 <div className="msg-brand-icon"><i className="fas fa-leaf" /></div>
                 DIGI-<span>GREEN</span>
               </div>
-              <div className="msg-brand-sub">Yönetim Paneli</div>
+              <div className="msg-brand-sub">Yonetim Paneli</div>
             </div>
             
             <nav className="msg-nav">
-              <div className="msg-nav-label">Ana Menü</div>
+              <div className="msg-nav-label">Ana Menu</div>
               
               <Link href="/admin" className="msg-nav-btn" style={{textDecoration:'none', color:'inherit', marginBottom:'10px', background:'rgba(255,255,255,0.03)'}}>
-                <span className="msg-nav-icon"><i className="fas fa-arrow-left" /></span> Ana Panele Dön
+                <span className="msg-nav-icon"><i className="fas fa-arrow-left" /></span> Ana Panele Don
               </Link>
               
               <div className="msg-nav-label" style={{marginTop:'10px'}}>Gelen Kutusu</div>
@@ -481,7 +467,7 @@ useEffect(() => {
                 className={`msg-nav-btn ${currentView === 'all' ? 'active' : ''}`} 
                 onClick={() => {setCurrentView('all'); setExpandedId(null);}}
               >
-                <span className="msg-nav-icon"><i className="fas fa-inbox" /></span> Tümü
+                <span className="msg-nav-icon"><i className="fas fa-inbox" /></span> Tumu
                 <span className="msg-nav-badge" style={{background: 'rgba(255,255,255,0.1)', color: '#d1d5db'}}>{messages.length}</span>
               </button>
 
@@ -489,7 +475,7 @@ useEffect(() => {
                 className={`msg-nav-btn ${currentView === 'unread' ? 'active' : ''}`} 
                 onClick={() => {setCurrentView('unread'); setExpandedId(null);}}
               >
-                <span className="msg-nav-icon"><i className="fas fa-envelope" /></span> Okunmamış
+                <span className="msg-nav-icon"><i className="fas fa-envelope" /></span> Okunmamis
                 {unreadCount > 0 && <span className="msg-nav-badge">{unreadCount}</span>}
               </button>
 
@@ -504,7 +490,7 @@ useEffect(() => {
                 className={`msg-nav-btn ${currentView === 'starred' ? 'active-star' : ''}`} 
                 onClick={() => {setCurrentView('starred'); setExpandedId(null);}}
               >
-                <span className="msg-nav-icon"><i className="fas fa-star" /></span> Yıldızlılar
+                <span className="msg-nav-icon"><i className="fas fa-star" /></span> Yildizlilar
                 {starredCount > 0 && <span className="msg-nav-badge" style={{background: '#eab308', color: '#fff'}}>{starredCount}</span>}
               </button>
 
@@ -516,7 +502,7 @@ useEffect(() => {
                 {repliedCount > 0 && <span className="msg-nav-badge" style={{background: '#3b82f6', color: '#fff'}}>{repliedCount}</span>}
               </button>
 
-              <div className="msg-nav-label" style={{marginTop:'20px'}}>Güvenlik & Sistem</div>
+              <div className="msg-nav-label" style={{marginTop:'20px'}}>Guvenlik & Sistem</div>
               
               <button 
                 className={`msg-nav-btn ${currentView === 'blocked' ? 'active-warning' : ''}`} 
@@ -531,15 +517,13 @@ useEffect(() => {
             <div style={{ padding: '0 12px', marginTop: 'auto' }}>
               <button className="msg-logout-btn" onClick={async () => { await supabase.auth.signOut(); router.push('/login'); }}>
                 <span className="msg-nav-icon"><i className="fas fa-arrow-right-from-bracket" /></span>
-                Çıkış Yap
+                Cikis Yap
               </button>
             </div>
           </aside>
 
-          {/* ── MAIN ── */}
           <main className="msg-main">
 
-            {/* TOPBAR */}
             <div className="msg-topbar">
               <div className="msg-topbar-left">
                 <div className="msg-topbar-title">
@@ -557,10 +541,10 @@ useEffect(() => {
                     marginRight:'10px'
                   }} />
                   {
-                    currentView === 'all' ? 'Tüm Mesajlar' : 
-                    currentView === 'unread' ? 'Okunmamış Mesajlar' : 
+                    currentView === 'all' ? 'Tum Mesajlar' : 
+                    currentView === 'unread' ? 'Okunmamis Mesajlar' : 
                     currentView === 'read' ? 'Okunan Mesajlar' : 
-                    currentView === 'starred' ? 'Yıldızlı Mesajlar' : 
+                    currentView === 'starred' ? 'Yildizli Mesajlar' : 
                     currentView === 'replied' ? 'Cevaplanan Mesajlar' : 
                     'Engellenen E-postalar'
                   }
@@ -574,7 +558,6 @@ useEffect(() => {
 
             <div className="msg-content">
 
-              {/* STATS */}
               <div className="msg-stats">
                 <div className="msg-stat-card">
                   <div className="msg-stat-icon" style={{background:'rgba(34,197,94,0.12)', color:'#22c55e'}}>
@@ -591,7 +574,7 @@ useEffect(() => {
                   </div>
                   <div>
                     <div className="msg-stat-val">{unreadCount}</div>
-                    <div className="msg-stat-lbl">Okunmamış</div>
+                    <div className="msg-stat-lbl">Okunmamis</div>
                   </div>
                 </div>
                 <div className="msg-stat-card">
@@ -614,37 +597,33 @@ useEffect(() => {
                 </div>
               </div>
 
-              {/* TOOLBAR */}
               <div className="msg-toolbar">
                 <div className="msg-search-wrap">
                   <i className="fas fa-search" />
                   <input
                     className="msg-search-input"
-                    placeholder={currentView === 'blocked' ? "Engellenen e-posta ara..." : "İsim, e-posta, ID veya konu ara…"}
+                    placeholder={currentView === 'blocked' ? "Engellenen e-posta ara..." : "Isim, e-posta, ID veya konu ara..."}
                     value={searchQuery}
                     onChange={e => setSearchQuery(e.target.value)}
                   />
                 </div>
               </div>
 
-              {/* RESULT COUNT */}
               {searchQuery && (
                 <div className="msg-result-count">
-                  {currentView === 'blocked' ? filteredBlocked.length : filteredMessages.length} sonuç bulundu
+                  {currentView === 'blocked' ? filteredBlocked.length : filteredMessages.length} sonuc bulundu
                 </div>
               )}
 
-              {/* ── İÇERİK LİSTESİ ── */}
               <div className="msg-list">
                 
-                {/* ENGELLENENLER SEKME GÖRÜNÜMÜ */}
                 {currentView === 'blocked' ? (
                   filteredBlocked.length === 0 ? (
                     <div className="msg-empty">
                       <div className="msg-empty-icon" style={{color:'#f59e0b', background:'rgba(245,158,11,0.05)', borderColor:'rgba(245,158,11,0.1)'}}>
                         <i className="fas fa-shield-alt" />
                       </div>
-                      <p>{searchQuery ? 'Arama sonucu bulunamadı.' : 'Engellenmiş bir e-posta adresi bulunmuyor.'}</p>
+                      <p>{searchQuery ? 'Arama sonucu bulunamadi.' : 'Engellenmis bir e-posta adresi bulunmuyor.'}</p>
                     </div>
                   ) : (
                     filteredBlocked.map(b => (
@@ -662,11 +641,11 @@ useEffect(() => {
                         </div>
                         <button 
                           className="msg-action-btn"
-                          title="Engeli Kaldır"
+                          title="Engeli Kaldir"
                           onClick={() => handleUnblockEmail(b.email)} 
                           style={{background: 'rgba(34,197,94,0.1)', color: '#22c55e', width: 'auto', padding: '0 15px', fontWeight:'500'}}
                         >
-                          <i className="fas fa-unlock" style={{marginRight: '8px'}} /> Engeli Kaldır
+                          <i className="fas fa-unlock" style={{marginRight: '8px'}} /> Engeli Kaldir
                         </button>
                       </div>
                     ))
@@ -674,13 +653,12 @@ useEffect(() => {
 
                 ) : (
                   
-                  /* MESAJLAR SEKME GÖRÜNÜMÜ */
                   filteredMessages.length === 0 ? (
                     <div className="msg-empty">
                       <div className="msg-empty-icon">
                         <i className={currentView === 'starred' ? 'fas fa-star' : currentView === 'replied' ? 'fas fa-reply-all' : 'fas fa-envelope-open-text'} />
                       </div>
-                      <p>{searchQuery ? 'Arama sonucu bulunamadı.' : 'Bu kategoride hiç mesajınız yok.'}</p>
+                      <p>{searchQuery ? 'Arama sonucu bulunamadi.' : 'Bu kategoride hic mesajiniz yok.'}</p>
                     </div>
                   ) : (
                     filteredMessages.map(msg => {
@@ -693,32 +671,28 @@ useEffect(() => {
                           onClick={() => setExpandedId(isExpanded ? null : msg.id)}
                         >
                           <div className="msg-item-header">
-                            {/* Avatar */}
                             <div className="msg-avatar" style={{background: avatarColor}}>
                               {getInitials(msg.name)}
                             </div>
 
-                            {/* Meta */}
                             <div className="msg-meta">
                               <div className="msg-sender-row">
                                 <span className="msg-sender-name">{msg.name}</span>
                                 {!msg.is_read && <span className="msg-new-badge">Yeni</span>}
-                                {msg.is_replied && <span className="msg-replied-badge"><i className="fas fa-check" style={{marginRight:'3px'}}/>Cevaplandı</span>}
+                                {msg.is_replied && <span className="msg-replied-badge"><i className="fas fa-check" style={{marginRight:'3px'}}/>Cevaplandi</span>}
                               </div>
                               <div className="msg-subject">
                                 <span style={{color:'#9ca3af'}}>{msg.subject}</span>
                                 <span style={{color:'#374151', margin:'0 6px'}}>—</span>
-                                <span>{msg.message?.slice(0, 60)}{msg.message?.length > 60 ? '…' : ''}</span>
+                                <span>{msg.message?.slice(0, 60)}{msg.message?.length > 60 ? '...' : ''}</span>
                               </div>
                             </div>
 
-                            {/* Right controls */}
                             <div className="msg-item-right" onClick={e => e.stopPropagation()}>
                               
-                              {/* ✨ YENİ: ID BURAYA ALINDI */}
                               <span 
                                 className="msg-ticket-id" 
-                                title="ID'yi Kopyala"
+                                title="ID Kopyala"
                                 onClick={(e) => copyToClipboard(msg.id, e)}
                                 style={{ marginRight: '10px' }}
                               >
@@ -729,7 +703,7 @@ useEffect(() => {
                               
                               <button
                                 className={`msg-action-btn starred`}
-                                title={msg.is_starred ? 'Yıldızı Kaldır' : 'Yıldızla'}
+                                title={msg.is_starred ? 'Yildizi Kaldir' : 'Yildizla'}
                                 onClick={e => toggleStarStatus(msg, e)}
                                 style={{ color: msg.is_starred ? '#eab308' : 'var(--text-muted)' }}
                               >
@@ -746,7 +720,7 @@ useEffect(() => {
 
                               <button
                                 className="msg-action-btn"
-                                title={msg.is_read ? 'Okunmadı İşaretle' : 'Okundu İşaretle'}
+                                title={msg.is_read ? 'Okunmadi Isaretle' : 'Okundu Isaretle'}
                                 onClick={e => toggleReadStatus(msg, e)}
                               >
                                 <i className={`fas ${msg.is_read ? 'fa-envelope-open' : 'fa-envelope'}`} />
@@ -754,7 +728,7 @@ useEffect(() => {
                               
                               <button
                                 className="msg-action-btn delete"
-                                title="Mesajı Sil"
+                                title="Mesaji Sil"
                                 onClick={e => deleteMessage(msg.id, e)}
                               >
                                 <i className="fas fa-trash" />
@@ -762,7 +736,6 @@ useEffect(() => {
                             </div>
                           </div>
 
-                          {/* Expanded Body */}
                           {isExpanded && (
                             <div className="msg-body">
                               <div className="msg-body-inner">
@@ -774,7 +747,7 @@ useEffect(() => {
                                 <div className="msg-body-footer">
                                   <a href={`mailto:${msg.email}`} className="msg-reply-link">
                                     <i className="fas fa-reply" />
-                                    {msg.email} adresine yanıtla
+                                    {msg.email} adresine yanitla
                                   </a>
                                   
                                   <button 
@@ -787,7 +760,7 @@ useEffect(() => {
                                     }}
                                   >
                                     <i className={`fas ${msg.is_replied ? 'fa-check-double' : 'fa-check'}`} />
-                                    {msg.is_replied ? 'Cevaplandı İşaretini Kaldır' : 'Cevaplandı Olarak İşaretle'}
+                                    {msg.is_replied ? 'Cevaplandi Isaretini Kaldir' : 'Cevaplandi Olarak Isaretle'}
                                   </button>
                                 </div>
                               </div>
@@ -799,7 +772,6 @@ useEffect(() => {
                   )
                 )}
 
-                {/* SONSUZ KAYDIRMA İÇİN TETİKLEYİCİ GÖSTERGE */}
                 {currentView !== 'blocked' && hasMore && !searchQuery && (
                   <div ref={sentinelRef} className="load-more-indicator">
                     {loadingMore ? (
@@ -807,7 +779,7 @@ useEffect(() => {
                         <div className="loader-ring">
                           <div></div><div></div><div></div><div></div>
                         </div>
-                        <div style={{marginTop:'8px'}}>Yükleniyor...</div>
+                        <div style={{marginTop:'8px'}}>Yukleniyor...</div>
                       </>
                     ) : (
                        <div style={{height: '20px'}}></div>
