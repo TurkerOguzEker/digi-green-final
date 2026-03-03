@@ -2,9 +2,9 @@
 'use client';
 import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { supabase } from '../../../lib/supabase'; // BURASI DOĞRU YOL (3 NOKTA)
+import { supabase } from '../../lib/supabase'; // DOĞRU
 import Link from 'next/link';
-import '../../globals.css'; // BURASI DA DOĞRU YOL (2 NOKTA)
+import '../globals.css'; // DOĞRU
 
 export default function AdminUsersPage() {
   const router = useRouter();
