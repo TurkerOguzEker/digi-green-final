@@ -11,14 +11,14 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState(''); // Hataları ekranda göstermek için state
 
-  const handleLogin = async (e) => {
+const handleLogin = async (e) => {
     e.preventDefault();
     setLoading(true);
-    setErrorMsg(''); // Yeni denemede eski hatayı temizle
+    setErrorMsg(''); 
     
     try {
-      // Supabase giriş isteği
-      const { error } = await supabase.auth.signInWithPassword({
+      // 1. Supabase giriş isteği (data objesini de alıyoruz)
+      const { data, error } = await supabase.auth.signInWithPassword({
           email,
           password,
       });
@@ -26,16 +26,17 @@ export default function LoginPage() {
       if (error) {
           setErrorMsg('Giriş başarısız: ' + error.message);
       } else {
-          // Başarılı olursa admin paneline yönlendir
+          // 2. İŞTE SİHİRLİ DOKUNUŞ: Middleware'in bizi içeri alması için çerez (cookie) oluşturuyoruz!
+          document.cookie = `sb-access-token=${data.session.access_token}; path=/; max-age=86400;`;
+          
+          // 3. Başarılı olursa admin paneline yönlendir
           router.push('/admin');
-          router.refresh(); // Oturum bilgisinin her yerde güncellenmesi için refresh
+          router.refresh(); 
       }
     } catch (err) {
-      // Beklenmeyen çökmeleri (Network hatası vb.) burada yakalıyoruz
       console.error("Giriş esnasında kritik hata:", err);
       setErrorMsg('Sunucuyla iletişim kurulamadı. Lütfen bağlantınızı kontrol edin.');
     } finally {
-      // İşlem başarılı da olsa hatalı da olsa butonu her zaman eski haline getirir!
       setLoading(false);
     }
   };

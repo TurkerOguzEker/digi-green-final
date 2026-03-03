@@ -380,7 +380,11 @@ export default function AdminDashboardPage() {
                           <div style={{ fontSize: '0.82rem', fontWeight: 600, color: '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{currentUser?.email}</div>
                         </div>
                       </div>
-                      <button onClick={async () => { await supabase.auth.signOut(); router.push('/login'); }} style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 9, padding: '10px 12px', background: 'transparent', border: '1px solid transparent', borderRadius: 9, cursor: 'pointer', color: '#f87171', fontSize: '0.84rem', fontWeight: 500, transition: 'all 0.15s', textAlign: 'left', fontFamily: 'var(--font)' }}>
+                      <button onClick={async () => { 
+  document.cookie = 'sb-access-token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT'; 
+  await supabase.auth.signOut(); 
+  router.push('/login'); 
+}} style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 9, padding: '10px 12px', background: 'transparent', border: '1px solid transparent', borderRadius: 9, cursor: 'pointer', color: '#f87171', fontSize: '0.84rem', fontWeight: 500, transition: 'all 0.15s', textAlign: 'left', fontFamily: 'var(--font)' }}>
                         <i className="fas fa-arrow-right-from-bracket" style={{ fontSize: '0.9rem', width: 16 }} />
                         Çıkış Yap
                       </button>
