@@ -1,15 +1,20 @@
 'use client';
 import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { supabase } from '../../lib/supabase'; // 2 katman geri çıkmalı
+import { supabase } from '../../lib/supabase';
 import Link from 'next/link';
-import '../globals.css'; // 1 katman geri çıkmalı
+import '../globals.css';
 
-// ... kodun geri kalanı aynı
 import {
   AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend
 } from 'recharts';
+
+// Ayırdığımız bileşenleri içe aktarıyoruz
+import CustomTooltip from '../../components/admin/CustomTooltip';
+import StatCard from '../../components/admin/StatCard';
+import ActivityItem from '../../components/admin/ActivityItem';
+import QuickAction from '../../components/admin/QuickAction';
 
 const fallbackTrend = [
   { gun: 'Pzt', mesaj: 0 }, { gun: 'Sal', mesaj: 0 }, { gun: 'Çar', mesaj: 0 },
@@ -20,75 +25,6 @@ const fallbackMonthly = [
   { ay: 'Ara', haber: 0, faaliyet: 0 }, { ay: 'Oca', haber: 0, faaliyet: 0 },
   { ay: 'Şub', haber: 0, faaliyet: 0 }, { ay: 'Mar', haber: 0, faaliyet: 0 },
 ];
-
-const CustomTooltip = ({ active, payload, label }) => {
-  if (active && payload && payload.length) {
-    return (
-      <div style={{ background: '#1c2333', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10, padding: '10px 16px', fontSize: '0.8rem', boxShadow: '0 8px 24px rgba(0,0,0,0.4)', zIndex: 1000 }}>
-        <p style={{ color: '#7d8590', marginBottom: 4, fontWeight: 600 }}>{label}</p>
-        {payload.map((p, i) => (
-          <p key={i} style={{ color: p.color, margin: 0 }}>{p.name}: <strong>{p.value}</strong></p>
-        ))}
-      </div>
-    );
-  }
-  return null;
-};
-
-const StatCard = ({ icon, label, value, color, bg, border, trend, link, prefix = '' }) => {
-  const trendPositive = trend >= 0;
-  return (
-    <Link href={link || '#'} style={{ textDecoration: 'none', color: 'inherit', display: 'block', width: '100%' }}>
-      <div className="stat-card" style={{ '--card-accent': color }}>
-        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 16 }}>
-          <div style={{ width: 48, height: 48, borderRadius: 12, background: bg, border: `1px solid ${border}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.2rem', color }}>
-            <i className={icon} />
-          </div>
-          {typeof trend !== 'undefined' && trend !== null && (
-            <span style={{ fontSize: '0.72rem', fontWeight: 700, padding: '3px 8px', borderRadius: 20, background: trendPositive ? 'rgba(34,197,94,0.12)' : 'rgba(239,68,68,0.12)', color: trendPositive ? '#22c55e' : '#ef4444' }}>
-              <i className={`fas fa-arrow-${trendPositive ? 'up' : 'down'}`} style={{ marginRight: 3 }} />
-              {Math.abs(trend)}%
-            </span>
-          )}
-        </div>
-        <div style={{ fontFamily: "'Syne', sans-serif", fontSize: '2rem', fontWeight: 700, color: '#e6edf3', lineHeight: 1, marginBottom: 4 }}>
-          {prefix}{value}
-        </div>
-        <div style={{ fontSize: '0.8rem', fontWeight: 500, color: '#7d8590', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-          {label}
-        </div>
-        <div className="stat-card-bar" />
-      </div>
-    </Link>
-  );
-};
-
-const ActivityItem = ({ icon, color, bg, title, desc, time }) => (
-  <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, padding: '12px 0', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
-    <div style={{ width: 34, height: 34, borderRadius: 9, background: bg, color, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.85rem', flexShrink: 0 }}>
-      <i className={icon} />
-    </div>
-    <div style={{ flex: 1, minWidth: 0 }}>
-      <div style={{ fontSize: '0.85rem', fontWeight: 600, color: '#e6edf3', marginBottom: 2 }}>{title}</div>
-      <div style={{ fontSize: '0.75rem', color: '#7d8590', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{desc}</div>
-    </div>
-    <div style={{ fontSize: '0.7rem', color: '#484f58', flexShrink: 0, marginTop: 2 }}>{time}</div>
-  </div>
-);
-
-const QuickAction = ({ icon, label, color, bg, link }) => (
-  <Link href={link || '#'} style={{ textDecoration: 'none' }}>
-    <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '11px 14px', borderRadius: 10, background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)', transition: 'all 0.18s', cursor: 'pointer' }}
-      onMouseEnter={e => { e.currentTarget.style.background = bg; e.currentTarget.style.borderColor = color + '40'; }}
-      onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.02)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.05)'; }}>
-      <div style={{ width: 30, height: 30, borderRadius: 8, background: bg, color, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.85rem' }}>
-        <i className={icon} />
-      </div>
-      <span style={{ fontSize: '0.82rem', fontWeight: 500, color: '#c9d1d9' }}>{label}</span>
-      <i className="fas fa-arrow-right" style={{ marginLeft: 'auto', fontSize: '0.65rem', color: '#484f58' }} />
-    </div>
-  </Link>
-);
 
 export default function AdminDashboardPage() {
   const router = useRouter();
