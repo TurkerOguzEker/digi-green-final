@@ -1,9 +1,11 @@
 'use client';
 import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { supabase } from '../../lib/supabase';
+import { supabase } from '../../lib/supabase'; // 2 katman geri çıkmalı
 import Link from 'next/link';
-import '../globals.css';
+import '../globals.css'; // 1 katman geri çıkmalı
+
+// ... kodun geri kalanı aynı
 import {
   AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend

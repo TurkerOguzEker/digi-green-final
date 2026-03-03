@@ -2,9 +2,11 @@
 'use client';
 import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { supabase } from '../../lib/supabase'; // DOĞRU
+import { supabase } from '../../../lib/supabase'; // 3 katman geri çıkmalı
 import Link from 'next/link';
-import '../globals.css'; // DOĞRU
+import '../../globals.css'; // 2 katman geri çıkmalı (src/app'a ulaşmak için)
+
+// ... kodun geri kalanı aynı
 
 export default function AdminUsersPage() {
   const router = useRouter();
