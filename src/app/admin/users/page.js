@@ -2,9 +2,9 @@
 'use client';
 import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { supabase } from '../../../lib/supabase';
+import { supabase } from '../../lib/supabase';
 import Link from 'next/link';
-import '../../globals.css';
+import '../globals.css';
 
 export default function AdminUsersPage() {
   const router = useRouter();
