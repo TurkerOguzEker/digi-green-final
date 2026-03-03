@@ -1,44 +1,41 @@
+// src/app/admin/users/page.js
 'use client';
 import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { supabase } from '../../lib/supabase';
+import { supabase } from '../../../lib/supabase';
 import Link from 'next/link';
-import '../globals.css';
+import '../../globals.css';
 
-export default function AdminDashboardPage() {
+export default function AdminUsersPage() {
   const router = useRouter();
   const [profileOpen, setProfileOpen] = useState(false);
   const [isAboutMenuOpen, setIsAboutMenuOpen] = useState(false); 
   const [loading, setLoading] = useState(true);
   
   const [currentUser, setCurrentUser] = useState(null);
-  
-  // Badge Counts & Dashboard Stats
+
+  // Badge Counts
   const [unreadMsgCount, setUnreadMsgCount] = useState(0);
   const [newsCount, setNewsCount] = useState(0);
   const [activitiesCount, setActivitiesCount] = useState(0);
   const [partnersCount, setPartnersCount] = useState(0);
   const [resultsCount, setResultsCount] = useState(0);
-  const [logsCount, setLogsCount] = useState(0);
 
-  const fetchDashboardData = useCallback(async () => {
+  const fetchPageData = useCallback(async () => {
     try {
       const { count: msgCount } = await supabase.from('contact_messages').select('*', { count: 'exact', head: true }).eq('is_read', false);
       const { count: nCount } = await supabase.from('news').select('*', { count: 'exact', head: true });
       const { count: aCount } = await supabase.from('activities').select('*', { count: 'exact', head: true });
       const { count: pCount } = await supabase.from('partners').select('*', { count: 'exact', head: true });
       const { count: rCount } = await supabase.from('results').select('*', { count: 'exact', head: true });
-      const { count: lCount } = await supabase.from('admin_logs').select('*', { count: 'exact', head: true });
         
       if (msgCount) setUnreadMsgCount(msgCount);
       if (nCount) setNewsCount(nCount);
       if (aCount) setActivitiesCount(aCount);
       if (pCount) setPartnersCount(pCount);
       if (rCount) setResultsCount(rCount);
-      if (lCount) setLogsCount(lCount);
-
     } catch (error) {
-      console.error("Dashboard veri hatasi:", error);
+      console.error("Veri hatasi:", error);
     } finally {
       setLoading(false);
     }
@@ -50,15 +47,13 @@ export default function AdminDashboardPage() {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) { router.push('/login'); return; }
       if (isMounted) setCurrentUser(session.user);
-
-      await fetchDashboardData();
+      await fetchPageData();
     }
     load();
     return () => { isMounted = false; };
-  }, [router, fetchDashboardData]);
+  }, [router, fetchPageData]);
 
   const NAV = [
-    { id: 'dashboard', label: 'Dashboard', icon: 'fas fa-chart-pie', group: 'Genel', link: '/admin', active: true },
     { id: 'messages', label: `Mesajlar`, icon: 'fas fa-inbox', badge: unreadMsgCount, group: 'Genel', link: '/admin/messages' },
     { id: 'home', label: 'Ana Sayfa', icon: 'fas fa-house', group: 'Icerik', link: '/admin/homepage' },
     { 
@@ -78,7 +73,7 @@ export default function AdminDashboardPage() {
     { id: 'results', label: 'Dosyalar', icon: 'fas fa-file-circle-check', badge: resultsCount, group: 'Icerik', link: '/admin/results' },
     { id: 'contact', label: 'Iletisim', icon: 'fas fa-phone', group: 'Icerik', link: '/admin/contact' },
     { id: 'site', label: 'Header/Footer', icon: 'fas fa-sliders', group: 'Icerik', link: '/admin/site' },
-    { id: 'users', label: 'Kullanicilar', icon: 'fas fa-users', group: 'Ayarlar', link: '/admin/users' },
+    { id: 'users', label: 'Kullanicilar', icon: 'fas fa-users', group: 'Ayarlar', link: '/admin/users', active: true },
     { id: 'logs', label: 'Loglar', icon: 'fas fa-list', group: 'Ayarlar', link: '/admin/logs' },
     { id: 'security', label: 'Sifre & Guvenlik', icon: 'fas fa-lock', group: 'Ayarlar', link: '/admin/security' },
   ];
@@ -89,13 +84,13 @@ export default function AdminDashboardPage() {
     return acc;
   }, {});
 
-  if (loading) return <div className="adm-loading"><div className="adm-loading-spinner" /><p>Panel Yukleniyor...</p></div>;
+  if (loading) return <div className="adm-loading"><div className="adm-loading-spinner" /><p>Yukleniyor...</p></div>;
 
   return (
     <>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=Syne:wght@600;700&family=JetBrains+Mono:wght@500&display=swap');
-        .adm-layout, .adm-loading { --bg: #0d1117; --surface: #161b22; --surface-2: #1c2333; --border: rgba(255,255,255,0.07); --border-hover: rgba(255,255,255,0.15); --accent: #22c55e; --accent-dim: rgba(34,197,94,0.12); --accent-glow: rgba(34,197,94,0.25); --blue: #3b82f6; --blue-dim: rgba(59,130,246,0.12); --red: #ef4444; --red-dim: rgba(239,68,68,0.12); --yellow: #f59e0b; --text-primary: #e6edf3; --text-secondary: #7d8590; --text-muted: #484f58; --sidebar-w: 260px; --radius: 10px; --radius-lg: 14px; --font: 'DM Sans', sans-serif; --font-display: 'Syne', sans-serif; --transition: 0.18s cubic-bezier(0.4,0,0.2,1); }
+        .adm-layout, .adm-loading { --bg: #0d1117; --surface: #161b22; --surface-2: #1c2333; --border: rgba(255,255,255,0.07); --border-hover: rgba(255,255,255,0.15); --accent: #22c55e; --accent-dim: rgba(34,197,94,0.12); --accent-glow: rgba(34,197,94,0.25); --text-primary: #e6edf3; --text-secondary: #7d8590; --text-muted: #484f58; --sidebar-w: 260px; --radius: 10px; --radius-lg: 14px; --font: 'DM Sans', sans-serif; --font-display: 'Syne', sans-serif; --transition: 0.18s cubic-bezier(0.4,0,0.2,1); }
         .adm-layout { font-family: var(--font); background: var(--bg); color: var(--text-primary); line-height: 1.6; display: flex; min-height: 100vh; width: 100%; -webkit-font-smoothing: antialiased; }
         .adm-sidebar { width: var(--sidebar-w); background: var(--surface); border-right: 1px solid var(--border); display: flex; flex-direction: column; position: fixed; top: 0; left: 0; bottom: 0; z-index: 100; overflow-y: auto; }
         .adm-sidebar::-webkit-scrollbar { width: 4px; } .adm-sidebar::-webkit-scrollbar-track { background: transparent; } .adm-sidebar::-webkit-scrollbar-thumb { background: var(--border-hover); border-radius: 4px; }
@@ -134,15 +129,8 @@ export default function AdminDashboardPage() {
         .adm-page-header { margin-bottom: 28px; }
         .adm-page-title { font-family: var(--font-display); font-size: 1.5rem; font-weight: 700; color: var(--text-primary); letter-spacing: -0.02em; line-height: 1.2; text-transform: capitalize; }
         .adm-page-title em { color: var(--accent); font-style: normal; }
-        .adm-page-desc { font-size: 0.875rem; color: var(--text-secondary); margin-top: 4px; }
         
-        .adm-dashboard-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 20px; margin-bottom: 30px; }
-        .adm-stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 24px; display: flex; align-items: center; gap: 20px; transition: all 0.3s ease; text-decoration: none; color: inherit; }
-        .adm-stat-card:hover { transform: translateY(-3px); border-color: var(--border-hover); box-shadow: 0 10px 30px rgba(0,0,0,0.4); }
-        .adm-stat-icon { width: 56px; height: 56px; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; flex-shrink: 0; }
-        .adm-stat-info { display: flex; flex-direction: column; }
-        .adm-stat-val { font-family: var(--font-display); font-size: 1.8rem; font-weight: 700; color: var(--text-primary); line-height: 1; margin-bottom: 4px; }
-        .adm-stat-label { font-size: 0.85rem; font-weight: 500; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.05em; }
+        .adm-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 20px; margin-bottom: 12px; }
 
         .adm-fade-in { animation: fadeUp 0.25s cubic-bezier(0.4,0,0.2,1); }
         @keyframes fadeUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
@@ -152,6 +140,8 @@ export default function AdminDashboardPage() {
         .adm-loading-spinner { width: 40px; height: 40px; border: 3px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; }
         @keyframes spin { to { transform: rotate(360deg); } }
         @keyframes topbarDropdown { from { opacity: 0; transform: translateY(-6px) scale(0.97); } to { opacity: 1; transform: translateY(0); } }
+        .adm-badge { display: inline-flex; align-items: center; padding: 2px 9px; border-radius: 20px; font-size: 0.68rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; }
+        .adm-badge-green { background: var(--accent-dim); color: var(--accent); border: 1px solid rgba(34,197,94,0.25); }
       `}</style>
 
       <div className="adm-layout">
@@ -219,7 +209,6 @@ export default function AdminDashboardPage() {
                       </Link>
                     );
                   }
-
                   return null;
                 })}
               </div>
@@ -238,10 +227,10 @@ export default function AdminDashboardPage() {
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   boxShadow: '0 4px 12px var(--accent-glow, rgba(99,102,241,0.35))',
                 }}>
-                  <i className="fas fa-chart-pie" style={{ color: '#fff', fontSize: '0.85rem' }} />
+                  <i className="fas fa-users" style={{ color: '#fff', fontSize: '0.85rem' }} />
                 </div>
                 <span style={{ fontWeight: 600, letterSpacing: '-0.01em' }}>
-                  Yonetim Paneli Özeti
+                  Kullanicilar
                 </span>
               </div>
             </div>
@@ -298,72 +287,36 @@ export default function AdminDashboardPage() {
           <div className="adm-content">
             <div className="adm-fade-in">
               <div className="adm-page-header">
-                <div className="adm-page-title">Sistem <em>Ozetiniz</em></div>
-                <div className="adm-page-desc">Projenizin guncel durumunu buradan takip edebilirsiniz.</div>
+                <div className="adm-page-title">Sistem <em>Kullanicilari</em></div>
+                <div className="adm-page-desc">Panele erisim yetkisi olan admin hesaplari.</div>
               </div>
-              
-              <div className="adm-dashboard-grid">
-                <Link href="/admin/messages" className="adm-stat-card">
-                  <div className="adm-stat-icon" style={{ background: 'rgba(239,68,68,0.15)', color: 'var(--red)', border: '1px solid rgba(239,68,68,0.3)' }}>
-                    <i className="fas fa-inbox"></i>
-                  </div>
-                  <div className="adm-stat-info">
-                    <span className="adm-stat-val">{unreadMsgCount}</span>
-                    <span className="adm-stat-label">Okunmamis Mesaj</span>
-                  </div>
-                </Link>
-
-                <Link href="/admin/news" className="adm-stat-card">
-                  <div className="adm-stat-icon" style={{ background: 'var(--accent-dim)', color: 'var(--accent)', border: '1px solid rgba(34,197,94,0.3)' }}>
-                    <i className="fas fa-newspaper"></i>
-                  </div>
-                  <div className="adm-stat-info">
-                    <span className="adm-stat-val">{newsCount}</span>
-                    <span className="adm-stat-label">Yayindaki Haber</span>
-                  </div>
-                </Link>
-
-                <Link href="/admin/activities" className="adm-stat-card">
-                  <div className="adm-stat-icon" style={{ background: 'rgba(59,130,246,0.15)', color: 'var(--blue)', border: '1px solid rgba(59,130,246,0.3)' }}>
-                    <i className="fas fa-calendar-check"></i>
-                  </div>
-                  <div className="adm-stat-info">
-                    <span className="adm-stat-val">{activitiesCount}</span>
-                    <span className="adm-stat-label">Faaliyet & Etkinlik</span>
-                  </div>
-                </Link>
-
-                <Link href="/admin/partners" className="adm-stat-card">
-                  <div className="adm-stat-icon" style={{ background: 'rgba(245,158,11,0.15)', color: 'var(--yellow)', border: '1px solid rgba(245,158,11,0.3)' }}>
-                    <i className="fas fa-handshake"></i>
-                  </div>
-                  <div className="adm-stat-info">
-                    <span className="adm-stat-val">{partnersCount}</span>
-                    <span className="adm-stat-label">Proje Ortagi</span>
-                  </div>
-                </Link>
-
-                <Link href="/admin/results" className="adm-stat-card">
-                  <div className="adm-stat-icon" style={{ background: 'rgba(168,85,247,0.15)', color: '#a855f7', border: '1px solid rgba(168,85,247,0.3)' }}>
-                    <i className="fas fa-file-circle-check"></i>
-                  </div>
-                  <div className="adm-stat-info">
-                    <span className="adm-stat-val">{resultsCount}</span>
-                    <span className="adm-stat-label">Proje Dosyasi</span>
-                  </div>
-                </Link>
-
-                <Link href="/admin/logs" className="adm-stat-card">
-                  <div className="adm-stat-icon" style={{ background: 'rgba(255,255,255,0.08)', color: 'var(--text-secondary)', border: '1px solid rgba(255,255,255,0.1)' }}>
-                    <i className="fas fa-list"></i>
-                  </div>
-                  <div className="adm-stat-info">
-                    <span className="adm-stat-val">{logsCount}</span>
-                    <span className="adm-stat-label">Sistem Logu</span>
-                  </div>
-                </Link>
+              <div className="adm-card" style={{padding: '0'}}>
+                 <table style={{width: '100%', textAlign: 'left', borderCollapse: 'collapse'}}>
+                   <thead>
+                     <tr style={{borderBottom: '1px solid var(--border)', background: 'var(--surface-2)', color: 'var(--text-secondary)', fontSize:'0.75rem', textTransform:'uppercase', letterSpacing:'0.05em'}}>
+                       <th style={{padding: '16px 20px'}}>Kullanici (Email)</th>
+                       <th style={{padding: '16px 20px'}}>ID (Benzersiz)</th>
+                       <th style={{padding: '16px 20px'}}>Son Giris Tarihi</th>
+                       <th style={{padding: '16px 20px'}}>Yetki Rolu</th>
+                     </tr>
+                   </thead>
+                   <tbody>
+                     <tr style={{borderBottom: '1px solid var(--border)'}}>
+                       <td style={{padding: '16px 20px', fontWeight: '600', color: 'var(--text-primary)'}}>
+                          <i className="fas fa-user-circle" style={{marginRight:'10px', color:'var(--accent)', fontSize:'1.2rem'}}></i>
+                          {currentUser?.email}
+                       </td>
+                       <td style={{padding: '16px 20px', fontSize:'0.85rem', fontFamily:'monospace', color:'var(--text-muted)'}}>{currentUser?.id}</td>
+                       <td style={{padding: '16px 20px', fontSize:'0.85rem', color:'var(--text-secondary)'}}>
+                         {currentUser?.last_sign_in_at ? new Date(currentUser.last_sign_in_at).toLocaleString('tr-TR') : 'Bilinmiyor'}
+                       </td>
+                       <td style={{padding: '16px 20px'}}>
+                         <span className="adm-badge adm-badge-green">Super Admin</span>
+                       </td>
+                     </tr>
+                   </tbody>
+                 </table>
               </div>
-
             </div>
           </div>
         </main>

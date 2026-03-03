@@ -47,6 +47,9 @@ const PAGE_SIZE = 15;
 export default function MessagesPage() {
   const router = useRouter();
   
+  // Profil Acilir Menu State'i
+  const [profileOpen, setProfileOpen] = useState(false);
+
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
@@ -74,7 +77,7 @@ export default function MessagesPage() {
   const closeConfirm = () => setModal({ ...modal, isOpen: false });
   const handleConfirmAction = () => { if (modal.onConfirm) modal.onConfirm(); closeConfirm(); };
 
-  // 1. DATA CEKME (SAYFA 0)
+  // 1. DATA CEKME
   const fetchInitialData = useCallback(async () => {
     const { data: bData } = await supabase.from('blocked_emails').select('*').order('created_at', { ascending: false });
     if (bData) setBlockedEmails(bData);
@@ -93,7 +96,7 @@ export default function MessagesPage() {
     setLoading(false);
   }, []);
 
-  // 2. OTURUM VE REALTIME KANALI KURULUMU
+  // 2. OTURUM VE REALTIME KANALI
   useEffect(() => {
     let isMounted = true;
     let channel;
@@ -107,10 +110,8 @@ export default function MessagesPage() {
         await fetchInitialData();
       }
 
-      // KESIN COZUM: Supabase auth token'ı manuel olarak aktar
       supabase.realtime.setAuth(session.access_token);
 
-      // REALTIME KANALI (Daha once hata veren abonelikleri engellemek icin rastgele isim)
       const channelName = `messages-channel-${Date.now()}`;
       channel = supabase
         .channel(channelName)
@@ -121,7 +122,6 @@ export default function MessagesPage() {
             console.log("[REALTIME] YENI MESAJ:", payload.new);
             showToast('Yeni bir iletisim mesaji aldiniz!', 'success');
             
-            // Yeni mesaji listeye doğrudan ekle (Tüm datayi bastan cekmeye gerek kalmadan)
             setMessages(prev => {
               if (prev.some(m => m.id === payload.new.id)) return prev;
               return [payload.new, ...prev];
@@ -138,14 +138,12 @@ export default function MessagesPage() {
 
     return () => {
       isMounted = false;
-      if (channel) {
-        supabase.removeChannel(channel);
-      }
+      if (channel) supabase.removeChannel(channel);
     };
   }, [router, fetchInitialData, showToast]);
 
 
-  // 3. SONSUZ KAYDIRMA (INFINITE SCROLL) MANTIGI
+  // 3. SONSUZ KAYDIRMA
   const loadMoreMessages = useCallback(async () => {
     if (loadingMore || !hasMore) return;
     setLoadingMore(true);
@@ -162,7 +160,6 @@ export default function MessagesPage() {
 
     if (!error && data && data.length > 0) {
       setMessages(prev => {
-        // Çift verileri önle
         const newData = data.filter(d => !prev.some(p => p.id === d.id));
         return [...prev, ...newData];
       });
@@ -191,7 +188,7 @@ export default function MessagesPage() {
   }, [loading, hasMore, loadingMore, loadMoreMessages, searchQuery]);
 
 
-  // ─── EYLEM FONKSIYONLARI ───
+  // EYLEM FONKSIYONLARI
   function deleteMessage(id, e) {
     e.stopPropagation();
     showConfirm('Bu mesaji kalici olarak silmek istediginize emin misiniz?', async () => {
@@ -223,6 +220,14 @@ export default function MessagesPage() {
     setMessages(prev => prev.map(m => m.id === msg.id ? { ...m, is_replied: newStatus } : m));
     const { error } = await supabase.from('contact_messages').update({ is_replied: newStatus }).eq('id', msg.id);
     if (!error) showToast(newStatus ? 'Yanitlandi olarak isaretlendi.' : 'Yanit durumu kaldirildi.', 'success');
+  }
+
+  async function markAllRead() {
+    const unread = messages.filter(m => !m.is_read);
+    if (!unread.length) return showToast('Okunmamis mesaj yok.', 'success');
+    setMessages(prev => prev.map(m => ({ ...m, is_read: true })));
+    await supabase.from('contact_messages').update({ is_read: true }).in('id', unread.map(m => m.id));
+    showToast('Tum mesajlar okundu olarak isaretlendi.', 'success');
   }
 
   function handleBlockEmail(email, e) {
@@ -307,15 +312,69 @@ export default function MessagesPage() {
 
         .msg-layout { display: flex; min-height: 100vh; background: #0d0f14; font-family: 'DM Sans', sans-serif; color: #e2e8f0; }
 
-        .msg-sidebar { width: 260px; flex-shrink: 0; background: #111318; border-right: 1px solid rgba(255,255,255,0.06); display: flex; flex-direction: column; padding: 28px 0; position: sticky; top: 0; height: 100vh; }
-        .msg-brand { padding: 0 24px 28px; border-bottom: 1px solid rgba(255,255,255,0.06); }
-        .msg-brand-logo { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 1.3rem; letter-spacing: 1px; color: #fff; display: flex; align-items: center; gap: 10px; }
-        .msg-brand-icon { width: 34px; height: 34px; border-radius: 10px; background: linear-gradient(135deg, #22c55e, #16a34a); display: flex; align-items: center; justify-content: center; font-size: 0.85rem; }
-        .msg-brand-logo span { color: #22c55e; }
-        .msg-brand-sub { margin-top: 6px; font-size: 0.72rem; color: #4b5563; letter-spacing: 2px; text-transform: uppercase; }
-        .msg-nav { padding: 24px 12px; flex: 1; display: flex; flex-direction: column; gap: 4px; overflow-y: auto; }
-        .msg-nav-label { font-size: 0.65rem; letter-spacing: 2.5px; color: #6b7280; font-weight: 600; text-transform: uppercase; padding: 0 12px; margin-bottom: 8px; margin-top: 8px; }
-        .msg-nav-btn { display: flex; align-items: center; gap: 12px; padding: 11px 14px; border-radius: 10px; font-size: 0.875rem; font-weight: 500; color: #9ca3af; cursor: pointer; transition: all 0.2s; text-decoration: none; border: none; background: none; width: 100%; text-align: left; }
+        /* Sidebar CSS */
+        .adm-sidebar { width: 260px; flex-shrink: 0; background: #111318; border-right: 1px solid rgba(255,255,255,0.06); display: flex; flex-direction: column; position: sticky; top: 0; height: 100vh; z-index: 100;}
+        
+        .adm-brand-wrapper { padding: 24px 20px 20px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+        .adm-brand-card {
+          display: flex;
+          align-items: center;
+          gap: 14px;
+          padding: 14px 16px;
+          background: rgba(255,255,255,0.02);
+          border: 1px solid rgba(255,255,255,0.04);
+          border-radius: 14px;
+          text-decoration: none;
+          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+          cursor: pointer;
+        }
+        .adm-brand-card:hover {
+          background: rgba(34, 197, 94, 0.08);
+          border-color: rgba(34, 197, 94, 0.2);
+          transform: translateY(-2px);
+          box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+        }
+        .adm-brand-icon {
+          width: 40px;
+          height: 40px;
+          border-radius: 10px;
+          background: linear-gradient(135deg, #22c55e, #16a34a);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 1.1rem;
+          color: #fff;
+          flex-shrink: 0;
+          box-shadow: 0 4px 10px rgba(34, 197, 94, 0.3);
+        }
+        .adm-brand-text { display: flex; flex-direction: column; }
+        .adm-brand-logo {
+          font-family: 'Syne', sans-serif;
+          font-weight: 700;
+          font-size: 1.15rem;
+          letter-spacing: 0.5px;
+          color: #fff;
+          line-height: 1.1;
+          display: block;
+          white-space: nowrap;
+        }
+        .adm-brand-logo span { color: #22c55e; }
+        .adm-brand-sub {
+          margin-top: 4px;
+          font-size: 0.65rem;
+          color: #9ca3af;
+          letter-spacing: 1px;
+          text-transform: uppercase;
+          font-weight: 600;
+          display: flex;
+          align-items: center;
+          transition: color 0.3s;
+        }
+        .adm-brand-card:hover .adm-brand-sub { color: #22c55e; }
+
+        .msg-nav { padding: 16px 12px; flex: 1; display: flex; flex-direction: column; gap: 4px; overflow-y: auto; }
+        .msg-nav-label { font-size: 0.65rem; letter-spacing: 2.5px; color: #6b7280; font-weight: 600; text-transform: uppercase; padding: 0 12px; margin-top: 16px; margin-bottom: 8px; }
+        .msg-nav-btn { display: flex; align-items: center; gap: 12px; padding: 11px 14px; border-radius: 10px; font-size: 0.875rem; font-weight: 500; color: #9ca3af; cursor: pointer; transition: all 0.2s; text-decoration: none; border: none; background: transparent; width: 100%; text-align: left; }
         .msg-nav-btn:hover { background: rgba(255,255,255,0.05); color: #f9fafb; }
         
         .msg-nav-btn.active { background: rgba(34,197,94,0.12); color: #22c55e; }
@@ -323,17 +382,15 @@ export default function MessagesPage() {
         .msg-nav-btn.active-star { background: rgba(234, 179, 8, 0.12); color: #eab308; }
         .msg-nav-btn.active-replied { background: rgba(59, 130, 246, 0.12); color: #3b82f6; }
         
-        .msg-logout-btn { display: flex; align-items: center; gap: 12px; padding: 11px 14px; border-radius: 10px; font-size: 0.875rem; font-weight: 500; color: #ef4444; cursor: pointer; transition: all 0.2s; text-decoration: none; border: none; background: none; width: 100%; text-align: left; }
-        .msg-logout-btn:hover { background: rgba(239,68,68,0.1); }
         .msg-nav-icon { width: 18px; text-align: center; }
         .msg-nav-badge { margin-left: auto; background: #22c55e; color: #000; font-size: 0.7rem; font-weight: 600; padding: 2px 8px; border-radius: 20px; }
 
         .msg-main { flex: 1; display: flex; flex-direction: column; min-width: 0; }
-        .msg-topbar { display: flex; align-items: center; justify-content: space-between; padding: 18px 36px; border-bottom: 1px solid rgba(255,255,255,0.06); background: rgba(17,19,24,0.7); backdrop-filter: blur(12px); position: sticky; top: 0; z-index: 10; }
+        
+        /* Topbar ve Profil Menu CSS */
+        .msg-topbar { height: 76px; display: flex; align-items: center; justify-content: space-between; padding: 0 36px; border-bottom: 1px solid rgba(255,255,255,0.06); background: rgba(17,19,24,0.7); backdrop-filter: blur(12px); position: sticky; top: 0; z-index: 50; }
         .msg-topbar-left { display: flex; align-items: center; gap: 16px; }
         .msg-topbar-title { font-family: 'Syne', sans-serif; font-size: 1.15rem; font-weight: 700; color: #f9fafb; display: flex; align-items: center; }
-        .msg-topbar-pill { display: flex; align-items: center; gap: 8px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08); padding: 7px 14px; border-radius: 20px; font-size: 0.8rem; color: #9ca3af; }
-        .msg-topbar-pill .dot { width: 7px; height: 7px; border-radius: 50%; background: #22c55e; box-shadow: 0 0 6px #22c55e; display: inline-block; }
 
         .msg-content { padding: 36px; flex: 1; overflow-y: auto; }
         
@@ -349,6 +406,9 @@ export default function MessagesPage() {
         .msg-search-wrap i { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: #4b5563; font-size: 0.85rem; }
         .msg-search-input { width: 100%; background: #111318; border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 10px 14px 10px 38px; color: #e2e8f0; font-size: 0.875rem; font-family: 'DM Sans', sans-serif; outline: none; transition: border-color 0.2s; box-sizing: border-box; }
         .msg-search-input:focus { border-color: rgba(34,197,94,0.4); }
+
+        .msg-mark-all-btn { background: none; border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 10px 16px; color: #6b7280; font-size: 0.82rem; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 7px; margin-left: auto; }
+        .msg-mark-all-btn:hover { color: #d1d5db; border-color: rgba(255,255,255,0.15); }
 
         .msg-list { background: #111318; border: 1px solid rgba(255,255,255,0.07); border-radius: 16px; overflow: hidden; }
         .msg-item { border-bottom: 1px solid rgba(255,255,255,0.05); cursor: pointer; transition: background 0.2s; }
@@ -430,8 +490,10 @@ export default function MessagesPage() {
         
         .load-more-indicator { display: flex; flex-direction: column; align-items: center; padding: 20px 0; color: #6b7280; font-size: 0.8rem; letter-spacing: 1px; text-transform: uppercase; }
 
-        @keyframes toastSlideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
-        @keyframes modalPop { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        @keyframes topbarDropdown {
+          from { opacity: 0; transform: translateY(-6px) scale(0.97); }
+          to   { opacity: 1; transform: translateY(0) scale(1); }
+        }
       `}</style>
 
       {loading ? (
@@ -445,13 +507,20 @@ export default function MessagesPage() {
           <Toast message={toast?.message} type={toast?.type} onClose={() => setToast(null)} />
           <ConfirmModal isOpen={modal.isOpen} message={modal.message} onConfirm={handleConfirmAction} onCancel={closeConfirm} />
 
-          <aside className="msg-sidebar">
-            <div className="msg-brand">
-              <div className="msg-brand-logo">
-                <div className="msg-brand-icon"><i className="fas fa-leaf" /></div>
-                DIGI-<span>GREEN</span>
-              </div>
-              <div className="msg-brand-sub">Yonetim Paneli</div>
+          <aside className="adm-sidebar">
+            <div className="adm-brand-wrapper">
+              <Link href="/admin" className="adm-brand-card" title="Yonetim Paneline Git">
+                <div className="adm-brand-icon">
+                  <i className="fas fa-leaf" />
+                </div>
+                <div className="adm-brand-text">
+                  <div className="adm-brand-logo">DIGI-<span>GREEN</span></div>
+                  <div className="adm-brand-sub">
+                    Yonetim Paneli 
+                    <i className="fas fa-external-link-alt" style={{ marginLeft: '6px', fontSize: '0.6rem' }} />
+                  </div>
+                </div>
+              </Link>
             </div>
             
             <nav className="msg-nav">
@@ -513,13 +582,6 @@ export default function MessagesPage() {
               </button>
 
             </nav>
-
-            <div style={{ padding: '0 12px', marginTop: 'auto' }}>
-              <button className="msg-logout-btn" onClick={async () => { await supabase.auth.signOut(); router.push('/login'); }}>
-                <span className="msg-nav-icon"><i className="fas fa-arrow-right-from-bracket" /></span>
-                Cikis Yap
-              </button>
-            </div>
           </aside>
 
           <main className="msg-main">
@@ -550,9 +612,145 @@ export default function MessagesPage() {
                   }
                 </div>
               </div>
-              <div className="msg-topbar-pill">
-                <span className="dot" />
-                {currentUser?.email || 'Admin'}
+              
+              <div style={{ position: 'relative', display: 'flex', alignItems: 'center', height: '100%' }}>
+                <button
+                  onClick={() => setProfileOpen(!profileOpen)}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: '10px',
+                    padding: '6px 14px 6px 6px',
+                    background: profileOpen ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.02)',
+                    border: '1px solid',
+                    borderColor: profileOpen ? '#22c55e' : 'rgba(255,255,255,0.05)',
+                    borderRadius: '999px',
+                    cursor: 'pointer',
+                    color: '#fff',
+                    transition: 'all 0.2s ease',
+                    outline: 'none',
+                    userSelect: 'none',
+                  }}
+                  onMouseEnter={e => {
+                    e.currentTarget.style.borderColor = '#22c55e';
+                    e.currentTarget.style.background = 'rgba(255,255,255,0.08)';
+                  }}
+                  onMouseLeave={e => {
+                    if (!profileOpen) {
+                      e.currentTarget.style.borderColor = 'rgba(255,255,255,0.05)';
+                      e.currentTarget.style.background = 'rgba(255,255,255,0.02)';
+                    }
+                  }}
+                >
+                  <div style={{
+                    width: '28px', height: '28px',
+                    background: 'linear-gradient(135deg, #22c55e, #16a34a)',
+                    borderRadius: '50%',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    color: '#fff', fontWeight: 700, fontSize: '0.85rem',
+                    lineHeight: 1, paddingBottom: '1px',
+                    flexShrink: 0,
+                    boxShadow: '0 2px 8px rgba(34, 197, 94, 0.4)',
+                  }}>
+                    {currentUser?.email ? currentUser.email.charAt(0).toUpperCase() : 'A'}
+                  </div>
+
+                  <span style={{ fontSize: '0.85rem', fontWeight: 500, maxWidth: '130px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {currentUser?.email?.split('@')[0] || 'Admin'}
+                  </span>
+
+                  <i
+                    className={`fas fa-chevron-${profileOpen ? 'up' : 'down'}`}
+                    style={{
+                      fontSize: '0.7rem',
+                      opacity: 0.5,
+                      transition: 'transform 0.2s ease',
+                      transform: profileOpen ? 'rotate(180deg)' : 'rotate(0deg)',
+                    }}
+                  />
+                </button>
+
+                {profileOpen && (
+                  <>
+                    <div
+                      style={{ position: 'fixed', inset: 0, zIndex: 99 }}
+                      onClick={() => setProfileOpen(false)}
+                    />
+
+                    <div style={{
+                      position: 'absolute',
+                      top: 'calc(100% + 10px)',
+                      right: 0,
+                      width: '240px',
+                      background: '#111318',
+                      border: '1px solid rgba(255,255,255,0.1)',
+                      borderRadius: '16px',
+                      padding: '8px',
+                      boxShadow: '0 20px 40px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.04) inset',
+                      zIndex: 100,
+                      animation: 'topbarDropdown 0.18s cubic-bezier(0.16,1,0.3,1)',
+                    }}>
+
+                      <div style={{
+                        padding: '12px 14px',
+                        marginBottom: '6px',
+                        background: 'rgba(255,255,255,0.04)',
+                        borderRadius: '10px',
+                        display: 'flex', alignItems: 'center', gap: '12px',
+                      }}>
+                        <div style={{
+                          width: '38px', height: '38px', flexShrink: 0,
+                          background: 'linear-gradient(135deg, #22c55e, #16a34a)',
+                          borderRadius: '12px',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          color: '#fff', fontWeight: 700, fontSize: '1.1rem',
+                          lineHeight: 1, paddingBottom: '2px',
+                        }}>
+                          {currentUser?.email ? currentUser.email.charAt(0).toUpperCase() : 'A'}
+                        </div>
+                        <div style={{ overflow: 'hidden' }}>
+                          <div style={{ fontSize: '0.75rem', color: '#9ca3af', marginBottom: '2px' }}>
+                            Oturum acik
+                          </div>
+                          <div style={{
+                            fontSize: '0.85rem', fontWeight: 600,
+                            color: '#fff',
+                            overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                          }}>
+                            {currentUser?.email}
+                          </div>
+                        </div>
+                      </div>
+
+                      <button
+                        onClick={async () => { await supabase.auth.signOut(); router.push('/login'); }}
+                        style={{
+                          width: '100%',
+                          display: 'flex', alignItems: 'center', gap: '10px',
+                          padding: '11px 14px',
+                          background: 'transparent',
+                          border: '1px solid transparent',
+                          borderRadius: '10px',
+                          cursor: 'pointer',
+                          color: '#f87171',
+                          fontSize: '0.875rem',
+                          fontWeight: 500,
+                          transition: 'all 0.15s ease',
+                          textAlign: 'left',
+                        }}
+                        onMouseEnter={e => {
+                          e.currentTarget.style.background = 'rgba(248,113,113,0.1)';
+                          e.currentTarget.style.borderColor = 'rgba(248,113,113,0.25)';
+                        }}
+                        onMouseLeave={e => {
+                          e.currentTarget.style.background = 'transparent';
+                          e.currentTarget.style.borderColor = 'transparent';
+                        }}
+                      >
+                        <i className="fas fa-arrow-right-from-bracket" style={{ fontSize: '0.9rem', width: '16px' }} />
+                        Cikis Yap
+                      </button>
+                    </div>
+                  </>
+                )}
               </div>
             </div>
 
