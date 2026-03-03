@@ -1,12 +1,13 @@
-import './globals.css';
+import type { Metadata } from "next";
+import "./globals.css";
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import ScrollToTop from '../components/ScrollToTop';
 import { supabase } from '../lib/supabase'; 
-// ✨ YENİ: Dil Context'ini (LanguageProvider) içeri aktarıyoruz
 import { LanguageProvider } from '../context/LanguageContext';
+import CookieBanner from '../components/CookieBanner';
+import Script from 'next/script';
 
-// ✨ NEXT.JS ÖNBELLEĞİNİ İPTAL EDİYORUZ (Her seferinde güncel veriyi çekecek)
 export const revalidate = 0;
 export const dynamic = 'force-dynamic';
 
@@ -20,12 +21,10 @@ export async function generateMetadata() {
     });
   }
 
-  // Tarayıcı önbelleğini kırmak için URL sonuna rastgele zaman damgası ekliyoruz
   const logoUrl = settings['header_logo_image'] 
     ? `${settings['header_logo_image']}?v=${new Date().getTime()}` 
     : '/favicon.ico';
 
-  // ✨ GOOGLE SEO ve SOSYAL MEDYA (OPENGRAPH) ETİKETLERİ EKLENDİ ✨
   return {
     title: 'DIGI-GREEN FUTURE | Dijital Yeşil Dönüşüm',
     description: 'Kapaklı Belediyesi liderliğinde yürütülen, iklim değişikliği ile mücadelede dijital araçları kullanmayı hedefleyen Erasmus+ projesi.',
@@ -36,11 +35,11 @@ export async function generateMetadata() {
     openGraph: {
       title: 'DIGI-GREEN FUTURE',
       description: 'Vatandaş Odaklı Yerel Yeşil Gelecek İçin Dijital Dönüşüm Projesi',
-      url: 'https://digigreenfuture.eu', // Canlıya aldığında buraya kendi alan adını yazarsın
+      url: 'https://digigreenfuture.eu', 
       siteName: 'DIGI-GREEN FUTURE',
       images: [
         {
-          url: '/assets/images/eu-flag.png', // Sosyal medyada paylaşıldığında çıkacak resim
+          url: '/assets/images/eu-flag.png',
           width: 800,
           height: 600,
         },
@@ -51,14 +50,12 @@ export async function generateMetadata() {
   }
 }
 
-// ✨ RootLayout async yapıldı! Ayarlar sayfa yüklenmeden ÖNCE burada çekilecek ✨
 export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
   
-  // SUNUCU (SERVER) TARAFINDA SİTE AYARLARINI ÇEKİYORUZ
   const { data } = await supabase.from('settings').select('*');
   const settings: Record<string, string> = {};
   if (data) {
@@ -67,26 +64,56 @@ export default async function RootLayout({
     });
   }
 
+  const GA_MEASUREMENT_ID = 'G-XXXXXXXXXX'; 
+
   return (
     <html lang="tr" suppressHydrationWarning>
       <head>
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Montserrat:wght@600;700;800&display=swap" rel="stylesheet" />
         
-        {/* ✨ GÜNCELLENDİ: İkonların engellenmemesi için crossOrigin ve referrerPolicy eklendi ✨ */}
         <link 
           rel="stylesheet" 
           href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" 
           crossOrigin="anonymous" 
           referrerPolicy="no-referrer" 
         />
-        
         <link rel="stylesheet" href="/assets/css/main.css" />
       </head>
+      
+      {/* className'deki hata çıkartan geist fontlarını temizledik */}
       <body suppressHydrationWarning>
         
-        {/* ✨ YENİ: Tüm uygulamayı LanguageProvider ile sarmalıyoruz ✨ */}
+        {/* GOOGLE ANALYTICS SCRIPTS */}
+        <Script id="google-analytics-consent" strategy="afterInteractive">
+          {`
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            
+            gtag('consent', 'default', {
+              'analytics_storage': 'denied',
+              'ad_storage': 'denied'
+            });
+
+            if (localStorage.getItem('cookie_consent') === 'granted') {
+              gtag('consent', 'update', {
+                'analytics_storage': 'granted'
+              });
+            }
+          `}
+        </Script>
+        <Script src={`https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`} strategy="afterInteractive" />
+        <Script id="google-analytics-init" strategy="afterInteractive">
+          {`
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+            gtag('config', '${GA_MEASUREMENT_ID}', {
+              page_path: window.location.pathname,
+            });
+          `}
+        </Script>
+
         <LanguageProvider>
-            {/* ✨ TYPESCRIPT HATASINI SUSTURMAK İÇİN ts-ignore EKLENDİ ✨ */}
             {/* @ts-ignore */}
             <Header initialSettings={settings} />
             
@@ -98,6 +125,7 @@ export default async function RootLayout({
             <Footer initialSettings={settings} />
             
             <ScrollToTop />
+            <CookieBanner />
         </LanguageProvider>
         
       </body>

@@ -11,6 +11,7 @@ export default function LogsPage() {
   const [loading, setLoading] = useState(true);
   const [currentUser, setCurrentUser] = useState(null);
   const [profileOpen, setProfileOpen] = useState(false);
+  const [isAboutMenuOpen, setIsAboutMenuOpen] = useState(false); 
   const [logs, setLogs] = useState([]);
   const [unreadMsgCount, setUnreadMsgCount] = useState(0);
 
@@ -45,20 +46,31 @@ export default function LogsPage() {
     return () => { isMounted = false; };
   }, [router]);
 
-  // Diger sayfalara gecis yapabilmek icin hepsine Link verdik
+  const currentPath = typeof window !== 'undefined' ? window.location.pathname : '';
   const NAV = [
-    { id: 'messages', label: 'Mesajlar', icon: 'fas fa-inbox', badge: unreadMsgCount, group: 'Genel', link: '/admin/messages' },
-    { id: 'home', label: 'Ana Sayfa', icon: 'fas fa-house', group: 'Icerik', link: '/admin' },
-    { id: 'about', label: 'Hakkinda', icon: 'fas fa-circle-info', group: 'Icerik', link: '/admin' },
-    { id: 'news', label: 'Haberler', icon: 'fas fa-newspaper', group: 'Icerik', link: '/admin' },
-    { id: 'activities', label: 'Faaliyetler', icon: 'fas fa-calendar-check', group: 'Icerik', link: '/admin' },
-    { id: 'partners', label: 'Ortaklar', icon: 'fas fa-handshake', group: 'Icerik', link: '/admin' },
-    { id: 'results', label: 'Dosyalar', icon: 'fas fa-file-circle-check', group: 'Icerik', link: '/admin' },
-    { id: 'contact', label: 'Iletisim', icon: 'fas fa-phone', group: 'Icerik', link: '/admin' },
-    { id: 'site', label: 'Header/Footer', icon: 'fas fa-sliders', group: 'Icerik', link: '/admin' },
-    { id: 'users', label: 'Kullanicilar', icon: 'fas fa-users', group: 'Ayarlar', link: '/admin' },
-    { id: 'logs', label: 'Loglar', icon: 'fas fa-list', group: 'Ayarlar', link: '/admin/logs', active: true },
-    { id: 'security', label: 'Sifre & Guvenlik', icon: 'fas fa-lock', group: 'Ayarlar', link: '/admin' },
+    { id: 'dashboard', label: 'Dashboard', icon: 'fas fa-chart-pie', group: 'Genel', link: '/admin', active: currentPath === '/admin' },
+    { id: 'messages', label: `Mesajlar`, icon: 'fas fa-inbox', badge: typeof unreadMsgCount !== 'undefined' ? unreadMsgCount : 0, group: 'Genel', link: '/admin/messages', active: currentPath === '/admin/messages' },
+    { id: 'home', label: 'Ana Sayfa', icon: 'fas fa-house', group: 'Icerik', link: '/admin/homepage', active: currentPath === '/admin/homepage' },
+    { 
+      id: 'about', label: 'Hakkinda', icon: 'fas fa-circle-info', group: 'Icerik',
+      subItems: [
+        { id: 'general', label: 'Genel Hakkinda', tab: 'general' },
+        { id: 'consortium', label: 'Konsorsiyum', tab: 'consortium' },
+        { id: 'impact', label: 'Proje Etkisi', tab: 'impact' },
+        { id: 'plan', label: 'Proje Plani', tab: 'plan' },  
+        { id: 'roadmap', label: 'Yol Haritasi', tab: 'roadmap' },
+        { id: 'strategy', label: 'Strateji', tab: 'strategy' }
+      ]
+    },
+    { id: 'news', label: 'Haberler', icon: 'fas fa-newspaper', badge: typeof newsCount !== 'undefined' ? newsCount : 0, group: 'Icerik', link: '/admin/news', active: currentPath === '/admin/news' },
+    { id: 'activities', label: 'Faaliyetler', icon: 'fas fa-calendar-check', badge: typeof activitiesCount !== 'undefined' ? activitiesCount : 0, group: 'Icerik', link: '/admin/activities', active: currentPath === '/admin/activities' },
+    { id: 'partners', label: 'Ortaklar', icon: 'fas fa-handshake', badge: typeof partnersCount !== 'undefined' ? partnersCount : 0, group: 'Icerik', link: '/admin/partners', active: currentPath === '/admin/partners' },
+    { id: 'results', label: 'Dosyalar', icon: 'fas fa-file-circle-check', badge: typeof resultsCount !== 'undefined' ? resultsCount : 0, group: 'Icerik', link: '/admin/results', active: currentPath === '/admin/results' },
+    { id: 'contact', label: 'Iletisim', icon: 'fas fa-phone', group: 'Icerik', link: '/admin/contact', active: currentPath === '/admin/contact' },
+    { id: 'site', label: 'Header/Footer', icon: 'fas fa-sliders', group: 'Icerik', link: '/admin/site', active: currentPath === '/admin/site' },
+    { id: 'users', label: 'Kullanicilar', icon: 'fas fa-users', group: 'Ayarlar', link: '/admin/users', active: currentPath === '/admin/users' },
+    { id: 'logs', label: 'Loglar', icon: 'fas fa-list', group: 'Ayarlar', link: '/admin/logs', active: currentPath === '/admin/logs' },
+    { id: 'security', label: 'Sifre & Guvenlik', icon: 'fas fa-lock', group: 'Ayarlar', link: '/admin/security', active: currentPath === '/admin/security' },
   ];
 
   const groupedNav = NAV.reduce((acc, item) => {
@@ -100,6 +112,12 @@ export default function LogsPage() {
         .adm-nav-icon { width: 18px; height: 18px; display: flex; align-items: center; justify-content: center; font-size: 0.85rem; flex-shrink: 0; transition: var(--transition); }
         .adm-nav-badge { margin-left: auto; background: var(--accent); color: #000; font-size: 0.65rem; font-weight: 700; padding: 2px 7px; border-radius: 20px; min-width: 20px; text-align: center; }
 
+        /* Alt Menu (Accordion) CSS */
+        .adm-nav-submenu { display: flex; flex-direction: column; gap: 2px; padding-left: 38px; padding-right: 8px; margin-top: 2px; margin-bottom: 8px; animation: fadeDown 0.2s ease;}
+        .adm-nav-subitem { display: flex; align-items: center; padding: 8px 12px; font-size: 0.8rem; color: var(--text-secondary); background: transparent; border: none; border-radius: 8px; cursor: pointer; transition: var(--transition); text-align: left; }
+        .adm-nav-subitem:hover { color: var(--text-primary); background: rgba(255,255,255,0.03); }
+        .adm-nav-subitem.active { color: var(--accent); background: var(--accent-dim); font-weight: 600; }
+
         .adm-main { margin-left: var(--sidebar-w); flex: 1; display: flex; flex-direction: column; min-height: 100vh; }
         .adm-topbar { height: 76px; background: var(--surface); border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; padding: 0 32px; position: sticky; top: 0; z-index: 50; }
         .adm-topbar-title { font-family: var(--font-display); font-size: 0.95rem; font-weight: 700; color: var(--text-primary); flex: 1; }
@@ -121,6 +139,7 @@ export default function LogsPage() {
         @keyframes topbarDropdown { from { opacity: 0; transform: translateY(-6px) scale(0.97); } to { opacity: 1; transform: translateY(0) scale(1); } }
         .adm-fade-in { animation: fadeUp 0.25s cubic-bezier(0.4,0,0.2,1); }
         @keyframes fadeUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes fadeDown { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: translateY(0); } }
       `}</style>
 
       <div className="adm-layout">
@@ -144,17 +163,52 @@ export default function LogsPage() {
             {Object.entries(groupedNav).map(([group, items]) => (
               <div key={group} className="adm-nav-section">
                 <div className="adm-nav-label">{group}</div>
-                {items.map(item => (
-                  <Link 
-                    href={item.link} 
-                    key={item.id} 
-                    className={`adm-nav-btn ${item.active ? 'active' : ''}`} 
-                    style={{ textDecoration: 'none', color: 'inherit' }}
-                  >
-                    <span className="adm-nav-icon"><i className={item.icon} /></span>{item.label}
-                    {item.badge > 0 && <span className="adm-nav-badge">{item.badge}</span>}
-                  </Link>
-                ))}
+                {items.map(item => {
+                  if (item.subItems) {
+                    return (
+                      <div key={item.id}>
+                        <button 
+                          className={`adm-nav-btn ${item.active ? 'active' : ''}`}
+                          onClick={() => setIsAboutMenuOpen(!isAboutMenuOpen)}
+                        >
+                          <span className="adm-nav-icon"><i className={item.icon} /></span>{item.label}
+                          <i className={`fas fa-chevron-${isAboutMenuOpen ? 'up' : 'down'}`} style={{ marginLeft: 'auto', fontSize: '0.7rem', transition: 'all 0.2s', opacity: 0.6 }} />
+                        </button>
+                        
+                        {isAboutMenuOpen && (
+                          <div className="adm-nav-submenu">
+                            {item.subItems.map(sub => (
+                              <button
+                                key={sub.id}
+                                className={`adm-nav-subitem`}
+                                onClick={() => router.push(`/admin/about?tab=${sub.tab}`, { scroll: false })}
+                              >
+                                <span style={{width:'4px', height:'4px', borderRadius:'50%', background:'currentColor', marginRight:'8px', display:'inline-block', opacity: 0.4}}></span>
+                                {sub.label}
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  }
+
+                  if (item.link) {
+                    return (
+                      <Link 
+                        href={item.link} 
+                        key={item.id} 
+                        className={`adm-nav-btn ${item.active ? 'active' : ''}`} 
+                        style={{ textDecoration: 'none', color: 'inherit' }}
+                      >
+                        <span className="adm-nav-icon"><i className={item.icon} /></span>{item.label}
+                        {item.badge > 0 && <span className="adm-nav-badge">{item.badge}</span>}
+                      </Link>
+                    );
+                  }
+
+                  return null;
+                })}
               </div>
             ))}
           </nav>
@@ -240,7 +294,7 @@ export default function LogsPage() {
                         {currentUser?.email ? currentUser.email.charAt(0).toUpperCase() : 'A'}
                       </div>
                       <div style={{ overflow: 'hidden' }}>
-                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '2px' }}>Oturum acik</div>
+                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', margin: 0 }}>Oturum acik</div>
                         <div style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{currentUser?.email}</div>
                       </div>
                     </div>

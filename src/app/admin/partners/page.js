@@ -131,6 +131,7 @@ export default function AdminPartnersPage() {
   const [unreadMsgCount, setUnreadMsgCount] = useState(0);
   const [newsCount, setNewsCount] = useState(0);
   const [activitiesCount, setActivitiesCount] = useState(0);
+  const [resultsCount, setResultsCount] = useState(0);
 
   // Form State
   const [partnerForm, setPartnerForm] = useState({ id: null, name: '', name_en: '', country: '', country_en: '', image_url: '', flag_url: '', website: '', description: '', description_en: '', role: 'Ortak', role_en: '' });
@@ -152,6 +153,7 @@ export default function AdminPartnersPage() {
       const { count: msgCount } = await supabase.from('contact_messages').select('*', { count: 'exact', head: true }).eq('is_read', false);
       const { count: nCount } = await supabase.from('news').select('*', { count: 'exact', head: true });
       const { count: aCount } = await supabase.from('activities').select('*', { count: 'exact', head: true });
+      const { count: rCount } = await supabase.from('results').select('*', { count: 'exact', head: true });
         
       setSettings(s.data || []);
       setPartners(p.data || []);
@@ -159,6 +161,7 @@ export default function AdminPartnersPage() {
       if (msgCount) setUnreadMsgCount(msgCount);
       if (nCount) setNewsCount(nCount);
       if (aCount) setActivitiesCount(aCount);
+      if (rCount) setResultsCount(rCount);
     } catch (error) {
       console.error("Veri hatasi:", error);
     } finally {
@@ -267,30 +270,31 @@ export default function AdminPartnersPage() {
   }
 
   const commonProps = { settings, handleSettingChange, updateSetting, uploadFile };
-
+ const currentPath = typeof window !== 'undefined' ? window.location.pathname : '';
   const NAV = [
-    { id: 'messages', label: `Mesajlar`, icon: 'fas fa-inbox', badge: unreadMsgCount, group: 'Genel', link: '/admin/messages' },
-    { id: 'home', label: 'Ana Sayfa', icon: 'fas fa-house', group: 'Icerik', link: '/admin/homepage' },
+    { id: 'dashboard', label: 'Dashboard', icon: 'fas fa-chart-pie', group: 'Genel', link: '/admin', active: currentPath === '/admin' },
+    { id: 'messages', label: `Mesajlar`, icon: 'fas fa-inbox', badge: typeof unreadMsgCount !== 'undefined' ? unreadMsgCount : 0, group: 'Genel', link: '/admin/messages', active: currentPath === '/admin/messages' },
+    { id: 'home', label: 'Ana Sayfa', icon: 'fas fa-house', group: 'Icerik', link: '/admin/homepage', active: currentPath === '/admin/homepage' },
     { 
       id: 'about', label: 'Hakkinda', icon: 'fas fa-circle-info', group: 'Icerik',
       subItems: [
         { id: 'general', label: 'Genel Hakkinda', tab: 'general' },
         { id: 'consortium', label: 'Konsorsiyum', tab: 'consortium' },
         { id: 'impact', label: 'Proje Etkisi', tab: 'impact' },
-        { id: 'plan', label: 'Proje Plani', tab: 'plan' },
+        { id: 'plan', label: 'Proje Plani', tab: 'plan' },  
         { id: 'roadmap', label: 'Yol Haritasi', tab: 'roadmap' },
         { id: 'strategy', label: 'Strateji', tab: 'strategy' }
       ]
     },
-    { id: 'news', label: 'Haberler', icon: 'fas fa-newspaper', badge: newsCount, group: 'Icerik', link: '/admin/news' },
-    { id: 'activities', label: 'Faaliyetler', icon: 'fas fa-calendar-check', badge: activitiesCount, group: 'Icerik', link: '/admin/activities' },
-    { id: 'partners', label: 'Ortaklar', icon: 'fas fa-handshake', badge: partners.length, group: 'Icerik', link: '/admin/partners', active: true },
-    { id: 'results', label: 'Dosyalar', icon: 'fas fa-file-circle-check', group: 'Icerik', link: '/admin' },
-    { id: 'contact', label: 'Iletisim', icon: 'fas fa-phone', group: 'Icerik', link: '/admin' },
-    { id: 'site', label: 'Header/Footer', icon: 'fas fa-sliders', group: 'Icerik', link: '/admin' },
-    { id: 'users', label: 'Kullanicilar', icon: 'fas fa-users', group: 'Ayarlar', link: '/admin' },
-    { id: 'logs', label: 'Loglar', icon: 'fas fa-list', group: 'Ayarlar', link: '/admin/logs' },
-    { id: 'security', label: 'Sifre & Guvenlik', icon: 'fas fa-lock', group: 'Ayarlar', link: '/admin' },
+    { id: 'news', label: 'Haberler', icon: 'fas fa-newspaper', badge: typeof newsCount !== 'undefined' ? newsCount : (typeof news !== 'undefined' ? news.length : 0), group: 'Icerik', link: '/admin/news', active: currentPath === '/admin/news' },
+    { id: 'activities', label: 'Faaliyetler', icon: 'fas fa-calendar-check', badge: typeof activitiesCount !== 'undefined' ? activitiesCount : (typeof activities !== 'undefined' ? activities.length : 0), group: 'Icerik', link: '/admin/activities', active: currentPath === '/admin/activities' },
+    { id: 'partners', label: 'Ortaklar', icon: 'fas fa-handshake', badge: typeof partnersCount !== 'undefined' ? partnersCount : (typeof partners !== 'undefined' ? partners.length : 0), group: 'Icerik', link: '/admin/partners', active: currentPath === '/admin/partners' },
+    { id: 'results', label: 'Dosyalar', icon: 'fas fa-file-circle-check', badge: typeof resultsCount !== 'undefined' ? resultsCount : (typeof results !== 'undefined' ? results.length : 0), group: 'Icerik', link: '/admin/results', active: currentPath === '/admin/results' },
+    { id: 'contact', label: 'Iletisim', icon: 'fas fa-phone', group: 'Icerik', link: '/admin/contact', active: currentPath === '/admin/contact' },
+    { id: 'site', label: 'Header/Footer', icon: 'fas fa-sliders', group: 'Icerik', link: '/admin/site', active: currentPath === '/admin/site' },
+    { id: 'users', label: 'Kullanicilar', icon: 'fas fa-users', group: 'Ayarlar', link: '/admin/users', active: currentPath === '/admin/users' },
+    { id: 'logs', label: 'Loglar', icon: 'fas fa-list', group: 'Ayarlar', link: '/admin/logs', active: currentPath === '/admin/logs' },
+    { id: 'security', label: 'Sifre & Guvenlik', icon: 'fas fa-lock', group: 'Ayarlar', link: '/admin/security', active: currentPath === '/admin/security' },
   ];
 
   const groupedNav = NAV.reduce((acc, item) => {
@@ -298,7 +302,9 @@ export default function AdminPartnersPage() {
     acc[item.group].push(item);
     return acc;
   }, {});
+
   const currentTab = NAV.find(n => n.id === 'partners');
+
   if (loading) return <div className="adm-loading"><div className="adm-loading-spinner" /><p>Yukleniyor...</p></div>;
 
   return (
@@ -504,19 +510,7 @@ export default function AdminPartnersPage() {
                     );
                   }
 
-                  return (
-                    <button 
-                      key={item.id} 
-                      className={`adm-nav-btn ${activeTab === item.id ? 'active' : ''}`} 
-                      onClick={() => { 
-                          setActiveTab(item.id); 
-                          setIsEditing(false); 
-                      }}
-                    >
-                      <span className="adm-nav-icon"><i className={item.icon} /></span>{item.label}
-                      {item.badge > 0 && <span className="adm-nav-badge">{item.badge}</span>}
-                    </button>
-                  );
+                  return null;
                 })}
               </div>
             ))}
@@ -619,484 +613,151 @@ export default function AdminPartnersPage() {
 
           <div className="adm-content">
 
-            {/* ORTAKLAR */}
-            {activeTab === 'partners' && (
-              <div className="adm-fade-in">
-                <div className="adm-page-header">
-                  <div className="adm-page-title">Ortaklar & <em>Kurumlar</em></div>
+            <div className="adm-fade-in">
+              <div className="adm-page-header">
+                <div className="adm-page-title">Ortaklar & <em>Kurumlar</em></div>
+              </div>
+
+              <div className="adm-section" style={{ background: 'var(--surface-2)', padding: '20px', borderRadius: '14px', border: '1px dashed var(--border)', marginBottom: '30px' }}>
+                <SectionHeader iconClass="fas fa-layer-group" title="Sayfa Ust Bilgileri (Hero)" />
+                <div className="adm-form-grid2">
+                  <SettingInput label="Ust Ufak Baslik (TR)" settingKey="partners_hero_eyebrow" {...commonProps} />
+                  <SettingInput label="Ust Ufak Baslik (EN)" settingKey="partners_hero_eyebrow_en" {...commonProps} />
+                  <SettingInput label="Ana Baslik Satir 1 (TR)" settingKey="partners_hero_title1" {...commonProps} />
+                  <SettingInput label="Ana Baslik Satir 1 (EN)" settingKey="partners_hero_title1_en" {...commonProps} />
+                  <SettingInput label="Vurgulu Baslik Satir 2 (TR)" settingKey="partners_hero_title2" {...commonProps} />
+                  <SettingInput label="Vurgulu Baslik Satir 2 (EN)" settingKey="partners_hero_title2_en" {...commonProps} />
+                </div>
+                <div className="adm-form-grid2" style={{marginTop:'10px'}}>
+                  <SettingInput label="Giris Aciklamasi (TR)" settingKey="partners_page_desc" type="textarea" {...commonProps} />
+                  <SettingInput label="Giris Aciklamasi (EN)" settingKey="partners_page_desc_en" type="textarea" {...commonProps} />
+                </div>
+                <div className="adm-form-grid2" style={{marginTop:'10px'}}>
+                  <SettingInput label="Kaydirma Butonu (TR)" settingKey="partners_hero_scroll" {...commonProps} />
+                  <SettingInput label="Kaydirma Butonu (EN)" settingKey="partners_hero_scroll_en" {...commonProps} />
                 </div>
 
-                <div className="adm-section" style={{ background: 'var(--surface-2)', padding: '20px', borderRadius: '14px', border: '1px dashed var(--border)', marginBottom: '30px' }}>
-                  <SectionHeader iconClass="fas fa-layer-group" title="Sayfa Ust Bilgileri (Hero)" />
-                  <div className="adm-form-grid2">
-                    <SettingInput label="Ust Ufak Baslik (TR)" settingKey="partners_hero_eyebrow" {...commonProps} />
-                    <SettingInput label="Ust Ufak Baslik (EN)" settingKey="partners_hero_eyebrow_en" {...commonProps} />
-                    <SettingInput label="Ana Baslik Satir 1 (TR)" settingKey="partners_hero_title1" {...commonProps} />
-                    <SettingInput label="Ana Baslik Satir 1 (EN)" settingKey="partners_hero_title1_en" {...commonProps} />
-                    <SettingInput label="Vurgulu Baslik Satir 2 (TR)" settingKey="partners_hero_title2" {...commonProps} />
-                    <SettingInput label="Vurgulu Baslik Satir 2 (EN)" settingKey="partners_hero_title2_en" {...commonProps} />
-                  </div>
-                  <div className="adm-form-grid2" style={{marginTop:'10px'}}>
-                    <SettingInput label="Giris Aciklamasi (TR)" settingKey="partners_page_desc" type="textarea" {...commonProps} />
-                    <SettingInput label="Giris Aciklamasi (EN)" settingKey="partners_page_desc_en" type="textarea" {...commonProps} />
-                  </div>
-                  <div className="adm-form-grid2" style={{marginTop:'10px'}}>
-                    <SettingInput label="Kaydirma Butonu (TR)" settingKey="partners_hero_scroll" {...commonProps} />
-                    <SettingInput label="Kaydirma Butonu (EN)" settingKey="partners_hero_scroll_en" {...commonProps} />
-                  </div>
+                <div className="adm-divider" style={{margin: '20px 0'}} />
 
-                  <div className="adm-divider" style={{margin: '20px 0'}} />
-
-                  <SectionHeader iconClass="fas fa-bars" title="Icerik Bolumu Basliklari" />
-                  <div className="adm-form-grid2">
-                    <SettingInput label="Bolum Etiketi (TR)" settingKey="partners_sec_label" {...commonProps} />
-                    <SettingInput label="Bolum Etiketi (EN)" settingKey="partners_sec_label_en" {...commonProps} />
-                    <SettingInput label="Bolum Basligi (TR)" settingKey="partners_sec_title" {...commonProps} />
-                    <SettingInput label="Bolum Basligi (EN)" settingKey="partners_sec_title_en" {...commonProps} />
-                  </div>
-                </div>
-
-                <div className="adm-form-card">
-                  <div className="adm-form-card-title">
-                    <div>
-                      <i className={isEditing ? 'fas fa-pen' : 'fas fa-plus'} />
-                      {isEditing ? ' Ortak Duzenle' : ' Yeni Ortak Ekle'}
-                    </div>
-                  </div>
-                  <form onSubmit={e => saveItem(e, 'partners', partnerForm, setPartnerForm)} style={{display:'grid', gap:'14px'}}>
-                    
-                    <div className="adm-form-grid2">
-                      <div className="adm-form-item">
-                        <label>Kurum Adi (TR) *</label>
-                        <input className="adm-input-full" placeholder="Kurum adi..." value={partnerForm.name} onChange={e => setPartnerForm({...partnerForm, name: e.target.value})} required />
-                      </div>
-                      <div className="adm-form-item">
-                        <label>Kurum Adi (EN)</label>
-                        <input className="adm-input-full" placeholder="Institution name..." value={partnerForm.name_en} onChange={e => setPartnerForm({...partnerForm, name_en: e.target.value})} />
-                      </div>
-                    </div>
-
-                    <div className="adm-form-grid2">
-                      <div className="adm-form-item">
-                        <label>Ulke (TR) *</label>
-                        <input className="adm-input-full" placeholder="Turkiye..." value={partnerForm.country} onChange={e => setPartnerForm({...partnerForm, country: e.target.value})} required />
-                      </div>
-                      <div className="adm-form-item">
-                        <label>Ulke (EN)</label>
-                        <input className="adm-input-full" placeholder="Turkey..." value={partnerForm.country_en} onChange={e => setPartnerForm({...partnerForm, country_en: e.target.value})} />
-                      </div>
-                    </div>
-
-                    <div className="adm-form-grid2">
-                        <div className="adm-form-item">
-                          <label>Rol (TR)</label>
-                          <select className="adm-select-full" value={partnerForm.role} onChange={e => setPartnerForm({...partnerForm, role: e.target.value})}>
-                            <option value="Ortak">Ortak</option>
-                            <option value="Koordinator">Koordinator</option>
-                          </select>
-                        </div>
-                        <div className="adm-form-item">
-                          <label>Rol (EN)</label>
-                          <select className="adm-select-full" value={partnerForm.role_en} onChange={e => setPartnerForm({...partnerForm, role_en: e.target.value})}>
-                            <option value="">(Ingilizce karsiligini girin...)</option>
-                            <option value="Partner">Partner</option>
-                            <option value="Coordinator">Coordinator</option>
-                          </select>
-                        </div>
-                    </div>
-
-                    <div className="adm-form-grid2">
-                        <div className="adm-form-item">
-                          <label>Aciklama (TR)</label>
-                          <textarea className="adm-textarea-full" placeholder="Kurum hakkinda..." value={partnerForm.description} onChange={e => setPartnerForm({...partnerForm, description: e.target.value})} rows={4} />
-                        </div>
-                        <div className="adm-form-item">
-                          <label>Aciklama (EN)</label>
-                          <textarea className="adm-textarea-full" placeholder="About the institution..." value={partnerForm.description_en} onChange={e => setPartnerForm({...partnerForm, description_en: e.target.value})} rows={4} />
-                        </div>
-                    </div>
-
-                    <div className="adm-form-item">
-                      <label>Web Sitesi</label>
-                      <input className="adm-input-full" placeholder="https://..." value={partnerForm.website} onChange={e => setPartnerForm({...partnerForm, website: e.target.value})} />
-                    </div>
-
-                    <div className="adm-form-grid2">
-                        <div className="adm-form-item">
-                          <label>Kurum Logosu</label>
-                          <FileInput value={partnerForm.image_url} onChange={url => setPartnerForm({...partnerForm, image_url: url})} placeholder="Logo URL..." uploadFile={uploadFile} showToast={showToast} />
-                        </div>
-                        <div className="adm-form-item">
-                          <label>Ulke Bayragi</label>
-                          <FileInput value={partnerForm.flag_url} onChange={url => setPartnerForm({...partnerForm, flag_url: url})} placeholder="Bayrak URL..." uploadFile={uploadFile} showToast={showToast} />
-                        </div>
-                    </div>
-
-                    <button type="submit" className="adm-form-submit">
-                      {isEditing ? 'Ortak Bilgilerini Guncelle' : '+ Ortak Ekle'}
-                    </button>
-                  </form>
-                </div>
-                
-                <div style={{marginTop:'24px'}}>
-                  <div style={{fontSize:'0.8rem', fontWeight:'700', color:'var(--text-muted)', textTransform:'uppercase', letterSpacing:'0.08em', marginBottom:'12px'}}>Mevcut Ortaklar ({partners.length})</div>
-                  {partners.length === 0 ? (
-                    <div className="adm-empty"><i className="fas fa-handshake" />Ortak bulunamadi.</div>
-                  ) : partners.map(item => (
-                    <div key={item.id} className="adm-item-row">
-                      <div className="adm-item-info" style={{display:'flex', alignItems:'center', gap:'12px'}}>
-                        {item.image_url && <img src={item.image_url} style={{width:'40px', height:'28px', objectFit:'contain', borderRadius:'4px', border:'1px solid var(--border)', background:'white', padding:'2px'}} alt="" />}
-                        <div>
-                          <strong>{item.name}</strong>
-                          <span>
-                            <span className={`adm-badge ${item.role === 'Koordinator' ? 'adm-badge-yellow' : 'adm-badge-green'}`}>{item.role}</span>
-                            {' '}&bull; {item.country}
-                          </span>
-                        </div>
-                      </div>
-                      <div className="adm-item-actions">
-                        <button className="adm-btn adm-btn-ghost" onClick={() => startEdit(item, 'partners')} style={{height:'32px', fontSize:'0.78rem'}}>
-                          <i className="fas fa-pen" /> Duzenle
-                        </button>
-                        <button className="adm-btn adm-btn-danger" onClick={() => deleteItem('partners', item.id, [item.image_url, item.flag_url])}>
-                          <i className="fas fa-trash" />
-                        </button>
-                      </div>
-                    </div>
-                  ))}
+                <SectionHeader iconClass="fas fa-bars" title="Icerik Bolumu Basliklari" />
+                <div className="adm-form-grid2">
+                  <SettingInput label="Bolum Etiketi (TR)" settingKey="partners_sec_label" {...commonProps} />
+                  <SettingInput label="Bolum Etiketi (EN)" settingKey="partners_sec_label_en" {...commonProps} />
+                  <SettingInput label="Bolum Basligi (TR)" settingKey="partners_sec_title" {...commonProps} />
+                  <SettingInput label="Bolum Basligi (EN)" settingKey="partners_sec_title_en" {...commonProps} />
                 </div>
               </div>
-            )}
 
-            {/* DOSYALAR */}
-            {activeTab === 'results' && (
-              <div className="adm-fade-in">
-                <div className="adm-page-header">
-                  <div className="adm-page-title">Proje <em>Dosyalari</em></div>
-                </div>
-
-                <div className="adm-section" style={{ background: 'var(--surface-2)', padding: '20px', borderRadius: '14px', border: '1px dashed var(--border)', marginBottom: '30px' }}>
-                  <SectionHeader iconClass="fas fa-layer-group" title="Sayfa Ust Bilgileri (Hero)" />
-                  <div className="adm-form-grid2">
-                    <SettingInput label="Ust Ufak Baslik (TR)" settingKey="results_hero_eyebrow" {...commonProps} />
-                    <SettingInput label="Ust Ufak Baslik (EN)" settingKey="results_hero_eyebrow_en" {...commonProps} />
-                    <SettingInput label="Ana Baslik Satir 1 (TR)" settingKey="results_hero_title1" {...commonProps} />
-                    <SettingInput label="Ana Baslik Satir 1 (EN)" settingKey="results_hero_title1_en" {...commonProps} />
-                    <SettingInput label="Vurgulu Baslik Satir 2 (TR)" settingKey="results_hero_title2" {...commonProps} />
-                    <SettingInput label="Vurgulu Baslik Satir 2 (EN)" settingKey="results_hero_title2_en" {...commonProps} />
-                  </div>
-                  <div className="adm-form-grid2" style={{marginTop:'10px'}}>
-                    <SettingInput label="Giris Aciklamasi (TR)" settingKey="results_page_desc" type="textarea" {...commonProps} />
-                    <SettingInput label="Giris Aciklamasi (EN)" settingKey="results_page_desc_en" type="textarea" {...commonProps} />
-                  </div>
-                  <div className="adm-form-grid2" style={{marginTop:'10px'}}>
-                    <SettingInput label="Kaydirma Butonu (TR)" settingKey="results_hero_scroll" {...commonProps} />
-                    <SettingInput label="Kaydirma Butonu (EN)" settingKey="results_hero_scroll_en" {...commonProps} />
-                  </div>
-
-                  <div className="adm-divider" style={{margin: '20px 0'}} />
-
-                  <SectionHeader iconClass="fas fa-bars" title="Icerik Bolumu Basliklari" />
-                  <div className="adm-form-grid2">
-                    <SettingInput label="Bolum Etiketi (TR)" settingKey="results_sec_label" {...commonProps} />
-                    <SettingInput label="Bolum Etiketi (EN)" settingKey="results_sec_label_en" {...commonProps} />
-                    <SettingInput label="Bolum Basligi (TR)" settingKey="results_sec_title" {...commonProps} />
-                    <SettingInput label="Bolum Basligi (EN)" settingKey="results_sec_title_en" {...commonProps} />
+              <div className="adm-form-card">
+                <div className="adm-form-card-title">
+                  <div>
+                    <i className={isEditing ? 'fas fa-pen' : 'fas fa-plus'} />
+                    {isEditing ? ' Ortak Duzenle' : ' Yeni Ortak Ekle'}
                   </div>
                 </div>
-
-                <div className="adm-form-card">
-                  <div className="adm-form-card-title">
-                    <div>
-                      <i className="fas fa-plus" /> {isEditing ? ' Dosya Guncelle' : ' Yeni Dosya Ekle'}
-                    </div>
-                  </div>
-                  <form onSubmit={e => saveItem(e, 'results', resultForm, setResultForm)} style={{display:'grid', gap:'14px'}}>
-                    
-                    <div className="adm-form-grid2">
-                        <div className="adm-form-item">
-                          <label>Dosya Basligi (TR) *</label>
-                          <input className="adm-input-full" placeholder="Dosya basligi..." value={resultForm.title} onChange={e => setResultForm({...resultForm, title: e.target.value})} required />
-                        </div>
-                        <div className="adm-form-item">
-                          <label>Dosya Basligi (EN)</label>
-                          <input className="adm-input-full" placeholder="File title..." value={resultForm.title_en} onChange={e => setResultForm({...resultForm, title_en: e.target.value})} />
-                        </div>
-                    </div>
-
-                    <div className="adm-form-grid2">
-                        <div className="adm-form-item">
-                          <label>Aciklama (TR)</label>
-                          <textarea className="adm-textarea-full" placeholder="Aciklama..." value={resultForm.description} onChange={e => setResultForm({...resultForm, description: e.target.value})} rows={3} />
-                        </div>
-                        <div className="adm-form-item">
-                          <label>Aciklama (EN)</label>
-                          <textarea className="adm-textarea-full" placeholder="Description..." value={resultForm.description_en} onChange={e => setResultForm({...resultForm, description_en: e.target.value})} rows={3} />
-                        </div>
-                    </div>
-
-                    <div className="adm-form-grid2">
-                        <div className="adm-form-item">
-                          <label>Durum (TR)</label>
-                          <select className="adm-select-full" value={resultForm.status} onChange={e => setResultForm({...resultForm, status: e.target.value})}>
-                            <option value="Planlaniyor">Planlaniyor</option>
-                            <option value="Devam Ediyor">Devam Ediyor</option>
-                            <option value="Tamamlandi">Tamamlandi</option>
-                          </select>
-                        </div>
-                        <div className="adm-form-item">
-                          <label>Durum (EN)</label>
-                          <select className="adm-select-full" value={resultForm.status_en} onChange={e => setResultForm({...resultForm, status_en: e.target.value})}>
-                            <option value="Planned">Planned</option>
-                            <option value="In Progress">In Progress</option>
-                            <option value="Completed">Completed</option>
-                          </select>
-                        </div>
-                    </div>
-
-                    <div className="adm-form-item">
-                      <label>Dosya / Link</label>
-                      <FileInput value={resultForm.link} onChange={url => setResultForm({...resultForm, link: url})} placeholder="Dosya yukleyin veya URL girin..." uploadFile={uploadFile} showToast={showToast} />
-                    </div>
-                    <button type="submit" className="adm-form-submit">
-                      {isEditing ? 'Guncelle' : '+ Ekle'}
-                    </button>
-                  </form>
-                </div>
-                
-                <div style={{marginTop:'24px'}}>
-                  {results.length === 0 ? (
-                    <div className="adm-empty"><i className="fas fa-file" />Dosya bulunamadi.</div>
-                  ) : results.map(item => (
-                    <div key={item.id} className="adm-item-row">
-                      <div className="adm-item-info">
-                        <strong><i className="fas fa-file-circle-check" style={{color:'var(--accent)', marginRight:'8px'}} />{item.title}</strong>
-                        <span>{item.status}</span>
-                      </div>
-                      <div className="adm-item-actions">
-                        <button className="adm-btn adm-btn-ghost" onClick={() => startEdit(item, 'results')} style={{height:'32px', fontSize:'0.78rem'}}>
-                          <i className="fas fa-pen" /> Duzenle
-                        </button>
-                        <button className="adm-btn adm-btn-danger" onClick={() => deleteItem('results', item.id, [item.link])}>
-                          <i className="fas fa-trash" />
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* ILETISIM */}
-            {activeTab === 'contact' && (
-              <div className="adm-fade-in">
-                <div className="adm-page-header">
-                  <div className="adm-page-title">Iletisim <em>Bilgileri</em></div>
-                </div>
-
-                <div className="adm-section" style={{ background: 'var(--surface-2)', padding: '20px', borderRadius: '14px', border: '1px dashed var(--border)', marginBottom: '30px' }}>
-                  <SectionHeader iconClass="fas fa-layer-group" title="Sayfa Ust Bilgileri (Hero)" />
-                  <div className="adm-form-grid2">
-                    <SettingInput label="Ust Ufak Baslik (TR)" settingKey="contact_hero_eyebrow" {...commonProps} />
-                    <SettingInput label="Ust Ufak Baslik (EN)" settingKey="contact_hero_eyebrow_en" {...commonProps} />
-                    <SettingInput label="Ana Baslik Satir 1 (TR)" settingKey="contact_hero_title1" {...commonProps} />
-                    <SettingInput label="Ana Baslik Satir 1 (EN)" settingKey="contact_hero_title1_en" {...commonProps} />
-                    <SettingInput label="Vurgulu Baslik Satir 2 (TR)" settingKey="contact_hero_title2" {...commonProps} />
-                    <SettingInput label="Vurgulu Baslik Satir 2 (EN)" settingKey="contact_hero_title2_en" {...commonProps} />
-                  </div>
-                  <div className="adm-form-grid2" style={{marginTop:'10px'}}>
-                    <SettingInput label="Giris Aciklamasi (TR)" settingKey="contact_page_desc" type="textarea" {...commonProps} />
-                    <SettingInput label="Giris Aciklamasi (EN)" settingKey="contact_page_desc_en" type="textarea" {...commonProps} />
-                  </div>
-                  <div className="adm-form-grid2" style={{marginTop:'10px'}}>
-                    <SettingInput label="Kaydirma Butonu (TR)" settingKey="contact_hero_scroll" {...commonProps} />
-                    <SettingInput label="Kaydirma Butonu (EN)" settingKey="contact_hero_scroll_en" {...commonProps} />
-                  </div>
-
-                  <div className="adm-divider" style={{margin: '20px 0'}} />
-
-                  <SectionHeader iconClass="fas fa-bars" title="Icerik Bolumu Basliklari" />
-                  <div className="adm-form-grid2">
-                    <SettingInput label="Bolum Etiketi (TR)" settingKey="contact_sec_label" {...commonProps} />
-                    <SettingInput label="Bolum Etiketi (EN)" settingKey="contact_sec_label_en" {...commonProps} />
-                    <SettingInput label="Bolum Basligi (TR)" settingKey="contact_sec_title" {...commonProps} />
-                    <SettingInput label="Bolum Basligi (EN)" settingKey="contact_sec_title_en" {...commonProps} />
-                  </div>
-                </div>
-
-                <div className="adm-section" style={{ background: 'var(--surface-2)', padding: '20px', borderRadius: '14px', border: '1px dashed var(--border)', marginBottom: '30px' }}>
-                  <SectionHeader iconClass="fas fa-phone" title="Kurum Iletisim Bilgileri" />
-                  <div className="adm-form-grid2">
-                    <SettingInput label="Sol Kart Basligi (TR)" settingKey="contact_info_title" {...commonProps} />
-                    <SettingInput label="Sol Kart Basligi (EN)" settingKey="contact_info_title_en" {...commonProps} />
-                  </div>
-                  <div className="adm-form-grid2" style={{marginTop:'10px'}}>
-                    <SettingInput label="E-posta Adresi" settingKey="contact_email" {...commonProps} />
-                    <SettingInput label="Telefon Numarasi" settingKey="contact_phone" {...commonProps} />
-                  </div>
-                  <div className="adm-form-grid2" style={{marginTop:'10px'}}>
-                    <SettingInput label="Acik Adres (TR)" settingKey="contact_address" type="textarea" {...commonProps} />
-                    <SettingInput label="Acik Adres (EN)" settingKey="contact_address_en" type="textarea" {...commonProps} />
-                  </div>
-                  <div className="adm-form-grid2" style={{marginTop:'10px'}}>
-                    <SettingInput label="Sosyal Medya Basligi (TR)" settingKey="contact_social_title" {...commonProps} />
-                    <SettingInput label="Sosyal Medya Basligi (EN)" settingKey="contact_social_title_en" {...commonProps} />
-                  </div>
-                  <div style={{fontSize:'0.8rem', color:'var(--text-muted)', marginTop:'5px'}}>
-                    * Sosyal Medya linklerini (URL) sol menudeki "Header / Footer" sekmesinden degistirebilirsiniz.
-                  </div>
-                </div>
-
-                <div className="adm-section" style={{ background: 'var(--surface-2)', padding: '20px', borderRadius: '14px', border: '1px dashed var(--border)', marginBottom: '30px' }}>
-                  <SectionHeader iconClass="fas fa-envelope" title="Iletisim Formu (Mesajlar) Ayarlari" />
-                  <div className="adm-form-grid2">
-                    <SettingInput label="Form Karti Basligi (TR)" settingKey="contact_form_title" {...commonProps} />
-                    <SettingInput label="Form Karti Basligi (EN)" settingKey="contact_form_title_en" {...commonProps} />
-                    <SettingInput label="Basarili Mesaji (TR)" settingKey="contact_form_success" {...commonProps} />
-                    <SettingInput label="Basarili Mesaji (EN)" settingKey="contact_form_success_en" {...commonProps} />
-                    <SettingInput label="Hata Mesaji (TR)" settingKey="contact_form_error" {...commonProps} />
-                    <SettingInput label="Hata Mesaji (EN)" settingKey="contact_form_error_en" {...commonProps} />
-                    <SettingInput label="Gonder Butonu (TR)" settingKey="contact_form_btn" {...commonProps} />
-                    <SettingInput label="Gonder Butonu (EN)" settingKey="contact_form_btn_en" {...commonProps} />
-                  </div>
-                </div>
-              </div>
-            )}
-            
-            {/* SITE AYARLARI */}
-            {activeTab === 'site' && (
-              <div className="adm-fade-in">
-                <div className="adm-page-header">
-                  <div className="adm-page-title">Header / <em>Footer</em></div>
-                </div>
-
-                <div className="adm-section" style={{ background: 'var(--surface-2)', padding: '20px', borderRadius: '14px', border: '1px dashed var(--border)', marginBottom: '30px' }}>
-                  <SectionHeader iconClass="fas fa-window-maximize" title="Ust Menu & Sekme (Header)" />
-                  <div className="adm-form-grid2">
-                    <SettingInput label="Favicon (Sekme Ikonu)" settingKey="site_favicon" type="image" {...commonProps} />
-                    <SettingInput label="Site Ana Logosu" settingKey="header_logo_image" type="image" {...commonProps} />
-                  </div>
-                  <div className="adm-form-grid2">
-                    <SettingInput label="Logo Ana Metni" settingKey="header_logo_text" placeholder="DIGI-GREEN" {...commonProps} />
-                    <SettingInput label="Logo Vurgu Metni" settingKey="header_logo_highlight" placeholder="FUTURE" {...commonProps} />
-                  </div>
-                </div>
-
-                <div className="adm-section" style={{ background: 'var(--surface-2)', padding: '20px', borderRadius: '14px', border: '1px dashed var(--border)', marginBottom: '30px' }}>
-                  <SectionHeader iconClass="fas fa-window-minimize" title="Alt Bilgi (Footer)" />
-                  <SettingInput label="AB Logosu / Bayrak" settingKey="footer_eu_logo" type="image" {...commonProps} />
+                <form onSubmit={saveItem} style={{display:'grid', gap:'14px'}}>
                   
                   <div className="adm-form-grid2">
-                    <SettingInput label="Orta Sutun Basligi (TR) (Orn: Hizli Menu)" settingKey="footer_column2_title" {...commonProps} />
-                    <SettingInput label="Orta Sutun Basligi (EN)" settingKey="footer_column2_title_en" {...commonProps} />
-                  </div>
-                  <div className="adm-form-grid2">
-                    <SettingInput label="Sag Sutun Basligi (TR) (Orn: Iletisim)" settingKey="footer_column3_title" {...commonProps} />
-                    <SettingInput label="Sag Sutun Basligi (EN)" settingKey="footer_column3_title_en" {...commonProps} />
-                  </div>
-
-                  <div className="adm-form-grid2">
-                    <SettingInput label="Footer Hakkinda Metni (TR)" settingKey="footer_desc" type="textarea" {...commonProps} />
-                    <SettingInput label="Footer Hakkinda Metni (EN)" settingKey="footer_desc_en" type="textarea" {...commonProps} />
-                  </div>
-                  <div className="adm-form-grid2">
-                    <SettingInput label="AB Bilgilendirme Metni (TR)" settingKey="footer_disclaimer" type="textarea" {...commonProps} />
-                    <SettingInput label="AB Bilgilendirme Metni (EN)" settingKey="footer_disclaimer_en" type="textarea" {...commonProps} />
-                  </div>
-                </div>
-
-                <div className="adm-section" style={{ background: 'var(--surface-2)', padding: '20px', borderRadius: '14px', border: '1px dashed var(--border)', marginBottom: '30px' }}>
-                  <SectionHeader iconClass="fas fa-share-nodes" title="Sosyal Medya" />
-                  <div className="adm-form-grid3">
-                    <SettingInput label="Facebook" settingKey="social_facebook" placeholder="https://facebook.com/..." {...commonProps} />
-                    <SettingInput label="Twitter / X" settingKey="social_twitter" placeholder="https://twitter.com/..." {...commonProps} />
-                    <SettingInput label="Instagram" settingKey="social_instagram" placeholder="https://instagram.com/..." {...commonProps} />
-                  </div>
-                </div>
-              </div>
-            )}
-            
-            {/* KULLANICILAR */}
-            {activeTab === 'users' && (
-              <div className="adm-fade-in">
-                <div className="adm-page-header">
-                  <div className="adm-page-title">Sistem <em>Kullanicilari</em></div>
-                  <div className="adm-page-desc">Panele erisim yetkisi olan admin hesaplari.</div>
-                </div>
-                <div className="adm-card" style={{padding: '0'}}>
-                   <table style={{width: '100%', textAlign: 'left', borderCollapse: 'collapse'}}>
-                     <thead>
-                       <tr style={{borderBottom: '1px solid var(--border)', background: 'var(--surface-2)', color: 'var(--text-secondary)', fontSize:'0.75rem', textTransform:'uppercase', letterSpacing:'0.05em'}}>
-                         <th style={{padding: '16px 20px'}}>Kullanici (Email)</th>
-                         <th style={{padding: '16px 20px'}}>ID (Benzersiz)</th>
-                         <th style={{padding: '16px 20px'}}>Son Giris Tarihi</th>
-                         <th style={{padding: '16px 20px'}}>Yetki Rolu</th>
-                       </tr>
-                     </thead>
-                     <tbody>
-                       <tr style={{borderBottom: '1px solid var(--border)'}}>
-                         <td style={{padding: '16px 20px', fontWeight: '600', color: 'var(--text-primary)'}}>
-                            <i className="fas fa-user-circle" style={{marginRight:'10px', color:'var(--accent)', fontSize:'1.2rem'}}></i>
-                            {currentUser?.email}
-                         </td>
-                         <td style={{padding: '16px 20px', fontSize:'0.85rem', fontFamily:'monospace', color:'var(--text-muted)'}}>{currentUser?.id}</td>
-                         <td style={{padding: '16px 20px', fontSize:'0.85rem', color:'var(--text-secondary)'}}>
-                           {currentUser?.last_sign_in_at ? new Date(currentUser.last_sign_in_at).toLocaleString('tr-TR') : 'Bilinmiyor'}
-                         </td>
-                         <td style={{padding: '16px 20px'}}>
-                           <span className="adm-badge adm-badge-green">Super Admin</span>
-                         </td>
-                       </tr>
-                     </tbody>
-                   </table>
-                </div>
-              </div>
-            )}
-
-            {/* GUVENLIK VE SIFRE */}
-            {activeTab === 'security' && (
-              <div className="adm-fade-in">
-                <div className="adm-page-header">
-                  <div className="adm-page-title">Guvenlik & <em>Sifre</em></div>
-                  <div className="adm-page-desc">Hesabinizin guvenligini saglayin ve yonetici sifrenizi guncelleyin.</div>
-                </div>
-                
-                <div className="adm-form-card" style={{maxWidth: '500px'}}>
-                  <div className="adm-form-card-title">
-                    <div><i className="fas fa-key" style={{marginRight:'10px'}}/> Yeni Sifre Olustur</div>
-                  </div>
-                  <form onSubmit={handlePasswordChange} style={{display:'flex', flexDirection:'column', gap:'15px'}}>
-                    
                     <div className="adm-form-item">
-                      <label>Giris Yapili Admin Hesabi</label>
-                      <input className="adm-input-full" value={currentUser?.email || ''} disabled style={{opacity: 0.6, cursor: 'not-allowed'}} />
+                      <label>Kurum Adi (TR) *</label>
+                      <input className="adm-input-full" placeholder="Kurum adi..." value={partnerForm.name} onChange={e => setPartnerForm({...partnerForm, name: e.target.value})} required />
                     </div>
-
                     <div className="adm-form-item">
-                      <label>Guvenlik Icin Mevcut Sifreniz (Opsiyonel)</label>
-                      <input type="password" placeholder="Mevcut sifre..." className="adm-input-full" />
+                      <label>Kurum Adi (EN)</label>
+                      <input className="adm-input-full" placeholder="Institution name..." value={partnerForm.name_en} onChange={e => setPartnerForm({...partnerForm, name_en: e.target.value})} />
                     </div>
+                  </div>
 
+                  <div className="adm-form-grid2">
                     <div className="adm-form-item">
-                      <label>Yeni Sifre (En az 6 karakter)</label>
-                      <input 
-                        type="password" 
-                        minLength={6} 
-                        className="adm-input-full" 
-                        placeholder="Yeni sifrenizi girin..." 
-                        value={newPassword} 
-                        onChange={e => setNewPassword(e.target.value)} 
-                        required 
-                      />
+                      <label>Ulke (TR) *</label>
+                      <input className="adm-input-full" placeholder="Turkiye..." value={partnerForm.country} onChange={e => setPartnerForm({...partnerForm, country: e.target.value})} required />
                     </div>
-                    
-                    <button type="submit" className="adm-form-submit">
-                      <i className="fas fa-lock" style={{marginRight:'5px'}}></i> Sifreyi Guncelle
-                    </button>
-                  </form>
-                </div>
+                    <div className="adm-form-item">
+                      <label>Ulke (EN)</label>
+                      <input className="adm-input-full" placeholder="Turkey..." value={partnerForm.country_en} onChange={e => setPartnerForm({...partnerForm, country_en: e.target.value})} />
+                    </div>
+                  </div>
+
+                  <div className="adm-form-grid2">
+                      <div className="adm-form-item">
+                        <label>Rol (TR)</label>
+                        <select className="adm-select-full" value={partnerForm.role} onChange={e => setPartnerForm({...partnerForm, role: e.target.value})}>
+                          <option value="Ortak">Ortak</option>
+                          <option value="Koordinator">Koordinator</option>
+                        </select>
+                      </div>
+                      <div className="adm-form-item">
+                        <label>Rol (EN)</label>
+                        <select className="adm-select-full" value={partnerForm.role_en} onChange={e => setPartnerForm({...partnerForm, role_en: e.target.value})}>
+                          <option value="">(Ingilizce karsiligini girin...)</option>
+                          <option value="Partner">Partner</option>
+                          <option value="Coordinator">Coordinator</option>
+                        </select>
+                      </div>
+                  </div>
+
+                  <div className="adm-form-grid2">
+                      <div className="adm-form-item">
+                        <label>Aciklama (TR)</label>
+                        <textarea className="adm-textarea-full" placeholder="Kurum hakkinda..." value={partnerForm.description} onChange={e => setPartnerForm({...partnerForm, description: e.target.value})} rows={4} />
+                      </div>
+                      <div className="adm-form-item">
+                        <label>Aciklama (EN)</label>
+                        <textarea className="adm-textarea-full" placeholder="About the institution..." value={partnerForm.description_en} onChange={e => setPartnerForm({...partnerForm, description_en: e.target.value})} rows={4} />
+                      </div>
+                  </div>
+
+                  <div className="adm-form-item">
+                    <label>Web Sitesi</label>
+                    <input className="adm-input-full" placeholder="https://..." value={partnerForm.website} onChange={e => setPartnerForm({...partnerForm, website: e.target.value})} />
+                  </div>
+
+                  <div className="adm-form-grid2">
+                      <div className="adm-form-item">
+                        <label>Kurum Logosu</label>
+                        <FileInput value={partnerForm.image_url} onChange={url => setPartnerForm({...partnerForm, image_url: url})} placeholder="Logo URL..." uploadFile={uploadFile} showToast={showToast} />
+                      </div>
+                      <div className="adm-form-item">
+                        <label>Ulke Bayragi</label>
+                        <FileInput value={partnerForm.flag_url} onChange={url => setPartnerForm({...partnerForm, flag_url: url})} placeholder="Bayrak URL..." uploadFile={uploadFile} showToast={showToast} />
+                      </div>
+                  </div>
+
+                  <button type="submit" className="adm-form-submit">
+                    {isEditing ? 'Ortak Bilgilerini Guncelle' : '+ Ortak Ekle'}
+                  </button>
+                </form>
               </div>
-            )}
+              
+              <div style={{marginTop:'24px'}}>
+                <div style={{fontSize:'0.8rem', fontWeight:'700', color:'var(--text-muted)', textTransform:'uppercase', letterSpacing:'0.08em', marginBottom:'12px'}}>Mevcut Ortaklar ({partners.length})</div>
+                {partners.length === 0 ? (
+                  <div className="adm-empty"><i className="fas fa-handshake" />Ortak bulunamadi.</div>
+                ) : partners.map(item => (
+                  <div key={item.id} className="adm-item-row">
+                    <div className="adm-item-info" style={{display:'flex', alignItems:'center', gap:'12px'}}>
+                      {item.image_url && <img src={item.image_url} style={{width:'40px', height:'28px', objectFit:'contain', borderRadius:'4px', border:'1px solid var(--border)', background:'white', padding:'2px'}} alt="" />}
+                      <div>
+                        <strong>{item.name}</strong>
+                        <span>
+                          <span className={`adm-badge ${item.role === 'Koordinator' ? 'adm-badge-yellow' : 'adm-badge-green'}`}>{item.role}</span>
+                          {' '}&bull; {item.country}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="adm-item-actions">
+                      <button className="adm-btn adm-btn-ghost" onClick={() => startEdit(item)} style={{height:'32px', fontSize:'0.78rem'}}>
+                        <i className="fas fa-pen" /> Duzenle
+                      </button>
+                      <button className="adm-btn adm-btn-danger" onClick={() => deleteItem(item.id, [item.image_url, item.flag_url])}>
+                        <i className="fas fa-trash" />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
 
           </div>
         </main>
