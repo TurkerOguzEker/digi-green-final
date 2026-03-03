@@ -64,13 +64,12 @@ export default async function RootLayout({
     });
   }
 
-  const GA_MEASUREMENT_ID = 'G-XXXXXXXXXX'; 
+  const GA_MEASUREMENT_ID = 'G-928YHG64V3'; 
 
   return (
     <html lang="tr" suppressHydrationWarning>
       <head>
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Montserrat:wght@600;700;800&display=swap" rel="stylesheet" />
-        
         <link 
           rel="stylesheet" 
           href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" 
@@ -80,32 +79,32 @@ export default async function RootLayout({
         <link rel="stylesheet" href="/assets/css/main.css" />
       </head>
       
-      {/* className'deki hata çıkartan geist fontlarını temizledik */}
       <body suppressHydrationWarning>
         
         {/* GOOGLE ANALYTICS SCRIPTS */}
-        <Script id="google-analytics-consent" strategy="afterInteractive">
+        <Script 
+          src={`https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`} 
+          strategy="afterInteractive" 
+        />
+        <Script id="google-analytics-logic" strategy="afterInteractive">
           {`
             window.dataLayer = window.dataLayer || [];
             function gtag(){dataLayer.push(arguments);}
             
+            // 1. Varsayılan Çerez Ayarı (Başlangıçta Reddet)
             gtag('consent', 'default', {
               'analytics_storage': 'denied',
               'ad_storage': 'denied'
             });
 
-            if (localStorage.getItem('cookie_consent') === 'granted') {
+            // 2. Eğer daha önce izin verilmişse Hemen Güncelle
+            if (typeof window !== 'undefined' && localStorage.getItem('cookie_consent') === 'granted') {
               gtag('consent', 'update', {
                 'analytics_storage': 'granted'
               });
             }
-          `}
-        </Script>
-        <Script src={`https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`} strategy="afterInteractive" />
-        <Script id="google-analytics-init" strategy="afterInteractive">
-          {`
-            window.dataLayer = window.dataLayer || [];
-            function gtag(){dataLayer.push(arguments);}
+
+            // 3. Analytics'i Başlat
             gtag('js', new Date());
             gtag('config', '${GA_MEASUREMENT_ID}', {
               page_path: window.location.pathname,
