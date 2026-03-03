@@ -96,7 +96,6 @@ export default function AdminDashboardPage() {
   const [currentUser, setCurrentUser] = useState(null);
   const [currentTime, setCurrentTime] = useState(new Date());
   
-  // Real-time Google Analytics States
   const [onlineUsers, setOnlineUsers] = useState(0);
   const [totalViews, setTotalViews] = useState(0);
   const [totalUsers, setTotalUsers] = useState(0);
@@ -105,7 +104,6 @@ export default function AdminDashboardPage() {
   const [deviceData, setDeviceData] = useState([]);
   const [topPages, setTopPages] = useState([]);
 
-  // Dinamik Grafikler ve Veriler
   const [monthlyData, setMonthlyData] = useState([]);
   const [systemHealth, setSystemHealth] = useState([]);
   const [stats, setStats] = useState({ unreadMsgCount: 0, newsCount: 0, activitiesCount: 0, partnersCount: 0, resultsCount: 0, logsCount: 0 });
@@ -183,7 +181,6 @@ export default function AdminDashboardPage() {
         { label: 'Güvenlik', val: 100, color: '#a855f7' },
       ]);
 
-      // GA API
       try {
         const gaRes = await fetch('/api/analytics');
         if (gaRes.ok) {
@@ -472,7 +469,6 @@ export default function AdminDashboardPage() {
               </div>
             </div>
 
-            {/* Yeni Ziyaretçi İstatistikleri Satırı */}
             <div className="stats-grid">
               <StatCard icon="fas fa-users" label="Anlık Kullanıcı" value={onlineUsers} color="var(--cyan)" bg="rgba(6,182,212,0.12)" border="rgba(6,182,212,0.25)" />
               <StatCard icon="fas fa-eye" label="Toplam Gösterim" value={totalViews} color="var(--pink)" bg="rgba(236,72,153,0.12)" border="rgba(236,72,153,0.25)" />
@@ -480,7 +476,6 @@ export default function AdminDashboardPage() {
               <StatCard icon="fas fa-user-plus" label="Yeni Kullanıcılar" value={newUsers} color="var(--accent)" bg="rgba(34,197,94,0.12)" border="rgba(34,197,94,0.25)" />
             </div>
 
-            {/* İçerik İstatistikleri Satırı */}
             <div className="stats-grid">
               <StatCard icon="fas fa-inbox" label="Okunmamış Mesaj" value={stats.unreadMsgCount} color="var(--red)" bg="rgba(239,68,68,0.12)" border="rgba(239,68,68,0.25)" link="/admin/messages" />
               <StatCard icon="fas fa-newspaper" label="Yayındaki Haber" value={stats.newsCount} color="var(--accent)" bg="rgba(34,197,94,0.12)" border="rgba(34,197,94,0.25)" link="/admin/news" />
@@ -542,7 +537,6 @@ export default function AdminDashboardPage() {
 
             <div className="bottom-grid">
               <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-                {/* YENİ: En Çok Ziyaret Edilen Sayfalar */}
                 <div className="chart-card">
                   <div className="chart-header">
                     <div>
@@ -605,7 +599,6 @@ export default function AdminDashboardPage() {
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-                {/* YENİ: Cihaz Dağılımı Grafiği */}
                 <div className="chart-card">
                   <div className="chart-header">
                     <div>

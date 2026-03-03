@@ -2,9 +2,9 @@
 'use client';
 import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { supabase } from '../../lib/supabase';
+import { supabase } from '../../../lib/supabase'; // BURASI DOĞRU YOL (3 NOKTA)
 import Link from 'next/link';
-import '../globals.css';
+import '../../globals.css'; // BURASI DA DOĞRU YOL (2 NOKTA)
 
 export default function AdminUsersPage() {
   const router = useRouter();
@@ -14,7 +14,6 @@ export default function AdminUsersPage() {
   
   const [currentUser, setCurrentUser] = useState(null);
 
-  // Badge Counts
   const [unreadMsgCount, setUnreadMsgCount] = useState(0);
   const [newsCount, setNewsCount] = useState(0);
   const [activitiesCount, setActivitiesCount] = useState(0);
@@ -53,39 +52,37 @@ export default function AdminUsersPage() {
     return () => { isMounted = false; };
   }, [router, fetchPageData]);
 
- const currentPath = typeof window !== 'undefined' ? window.location.pathname : '';
   const NAV = [
-    { id: 'dashboard', label: 'Dashboard', icon: 'fas fa-chart-pie', group: 'Genel', link: '/admin', active: currentPath === '/admin' },
-    { id: 'messages', label: `Mesajlar`, icon: 'fas fa-inbox', badge: typeof unreadMsgCount !== 'undefined' ? unreadMsgCount : 0, group: 'Genel', link: '/admin/messages', active: currentPath === '/admin/messages' },
-    { id: 'home', label: 'Ana Sayfa', icon: 'fas fa-house', group: 'Icerik', link: '/admin/homepage', active: currentPath === '/admin/homepage' },
+    { id: 'dashboard', label: 'Dashboard', icon: 'fas fa-chart-pie', group: 'Genel', link: '/admin' },
+    { id: 'messages', label: `Mesajlar`, icon: 'fas fa-inbox', badge: unreadMsgCount, group: 'Genel', link: '/admin/messages' },
+    { id: 'home', label: 'Ana Sayfa', icon: 'fas fa-house', group: 'Icerik', link: '/admin/homepage' },
     { 
       id: 'about', label: 'Hakkinda', icon: 'fas fa-circle-info', group: 'Icerik',
       subItems: [
         { id: 'general', label: 'Genel Hakkinda', tab: 'general' },
         { id: 'consortium', label: 'Konsorsiyum', tab: 'consortium' },
         { id: 'impact', label: 'Proje Etkisi', tab: 'impact' },
-        { id: 'plan', label: 'Proje Plani', tab: 'plan' },  
+        { id: 'plan', label: 'Proje Plani', tab: 'plan' },
         { id: 'roadmap', label: 'Yol Haritasi', tab: 'roadmap' },
         { id: 'strategy', label: 'Strateji', tab: 'strategy' }
       ]
     },
-    { id: 'news', label: 'Haberler', icon: 'fas fa-newspaper', badge: typeof newsCount !== 'undefined' ? newsCount : (typeof news !== 'undefined' ? news.length : 0), group: 'Icerik', link: '/admin/news', active: currentPath === '/admin/news' },
-    { id: 'activities', label: 'Faaliyetler', icon: 'fas fa-calendar-check', badge: typeof activitiesCount !== 'undefined' ? activitiesCount : (typeof activities !== 'undefined' ? activities.length : 0), group: 'Icerik', link: '/admin/activities', active: currentPath === '/admin/activities' },
-    { id: 'partners', label: 'Ortaklar', icon: 'fas fa-handshake', badge: typeof partnersCount !== 'undefined' ? partnersCount : (typeof partners !== 'undefined' ? partners.length : 0), group: 'Icerik', link: '/admin/partners', active: currentPath === '/admin/partners' },
-    { id: 'results', label: 'Dosyalar', icon: 'fas fa-file-circle-check', badge: typeof resultsCount !== 'undefined' ? resultsCount : (typeof results !== 'undefined' ? results.length : 0), group: 'Icerik', link: '/admin/results', active: currentPath === '/admin/results' },
-    { id: 'contact', label: 'Iletisim', icon: 'fas fa-phone', group: 'Icerik', link: '/admin/contact', active: currentPath === '/admin/contact' },
-    { id: 'site', label: 'Header/Footer', icon: 'fas fa-sliders', group: 'Icerik', link: '/admin/site', active: currentPath === '/admin/site' },
-    { id: 'users', label: 'Kullanicilar', icon: 'fas fa-users', group: 'Ayarlar', link: '/admin/users', active: currentPath === '/admin/users' },
-    { id: 'logs', label: 'Loglar', icon: 'fas fa-list', group: 'Ayarlar', link: '/admin/logs', active: currentPath === '/admin/logs' },
-    { id: 'security', label: 'Sifre & Guvenlik', icon: 'fas fa-lock', group: 'Ayarlar', link: '/admin/security', active: currentPath === '/admin/security' },
+    { id: 'news', label: 'Haberler', icon: 'fas fa-newspaper', badge: newsCount, group: 'Icerik', link: '/admin/news' },
+    { id: 'activities', label: 'Faaliyetler', icon: 'fas fa-calendar-check', badge: activitiesCount, group: 'Icerik', link: '/admin/activities' },
+    { id: 'partners', label: 'Ortaklar', icon: 'fas fa-handshake', badge: partnersCount, group: 'Icerik', link: '/admin/partners' },
+    { id: 'results', label: 'Dosyalar', icon: 'fas fa-file-circle-check', badge: resultsCount, group: 'Icerik', link: '/admin/results' },
+    { id: 'contact', label: 'Iletisim', icon: 'fas fa-phone', group: 'Icerik', link: '/admin/contact' },
+    { id: 'site', label: 'Header/Footer', icon: 'fas fa-sliders', group: 'Icerik', link: '/admin/site' },
+    { id: 'users', label: 'Kullanicilar', icon: 'fas fa-users', group: 'Ayarlar', link: '/admin/users', active: true },
+    { id: 'logs', label: 'Loglar', icon: 'fas fa-list', group: 'Ayarlar', link: '/admin/logs' },
+    { id: 'security', label: 'Sifre & Guvenlik', icon: 'fas fa-lock', group: 'Ayarlar', link: '/admin/security' },
   ];
+
   const groupedNav = NAV.reduce((acc, item) => {
     if (!acc[item.group]) acc[item.group] = [];
     acc[item.group].push(item);
     return acc;
   }, {});
-
-  const currentTab = NAV.find(n => n.id === 'users');
 
   if (loading) return <div className="adm-loading"><div className="adm-loading-spinner" /><p>Yukleniyor...</p></div>;
 
@@ -118,7 +115,6 @@ export default function AdminUsersPage() {
         .adm-nav-icon { width: 18px; height: 18px; display: flex; align-items: center; justify-content: center; font-size: 0.85rem; flex-shrink: 0; transition: var(--transition); }
         .adm-nav-badge { margin-left: auto; background: var(--accent); color: #000; font-size: 0.65rem; font-weight: 700; padding: 2px 7px; border-radius: 20px; min-width: 20px; text-align: center; }
 
-        /* Alt Menu (Accordion) CSS */
         .adm-nav-submenu { display: flex; flex-direction: column; gap: 2px; padding-left: 38px; padding-right: 8px; margin-top: 2px; margin-bottom: 8px; animation: fadeDown 0.2s ease;}
         .adm-nav-subitem { display: flex; align-items: center; padding: 8px 12px; font-size: 0.8rem; color: var(--text-secondary); background: transparent; border: none; border-radius: 8px; cursor: pointer; transition: var(--transition); text-align: left; }
         .adm-nav-subitem:hover { color: var(--text-primary); background: rgba(255,255,255,0.03); }
@@ -132,7 +128,6 @@ export default function AdminUsersPage() {
         .adm-page-header { margin-bottom: 28px; }
         .adm-page-title { font-family: var(--font-display); font-size: 1.5rem; font-weight: 700; color: var(--text-primary); letter-spacing: -0.02em; line-height: 1.2; text-transform: capitalize; }
         .adm-page-title em { color: var(--accent); font-style: normal; }
-        .adm-page-desc { font-size: 0.875rem; color: var(--text-secondary); margin-top: 4px; }
         
         .adm-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 20px; margin-bottom: 12px; }
 
@@ -213,7 +208,6 @@ export default function AdminUsersPage() {
                       </Link>
                     );
                   }
-
                   return null;
                 })}
               </div>
@@ -224,22 +218,20 @@ export default function AdminUsersPage() {
         <main className="adm-main">
           <div className="adm-topbar">
             <div className="adm-topbar-title">
-              {currentTab && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                  <div style={{
-                    width: '34px', height: '34px',
-                    background: 'linear-gradient(135deg, var(--accent), var(--accent-dim, #6366f180))',
-                    borderRadius: '10px',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    boxShadow: '0 4px 12px var(--accent-glow, rgba(99,102,241,0.35))',
-                  }}>
-                    <i className={currentTab.icon} style={{ color: '#fff', fontSize: '0.85rem' }} />
-                  </div>
-                  <span style={{ fontWeight: 600, letterSpacing: '-0.01em' }}>
-                    {currentTab.label}
-                  </span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <div style={{
+                  width: '34px', height: '34px',
+                  background: 'linear-gradient(135deg, var(--accent), var(--accent-dim, #6366f180))',
+                  borderRadius: '10px',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  boxShadow: '0 4px 12px var(--accent-glow, rgba(99,102,241,0.35))',
+                }}>
+                  <i className="fas fa-users" style={{ color: '#fff', fontSize: '0.85rem' }} />
                 </div>
-              )}
+                <span style={{ fontWeight: 600, letterSpacing: '-0.01em' }}>
+                  Kullanicilar
+                </span>
+              </div>
             </div>
             
             <div style={{ position: 'relative', display: 'flex', alignItems: 'center', height: '100%' }}>
