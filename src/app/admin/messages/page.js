@@ -47,9 +47,7 @@ const PAGE_SIZE = 15;
 export default function MessagesPage() {
   const router = useRouter();
   
-  // Profil Acilir Menu State'i
   const [profileOpen, setProfileOpen] = useState(false);
-
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
@@ -65,6 +63,12 @@ export default function MessagesPage() {
 
   const [toast, setToast] = useState(null);
   const [modal, setModal] = useState({ isOpen: false, message: '', onConfirm: null });
+  
+  // SATIR ICI YANITLAMA & OTURUM HAFIZASI
+  const [replyingTo, setReplyingTo] = useState(null);
+  const [replyText, setReplyText] = useState('');
+  const [isSendingReply, setIsSendingReply] = useState(false);
+  const [readInSession, setReadInSession] = useState([]);
 
   const sentinelRef = useRef(null);
 
@@ -76,6 +80,14 @@ export default function MessagesPage() {
   const showConfirm = (message, onConfirm) => setModal({ isOpen: true, message, onConfirm });
   const closeConfirm = () => setModal({ ...modal, isOpen: false });
   const handleConfirmAction = () => { if (modal.onConfirm) modal.onConfirm(); closeConfirm(); };
+
+  // SEKMELER ARASI GEÇİŞ
+  const changeView = (view) => {
+    setCurrentView(view);
+    setExpandedId(null);
+    setReplyingTo(null);
+    setReadInSession([]);
+  };
 
   // 1. DATA CEKME
   const fetchInitialData = useCallback(async () => {
@@ -96,7 +108,7 @@ export default function MessagesPage() {
     setLoading(false);
   }, []);
 
-  // 2. OTURUM VE REALTIME KANALI
+  // 2. OTURUM VE REALTIME
   useEffect(() => {
     let isMounted = true;
     let channel;
@@ -119,19 +131,14 @@ export default function MessagesPage() {
           'postgres_changes',
           { event: 'INSERT', schema: 'public', table: 'contact_messages' },
           (payload) => {
-            console.log("[REALTIME] YENI MESAJ:", payload.new);
             showToast('Yeni bir iletisim mesaji aldiniz!', 'success');
-            
             setMessages(prev => {
               if (prev.some(m => m.id === payload.new.id)) return prev;
               return [payload.new, ...prev];
             });
           }
         )
-        .subscribe((status, err) => {
-          if (err) console.error("[REALTIME] Hata:", err);
-          else console.log(`[REALTIME] Durum: ${status}`);
-        });
+        .subscribe();
     }
 
     loadSession();
@@ -168,7 +175,6 @@ export default function MessagesPage() {
     } else {
       setHasMore(false);
     }
-    
     setLoadingMore(false);
   }, [pageIndex, loadingMore, hasMore]);
 
@@ -200,9 +206,21 @@ export default function MessagesPage() {
     });
   }
 
+  async function markAsRead(msg) {
+    if (msg.is_read) return; 
+    setReadInSession(prev => [...prev, msg.id]); 
+    setMessages(prev => prev.map(m => m.id === msg.id ? { ...m, is_read: true } : m));
+    await supabase.from('contact_messages').update({ is_read: true }).eq('id', msg.id);
+  }
+
   async function toggleReadStatus(msg, e) {
     e.stopPropagation();
     const newStatus = !msg.is_read;
+    if (newStatus) {
+      setReadInSession(prev => [...prev, msg.id]);
+    } else {
+      setReadInSession(prev => prev.filter(id => id !== msg.id));
+    }
     setMessages(prev => prev.map(m => m.id === msg.id ? { ...m, is_read: newStatus } : m));
     await supabase.from('contact_messages').update({ is_read: newStatus }).eq('id', msg.id);
   }
@@ -214,20 +232,52 @@ export default function MessagesPage() {
     await supabase.from('contact_messages').update({ is_starred: newStatus }).eq('id', msg.id);
   }
 
-  async function toggleReplyStatus(msg, e) {
-    e.stopPropagation();
-    const newStatus = !msg.is_replied;
-    setMessages(prev => prev.map(m => m.id === msg.id ? { ...m, is_replied: newStatus } : m));
-    const { error } = await supabase.from('contact_messages').update({ is_replied: newStatus }).eq('id', msg.id);
-    if (!error) showToast(newStatus ? 'Yanitlandi olarak isaretlendi.' : 'Yanit durumu kaldirildi.', 'success');
-  }
+  // Siteden Direkt E-Posta Gonderme Fonksiyonu (HATA YONETIMI GELISTIRILDI)
+  async function handleSendReply(msg) {
+    if (!replyText.trim()) {
+      showToast('Lütfen bir yanıt yazın.', 'error');
+      return;
+    }
+    
+    setIsSendingReply(true);
+    
+    try {
+      const res = await fetch('/api/send-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          to: msg.email,
+          subject: `RE: ${msg.subject || 'Mesajınız Hakkında'}`,
+          text: replyText
+        })
+      });
 
-  async function markAllRead() {
-    const unread = messages.filter(m => !m.is_read);
-    if (!unread.length) return showToast('Okunmamis mesaj yok.', 'success');
-    setMessages(prev => prev.map(m => ({ ...m, is_read: true })));
-    await supabase.from('contact_messages').update({ is_read: true }).in('id', unread.map(m => m.id));
-    showToast('Tum mesajlar okundu olarak isaretlendi.', 'success');
+      // API 200 harici bir kod döndürdüyse (örn 404, 500) hata fırlat
+      if (!res.ok) {
+        // Eğer sunucu HTML sayfası döndürdüyse JSON çevirmeyi denemeden direkt hata fırlat
+        const contentType = res.headers.get("content-type");
+        if (contentType && contentType.indexOf("application/json") !== -1) {
+          const errorData = await res.json();
+          throw new Error(errorData.error || 'API bir hata döndürdü.');
+        } else {
+          throw new Error('API Bulunamadı veya yanlış yapılandırıldı (Lütfen /api/send-email/route.js dosyasını kontrol edin).');
+        }
+      }
+
+      // Başarılı ise
+      await supabase.from('contact_messages').update({ is_replied: true }).eq('id', msg.id);
+      setMessages(prev => prev.map(m => m.id === msg.id ? { ...m, is_replied: true } : m));
+
+      showToast('E-posta başarıyla gönderildi!', 'success');
+      setReplyingTo(null);
+      setReplyText(''); 
+      
+    } catch (err) {
+      console.error(err);
+      showToast('Hata: ' + err.message, 'error');
+    } finally {
+      setIsSendingReply(false);
+    }
   }
 
   function handleBlockEmail(email, e) {
@@ -260,7 +310,6 @@ export default function MessagesPage() {
     showToast(`ID Kopyalandi: ${id}`, 'success');
   }
 
-  // SAYACLAR & FILTRELEME
   const unreadCount = messages.filter(m => !m.is_read).length;
   const starredCount = messages.filter(m => m.is_starred).length; 
   const repliedCount = messages.filter(m => m.is_replied).length; 
@@ -275,7 +324,7 @@ export default function MessagesPage() {
       msg.id.toString().includes(searchQuery.replace(/[^0-9]/g, ''));
     
     if (currentView === 'all') return matchSearch;
-    if (currentView === 'unread') return matchSearch && !msg.is_read;
+    if (currentView === 'unread') return matchSearch && (!msg.is_read || readInSession.includes(msg.id));
     if (currentView === 'read') return matchSearch && msg.is_read;
     if (currentView === 'starred') return matchSearch && msg.is_starred; 
     if (currentView === 'replied') return matchSearch && msg.is_replied;
@@ -317,59 +366,24 @@ export default function MessagesPage() {
         
         .adm-brand-wrapper { padding: 24px 20px 20px; border-bottom: 1px solid rgba(255,255,255,0.06); }
         .adm-brand-card {
-          display: flex;
-          align-items: center;
-          gap: 14px;
-          padding: 14px 16px;
-          background: rgba(255,255,255,0.02);
-          border: 1px solid rgba(255,255,255,0.04);
-          border-radius: 14px;
-          text-decoration: none;
-          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+          display: flex; align-items: center; gap: 14px; padding: 14px 16px;
+          background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.04);
+          border-radius: 14px; text-decoration: none; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
           cursor: pointer;
         }
         .adm-brand-card:hover {
-          background: rgba(34, 197, 94, 0.08);
-          border-color: rgba(34, 197, 94, 0.2);
-          transform: translateY(-2px);
-          box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+          background: rgba(34, 197, 94, 0.08); border-color: rgba(34, 197, 94, 0.2);
+          transform: translateY(-2px); box-shadow: 0 8px 20px rgba(0,0,0,0.2);
         }
         .adm-brand-icon {
-          width: 40px;
-          height: 40px;
-          border-radius: 10px;
-          background: linear-gradient(135deg, #22c55e, #16a34a);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          font-size: 1.1rem;
-          color: #fff;
-          flex-shrink: 0;
-          box-shadow: 0 4px 10px rgba(34, 197, 94, 0.3);
+          width: 40px; height: 40px; border-radius: 10px; background: linear-gradient(135deg, #22c55e, #16a34a);
+          display: flex; align-items: center; justify-content: center; font-size: 1.1rem; color: #fff;
+          flex-shrink: 0; box-shadow: 0 4px 10px rgba(34, 197, 94, 0.3);
         }
         .adm-brand-text { display: flex; flex-direction: column; }
-        .adm-brand-logo {
-          font-family: 'Syne', sans-serif;
-          font-weight: 700;
-          font-size: 1.15rem;
-          letter-spacing: 0.5px;
-          color: #fff;
-          line-height: 1.1;
-          display: block;
-          white-space: nowrap;
-        }
+        .adm-brand-logo { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 1.15rem; letter-spacing: 0.5px; color: #fff; line-height: 1.1; white-space: nowrap; }
         .adm-brand-logo span { color: #22c55e; }
-        .adm-brand-sub {
-          margin-top: 4px;
-          font-size: 0.65rem;
-          color: #9ca3af;
-          letter-spacing: 1px;
-          text-transform: uppercase;
-          font-weight: 600;
-          display: flex;
-          align-items: center;
-          transition: color 0.3s;
-        }
+        .adm-brand-sub { margin-top: 4px; font-size: 0.65rem; color: #9ca3af; letter-spacing: 1px; text-transform: uppercase; font-weight: 600; display: flex; align-items: center; transition: color 0.3s; }
         .adm-brand-card:hover .adm-brand-sub { color: #22c55e; }
 
         .msg-nav { padding: 16px 12px; flex: 1; display: flex; flex-direction: column; gap: 4px; overflow-y: auto; }
@@ -387,7 +401,6 @@ export default function MessagesPage() {
 
         .msg-main { flex: 1; display: flex; flex-direction: column; min-width: 0; }
         
-        /* Topbar ve Profil Menu CSS */
         .msg-topbar { height: 76px; display: flex; align-items: center; justify-content: space-between; padding: 0 36px; border-bottom: 1px solid rgba(255,255,255,0.06); background: rgba(17,19,24,0.7); backdrop-filter: blur(12px); position: sticky; top: 0; z-index: 50; }
         .msg-topbar-left { display: flex; align-items: center; gap: 16px; }
         .msg-topbar-title { font-family: 'Syne', sans-serif; font-size: 1.15rem; font-weight: 700; color: #f9fafb; display: flex; align-items: center; }
@@ -406,9 +419,6 @@ export default function MessagesPage() {
         .msg-search-wrap i { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: #4b5563; font-size: 0.85rem; }
         .msg-search-input { width: 100%; background: #111318; border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 10px 14px 10px 38px; color: #e2e8f0; font-size: 0.875rem; font-family: 'DM Sans', sans-serif; outline: none; transition: border-color 0.2s; box-sizing: border-box; }
         .msg-search-input:focus { border-color: rgba(34,197,94,0.4); }
-
-        .msg-mark-all-btn { background: none; border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 10px 16px; color: #6b7280; font-size: 0.82rem; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 7px; margin-left: auto; }
-        .msg-mark-all-btn:hover { color: #d1d5db; border-color: rgba(255,255,255,0.15); }
 
         .msg-list { background: #111318; border: 1px solid rgba(255,255,255,0.07); border-radius: 16px; overflow: hidden; }
         .msg-item { border-bottom: 1px solid rgba(255,255,255,0.05); cursor: pointer; transition: background 0.2s; }
@@ -441,16 +451,21 @@ export default function MessagesPage() {
         .msg-body { padding: 0 22px 20px 80px; animation: fadeDown 0.2s ease; }
         @keyframes fadeDown { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: translateY(0); } }
         .msg-body-inner { background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; padding: 18px 20px; }
-        .msg-body-subject { font-size: 0.78rem; text-transform: uppercase; letter-spacing: 1px; color: #4b5563; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
-        .msg-body-subject span { color: #9ca3af; font-weight: 500; }
+        
         .msg-full-date { font-size: 0.75rem; color: #4b5563; font-style: italic; font-weight: normal; text-transform: none; letter-spacing: 0; }
         
         .msg-body-text { font-size: 0.875rem; color: #d1d5db; line-height: 1.8; white-space: pre-wrap; margin: 0; }
         .msg-body-footer { display: flex; align-items: center; gap: 10px; margin-top: 18px; padding-top: 15px; border-top: 1px dashed rgba(255,255,255,0.05); }
-        .msg-reply-link { display: inline-flex; align-items: center; gap: 7px; background: rgba(34,197,94,0.1); border: 1px solid rgba(34,197,94,0.25); color: #22c55e; text-decoration: none; padding: 7px 14px; border-radius: 8px; font-size: 0.8rem; font-weight: 500; transition: all 0.2s; }
+        
+        .msg-reply-link { display: inline-flex; align-items: center; gap: 7px; background: rgba(34,197,94,0.1); border: 1px solid rgba(34,197,94,0.25); color: #22c55e; cursor: pointer; padding: 7px 14px; border-radius: 8px; font-size: 0.8rem; font-weight: 500; transition: all 0.2s; }
         .msg-reply-link:hover { background: rgba(34,197,94,0.18); }
-        .msg-mark-replied { display: inline-flex; align-items: center; gap: 7px; background: transparent; border: 1px solid rgba(59,130,246,0.3); color: #3b82f6; cursor: pointer; padding: 7px 14px; border-radius: 8px; font-size: 0.8rem; font-weight: 500; transition: all 0.2s; }
-        .msg-mark-replied:hover { background: rgba(59,130,246,0.1); }
+
+        /* INLINE REPLY KUTUSU CSS */
+        .inline-reply-box { margin-top: 15px; background: #111318; border: 1px solid rgba(34,197,94,0.3); border-radius: 10px; padding: 16px; animation: fadeDown 0.2s ease; }
+        .inline-reply-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; font-size: 0.85rem; color: #9ca3af; }
+        .inline-reply-textarea { width: 100%; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: #f9fafb; padding: 12px; font-family: inherit; font-size: 0.875rem; resize: vertical; outline: none; transition: border-color 0.2s; }
+        .inline-reply-textarea:focus { border-color: rgba(34,197,94,0.5); }
+        .inline-reply-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 12px; }
 
         .msg-empty { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 80px 0; gap: 14px; color: #4b5563; }
         .msg-empty-icon { width: 64px; height: 64px; border-radius: 20px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); display: flex; align-items: center; justify-content: center; font-size: 1.6rem; color: #374151; }
@@ -506,7 +521,7 @@ export default function MessagesPage() {
 
           <Toast message={toast?.message} type={toast?.type} onClose={() => setToast(null)} />
           <ConfirmModal isOpen={modal.isOpen} message={modal.message} onConfirm={handleConfirmAction} onCancel={closeConfirm} />
-
+          
           <aside className="adm-sidebar">
             <div className="adm-brand-wrapper">
               <Link href="/admin" className="adm-brand-card" title="Yonetim Paneline Git">
@@ -534,7 +549,7 @@ export default function MessagesPage() {
 
               <button 
                 className={`msg-nav-btn ${currentView === 'all' ? 'active' : ''}`} 
-                onClick={() => {setCurrentView('all'); setExpandedId(null);}}
+                onClick={() => changeView('all')}
               >
                 <span className="msg-nav-icon"><i className="fas fa-inbox" /></span> Tumu
                 <span className="msg-nav-badge" style={{background: 'rgba(255,255,255,0.1)', color: '#d1d5db'}}>{messages.length}</span>
@@ -542,7 +557,7 @@ export default function MessagesPage() {
 
               <button 
                 className={`msg-nav-btn ${currentView === 'unread' ? 'active' : ''}`} 
-                onClick={() => {setCurrentView('unread'); setExpandedId(null);}}
+                onClick={() => changeView('unread')}
               >
                 <span className="msg-nav-icon"><i className="fas fa-envelope" /></span> Okunmamis
                 {unreadCount > 0 && <span className="msg-nav-badge">{unreadCount}</span>}
@@ -550,14 +565,14 @@ export default function MessagesPage() {
 
               <button 
                 className={`msg-nav-btn ${currentView === 'read' ? 'active' : ''}`} 
-                onClick={() => {setCurrentView('read'); setExpandedId(null);}}
+                onClick={() => changeView('read')}
               >
                 <span className="msg-nav-icon"><i className="fas fa-envelope-open" /></span> Okunanlar
               </button>
               
               <button 
                 className={`msg-nav-btn ${currentView === 'starred' ? 'active-star' : ''}`} 
-                onClick={() => {setCurrentView('starred'); setExpandedId(null);}}
+                onClick={() => changeView('starred')}
               >
                 <span className="msg-nav-icon"><i className="fas fa-star" /></span> Yildizlilar
                 {starredCount > 0 && <span className="msg-nav-badge" style={{background: '#eab308', color: '#fff'}}>{starredCount}</span>}
@@ -565,7 +580,7 @@ export default function MessagesPage() {
 
               <button 
                 className={`msg-nav-btn ${currentView === 'replied' ? 'active-replied' : ''}`} 
-                onClick={() => {setCurrentView('replied'); setExpandedId(null);}}
+                onClick={() => changeView('replied')}
               >
                 <span className="msg-nav-icon"><i className="fas fa-reply-all" /></span> Cevaplananlar
                 {repliedCount > 0 && <span className="msg-nav-badge" style={{background: '#3b82f6', color: '#fff'}}>{repliedCount}</span>}
@@ -575,7 +590,7 @@ export default function MessagesPage() {
               
               <button 
                 className={`msg-nav-btn ${currentView === 'blocked' ? 'active-warning' : ''}`} 
-                onClick={() => {setCurrentView('blocked'); setExpandedId(null);}}
+                onClick={() => changeView('blocked')}
               >
                 <span className="msg-nav-icon"><i className="fas fa-ban" /></span> Engellenenler
                 {blockedEmails.length > 0 && <span className="msg-nav-badge" style={{background: '#f59e0b', color: '#fff'}}>{blockedEmails.length}</span>}
@@ -861,12 +876,19 @@ export default function MessagesPage() {
                   ) : (
                     filteredMessages.map(msg => {
                       const isExpanded = expandedId === msg.id;
+                      const isReplying = replyingTo === msg.id;
                       const avatarColor = getAvatarColor(msg.name);
+                      
                       return (
                         <div
                           key={msg.id}
                           className={`msg-item ${msg.is_read ? 'read' : 'unread'}`}
-                          onClick={() => setExpandedId(isExpanded ? null : msg.id)}
+                          onClick={() => {
+                            if (!isReplying) {
+                              setExpandedId(isExpanded ? null : msg.id);
+                            }
+                            markAsRead(msg);
+                          }}
                         >
                           <div className="msg-item-header">
                             <div className="msg-avatar" style={{background: avatarColor}}>
@@ -876,6 +898,7 @@ export default function MessagesPage() {
                             <div className="msg-meta">
                               <div className="msg-sender-row">
                                 <span className="msg-sender-name">{msg.name}</span>
+                                <span style={{fontSize: '0.75rem', color: '#6b7280', margin: '0 6px'}}>&lt;{msg.email}&gt;</span>
                                 {!msg.is_read && <span className="msg-new-badge">Yeni</span>}
                                 {msg.is_replied && <span className="msg-replied-badge"><i className="fas fa-check" style={{marginRight:'3px'}}/>Cevaplandi</span>}
                               </div>
@@ -917,14 +940,6 @@ export default function MessagesPage() {
                               </button>
 
                               <button
-                                className="msg-action-btn"
-                                title={msg.is_read ? 'Okunmadi Isaretle' : 'Okundu Isaretle'}
-                                onClick={e => toggleReadStatus(msg, e)}
-                              >
-                                <i className={`fas ${msg.is_read ? 'fa-envelope-open' : 'fa-envelope'}`} />
-                              </button>
-                              
-                              <button
                                 className="msg-action-btn delete"
                                 title="Mesaji Sil"
                                 onClick={e => deleteMessage(msg.id, e)}
@@ -935,32 +950,71 @@ export default function MessagesPage() {
                           </div>
 
                           {isExpanded && (
-                            <div className="msg-body">
+                            <div className="msg-body" onClick={e => e.stopPropagation()}>
                               <div className="msg-body-inner">
-                                <div className="msg-body-subject">
-                                  <span>Konu: <span style={{color:'#f9fafb'}}>{msg.subject}</span></span>
-                                  <span className="msg-full-date">{formatFullDate(msg.created_at)}</span>
+                                
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '16px', paddingBottom: '16px', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                                    <div>
+                                      <div style={{ fontSize: '0.95rem', color: '#f9fafb', fontWeight: '600' }}>
+                                        {msg.name} <span style={{ color: '#9ca3af', fontWeight: '400', fontSize: '0.85rem', marginLeft: '6px' }}>&lt;{msg.email}&gt;</span>
+                                      </div>
+                                      <div style={{ fontSize: '0.85rem', color: '#6b7280', marginTop: '6px' }}>
+                                        Konu: <span style={{ color: '#e2e8f0' }}>{msg.subject}</span>
+                                      </div>
+                                    </div>
+                                    <span className="msg-full-date" style={{ marginTop: '2px' }}>{formatFullDate(msg.created_at)}</span>
+                                  </div>
                                 </div>
+
                                 <p className="msg-body-text">{msg.message}</p>
-                                <div className="msg-body-footer">
-                                  <a href={`mailto:${msg.email}`} className="msg-reply-link">
-                                    <i className="fas fa-reply" />
-                                    {msg.email} adresine yanitla
-                                  </a>
-                                  
-                                  <button 
-                                    className="msg-mark-replied"
-                                    onClick={e => toggleReplyStatus(msg, e)}
-                                    style={{
-                                      background: msg.is_replied ? 'rgba(34,197,94,0.1)' : 'transparent',
-                                      color: msg.is_replied ? '#22c55e' : '#3b82f6',
-                                      borderColor: msg.is_replied ? 'rgba(34,197,94,0.3)' : 'rgba(59,130,246,0.3)'
-                                    }}
-                                  >
-                                    <i className={`fas ${msg.is_replied ? 'fa-check-double' : 'fa-check'}`} />
-                                    {msg.is_replied ? 'Cevaplandi Isaretini Kaldir' : 'Cevaplandi Olarak Isaretle'}
-                                  </button>
-                                </div>
+                                
+                                {!isReplying ? (
+                                  <div className="msg-body-footer">
+                                    <button 
+                                      className="msg-reply-link"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setReplyingTo(msg.id);
+                                        setReplyText('');
+                                      }}
+                                    >
+                                      <i className="fas fa-reply" />
+                                      Site Üzerinden Yanıtla
+                                    </button>
+                                  </div>
+                                ) : (
+                                  <div className="inline-reply-box">
+                                    <div className="inline-reply-header">
+                                      <span><strong>{msg.email}</strong> adresine yanıt yazıyorsunuz:</span>
+                                      <button 
+                                        style={{background:'none', border:'none', color:'#ef4444', cursor:'pointer'}}
+                                        onClick={() => setReplyingTo(null)}
+                                      >
+                                        <i className="fas fa-times" /> İptal
+                                      </button>
+                                    </div>
+                                    <textarea 
+                                      className="inline-reply-textarea"
+                                      rows="4" 
+                                      placeholder="Yanıtınızı buraya yazın..."
+                                      value={replyText}
+                                      onChange={(e) => setReplyText(e.target.value)}
+                                      disabled={isSendingReply}
+                                      autoFocus
+                                    />
+                                    <div className="inline-reply-actions">
+                                      <button 
+                                        className="adm-btn" 
+                                        style={{background:'#22c55e', color:'#000', border:'none'}} 
+                                        onClick={() => handleSendReply(msg)} 
+                                        disabled={isSendingReply}
+                                      >
+                                        {isSendingReply ? <i className="fas fa-spinner fa-spin" /> : <><i className="fas fa-paper-plane" /> Gönder</>}
+                                      </button>
+                                    </div>
+                                  </div>
+                                )}
                               </div>
                             </div>
                           )}

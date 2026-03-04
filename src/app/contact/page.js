@@ -1,8 +1,10 @@
 'use client';
+
 import { useEffect, useState, useRef } from 'react';
-import { supabase } from '../../lib/supabase';
-import ScrollToTop from '../../components/ScrollToTop';
-import { useLanguage } from '../../context/LanguageContext';
+import { supabase } from '../../lib/supabase'; 
+import ScrollToTop from '../../components/ScrollToTop'; 
+import { useLanguage } from '../../context/LanguageContext'; 
+import ReCAPTCHA from 'react-google-recaptcha';
 
 // ─── SAYFA GENELİ ARKA PLAN AĞI ────────────────────────────────────────────
 const NetworkBackground = () => {
@@ -235,9 +237,13 @@ export default function ContactPage() {
   const [content, setContent] = useState({});
   const [formData, setFormData] = useState({ name: '', email: '', subject: '', message: '' });
   const [sending, setSending] = useState(false);
-  const [status, setStatus] = useState(null);
+  
+  // YENİ: Uyarı mesajlarını daha akıllı yönetmek için State
+  const [alertInfo, setAlertInfo] = useState({ show: false, type: null }); 
+  
+  const [captchaValue, setCaptchaValue] = useState(null);
+  const recaptchaRef = useRef(null);
 
-  // Sözlükten ve dilden faydalanmak için
   const { language, t } = useLanguage();
 
   useEffect(() => {
@@ -252,6 +258,14 @@ export default function ContactPage() {
     fetchSettings();
   }, []);
 
+  // YENİ: 5 Saniye Sonra Mesajı Yumuşakça Kapatan Fonksiyon
+  const triggerAlert = (type) => {
+    setAlertInfo({ show: true, type: type });
+    setTimeout(() => {
+      setAlertInfo(prev => ({ ...prev, show: false })); // İçeriği silmeden sadece görünmez yapar (animasyon için)
+    }, 5000);
+  };
+
   // Reveal Animasyonu
   useEffect(() => {
     const observer = new IntersectionObserver((entries) => {
@@ -263,23 +277,45 @@ export default function ContactPage() {
 
   const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
 
+  const handleCaptchaChange = (value) => {
+    setCaptchaValue(value);
+    if(value && alertInfo.type === 'captcha_error') {
+       setAlertInfo({ show: false, type: null }); // Doğrulama yapıldığında hata yazısını kaldırır
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    // GÜVENLİK KONTROLÜ: Doğrulama yapılmadıysa formu gönderme ve uyarı ver!
+    if (!captchaValue) {
+      triggerAlert('captcha_error');
+      return; 
+    }
+
     setSending(true);
-    setStatus(null);
+    setAlertInfo({ show: false, type: null });
+
     try {
       const { error } = await supabase.from('contact_messages').insert([formData]);
       if (error) throw error;
-      setStatus('success');
+      
+      triggerAlert('success'); // Başarılı mesajını tetikle
       setFormData({ name: '', email: '', subject: '', message: '' });
+      
+      // Captcha'yı sıfırla
+      if (recaptchaRef.current) {
+        recaptchaRef.current.reset();
+      }
+      setCaptchaValue(null);
+
     } catch {
-      setStatus('error');
+      triggerAlert('error'); // Hata mesajını tetikle
     } finally {
       setSending(false);
     }
   };
 
-  // ✨ AKILLI YEDEKLEME FONKSİYONU
   const getDynamicContent = (trKey, defaultTranslationKey) => {
     if (language === 'en') {
       const enKey = `${trKey}_en`;
@@ -293,11 +329,12 @@ export default function ContactPage() {
     return translationFallback === defaultTranslationKey ? '' : translationFallback;
   };
 
+  const recaptchaSiteKey = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY || "6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI";
+
   return (
     <div className="contact-page">
       <NetworkBackground />
 
-      {/* ── HERO ───────────────────────────────────────────────────────────── */}
       <section className="page-header">
         <HeroAnimation />
         <div className="hero-noise"></div>
@@ -331,7 +368,6 @@ export default function ContactPage() {
         </button>
       </section>
 
-      {/* ── CONTENT ────────────────────────────────────────────────────────── */}
       <section id="icerik" className="section-padding">
         <div className="container" style={{ maxWidth: '1100px' }}>
 
@@ -342,7 +378,6 @@ export default function ContactPage() {
 
           <div className="contact-grid">
 
-            {/* ─ SOL: İletişim Bilgileri ─────────────────────────────────── */}
             <div className="info-card reveal">
               <h3 className="card-heading">{getDynamicContent('contact_info_title', 'contact.info.title')}</h3>
 
@@ -374,7 +409,6 @@ export default function ContactPage() {
                 </li>
               </ul>
 
-              {/* Sosyal Medya */}
               <div className="social-section">
                 <p className="social-heading">{getDynamicContent('contact_social_title', 'contact.social.title')}</p>
                 <div className="social-row">
@@ -400,22 +434,30 @@ export default function ContactPage() {
               </div>
             </div>
 
-            {/* ─ SAĞ: Form ──────────────────────────────────────────────── */}
             <div className="form-card reveal">
               <h3 className="card-heading">{getDynamicContent('contact_form_title', 'contact.form.title')}</h3>
 
-              {status === 'success' && (
-                <div className="alert alert-success">
-                  <i className="fas fa-check-circle"></i>
-                  {getDynamicContent('contact_form_success', 'contact.form.success')}
-                </div>
-              )}
-              {status === 'error' && (
-                <div className="alert alert-error">
-                  <i className="fas fa-exclamation-circle"></i>
-                  {getDynamicContent('contact_form_error', 'contact.form.error')}
-                </div>
-              )}
+              {/* YENİ UYARI KUTUSU - YUMUŞAK GEÇİŞLİ */}
+              <div className={`alert-wrapper ${alertInfo.show ? 'show' : ''}`}>
+                {alertInfo.type === 'success' && (
+                  <div className="alert alert-success">
+                    <i className="fas fa-check-circle"></i>
+                    {getDynamicContent('contact_form_success', 'contact.form.success')}
+                  </div>
+                )}
+                {alertInfo.type === 'error' && (
+                  <div className="alert alert-error">
+                    <i className="fas fa-exclamation-circle"></i>
+                    {getDynamicContent('contact_form_error', 'contact.form.error')}
+                  </div>
+                )}
+                {alertInfo.type === 'captcha_error' && (
+                  <div className="alert alert-error">
+                    <i className="fas fa-robot"></i>
+                    Lütfen mesajı göndermeden önce robot olmadığınızı doğrulayın!
+                  </div>
+                )}
+              </div>
 
               <form onSubmit={handleSubmit}>
                 <div className="form-row">
@@ -441,6 +483,16 @@ export default function ContactPage() {
                     value={formData.message} onChange={handleChange}></textarea>
                 </div>
 
+                <div className="captcha-container" style={{ marginBottom: '20px' }}>
+                  <ReCAPTCHA
+                    ref={recaptchaRef}
+                    sitekey={recaptchaSiteKey}
+                    onChange={handleCaptchaChange}
+                    hl={language === 'en' ? 'en' : 'tr'}
+                  />
+                </div>
+
+                {/* BUTON ARTIK HER ZAMAN TIKLANABİLİR. Robot seçilmediyse onClick'te uyarı fırlatacak. */}
                 <button type="submit" className="submit-btn" disabled={sending}>
                   {sending ? (
                     <><i className="fas fa-circle-notch fa-spin"></i> {t('contact.form.sending')}</>
@@ -448,6 +500,7 @@ export default function ContactPage() {
                     <><span>{getDynamicContent('contact_form_btn', 'contact.form.sendBtn')}</span><span className="btn-icon"><i className="fas fa-paper-plane"></i></span></>
                   )}
                 </button>
+                
               </form>
             </div>
 
@@ -466,13 +519,11 @@ export default function ContactPage() {
           --shadow-hover: 0 20px 60px rgba(30,148,72,0.14), 0 4px 16px rgba(0,0,0,0.05);
           --radius: 20px;
         }
-
         
         /* HERO */
         .page-header {
           position:relative; min-height:100vh; display:flex; flex-direction:column;
           align-items:center; justify-content:center; text-align:center; overflow:hidden;
-          /* Eski asil ve derin orman yeşili gradyanı */
           background: linear-gradient(160deg, #071a0f 0%, #0f3320 35%, #1a5c38 65%, #0d2b1f 100%);
         }
         .hero-noise { position:absolute; inset:0; z-index:0; pointer-events:none; opacity:0.6;
@@ -580,17 +631,29 @@ export default function ContactPage() {
           background:var(--green-deep); 
           transition:background 0.3s, transform 0.2s;
         }
-        .submit-btn:disabled { opacity:0.7; cursor:not-allowed; }
+        .submit-btn:disabled { opacity:0.7; cursor:not-allowed; transform: none; box-shadow: none; }
         
         .submit-btn span:first-child { flex: none; padding: 0; background: transparent; text-align: center; }
         .submit-btn .btn-icon { padding: 0; background: transparent; display: flex; align-items: center; justify-content: center; }
         
         .submit-btn:not(:disabled):hover { background:#166336; transform: translateY(-2px); }
         .submit-btn:not(:disabled):hover .btn-icon i { transform: translateX(4px); transition: transform 0.3s; }
-        .submit-btn:disabled span:first-child, .submit-btn:disabled .btn-icon { background:var(--green-deep); }
+        
+        /* UYARI KUTUSU ANİMASYONU - BURASI DÜZELTİLDİ */
+        .alert-wrapper {
+          max-height: 0;
+          opacity: 0;
+          overflow: hidden;
+          transition: max-height 0.4s ease-out, opacity 0.4s ease-out, margin 0.4s ease-out;
+          margin-bottom: 0;
+        }
+        .alert-wrapper.show {
+          max-height: 100px; /* Kutunun açılması için yeterli yükseklik */
+          opacity: 1;
+          margin-bottom: 20px;
+        }
 
-        /* Uyarılar */
-        .alert { display:flex; align-items:flex-start; gap:10px; padding:14px 16px; border-radius:10px; font-size:0.9rem; font-weight:500; margin-bottom:20px; line-height:1.5; }
+        .alert { display:flex; align-items:flex-start; gap:10px; padding:14px 16px; border-radius:10px; font-size:0.9rem; font-weight:500; line-height:1.5; }
         .alert i { margin-top:2px; flex-shrink:0; }
         .alert-success { background:rgba(45,181,93,0.1); color:var(--green-deep); border:1px solid rgba(45,181,93,0.25); }
         .alert-error { background:rgba(231,76,60,0.08); color:#c0392b; border:1px solid rgba(231,76,60,0.2); }
@@ -608,6 +671,7 @@ export default function ContactPage() {
           .header-title { font-size:2rem; }
           .info-card, .form-card { padding:24px; }
           .hero-scroll-btn { bottom:28px; }
+          .captcha-container { transform: scale(0.9); transform-origin: 0 0; }
         }
       `}</style>
     </div>

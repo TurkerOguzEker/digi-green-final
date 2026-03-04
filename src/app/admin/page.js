@@ -10,7 +10,6 @@ import {
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend
 } from 'recharts';
 
-// Ayırdığımız bileşenleri içe aktarıyoruz
 import CustomTooltip from '../../components/admin/CustomTooltip';
 import StatCard from '../../components/admin/StatCard';
 import ActivityItem from '../../components/admin/ActivityItem';
@@ -146,7 +145,6 @@ export default function AdminDashboardPage() {
     }
     init();
     
-    // API KOTA AŞIMINI ÖNLEMEK İÇİN SÜRE 60 SANİYEYE (60000 ms) ÇIKARILDI
     const interval = setInterval(fetchDashboardData, 60000); 
     
     return () => { mounted = false; clearInterval(interval); };
@@ -290,7 +288,7 @@ export default function AdminDashboardPage() {
       <div className="adm-layout">
         <aside className="adm-sidebar">
           <div className="adm-brand-wrapper">
-            <Link href="/admin" className="adm-brand-card">
+            <Link href="/" className="adm-brand-card">
               <div className="adm-brand-icon"><i className="fas fa-leaf" /></div>
               <div>
                 <div className="adm-brand-logo"><span>DIGI-<span>GREEN</span></span></div>
@@ -486,21 +484,25 @@ export default function AdminDashboardPage() {
                   <div className="chart-header">
                     <div>
                       <div className="chart-title">En Popüler Sayfalar</div>
-                      <div className="chart-subtitle">En çok görüntülenen 5 içerik (Son 28 Gün)</div>
+                      <div className="chart-subtitle">Sadece haber ve faaliyet içerikleri (Son 28 Gün)</div>
                     </div>
                   </div>
                   <div>
                     {topPages.length === 0 ? (
                       <div style={{color:'var(--text-muted)', fontSize:'0.8rem', padding:'10px 0'}}>Henüz yeterli veri yok.</div>
                     ) : (
-                      // YENİ HALİ:
-topPages.map((page, i) => (
-  <div key={i} className="page-list-item">
-    {/* Ekrana sadece temizlenmiş displayName yazılacak */}
-    <span className="page-path" title={page.title}>{page.displayName}</span>
-    <span className="page-views">{page.views}</span>
-  </div>
-))
+                      topPages.map((page, i) => {
+                        let cleanTitle = page.title || page.displayName;
+                        if (cleanTitle.includes(' | ')) cleanTitle = cleanTitle.split(' | ')[0];
+                        else if (cleanTitle.includes(' - ')) cleanTitle = cleanTitle.split(' - ')[0];
+                        
+                        return (
+                          <div key={i} className="page-list-item">
+                            <span className="page-path" title={page.path}>{cleanTitle}</span>
+                            <span className="page-views">{page.views}</span>
+                          </div>
+                        );
+                      })
                     )}
                   </div>
                 </div>

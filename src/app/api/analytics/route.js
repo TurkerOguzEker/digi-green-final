@@ -1,5 +1,5 @@
 // src/app/api/analytics/route.js
-export const dynamic = 'force-dynamic'; // MUCİZEYİ YARATAN VE CACHE'İ TEMİZLEYEN KOD
+export const dynamic = 'force-dynamic'; 
 
 import { BetaAnalyticsDataClient } from '@google-analytics/data';
 import { NextResponse } from 'next/server';
@@ -73,7 +73,7 @@ export async function GET() {
       };
     }) || [];
 
-    // 5. En Çok Ziyaret Edilen Sayfalar (SADECE HABERLER VE FAALİYETLER İÇİN FİLTRE)
+    // 5. En Çok Ziyaret Edilen Sayfalar (SADECE HABER VE FAALİYET İÇERİKLERİ)
     const [pages] = await client.runReport({
       property: `properties/${propertyId}`,
       dateRanges: [{ startDate: '28daysAgo', endDate: 'today' }],
@@ -82,43 +82,29 @@ export async function GET() {
       dimensionFilter: {
         orGroup: {
           expressions: [
-            { filter: { fieldName: 'pagePath', stringFilter: { matchType: 'CONTAINS', value: '/news/' } } },
-            { filter: { fieldName: 'pagePath', stringFilter: { matchType: 'CONTAINS', value: '/activities/' } } }
+            // Sadece /news/ ve /activities/ ile BAŞLAYAN (içerik barındıran) linkleri getir
+            { filter: { fieldName: 'pagePath', stringFilter: { matchType: 'BEGINS_WITH', value: '/news/' } } },
+            { filter: { fieldName: 'pagePath', stringFilter: { matchType: 'BEGINS_WITH', value: '/activities/' } } }
           ]
         }
       },
-      limit: 20 // Filtreleme sonrası azalmasın diye 20 çekip en yüksek 5'ini alacağız
+      limit: 25 // Süzme işleminden sonra sayı düşmesin diye fazla çekiyoruz
     });
 
     const topPages = pages.rows
       ?.filter(row => {
         const path = row.dimensionValues[0].value;
-        // /news veya /activities ana sayfalarının kendisini listeden atıyoruz (Sadece içindekiler kalacak)
-        return path !== '/news' && path !== '/news/' && path !== '/activities' && path !== '/activities/';
+        // KESİN KONTROL: Ana sayfaları listeye sokma, sadece içeriği olanları al
+        if (path === '/news' || path === '/news/' || path === '/activities' || path === '/activities/') {
+            return false;
+        }
+        return true;
       })
       .slice(0, 5) // En popüler 5 tanesini seç
       .map(row => {
-        let rawPath = row.dimensionValues[0].value;
-        
-        // 1. URL'den klasör isimlerini at (/news/ veya /activities/ kısımlarını temizle)
-        let cleanName = rawPath.replace(/\/news\//g, '').replace(/\/activities\//g, '');
-        
-        // 2. Türkçe URL kodlamalarını düzelt (%20, %C3%A7 vb.)
-        try { cleanName = decodeURIComponent(cleanName); } catch(e) {}
-
-        // 3. Kalan slash (/) ve parantez işaretlerini tamamen sil
-        cleanName = cleanName.replace(/[/\(\)]/g, '');
-        
-        // 4. Tireleri (-) boşluğa çevir
-        cleanName = cleanName.replace(/-/g, ' ');
-        
-        // 5. Kelimelerin baş harfini büyüt (Örn: iklim degisikligi -> Iklim Degisikligi)
-        cleanName = cleanName.split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
-
         return {
-          path: rawPath,
-          title: row.dimensionValues[1].value, // Üzerine gelince gözükecek uzun orijinal başlık
-          displayName: cleanName || 'İsimsiz Sayfa', // Ekrana basılacak temiz isim
+          path: row.dimensionValues[0].value,
+          title: row.dimensionValues[1].value, // Google Analytics'teki gerçek sayfa başlığı
           views: parseInt(row.metricValues[0].value, 10)
         };
       }) || [];
