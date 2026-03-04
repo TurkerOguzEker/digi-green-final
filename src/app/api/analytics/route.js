@@ -1,4 +1,6 @@
 // src/app/api/analytics/route.js
+export const dynamic = 'force-dynamic'; // MUCİZEYİ YARATAN VE CACHE'İ TEMİZLEYEN KOD
+
 import { BetaAnalyticsDataClient } from '@google-analytics/data';
 import { NextResponse } from 'next/server';
 
@@ -20,14 +22,14 @@ export async function GET() {
     });
     const activeUsers = realtime.rows?.[0]?.metricValues?.[0]?.value || '0';
 
-    // 2. Bugün & Toplam & Yeni Kullanıcılar (Tek bir sorguda)
+    // 2. Bugün & Toplam & Yeni Kullanıcılar
     const [generalStats] = await client.runReport({
       property: `properties/${propertyId}`,
       dateRanges: [{ startDate: '28daysAgo', endDate: 'today' }],
       metrics: [
-        { name: 'screenPageViews' }, // Bugün için değil, genel
-        { name: 'totalUsers' },      // Toplam Kullanıcı
-        { name: 'newUsers' }         // Yeni Kullanıcı
+        { name: 'screenPageViews' }, 
+        { name: 'totalUsers' },      
+        { name: 'newUsers' }         
       ],
     });
     const totalViews = generalStats.rows?.[0]?.metricValues?.[0]?.value || '0';
@@ -49,7 +51,7 @@ export async function GET() {
         mesaj: parseInt(row.metricValues[0].value, 10)
     }));
 
-    // 4. Cihaz Dağılımı (Mobil / Masaüstü / Tablet)
+    // 4. Cihaz Dağılımı
     const [devices] = await client.runReport({
       property: `properties/${propertyId}`,
       dateRanges: [{ startDate: '28daysAgo', endDate: 'today' }],
@@ -59,7 +61,7 @@ export async function GET() {
     
     const deviceData = devices.rows?.map(row => {
       let name = row.dimensionValues[0].value;
-      let color = '#3b82f6'; // Desktop
+      let color = '#3b82f6'; 
       if(name.toLowerCase() === 'mobile') { name = 'Mobil'; color = '#22c55e'; }
       if(name.toLowerCase() === 'desktop') { name = 'Masaüstü'; color = '#3b82f6'; }
       if(name.toLowerCase() === 'tablet') { name = 'Tablet'; color = '#f59e0b'; }
@@ -71,20 +73,55 @@ export async function GET() {
       };
     }) || [];
 
-    // 5. En Çok Ziyaret Edilen Sayfalar (Top 5)
+    // 5. En Çok Ziyaret Edilen Sayfalar (SADECE HABERLER VE FAALİYETLER İÇİN FİLTRE)
     const [pages] = await client.runReport({
       property: `properties/${propertyId}`,
       dateRanges: [{ startDate: '28daysAgo', endDate: 'today' }],
       dimensions: [{ name: 'pagePath' }, { name: 'pageTitle' }],
       metrics: [{ name: 'screenPageViews' }],
-      limit: 5
+      dimensionFilter: {
+        orGroup: {
+          expressions: [
+            { filter: { fieldName: 'pagePath', stringFilter: { matchType: 'CONTAINS', value: '/news/' } } },
+            { filter: { fieldName: 'pagePath', stringFilter: { matchType: 'CONTAINS', value: '/activities/' } } }
+          ]
+        }
+      },
+      limit: 20 // Filtreleme sonrası azalmasın diye 20 çekip en yüksek 5'ini alacağız
     });
 
-    const topPages = pages.rows?.map(row => ({
-      path: row.dimensionValues[0].value,
-      title: row.dimensionValues[1].value,
-      views: parseInt(row.metricValues[0].value, 10)
-    })) || [];
+    const topPages = pages.rows
+      ?.filter(row => {
+        const path = row.dimensionValues[0].value;
+        // /news veya /activities ana sayfalarının kendisini listeden atıyoruz (Sadece içindekiler kalacak)
+        return path !== '/news' && path !== '/news/' && path !== '/activities' && path !== '/activities/';
+      })
+      .slice(0, 5) // En popüler 5 tanesini seç
+      .map(row => {
+        let rawPath = row.dimensionValues[0].value;
+        
+        // 1. URL'den klasör isimlerini at (/news/ veya /activities/ kısımlarını temizle)
+        let cleanName = rawPath.replace(/\/news\//g, '').replace(/\/activities\//g, '');
+        
+        // 2. Türkçe URL kodlamalarını düzelt (%20, %C3%A7 vb.)
+        try { cleanName = decodeURIComponent(cleanName); } catch(e) {}
+
+        // 3. Kalan slash (/) ve parantez işaretlerini tamamen sil
+        cleanName = cleanName.replace(/[/\(\)]/g, '');
+        
+        // 4. Tireleri (-) boşluğa çevir
+        cleanName = cleanName.replace(/-/g, ' ');
+        
+        // 5. Kelimelerin baş harfini büyüt (Örn: iklim degisikligi -> Iklim Degisikligi)
+        cleanName = cleanName.split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+
+        return {
+          path: rawPath,
+          title: row.dimensionValues[1].value, // Üzerine gelince gözükecek uzun orijinal başlık
+          displayName: cleanName || 'İsimsiz Sayfa', // Ekrana basılacak temiz isim
+          views: parseInt(row.metricValues[0].value, 10)
+        };
+      }) || [];
 
     return NextResponse.json({
       activeUsers: parseInt(activeUsers, 10),

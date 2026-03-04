@@ -145,7 +145,10 @@ export default function AdminDashboardPage() {
       await fetchDashboardData();
     }
     init();
-    const interval = setInterval(fetchDashboardData, 15000); 
+    
+    // API KOTA AŞIMINI ÖNLEMEK İÇİN SÜRE 60 SANİYEYE (60000 ms) ÇIKARILDI
+    const interval = setInterval(fetchDashboardData, 60000); 
+    
     return () => { mounted = false; clearInterval(interval); };
   }, [router, fetchDashboardData]);
 
@@ -490,12 +493,14 @@ export default function AdminDashboardPage() {
                     {topPages.length === 0 ? (
                       <div style={{color:'var(--text-muted)', fontSize:'0.8rem', padding:'10px 0'}}>Henüz yeterli veri yok.</div>
                     ) : (
-                      topPages.map((page, i) => (
-                        <div key={i} className="page-list-item">
-                          <span className="page-path" title={page.title}>{page.path === '/' ? '/ (Ana Sayfa)' : page.path}</span>
-                          <span className="page-views">{page.views}</span>
-                        </div>
-                      ))
+                      // YENİ HALİ:
+topPages.map((page, i) => (
+  <div key={i} className="page-list-item">
+    {/* Ekrana sadece temizlenmiş displayName yazılacak */}
+    <span className="page-path" title={page.title}>{page.displayName}</span>
+    <span className="page-views">{page.views}</span>
+  </div>
+))
                     )}
                   </div>
                 </div>
