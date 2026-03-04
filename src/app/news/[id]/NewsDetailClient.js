@@ -91,13 +91,10 @@ export default function NewsDetailClient({ newsItem }) {
           padding: 50px;
           border-radius: 20px;
           box-shadow: 0 10px 40px rgba(0,0,0,0.05);
+          /* Kutunun dışına taşmayı engeller */
+          overflow: hidden; 
         }
-        .description-text p {
-          font-size: 1.15rem;
-          line-height: 1.8;
-          color: #444;
-          margin-bottom: 25px;
-        }
+        
         @media (max-width: 768px) {
           .detail-hero { height: auto; padding-top: 150px; padding-bottom: 40px; }
           .content-box { padding: 30px 20px; }
@@ -105,8 +102,9 @@ export default function NewsDetailClient({ newsItem }) {
         }
       `}</style>
 
-      {/* ✨ BUTON İÇİN GLOBAL CSS ✨ */}
+      {/* ✨ İÇERİK (QUILL) VE BUTON İÇİN GLOBAL CSS ✨ */}
       <style jsx global>{`
+        /* Geri Butonu */
         .custom-back-btn {
           display: inline-flex !important;
           align-items: center !important;
@@ -125,6 +123,87 @@ export default function NewsDetailClient({ newsItem }) {
           transform: translateY(-3px) !important;
           background-color: #1a5c38 !important;
           box-shadow: 0 8px 25px rgba(26, 92, 56, 0.5) !important;
+        }
+
+        /* * QUILL EDITOR İÇERİĞİ İÇİN DÜZELTMELER (Kaymayı/Taşmayı Önler) 
+         */
+        .quill-content {
+          width: 100%;
+          max-width: 100%;
+          color: #444;
+          /* Uzun linklerin ve kelimelerin taşmasını engeller */
+          word-wrap: break-word !important;
+          overflow-wrap: break-word !important;
+          word-break: break-word !important;
+        }
+        
+        .quill-content p {
+          font-size: 1.15rem;
+          line-height: 1.8;
+          margin-bottom: 25px;
+        }
+
+        .quill-content img {
+          max-width: 100% !important;
+          height: auto !important;
+          border-radius: 12px;
+          margin: 20px 0;
+          display: block;
+        }
+
+        .quill-content iframe, 
+        .quill-content video {
+          max-width: 100% !important;
+          border-radius: 12px;
+        }
+
+        .quill-content ul, 
+        .quill-content ol {
+          padding-left: 25px;
+          margin-bottom: 25px;
+          line-height: 1.8;
+          font-size: 1.15rem;
+        }
+
+        .quill-content li {
+          margin-bottom: 10px;
+        }
+
+        .quill-content h1, 
+        .quill-content h2, 
+        .quill-content h3, 
+        .quill-content h4 {
+          color: #1a1a1a;
+          margin-top: 35px;
+          margin-bottom: 15px;
+          font-weight: 700;
+          line-height: 1.3;
+        }
+
+        .quill-content a {
+          color: #27ae60;
+          text-decoration: underline;
+        }
+
+        /* Editörden Gelen Hizalama Sınıfları */
+        .quill-content .ql-align-center { text-align: center !important; }
+        .quill-content .ql-align-right { text-align: right !important; }
+        .quill-content .ql-align-justify { text-align: justify !important; }
+        
+        /* Editörden Gelen Girinti (Indent) Sınıfları */
+        .quill-content .ql-indent-1 { padding-left: 3rem; }
+        .quill-content .ql-indent-2 { padding-left: 6rem; }
+        
+        @media (max-width: 768px) {
+          .quill-content p,
+          .quill-content ul,
+          .quill-content ol {
+            font-size: 1.05rem;
+          }
+          .quill-content .ql-indent-1,
+          .quill-content .ql-indent-2 {
+            padding-left: 1rem; /* Mobilde aşırı boşluğu engelle */
+          }
         }
       `}</style>
     </div>

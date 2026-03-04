@@ -4,7 +4,10 @@ import { notFound } from 'next/navigation';
 
 // ✨ Google, WhatsApp, LinkedIn Paylaşımları İçin Dinamik SEO (Metadata) ✨
 export async function generateMetadata({ params }) {
-  const { id } = await params;
+  // Next.js 15 kurallarına göre params artık asenkron olarak çözülmeli
+  const resolvedParams = await params;
+  const id = resolvedParams.id;
+  
   const { data: newsItem } = await supabase.from('news').select('*').eq('id', id).single();
 
   if (!newsItem) {
@@ -23,7 +26,9 @@ export async function generateMetadata({ params }) {
 }
 
 export default async function NewsDetailPage({ params }) {
-  const { id } = await params;
+  // Next.js 15 kurallarına göre params asenkron
+  const resolvedParams = await params;
+  const id = resolvedParams.id;
   
   // Veriyi sunucuda (Server) anında çekiyoruz. Yükleniyor ekranına gerek yok!
   const { data: newsItem } = await supabase.from('news').select('*').eq('id', id).single();
@@ -33,6 +38,6 @@ export default async function NewsDetailPage({ params }) {
     notFound(); 
   }
 
-  // Çekilen veriyi dili yönetmesi için Client Component'e (İstemci Bileşenine) gönderiyoruz
+  // Çekilen veriyi dili yönetmesi ve CSS ile şekillendirmesi için Client Component'e gönderiyoruz
   return <NewsDetailClient newsItem={newsItem} />;
 }

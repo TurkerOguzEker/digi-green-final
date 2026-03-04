@@ -1,4 +1,3 @@
-// src/app/admin/results/page.js
 'use client';
 import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
@@ -229,24 +228,36 @@ export default function AdminResultsPage() {
     }]);
   }
 
+  // ✨ BURASI DÜZELTİLDİ: SİLME FONKSİYONU ✨
   async function deleteItem(id, fileUrls = []) {
     showConfirm('Bu dosyayi kalici olarak silmek istediginize emin misiniz?', async () => {
-      if (fileUrls && fileUrls.length > 0) {
-        const fileNamesToDelete = fileUrls.filter(url => url).map(url => {
-            const parts = url.split('/images/');
-            return parts.length > 1 ? parts[1] : null;
-          }).filter(name => name);
-
-        if (fileNamesToDelete.length > 0) {
-          try { await supabase.storage.from('images').remove(fileNamesToDelete); } 
-          catch (err) { console.error("Storage silme hatasi:", err); }
+      
+      // Önce UI'dan (Arayüzden) anında kaldır (Hızlı tepki)
+      setResults(prev => prev.filter(r => r.id !== id));
+      
+      // Arka planda DB'den sil
+      const { error } = await supabase.from('results').delete().eq('id', id);
+      
+      if (error) {
+        showToast('Hata: ' + error.message, 'error');
+        fetchPageData(); // Silinmezse geri yükle
+      } else {
+        await logAction(`Dosyalar tablosundan bir kayit silindi. (ID: ${id})`);
+        showToast('Basariyla silindi.', 'success');
+        
+        // (İsteğe bağlı) Dosyayı storage'dan da sil
+        if (fileUrls && fileUrls.length > 0) {
+          const fileNamesToDelete = fileUrls.filter(url => url).map(url => {
+              const parts = url.split('/images/');
+              return parts.length > 1 ? parts[1] : null;
+            }).filter(name => name);
+  
+          if (fileNamesToDelete.length > 0) {
+            try { await supabase.storage.from('images').remove(fileNamesToDelete); } 
+            catch (err) { console.error("Storage silme hatasi:", err); }
+          }
         }
       }
-
-      await supabase.from('results').delete().eq('id', id);
-      await logAction(`Dosyalar tablosundan bir kayit silindi. (ID: ${id})`);
-      fetchPageData(); 
-      showToast('Basariyla silindi.', 'success');
     });
   }
 
@@ -658,7 +669,7 @@ export default function AdminResultsPage() {
                     <i className="fas fa-plus" /> {isEditing ? ' Dosya Guncelle' : ' Yeni Dosya Ekle'}  
                   </div>
                 </div>
-               <form onSubmit={e => saveItem(e, 'results', resultForm, setResultForm)} style={{display:'grid', gap:'14px'}}>
+               <form onSubmit={saveItem} style={{display:'grid', gap:'14px'}}>
                   
                   <div className="adm-form-grid2">
                       <div className="adm-form-item">
@@ -721,10 +732,10 @@ export default function AdminResultsPage() {
                       <span>{item.status}</span>
                     </div>
                     <div className="adm-item-actions">
-                      <button className="adm-btn adm-btn-ghost" onClick={() => startEdit(item, 'results')} style={{height:'32px', fontSize:'0.78rem'}}>
+                      <button className="adm-btn adm-btn-ghost" onClick={() => startEdit(item)} style={{height:'32px', fontSize:'0.78rem'}}>
                         <i className="fas fa-pen" /> Duzenle
                       </button>
-                      <button className="adm-btn adm-btn-danger" onClick={() => deleteItem('results', item.id, [item.link])}>
+                      <button className="adm-btn adm-btn-danger" onClick={() => deleteItem(item.id, [item.link])}>
                         <i className="fas fa-trash" />
                       </button>
                     </div>

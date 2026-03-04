@@ -1,11 +1,13 @@
-// src/app/activities/[id]/page.js
 import { supabase } from '../../../lib/supabase';
 import ActivityDetailClient from './ActivityDetailClient';
 import { notFound } from 'next/navigation';
 
 // ✨ Google, WhatsApp, LinkedIn Paylaşımları İçin Dinamik SEO (Metadata) ✨
 export async function generateMetadata({ params }) {
-  const { id } = await params;
+  // Next.js 15 kurallarına göre params artık asenkron olarak çözülmeli
+  const resolvedParams = await params;
+  const id = resolvedParams.id;
+  
   const { data: activity } = await supabase.from('activities').select('*').eq('id', id).single();
 
   if (!activity) {
@@ -24,7 +26,9 @@ export async function generateMetadata({ params }) {
 }
 
 export default async function ActivityDetailPage({ params }) {
-  const { id } = await params;
+  // Next.js 15 kurallarına göre params asenkron olarak çözülmeli
+  const resolvedParams = await params;
+  const id = resolvedParams.id;
   
   // Veriyi sunucuda (Server) anında çekiyoruz. Yükleniyor ekranına gerek yok!
   const { data: activity } = await supabase.from('activities').select('*').eq('id', id).single();
