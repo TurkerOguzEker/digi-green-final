@@ -447,7 +447,7 @@ export default function AdminPartnersPage() {
       <div className="adm-layout">
         <aside className="adm-sidebar">
           <div className="adm-brand-wrapper">
-            <Link href="/" className="adm-brand-card" title="Site Ana Sayfasina Git">
+            <Link href="/admin" className="adm-brand-card" title="Site Ana Sayfasina Git">
               <div className="adm-brand-icon">
                 <i className="fas fa-leaf" />
               </div>

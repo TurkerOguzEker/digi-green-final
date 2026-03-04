@@ -290,7 +290,7 @@ export default function AdminDashboardPage() {
       <div className="adm-layout">
         <aside className="adm-sidebar">
           <div className="adm-brand-wrapper">
-            <Link href="/" className="adm-brand-card">
+            <Link href="/admin" className="adm-brand-card">
               <div className="adm-brand-icon"><i className="fas fa-leaf" /></div>
               <div>
                 <div className="adm-brand-logo"><span>DIGI-<span>GREEN</span></span></div>
