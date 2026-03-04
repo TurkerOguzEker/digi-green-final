@@ -1,4 +1,3 @@
-// src/app/admin/news/page.js
 'use client';
 import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
@@ -141,6 +140,9 @@ export default function AdminNewsPage() {
   const [settings, setSettings] = useState([]);
   const [news, setNews] = useState([]);
   const [unreadMsgCount, setUnreadMsgCount] = useState(0);
+  
+  // YENI: Arama State'i
+  const [searchQuery, setSearchQuery] = useState('');
 
   // Form State
   const [newsForm, setNewsForm] = useState({ id: null, title: '', title_en: '', summary: '', summary_en: '', description: '', description_en: '', image_url: '', date: '' });
@@ -265,6 +267,17 @@ export default function AdminNewsPage() {
     setNewsForm({ ...item });
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
+
+  // YENI: Arama Fonksiyonu (Filtreleme)
+  const filteredNews = news.filter(item => {
+    const searchVal = searchQuery.toLowerCase();
+    return (
+      item.title?.toLowerCase().includes(searchVal) ||
+      item.title_en?.toLowerCase().includes(searchVal) ||
+      item.summary?.toLowerCase().includes(searchVal) ||
+      item.summary_en?.toLowerCase().includes(searchVal)
+    );
+  });
 
   const commonProps = { settings, handleSettingChange, updateSetting, uploadFile };
 
@@ -416,11 +429,28 @@ export default function AdminNewsPage() {
         .adm-toast-close { margin-left: auto; background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 1rem; padding: 4px; transition: color var(--transition); flex-shrink: 0; }
         .adm-toast-close:hover { color: var(--text-primary); }
 
+        .adm-modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); backdrop-filter: blur(4px); z-index: 10000; display: flex; align-items: center; justify-content: center; animation: fadeIn 0.15s ease; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        .adm-modal { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 28px 32px; width: 400px; max-width: 90vw; text-align: center; box-shadow: 0 20px 60px rgba(0,0,0,0.5); animation: scaleIn 0.2s cubic-bezier(0.4,0,0.2,1); }
+        @keyframes scaleIn { from { transform: scale(0.92); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        .adm-modal-icon { width: 48px; height: 48px; background: var(--red-dim); border: 1px solid rgba(239,68,68,0.25); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; color: var(--red); margin: 0 auto 16px; }
+        .adm-modal h3 { font-family: var(--font-display); font-size: 1.1rem; font-weight: 700; color: var(--text-primary); margin-bottom: 8px; }
+        .adm-modal p { font-size: 0.875rem; color: var(--text-secondary); margin-bottom: 24px; line-height: 1.5; }
+        .adm-modal-btns { display: flex; gap: 10px; justify-content: center; }
+
         .adm-loading { height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; background: var(--bg); gap: 16px; font-family: var(--font); color: var(--text-primary); }
         .adm-loading-spinner { width: 40px; height: 40px; border: 3px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; }
         @keyframes spin { to { transform: rotate(360deg); } }
         @keyframes slideIn { from { transform: translateX(110%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
         @keyframes topbarDropdown { from { opacity: 0; transform: translateY(-6px) scale(0.97); } to { opacity: 1; transform: translateY(0); } }
+
+        /* YENI ARAMA KUTUSU CSS */
+        .adm-search-wrap { position: relative; margin-bottom: 16px; width: 100%; display: flex; align-items: center; }
+        .adm-search-wrap i { position: absolute; left: 14px; color: var(--text-muted); font-size: 0.85rem; }
+        .adm-search-input { width: 100%; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 10px 14px 10px 38px; color: var(--text-primary); font-family: var(--font); font-size: 0.875rem; transition: all var(--transition); outline: none; }
+        .adm-search-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow); background: var(--surface-2); }
+        .adm-search-clear { position: absolute; right: 12px; background: none; border: none; color: var(--text-muted); cursor: pointer; padding: 4px; transition: color var(--transition); }
+        .adm-search-clear:hover { color: var(--text-primary); }
       `}</style>
 
       <div className="adm-layout">
@@ -687,10 +717,35 @@ export default function AdminNewsPage() {
               </div>
               
               <div style={{marginTop:'24px'}}>
-                <div style={{fontSize:'0.8rem', fontWeight:'700', color:'var(--text-muted)', textTransform:'uppercase', letterSpacing:'0.08em', marginBottom:'12px'}}>Mevcut Haberler ({news.length})</div>
-                {news.length === 0 ? (
-                  <div className="adm-empty"><i className="fas fa-newspaper" />Haber bulunamadi.</div>
-                ) : news.map(item => (
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '12px' }}>
+                  <div style={{fontSize:'0.8rem', fontWeight:'700', color:'var(--text-muted)', textTransform:'uppercase', letterSpacing:'0.08em'}}>
+                    Mevcut Haberler ({filteredNews.length})
+                  </div>
+                  
+                  {/* ARAMA KUTUSU */}
+                  <div className="adm-search-wrap" style={{ width: '300px', marginBottom: 0 }}>
+                    <i className="fas fa-search" />
+                    <input 
+                      type="text" 
+                      className="adm-search-input" 
+                      placeholder="Haber ara..." 
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                    />
+                    {searchQuery && (
+                      <button className="adm-search-clear" onClick={() => setSearchQuery('')}>
+                        <i className="fas fa-times" />
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                {filteredNews.length === 0 ? (
+                  <div className="adm-empty">
+                    <i className="fas fa-newspaper" />
+                    {searchQuery ? 'Arama sonucu bulunamadi.' : 'Haber bulunamadi.'}
+                  </div>
+                ) : filteredNews.map(item => (
                   <div key={item.id} className="adm-item-row">
                     <div className="adm-item-info">
                       <strong>{item.title}</strong>

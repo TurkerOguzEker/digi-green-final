@@ -236,9 +236,12 @@ const HeroAnimation = () => {
 export default function ContactPage() {
   const [content, setContent] = useState({});
   const [formData, setFormData] = useState({ name: '', email: '', subject: '', message: '' });
+  
+  // ✨ YÜKLENME (LOADING) STATE'İ EKLENDİ ✨
+  const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   
-  // YENİ: Uyarı mesajlarını daha akıllı yönetmek için State
+  // Uyarı mesajlarını daha akıllı yönetmek için State
   const [alertInfo, setAlertInfo] = useState({ show: false, type: null }); 
   
   const [captchaValue, setCaptchaValue] = useState(null);
@@ -254,40 +257,42 @@ export default function ContactPage() {
         data.forEach(item => map[item.key] = item.value);
         setContent(map);
       }
+      // Veriler çekildikten sonra loading ekranını kapat
+      setLoading(false);
     }
     fetchSettings();
   }, []);
 
-  // YENİ: 5 Saniye Sonra Mesajı Yumuşakça Kapatan Fonksiyon
+  // 5 Saniye Sonra Mesajı Yumuşakça Kapatan Fonksiyon
   const triggerAlert = (type) => {
     setAlertInfo({ show: true, type: type });
     setTimeout(() => {
-      setAlertInfo(prev => ({ ...prev, show: false })); // İçeriği silmeden sadece görünmez yapar (animasyon için)
+      setAlertInfo(prev => ({ ...prev, show: false })); 
     }, 5000);
   };
 
   // Reveal Animasyonu
   useEffect(() => {
+    if (loading) return; // Yükleme devam ediyorsa animasyonu başlatma
     const observer = new IntersectionObserver((entries) => {
       entries.forEach(entry => { if (entry.isIntersecting) entry.target.classList.add('active'); });
     }, { threshold: 0.1 });
     document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
     return () => observer.disconnect();
-  }, [content]);
+  }, [loading, content]);
 
   const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
 
   const handleCaptchaChange = (value) => {
     setCaptchaValue(value);
     if(value && alertInfo.type === 'captcha_error') {
-       setAlertInfo({ show: false, type: null }); // Doğrulama yapıldığında hata yazısını kaldırır
+       setAlertInfo({ show: false, type: null }); 
     }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    // GÜVENLİK KONTROLÜ: Doğrulama yapılmadıysa formu gönderme ve uyarı ver!
     if (!captchaValue) {
       triggerAlert('captcha_error');
       return; 
@@ -300,17 +305,16 @@ export default function ContactPage() {
       const { error } = await supabase.from('contact_messages').insert([formData]);
       if (error) throw error;
       
-      triggerAlert('success'); // Başarılı mesajını tetikle
+      triggerAlert('success'); 
       setFormData({ name: '', email: '', subject: '', message: '' });
       
-      // Captcha'yı sıfırla
       if (recaptchaRef.current) {
         recaptchaRef.current.reset();
       }
       setCaptchaValue(null);
 
     } catch {
-      triggerAlert('error'); // Hata mesajını tetikle
+      triggerAlert('error'); 
     } finally {
       setSending(false);
     }
@@ -335,178 +339,187 @@ export default function ContactPage() {
     <div className="contact-page">
       <NetworkBackground />
 
-      <section className="page-header">
-        <HeroAnimation />
-        <div className="hero-noise"></div>
-        <div className="hero-orb orb-1"></div>
-        <div className="hero-orb orb-2"></div>
-        <div className="hero-orb orb-3"></div>
-
-        <div className="container hero-content">
-          <div className="eyebrow reveal active">
-            <span className="eyebrow-dot"></span>{getDynamicContent('contact_hero_eyebrow', 'contact.hero.eyebrow')}<span className="eyebrow-dot"></span>
-          </div>
-          <h1 className="header-title reveal active">
-            {getDynamicContent('contact_hero_title1', 'contact.hero.title1')}<br />
-            <em>{getDynamicContent('contact_hero_title2', 'contact.hero.title2')}</em>
-          </h1>
-          <p className="header-subtitle reveal active" style={{ transitionDelay: '0.25s' }}>
-            {getDynamicContent('contact_page_desc', 'contact.hero.desc')}
-          </p>
-          <div className="hero-divider reveal active" style={{ transitionDelay: '0.4s' }}>
-            <span></span><span className="dot"></span><span></span>
-          </div>
+      {/* ✨ YÜKLENİYOR EKRANI BURAYA EKLENDİ ✨ */}
+      {loading ? (
+        <div className="loading-screen">
+          <div className="loader-ring"><div></div><div></div><div></div><div></div></div>
+          <span className="loader-text">{t('contact.loading') || 'Yükleniyor...'}</span>
         </div>
+      ) : (
+        <>
+          <section className="page-header">
+            <HeroAnimation />
+            <div className="hero-noise"></div>
+            <div className="hero-orb orb-1"></div>
+            <div className="hero-orb orb-2"></div>
+            <div className="hero-orb orb-3"></div>
 
-        <button
-          className="hero-scroll-btn"
-          onClick={() => document.getElementById('icerik')?.scrollIntoView({ behavior: 'smooth' })}
-          aria-label="İçeriğe git"
-        >
-          <span className="scroll-btn-label">{getDynamicContent('contact_hero_scroll', 'contact.hero.scrollBtn')}</span>
-          <span className="scroll-btn-icon"><i className="fas fa-chevron-down"></i></span>
-        </button>
-      </section>
-
-      <section id="icerik" className="section-padding">
-        <div className="container" style={{ maxWidth: '1100px' }}>
-
-          <div className="section-head reveal">
-            <p className="section-label">{getDynamicContent('contact_sec_label', 'contact.section.label')}</p>
-            <h2 className="section-title">{getDynamicContent('contact_sec_title', 'contact.section.title')}</h2>
-          </div>
-
-          <div className="contact-grid">
-
-            <div className="info-card reveal">
-              <h3 className="card-heading">{getDynamicContent('contact_info_title', 'contact.info.title')}</h3>
-
-              <ul className="info-list">
-                <li className="info-item">
-                  <div className="info-icon"><i className="fas fa-map-marker-alt"></i></div>
-                  <div>
-                    <span className="info-label">{t('contact.info.address')}</span>
-                    <span className="info-value">
-                      {(language === 'en' && content.contact_address_en) ? content.contact_address_en : (content.contact_address || '—')}
-                    </span>
-                  </div>
-                </li>
-                <li className="info-item">
-                  <div className="info-icon"><i className="fas fa-envelope"></i></div>
-                  <div>
-                    <span className="info-label">{t('contact.info.email')}</span>
-                    <a href={`mailto:${content.contact_email}`} className="info-value info-link">
-                      {content.contact_email || '—'}
-                    </a>
-                  </div>
-                </li>
-                <li className="info-item">
-                  <div className="info-icon"><i className="fas fa-phone"></i></div>
-                  <div>
-                    <span className="info-label">{t('contact.info.phone')}</span>
-                    <span className="info-value">{content.contact_phone || '—'}</span>
-                  </div>
-                </li>
-              </ul>
-
-              <div className="social-section">
-                <p className="social-heading">{getDynamicContent('contact_social_title', 'contact.social.title')}</p>
-                <div className="social-row">
-                  {content.social_facebook && (
-                    <a href={content.social_facebook} target="_blank" rel="noopener noreferrer" className="social-btn" title="Facebook">
-                      <i className="fab fa-facebook-f"></i>
-                    </a>
-                  )}
-                  {content.social_twitter && (
-                    <a href={content.social_twitter} target="_blank" rel="noopener noreferrer" className="social-btn" title="Twitter / X">
-                      <i className="fab fa-twitter"></i>
-                    </a>
-                  )}
-                  {content.social_instagram && (
-                    <a href={content.social_instagram} target="_blank" rel="noopener noreferrer" className="social-btn" title="Instagram">
-                      <i className="fab fa-instagram"></i>
-                    </a>
-                  )}
-                  {!content.social_facebook && !content.social_twitter && !content.social_instagram && (
-                    <span className="social-empty">{t('contact.social.empty')}</span>
-                  )}
-                </div>
+            <div className="container hero-content">
+              <div className="eyebrow reveal active">
+                <span className="eyebrow-dot"></span>{getDynamicContent('contact_hero_eyebrow', 'contact.hero.eyebrow')}<span className="eyebrow-dot"></span>
+              </div>
+              <h1 className="header-title reveal active">
+                {getDynamicContent('contact_hero_title1', 'contact.hero.title1')}<br />
+                <em>{getDynamicContent('contact_hero_title2', 'contact.hero.title2')}</em>
+              </h1>
+              <p className="header-subtitle reveal active" style={{ transitionDelay: '0.25s' }}>
+                {getDynamicContent('contact_page_desc', 'contact.hero.desc')}
+              </p>
+              <div className="hero-divider reveal active" style={{ transitionDelay: '0.4s' }}>
+                <span></span><span className="dot"></span><span></span>
               </div>
             </div>
 
-            <div className="form-card reveal">
-              <h3 className="card-heading">{getDynamicContent('contact_form_title', 'contact.form.title')}</h3>
+            <button
+              className="hero-scroll-btn"
+              onClick={() => document.getElementById('icerik')?.scrollIntoView({ behavior: 'smooth' })}
+              aria-label="İçeriğe git"
+            >
+              <span className="scroll-btn-label">{getDynamicContent('contact_hero_scroll', 'contact.hero.scrollBtn')}</span>
+              <span className="scroll-btn-icon"><i className="fas fa-chevron-down"></i></span>
+            </button>
+          </section>
 
-              {/* YENİ UYARI KUTUSU - YUMUŞAK GEÇİŞLİ */}
-              <div className={`alert-wrapper ${alertInfo.show ? 'show' : ''}`}>
-                {alertInfo.type === 'success' && (
-                  <div className="alert alert-success">
-                    <i className="fas fa-check-circle"></i>
-                    {getDynamicContent('contact_form_success', 'contact.form.success')}
-                  </div>
-                )}
-                {alertInfo.type === 'error' && (
-                  <div className="alert alert-error">
-                    <i className="fas fa-exclamation-circle"></i>
-                    {getDynamicContent('contact_form_error', 'contact.form.error')}
-                  </div>
-                )}
-                {alertInfo.type === 'captcha_error' && (
-                  <div className="alert alert-error">
-                    <i className="fas fa-robot"></i>
-                    Lütfen mesajı göndermeden önce robot olmadığınızı doğrulayın!
-                  </div>
-                )}
+          <section id="icerik" className="section-padding">
+            <div className="container" style={{ maxWidth: '1100px' }}>
+
+              <div className="section-head reveal">
+                <p className="section-label">{getDynamicContent('contact_sec_label', 'contact.section.label')}</p>
+                <h2 className="section-title">{getDynamicContent('contact_sec_title', 'contact.section.title')}</h2>
               </div>
 
-              <form onSubmit={handleSubmit}>
-                <div className="form-row">
-                  <div className="form-group">
-                    <label>{t('contact.form.nameLabel')}</label>
-                    <input type="text" name="name" required placeholder={t('contact.form.namePlaceholder')}
-                      value={formData.name} onChange={handleChange} />
+              <div className="contact-grid">
+
+                <div className="info-card reveal">
+                  <h3 className="card-heading">{getDynamicContent('contact_info_title', 'contact.info.title')}</h3>
+
+                  <ul className="info-list">
+                    <li className="info-item">
+                      <div className="info-icon"><i className="fas fa-map-marker-alt"></i></div>
+                      <div>
+                        <span className="info-label">{t('contact.info.address')}</span>
+                        <span className="info-value">
+                          {(language === 'en' && content.contact_address_en) ? content.contact_address_en : (content.contact_address || '—')}
+                        </span>
+                      </div>
+                    </li>
+                    <li className="info-item">
+                      <div className="info-icon"><i className="fas fa-envelope"></i></div>
+                      <div>
+                        <span className="info-label">{t('contact.info.email')}</span>
+                        <a href={`mailto:${content.contact_email}`} className="info-value info-link">
+                          {content.contact_email || '—'}
+                        </a>
+                      </div>
+                    </li>
+                    <li className="info-item">
+                      <div className="info-icon"><i className="fas fa-phone"></i></div>
+                      <div>
+                        <span className="info-label">{t('contact.info.phone')}</span>
+                        <span className="info-value">{content.contact_phone || '—'}</span>
+                      </div>
+                    </li>
+                  </ul>
+
+                  <div className="social-section">
+                    <p className="social-heading">{getDynamicContent('contact_social_title', 'contact.social.title')}</p>
+                    <div className="social-row">
+                      {content.social_facebook && (
+                        <a href={content.social_facebook} target="_blank" rel="noopener noreferrer" className="social-btn" title="Facebook">
+                          <i className="fab fa-facebook-f"></i>
+                        </a>
+                      )}
+                      {content.social_twitter && (
+                        <a href={content.social_twitter} target="_blank" rel="noopener noreferrer" className="social-btn" title="Twitter / X">
+                          <i className="fab fa-twitter"></i>
+                        </a>
+                      )}
+                      {content.social_instagram && (
+                        <a href={content.social_instagram} target="_blank" rel="noopener noreferrer" className="social-btn" title="Instagram">
+                          <i className="fab fa-instagram"></i>
+                        </a>
+                      )}
+                      {!content.social_facebook && !content.social_twitter && !content.social_instagram && (
+                        <span className="social-empty">{t('contact.social.empty')}</span>
+                      )}
+                    </div>
                   </div>
-                  <div className="form-group">
-                    <label>{t('contact.form.emailLabel')}</label>
-                    <input type="email" name="email" required placeholder={t('contact.form.emailPlaceholder')}
-                      value={formData.email} onChange={handleChange} />
-                  </div>
-                </div>
-                <div className="form-group">
-                  <label>{t('contact.form.subjectLabel')}</label>
-                  <input type="text" name="subject" required placeholder={t('contact.form.subjectPlaceholder')}
-                    value={formData.subject} onChange={handleChange} />
-                </div>
-                <div className="form-group">
-                  <label>{t('contact.form.messageLabel')}</label>
-                  <textarea name="message" rows={5} required placeholder={t('contact.form.messagePlaceholder')}
-                    value={formData.message} onChange={handleChange}></textarea>
                 </div>
 
-                <div className="captcha-container" style={{ marginBottom: '20px' }}>
-                  <ReCAPTCHA
-                    ref={recaptchaRef}
-                    sitekey={recaptchaSiteKey}
-                    onChange={handleCaptchaChange}
-                    hl={language === 'en' ? 'en' : 'tr'}
-                  />
+                <div className="form-card reveal">
+                  <h3 className="card-heading">{getDynamicContent('contact_form_title', 'contact.form.title')}</h3>
+
+                  <div className={`alert-wrapper ${alertInfo.show ? 'show' : ''}`}>
+                    {alertInfo.type === 'success' && (
+                      <div className="alert alert-success">
+                        <i className="fas fa-check-circle"></i>
+                        {getDynamicContent('contact_form_success', 'contact.form.success')}
+                      </div>
+                    )}
+                    {alertInfo.type === 'error' && (
+                      <div className="alert alert-error">
+                        <i className="fas fa-exclamation-circle"></i>
+                        {getDynamicContent('contact_form_error', 'contact.form.error')}
+                      </div>
+                    )}
+                    {alertInfo.type === 'captcha_error' && (
+                      <div className="alert alert-error">
+                        <i className="fas fa-robot"></i>
+                        Lütfen mesajı göndermeden önce robot olmadığınızı doğrulayın!
+                      </div>
+                    )}
+                  </div>
+
+                  <form onSubmit={handleSubmit}>
+                    <div className="form-row">
+                      <div className="form-group">
+                        <label>{t('contact.form.nameLabel')}</label>
+                        <input type="text" name="name" required placeholder={t('contact.form.namePlaceholder')}
+                          value={formData.name} onChange={handleChange} />
+                      </div>
+                      <div className="form-group">
+                        <label>{t('contact.form.emailLabel')}</label>
+                        <input type="email" name="email" required placeholder={t('contact.form.emailPlaceholder')}
+                          value={formData.email} onChange={handleChange} />
+                      </div>
+                    </div>
+                    <div className="form-group">
+                      <label>{t('contact.form.subjectLabel')}</label>
+                      <input type="text" name="subject" required placeholder={t('contact.form.subjectPlaceholder')}
+                        value={formData.subject} onChange={handleChange} />
+                    </div>
+                    <div className="form-group">
+                      <label>{t('contact.form.messageLabel')}</label>
+                      <textarea name="message" rows={5} required placeholder={t('contact.form.messagePlaceholder')}
+                        value={formData.message} onChange={handleChange}></textarea>
+                    </div>
+
+                    <div className="captcha-container" style={{ marginBottom: '20px' }}>
+                      <ReCAPTCHA
+                        ref={recaptchaRef}
+                        sitekey={recaptchaSiteKey}
+                        onChange={handleCaptchaChange}
+                        hl={language === 'en' ? 'en' : 'tr'}
+                      />
+                    </div>
+
+                    <button type="submit" className="submit-btn" disabled={sending}>
+                      {sending ? (
+                        <><i className="fas fa-circle-notch fa-spin"></i> {t('contact.form.sending')}</>
+                      ) : (
+                        <><span>{getDynamicContent('contact_form_btn', 'contact.form.sendBtn')}</span><span className="btn-icon"><i className="fas fa-paper-plane"></i></span></>
+                      )}
+                    </button>
+                    
+                  </form>
                 </div>
 
-                {/* BUTON ARTIK HER ZAMAN TIKLANABİLİR. Robot seçilmediyse onClick'te uyarı fırlatacak. */}
-                <button type="submit" className="submit-btn" disabled={sending}>
-                  {sending ? (
-                    <><i className="fas fa-circle-notch fa-spin"></i> {t('contact.form.sending')}</>
-                  ) : (
-                    <><span>{getDynamicContent('contact_form_btn', 'contact.form.sendBtn')}</span><span className="btn-icon"><i className="fas fa-paper-plane"></i></span></>
-                  )}
-                </button>
-                
-              </form>
+              </div>
             </div>
+          </section>
+        </>
+      )}
 
-          </div>
-        </div>
-      </section>
       <ScrollToTop />
       <style jsx>{`
         .contact-page {
@@ -520,6 +533,51 @@ export default function ContactPage() {
           --radius: 20px;
         }
         
+        /* ✨ LOADER CSS ✨ */
+        .loading-screen { 
+          height: 100vh; 
+          display: flex; 
+          flex-direction: column; 
+          align-items: center; 
+          justify-content: center; 
+          gap: 24px;
+          background: transparent; 
+          position: relative;
+          z-index: 10;
+        }
+        .loader-ring { 
+          display: inline-block; 
+          position: relative; 
+          width: 60px; 
+          height: 60px; 
+        }
+        .loader-ring div { 
+          box-sizing: border-box; 
+          display: block; 
+          position: absolute; 
+          width: 46px; 
+          height: 46px; 
+          margin: 7px; 
+          border: 3px solid transparent; 
+          border-top-color: var(--green-mid); 
+          border-radius: 50%; 
+          animation: loader-spin 1.2s cubic-bezier(0.5,0,0.5,1) infinite; 
+        }
+        .loader-ring div:nth-child(1){ animation-delay: -0.45s; } 
+        .loader-ring div:nth-child(2){ animation-delay: -0.3s; border-top-color: var(--gold); } 
+        .loader-ring div:nth-child(3){ animation-delay: -0.15s; }
+        .loader-text { 
+          font-size: 0.9rem; 
+          font-weight: 600; 
+          color: var(--text-soft); 
+          letter-spacing: 0.1em; 
+          text-transform: uppercase; 
+        }
+        @keyframes loader-spin { 
+          0% { transform: rotate(0deg); } 
+          100% { transform: rotate(360deg); } 
+        }
+
         /* HERO */
         .page-header {
           position:relative; min-height:100vh; display:flex; flex-direction:column;

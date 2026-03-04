@@ -126,6 +126,9 @@ export default function AdminResultsPage() {
   const [settings, setSettings] = useState([]);
   const [results, setResults] = useState([]);
   
+  // YENI: Arama State'i
+  const [searchQuery, setSearchQuery] = useState('');
+  
   // Badge Counts
   const [unreadMsgCount, setUnreadMsgCount] = useState(0);
   const [newsCount, setNewsCount] = useState(0);
@@ -228,24 +231,20 @@ export default function AdminResultsPage() {
     }]);
   }
 
-  // ✨ BURASI DÜZELTİLDİ: SİLME FONKSİYONU ✨
   async function deleteItem(id, fileUrls = []) {
     showConfirm('Bu dosyayi kalici olarak silmek istediginize emin misiniz?', async () => {
       
-      // Önce UI'dan (Arayüzden) anında kaldır (Hızlı tepki)
       setResults(prev => prev.filter(r => r.id !== id));
       
-      // Arka planda DB'den sil
       const { error } = await supabase.from('results').delete().eq('id', id);
       
       if (error) {
         showToast('Hata: ' + error.message, 'error');
-        fetchPageData(); // Silinmezse geri yükle
+        fetchPageData(); 
       } else {
         await logAction(`Dosyalar tablosundan bir kayit silindi. (ID: ${id})`);
         showToast('Basariyla silindi.', 'success');
         
-        // (İsteğe bağlı) Dosyayı storage'dan da sil
         if (fileUrls && fileUrls.length > 0) {
           const fileNamesToDelete = fileUrls.filter(url => url).map(url => {
               const parts = url.split('/images/');
@@ -279,6 +278,17 @@ export default function AdminResultsPage() {
     setResultForm({ ...item });
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
+
+  // YENI: Arama Fonksiyonu (Filtreleme)
+  const filteredResults = results.filter(item => {
+    const searchVal = searchQuery.toLowerCase();
+    return (
+      item.title?.toLowerCase().includes(searchVal) ||
+      item.title_en?.toLowerCase().includes(searchVal) ||
+      item.description?.toLowerCase().includes(searchVal) ||
+      item.description_en?.toLowerCase().includes(searchVal)
+    );
+  });
 
   const commonProps = { settings, handleSettingChange, updateSetting, uploadFile };
 
@@ -371,10 +381,6 @@ export default function AdminResultsPage() {
         .adm-section-num { width: 26px; height: 26px; background: var(--accent-dim); border: 1px solid rgba(34,197,94,0.3); border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 0.7rem; font-weight: 700; color: var(--accent); flex-shrink: 0; font-family: var(--font-display); }
         .adm-section-title { font-family: var(--font-display); font-size: 0.875rem; font-weight: 700; color: var(--text-primary); letter-spacing: 0.02em; text-transform: uppercase; }
 
-        .adm-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 20px; margin-bottom: 12px; }
-        .adm-card-grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-        .adm-card-inner { background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; }
-
         .adm-field { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; margin-bottom: 10px; transition: border-color var(--transition); }
         .adm-field:hover { border-color: var(--border-hover); }
         .adm-field-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
@@ -453,11 +459,14 @@ export default function AdminResultsPage() {
         @keyframes spin { to { transform: rotate(360deg); } }
         @keyframes slideIn { from { transform: translateX(110%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
         @keyframes topbarDropdown { from { opacity: 0; transform: translateY(-6px) scale(0.97); } to { opacity: 1; transform: translateY(0); } }
-        .adm-badge { display: inline-flex; align-items: center; padding: 2px 9px; border-radius: 20px; font-size: 0.68rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; }
-        .adm-badge-green { background: var(--accent-dim); color: var(--accent); border: 1px solid rgba(34,197,94,0.25); }
-        .adm-badge-yellow { background: rgba(245,158,11,0.12); color: var(--yellow); border: 1px solid rgba(245,158,11,0.25); }
-        .adm-empty { text-align: center; padding: 40px; color: var(--text-muted); font-size: 0.875rem; border: 1px dashed var(--border); border-radius: var(--radius-lg); }
-        .adm-empty i { display: block; font-size: 2rem; margin-bottom: 12px; opacity: 0.4; }
+        
+        /* YENI ARAMA KUTUSU CSS */
+        .adm-search-wrap { position: relative; margin-bottom: 16px; width: 100%; display: flex; align-items: center; }
+        .adm-search-wrap i { position: absolute; left: 14px; color: var(--text-muted); font-size: 0.85rem; }
+        .adm-search-input { width: 100%; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 10px 14px 10px 38px; color: var(--text-primary); font-family: var(--font); font-size: 0.875rem; transition: all var(--transition); outline: none; }
+        .adm-search-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow); background: var(--surface-2); }
+        .adm-search-clear { position: absolute; right: 12px; background: none; border: none; color: var(--text-muted); cursor: pointer; padding: 4px; transition: color var(--transition); }
+        .adm-search-clear:hover { color: var(--text-primary); }
       `}</style>
 
       <div className="adm-layout">
@@ -723,9 +732,35 @@ export default function AdminResultsPage() {
               </div>
               
               <div style={{marginTop:'24px'}}>
-                {results.length === 0 ? (
-                  <div className="adm-empty"><i className="fas fa-file" />Dosya bulunamadi.</div>
-                ) : results.map(item => (
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '12px' }}>
+                  <div style={{fontSize:'0.8rem', fontWeight:'700', color:'var(--text-muted)', textTransform:'uppercase', letterSpacing:'0.08em'}}>
+                    Mevcut Dosyalar ({filteredResults.length})
+                  </div>
+                  
+                  {/* ✨ ARAMA KUTUSU BURADA ✨ */}
+                  <div className="adm-search-wrap" style={{ width: '300px', marginBottom: 0 }}>
+                    <i className="fas fa-search" />
+                    <input 
+                      type="text" 
+                      className="adm-search-input" 
+                      placeholder="Dosya ara..." 
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                    />
+                    {searchQuery && (
+                      <button className="adm-search-clear" onClick={() => setSearchQuery('')}>
+                        <i className="fas fa-times" />
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                {filteredResults.length === 0 ? (
+                  <div className="adm-empty">
+                    <i className="fas fa-file" />
+                    {searchQuery ? 'Arama sonucu bulunamadi.' : 'Dosya bulunamadi.'}
+                  </div>
+                ) : filteredResults.map(item => (
                   <div key={item.id} className="adm-item-row">
                     <div className="adm-item-info">
                       <strong><i className="fas fa-file-circle-check" style={{color:'var(--accent)', marginRight:'8px'}} />{item.title}</strong>

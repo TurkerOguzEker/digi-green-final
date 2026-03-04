@@ -1,4 +1,3 @@
-// src/app/activities/ActivitiesClient.js
 'use client';
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { supabase } from '../../lib/supabase';
@@ -227,19 +226,49 @@ const HeroAnimation = () => {
 };
 
 // ─── ACTIVITIES CLIENT COMPONENT ──────────────────────────────────────────────────────────
-export default function ActivitiesClient({ initialContent, initialActivities, initialHasMore }) {
-  // Veriler artık props olarak sunucudan hazır geliyor.
-  const [content]           = useState(initialContent || {});
-  const [activities, setActivities]     = useState(initialActivities || []);
+export default function ActivitiesClient() {
+  const [content, setContent]           = useState({});
+  const [activities, setActivities]     = useState([]);
+  
+  // ✨ Yüklenme State'i (Partner sayfasıyla aynı mantık)
+  const [loading, setLoading]           = useState(true); 
   const [loadingMore, setLoadingMore]   = useState(false);
-  const [hasMore, setHasMore]           = useState(initialHasMore);
+  const [hasMore, setHasMore]           = useState(false);
   const [page, setPage]                 = useState(0);
+  const [searchQuery, setSearchQuery]   = useState('');
 
   const sentinelRef = useRef(null);
-  
   const { language, t } = useLanguage();
 
-  // ── Sonraki sayfaları yükle ─────────────────────────────────────────────────
+  // ✨ İLK YÜKLEME (Sayfa açılır açılmaz çalışır)
+  useEffect(() => {
+    async function fetchInitialData() {
+      // 1. Ayarları Çek
+      const { data: settingsData } = await supabase.from('settings').select('*');
+      if (settingsData) {
+        const map = {}; settingsData.forEach(item => map[item.key] = item.value);
+        setContent(map);
+      }
+
+      // 2. İlk Faaliyetleri Çek
+      const { data: actData } = await supabase
+        .from('activities')
+        .select('*')
+        .order('date', { ascending: false })
+        .range(0, PAGE_SIZE - 1);
+
+      if (actData) {
+        setActivities(actData);
+        setHasMore(actData.length === PAGE_SIZE);
+      }
+      
+      setLoading(false); // Yükleme bitti, ekranı aç!
+    }
+    
+    fetchInitialData();
+  }, []);
+
+  // ── Sonraki sayfaları yükle (Infinite Scroll)
   const loadMore = useCallback(async () => {
     if (loadingMore || !hasMore) return;
     setLoadingMore(true);
@@ -251,7 +280,7 @@ export default function ActivitiesClient({ initialContent, initialActivities, in
     const { data } = await supabase
       .from('activities')
       .select('*')
-      .order('id', { ascending: false })
+      .order('date', { ascending: false })
       .range(from, to);
 
     if (data && data.length > 0) {
@@ -264,10 +293,12 @@ export default function ActivitiesClient({ initialContent, initialActivities, in
     setLoadingMore(false);
   }, [loadingMore, hasMore, page]);
 
-  // ── Sentinel observer ───────────────────────────────────────────────────────
+  // ── Sentinel observer
   useEffect(() => {
     const sentinel = sentinelRef.current;
     if (!sentinel) return;
+
+    if (searchQuery) return;
 
     const observer = new IntersectionObserver(
       (entries) => {
@@ -280,9 +311,24 @@ export default function ActivitiesClient({ initialContent, initialActivities, in
 
     observer.observe(sentinel);
     return () => observer.disconnect();
-  }, [hasMore, loadingMore, loadMore]);
+  }, [hasMore, loadingMore, loadMore, searchQuery]);
 
-  // ── Reveal animasyonu ───────────────────────────────────────────────────────
+  // ── Arama Filtreleme İşlemi
+  const filteredActivities = activities.filter(item => {
+    const searchVal = searchQuery.toLowerCase();
+    return (
+      item.title?.toLowerCase().includes(searchVal) ||
+      item.title_en?.toLowerCase().includes(searchVal) ||
+      item.summary?.toLowerCase().includes(searchVal) ||
+      item.summary_en?.toLowerCase().includes(searchVal) ||
+      item.location?.toLowerCase().includes(searchVal) ||
+      item.location_en?.toLowerCase().includes(searchVal) ||
+      item.type?.toLowerCase().includes(searchVal) ||
+      item.type_en?.toLowerCase().includes(searchVal)
+    );
+  });
+
+  // ── Reveal animasyonu
   useEffect(() => {
     const revealObserver = new IntersectionObserver(
       (entries) => {
@@ -297,9 +343,8 @@ export default function ActivitiesClient({ initialContent, initialActivities, in
     );
     document.querySelectorAll('.reveal:not(.active)').forEach(el => revealObserver.observe(el));
     return () => revealObserver.disconnect();
-  }, [activities]);
+  }, [filteredActivities, loading]); // loading bittiğinde tekrar tarar
 
-  // ✨ AKILLI YEDEKLEME
   const getDynamicContent = (trKey, defaultTranslationKey) => {
     if (language === 'en') {
       const enKey = `${trKey}_en`;
@@ -317,10 +362,16 @@ export default function ActivitiesClient({ initialContent, initialActivities, in
     <div className="activities-page">
       <NetworkBackground />
 
+      {/* ✨ YÜKLENİYOR EKRANI (Partner sayfasıyla aynı zarif tasarım) */}
+      {loading ? (
+        <div className="loading-screen">
+          <div className="loader-ring"><div></div><div></div><div></div><div></div></div>
+          <span className="loader-text">{t('activities.loading') || 'Yükleniyor...'}</span>
+        </div>
+      ) : (
         <>
           {/* ── HERO ────────────────── */}
           <section className="page-header">
-            
             <HeroAnimation />
             <div className="hero-noise"></div>
             <div className="hero-orb orb-1"></div>
@@ -355,21 +406,39 @@ export default function ActivitiesClient({ initialContent, initialActivities, in
           {/* ── FAALİYET KARTLARI ─────────────────────────────────────────── */}
           <section id="icerik" className="section-padding">
             <div className="container" style={{ maxWidth: '1160px' }}>
-              <div className="section-head reveal">
-                <p className="section-label">{getDynamicContent('activities_sec_label', 'activities.section.label')}</p>
-                <h2 className="section-title">{getDynamicContent('activities_sec_title', 'activities.section.title')}</h2>
+              
+              <div className="section-head reveal active" style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'flex-end', gap: '20px' }}>
+                <div>
+                  <p className="section-label">{getDynamicContent('activities_sec_label', 'activities.section.label')}</p>
+                  <h2 className="section-title">{getDynamicContent('activities_sec_title', 'activities.section.title')}</h2>
+                </div>
+
+                <div className="client-search-wrap">
+                  <i className="fas fa-search search-icon"></i>
+                  <input 
+                    type="text" 
+                    className="client-search-input" 
+                    placeholder={language === 'en' ? 'Search activities...' : 'Faaliyetlerde ara...'}
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                  />
+                  {searchQuery && (
+                    <button className="client-search-clear" onClick={() => setSearchQuery('')}>
+                      <i className="fas fa-times"></i>
+                    </button>
+                  )}
+                </div>
               </div>
 
               <div className="activities-grid">
-                {activities.length === 0 ? (
-                  <div className="empty-state reveal">
+                {filteredActivities.length === 0 ? (
+                  <div className="empty-state reveal active">
                     <i className="far fa-calendar-times"></i>
-                    <p>{t('activities.list.empty')}</p>
+                    <p>{searchQuery ? (language === 'en' ? 'No results found.' : 'Arama sonucu bulunamadı.') : t('activities.list.empty')}</p>
                   </div>
                 ) : (
-                  activities.map((item, index) => {
+                  filteredActivities.map((item, index) => {
                     const delay = `${(index % 3) * 0.12 + 0.1}s`;
-                    
                     const displayTitle = language === 'en' && item.title_en ? item.title_en : item.title;
                     const displayType = language === 'en' && item.type_en ? item.type_en : item.type;
                     const displayLocation = language === 'en' && item.location_en ? item.location_en : item.location;
@@ -378,9 +447,7 @@ export default function ActivitiesClient({ initialContent, initialActivities, in
                     return (
                       <article key={item.id} className="activity-card reveal" style={{ transitionDelay: delay }}>
                         <div className="card-shine"></div>
-
                         <div className="activity-image-container">
-                          {/* YENİ NESİL NEXT IMAGE KULLANIMI */}
                           <div className="activity-image" style={{ position: 'relative' }}>
                             {item.image_url ? (
                               <Image 
@@ -403,20 +470,13 @@ export default function ActivitiesClient({ initialContent, initialActivities, in
 
                         <div className="activity-content">
                           <div className="activity-meta">
-                            <span className="meta-tag type-tag">
-                                {displayType}
-                            </span>
+                            <span className="meta-tag type-tag">{displayType}</span>
                             <span className="meta-tag location-tag">
-                                <i className="fas fa-map-marker-alt"></i> 
-                                {displayLocation}
+                              <i className="fas fa-map-marker-alt"></i> {displayLocation}
                             </span>
                           </div>
-                          <h3 className="activity-title">
-                              {displayTitle}
-                          </h3>
-                          <p className="activity-desc">
-                              {displaySummary}
-                          </p>
+                          <h3 className="activity-title">{displayTitle}</h3>
+                          <p className="activity-desc">{displaySummary}</p>
                           <div className="activity-footer">
                             <Link href={`/activities/${item.id}`} className="read-more" style={{ textDecoration: 'none' }}>
                               {t('activities.list.readMore')} <i className="fas fa-arrow-right"></i>
@@ -429,10 +489,8 @@ export default function ActivitiesClient({ initialContent, initialActivities, in
                 )}
               </div>
 
-              {/* ── SENTINEL + YÜKLEME GÖSTERGESİ ──────────────────────── */}
               <div ref={sentinelRef} style={{ height: '1px' }} />
-
-              {loadingMore && (
+              {loadingMore && !searchQuery && (
                 <div className="load-more-indicator">
                   <div className="loader-ring small">
                     <div></div><div></div><div></div><div></div>
@@ -440,13 +498,13 @@ export default function ActivitiesClient({ initialContent, initialActivities, in
                   <span className="loader-text">{t('activities.list.loadMore')}</span>
                 </div>
               )}
-
-              {!hasMore && activities.length > 0 && (
+              {!hasMore && activities.length > 0 && !searchQuery && (
                 <p className="end-of-list">{t('activities.list.end')}</p>
               )}
             </div>
           </section>
         </>
+      )}
       
       <ScrollToTop />
       <style jsx>{`
@@ -469,7 +527,18 @@ export default function ActivitiesClient({ initialContent, initialActivities, in
           --radius:       24px;
         }
 
-        /* LOADER (Artık sadece sayfanın altındaki lazy load için kullanılıyor) */
+        /* LOADER (Şeffaf ve Şık Tasarım) */
+        .loading-screen { 
+          height: 100vh; 
+          display: flex; 
+          flex-direction: column; 
+          align-items: center; 
+          justify-content: center; 
+          gap: 24px;
+          background: transparent; 
+          position: relative;
+          z-index: 10;
+        }
         .loader-ring { display: inline-block; position: relative; width: 60px; height: 60px; }
         .loader-ring.small { width: 36px; height: 36px; }
         .loader-ring div { box-sizing: border-box; display: block; position: absolute; width: 46px; height: 46px; margin: 7px; border: 3px solid transparent; border-top-color: var(--green-mid); border-radius: 50%; animation: loader-spin 1.2s cubic-bezier(0.5,0,0.5,1) infinite; }
@@ -479,6 +548,15 @@ export default function ActivitiesClient({ initialContent, initialActivities, in
         .loader-ring div:nth-child(3) { animation-delay: -0.15s; }
         .loader-text { font-family: 'Inter', sans-serif; font-size: 0.9rem; font-weight: 600; color: var(--text-soft); letter-spacing: 0.1em; text-transform: uppercase; }
         @keyframes loader-spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        /* YENİ ARAMA KUTUSU (ÖN YÜZ İÇİN UYUMLU) */
+        .client-search-wrap { position: relative; width: 100%; max-width: 350px; display: flex; align-items: center; }
+        .search-icon { position: absolute; left: 18px; color: var(--green-mid); font-size: 1rem; }
+        .client-search-input { width: 100%; background: #fff; border: 2px solid var(--border); border-radius: 50px; padding: 14px 20px 14px 44px; font-family: 'Inter', sans-serif; font-size: 0.95rem; color: var(--text-dark); transition: all 0.3s ease; box-shadow: 0 4px 12px rgba(0,0,0,0.03); outline: none; }
+        .client-search-input:focus { border-color: var(--green-mid); box-shadow: 0 6px 20px rgba(39,174,96,0.15); }
+        .client-search-input::placeholder { color: #a0aec0; }
+        .client-search-clear { position: absolute; right: 14px; background: none; border: none; color: #9ca3af; cursor: pointer; padding: 6px; font-size: 1rem; transition: color 0.2s ease; }
+        .client-search-clear:hover { color: var(--red); }
 
         /* LOAD MORE INDICATOR */
         .load-more-indicator { display: flex; flex-direction: column; align-items: center; gap: 14px; padding: 40px 0 20px; }
@@ -566,6 +644,11 @@ export default function ActivitiesClient({ initialContent, initialActivities, in
         .empty-state { grid-column: 1 / -1; text-align: center; padding: 80px 40px; color: var(--text-soft); }
         .empty-state i { font-size: 3rem; opacity: 0.4; margin-bottom: 20px; display: block; }
         .empty-state p { font-size: 1rem; }
+
+        @media (max-width: 768px) {
+          .section-head { flex-direction: column; align-items: flex-start !important; gap: 15px; }
+          .client-search-wrap { max-width: 100%; }
+        }
 
         @media (max-width: 640px) {
           .page-header { min-height: 100svh; padding: 0; }

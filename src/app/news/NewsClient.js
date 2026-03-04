@@ -210,16 +210,48 @@ const HeroAnimation = () => {
 };
 
 // ─── NEWS CLIENT COMPONENT ─────────────────────────────────────────────────────────────
-export default function NewsClient({ initialContent, initialNews, initialHasMore }) {
-  // Veriler artık props olarak sunucudan hazır geliyor.
-  const [content, setContent]       = useState(initialContent || {}); 
-  const [news, setNews]             = useState(initialNews || []);
+export default function NewsClient() {
+  const [content, setContent]       = useState({}); 
+  const [news, setNews]             = useState([]);
+  
+  // ✨ YÜKLENME DURUMU
+  const [loading, setLoading]       = useState(true); 
   const [loadingMore, setLoadingMore] = useState(false); 
-  const [hasMore, setHasMore]       = useState(initialHasMore);
+  const [hasMore, setHasMore]       = useState(false);
   const [page, setPage]             = useState(0);        
+  
+  const [searchQuery, setSearchQuery] = useState('');
 
   const sentinelRef = useRef(null);
   const { language, t } = useLanguage();
+
+  // ✨ İLK YÜKLEME (Sayfa açılır açılmaz çalışır)
+  useEffect(() => {
+    async function fetchInitialData() {
+      // 1. Ayarları Çek
+      const { data: settingsData } = await supabase.from('settings').select('*');
+      if (settingsData) {
+        const map = {}; settingsData.forEach(item => map[item.key] = item.value);
+        setContent(map);
+      }
+
+      // 2. İlk Haberleri Çek
+      const { data: newsData } = await supabase
+        .from('news')
+        .select('*')
+        .order('date', { ascending: false })
+        .range(0, PAGE_SIZE - 1);
+
+      if (newsData) {
+        setNews(newsData);
+        setHasMore(newsData.length === PAGE_SIZE);
+      }
+      
+      setLoading(false); // Yükleme bitti, ekranı aç!
+    }
+    
+    fetchInitialData();
+  }, []);
 
   const loadMore = useCallback(async () => {
     if (loadingMore || !hasMore) return;
@@ -249,6 +281,8 @@ export default function NewsClient({ initialContent, initialNews, initialHasMore
     const sentinel = sentinelRef.current;
     if (!sentinel) return;
 
+    if (searchQuery) return; // Arama yapılıyorsa sonsuz kaydırmayı durdur
+
     const observer = new IntersectionObserver(
       (entries) => {
         if (entries[0].isIntersecting && hasMore && !loadingMore) {
@@ -259,7 +293,18 @@ export default function NewsClient({ initialContent, initialNews, initialHasMore
     );
     observer.observe(sentinel);
     return () => observer.disconnect();
-  }, [hasMore, loadingMore, loadMore]);
+  }, [hasMore, loadingMore, loadMore, searchQuery]);
+
+  // YENİ: Arama Filtreleme İşlemi
+  const filteredNews = news.filter(item => {
+    const searchVal = searchQuery.toLowerCase();
+    return (
+      item.title?.toLowerCase().includes(searchVal) ||
+      item.title_en?.toLowerCase().includes(searchVal) ||
+      item.summary?.toLowerCase().includes(searchVal) ||
+      item.summary_en?.toLowerCase().includes(searchVal)
+    );
+  });
 
   useEffect(() => {
     const revealObserver = new IntersectionObserver(
@@ -275,9 +320,8 @@ export default function NewsClient({ initialContent, initialNews, initialHasMore
     );
     document.querySelectorAll('.reveal:not(.active)').forEach(el => revealObserver.observe(el));
     return () => revealObserver.disconnect();
-  }, [news]); 
+  }, [filteredNews, loading]); 
 
-  // ✨ AKILLI YEDEKLEME
   const getDynamicContent = (trKey, defaultTranslationKey) => {
     if (language === 'en') {
       const enKey = `${trKey}_en`;
@@ -291,130 +335,159 @@ export default function NewsClient({ initialContent, initialNews, initialHasMore
     return translationFallback === defaultTranslationKey ? '' : translationFallback;
   };
 
+  // ✨ YÜKLENİYOR EKRANI
+  if (loading) {
+    return (
+      <div className="loading-screen" style={{ background: 'transparent', position: 'fixed', inset: 0, zIndex: 9999, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '20px' }}>
+        <div className="loader-ring">
+          <div></div><div></div><div></div><div></div>
+        </div>
+        <span className="loader-text">{t('news.loading') || 'Yükleniyor...'}</span>
+      </div>
+    );
+  }
+
   return (
     <div className="news-page">
       <NetworkBackground />
 
-        <>
-          {/* ── HERO (ESKİ TASARIM BİREBİR KORUNDU) ─────────────────────────── */}
-          <section className="page-header">
-            <HeroAnimation />
-            <div className="hero-noise"></div>
-            <div className="hero-orb orb-1"></div>
-            <div className="hero-orb orb-2"></div>
-            <div className="hero-orb orb-3"></div>
+      {/* ── HERO ─────────────────────────── */}
+      <section className="page-header">
+        <HeroAnimation />
+        <div className="hero-noise"></div>
+        <div className="hero-orb orb-1"></div>
+        <div className="hero-orb orb-2"></div>
+        <div className="hero-orb orb-3"></div>
 
-            <div className="container hero-content">
-              <div className="eyebrow reveal active">
-                <span className="eyebrow-dot"></span>{getDynamicContent('news_hero_eyebrow', 'news.hero.eyebrow')}<span className="eyebrow-dot"></span>
-              </div>
-              <h1 className="header-title reveal active">
-                {getDynamicContent('news_hero_title1', 'news.hero.title1')}<br /><em>{getDynamicContent('news_hero_title2', 'news.hero.title2')}</em>
-              </h1>
-              <p className="header-subtitle reveal active" style={{ transitionDelay: '0.25s' }}>
-                {getDynamicContent('news_page_desc', 'news.hero.desc')}
-              </p>
-              <div className="hero-divider reveal active" style={{ transitionDelay: '0.4s' }}>
-                <span></span><span className="dot"></span><span></span>
-              </div>
+        <div className="container hero-content">
+          <div className="eyebrow reveal active">
+            <span className="eyebrow-dot"></span>{getDynamicContent('news_hero_eyebrow', 'news.hero.eyebrow')}<span className="eyebrow-dot"></span>
+          </div>
+          <h1 className="header-title reveal active">
+            {getDynamicContent('news_hero_title1', 'news.hero.title1')}<br /><em>{getDynamicContent('news_hero_title2', 'news.hero.title2')}</em>
+          </h1>
+          <p className="header-subtitle reveal active" style={{ transitionDelay: '0.25s' }}>
+            {getDynamicContent('news_page_desc', 'news.hero.desc')}
+          </p>
+          <div className="hero-divider reveal active" style={{ transitionDelay: '0.4s' }}>
+            <span></span><span className="dot"></span><span></span>
+          </div>
+        </div>
+
+        <button
+          className="hero-scroll-btn"
+          onClick={() => document.getElementById('icerik')?.scrollIntoView({ behavior: 'smooth' })}
+          aria-label="İçeriğe git"
+        >
+          <span className="scroll-btn-label">{getDynamicContent('news_hero_scroll', 'news.hero.scrollBtn')}</span>
+          <span className="scroll-btn-icon"><i className="fas fa-chevron-down"></i></span>
+        </button>
+      </section>
+
+      {/* ── HABER KARTLARI ───────────────────────────────────────────── */}
+      <section id="icerik" className="section-padding">
+        <div className="container" style={{ maxWidth: '1160px' }}>
+          
+          {/* ✨ ARAMA KUTUSU VE BAŞLIK YAN YANA ✨ */}
+          <div className="section-head reveal active" style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'flex-end', gap: '20px' }}>
+            <div>
+              <p className="section-label">{getDynamicContent('news_sec_label', 'news.section.label')}</p>
+              <h2 className="section-title">{getDynamicContent('news_sec_title', 'news.section.title')}</h2>
             </div>
 
-            <button
-              className="hero-scroll-btn"
-              onClick={() => document.getElementById('icerik')?.scrollIntoView({ behavior: 'smooth' })}
-              aria-label="İçeriğe git"
-            >
-              <span className="scroll-btn-label">{getDynamicContent('news_hero_scroll', 'news.hero.scrollBtn')}</span>
-              <span className="scroll-btn-icon"><i className="fas fa-chevron-down"></i></span>
-            </button>
-          </section>
-
-          {/* ── HABER KARTLARI ───────────────────────────────────────────── */}
-          <section id="icerik" className="section-padding">
-            <div className="container" style={{ maxWidth: '1160px' }}>
-              <div className="section-head reveal">
-                <p className="section-label">{getDynamicContent('news_sec_label', 'news.section.label')}</p>
-                <h2 className="section-title">{getDynamicContent('news_sec_title', 'news.section.title')}</h2>
-              </div>
-
-              <div className="news-grid">
-                {news.length === 0 ? (
-                  <div className="empty-state reveal">
-                    <i className="far fa-newspaper"></i>
-                    <p>{t('news.list.empty')}</p>
-                  </div>
-                ) : (
-                  news.map((item, index) => {
-                    const delay = `${(index % 3) * 0.12 + 0.1}s`;
-                    const dateParts = item.date ? item.date.split(' ') : [];
-                    const displayDate = dateParts.length >= 2 ? `${dateParts[0]} ${dateParts[1]}` : item.date;
-
-                    const displayTitle = language === 'en' && item.title_en ? item.title_en : item.title;
-                    const displaySummary = language === 'en' && item.summary_en ? item.summary_en : item.summary;
-
-                    return (
-                      <article key={item.id} className="news-card reveal" style={{ transitionDelay: delay }}>
-                        <div className="card-shine"></div>
-
-                        <div className="news-image-container">
-                          {/* YENİ NESİL NEXT IMAGE KULLANIMI */}
-                          <div className="news-image" style={{ position: 'relative' }}>
-                            {item.image_url ? (
-                              <Image 
-                                src={item.image_url} 
-                                alt={displayTitle} 
-                                fill 
-                                style={{ objectFit: 'cover' }} 
-                                sizes="(max-width: 768px) 100vw, 330px"
-                                unoptimized={true} 
-                              />
-                            ) : (
-                              <div className="placeholder-img"><i className="far fa-image"></i></div>
-                            )}
-                            <div className="news-date-badge">
-                              <i className="far fa-calendar-alt"></i>
-                              {displayDate}
-                            </div>
-                          </div>
-                        </div>
-
-                        <div className="news-content">
-                          <h3 className="news-title">
-                            {displayTitle}
-                          </h3>
-                          <p className="news-desc">
-                            {displaySummary}
-                          </p>
-                          <div className="news-footer">
-                            <Link href={`/news/${item.id}`} className="read-more" style={{ textDecoration: 'none' }}>
-                              {t('news.list.readMore')} <i className="fas fa-arrow-right"></i>
-                            </Link>
-                          </div>
-                        </div>
-                      </article>
-                    );
-                  })
-                )}
-              </div>
-
-              {/* ── SENTINEL + YÜKLEME GÖSTERGESİ ─────────────────────── */}
-              <div ref={sentinelRef} style={{ height: '1px' }} />
-
-              {loadingMore && (
-                <div className="load-more-indicator">
-                  <div className="loader-ring small">
-                    <div></div><div></div><div></div><div></div>
-                  </div>
-                  <span className="loader-text">{t('news.list.loadMore')}</span>
-                </div>
-              )}
-
-              {!hasMore && news.length > 0 && (
-                <p className="end-of-list">{t('news.list.end')}</p>
+            <div className="client-search-wrap">
+              <i className="fas fa-search search-icon"></i>
+              <input 
+                type="text" 
+                className="client-search-input" 
+                placeholder={language === 'en' ? 'Search news...' : 'Haberlerde ara...'}
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+              {searchQuery && (
+                <button className="client-search-clear" onClick={() => setSearchQuery('')}>
+                  <i className="fas fa-times"></i>
+                </button>
               )}
             </div>
-          </section>
-        </>
+          </div>
+
+          <div className="news-grid">
+            {filteredNews.length === 0 ? (
+              <div className="empty-state reveal active">
+                <i className="far fa-newspaper"></i>
+                <p>{searchQuery ? (language === 'en' ? 'No results found.' : 'Arama sonucu bulunamadı.') : t('news.list.empty')}</p>
+              </div>
+            ) : (
+              filteredNews.map((item, index) => {
+                const delay = `${(index % 3) * 0.12 + 0.1}s`;
+                const dateParts = item.date ? item.date.split(' ') : [];
+                const displayDate = dateParts.length >= 2 ? `${dateParts[0]} ${dateParts[1]}` : item.date;
+
+                const displayTitle = language === 'en' && item.title_en ? item.title_en : item.title;
+                const displaySummary = language === 'en' && item.summary_en ? item.summary_en : item.summary;
+
+                return (
+                  <article key={item.id} className="news-card reveal" style={{ transitionDelay: delay }}>
+                    <div className="card-shine"></div>
+
+                    <div className="news-image-container">
+                      <div className="news-image" style={{ position: 'relative' }}>
+                        {item.image_url ? (
+                          <Image 
+                            src={item.image_url} 
+                            alt={displayTitle} 
+                            fill 
+                            style={{ objectFit: 'cover' }} 
+                            sizes="(max-width: 768px) 100vw, 330px"
+                            unoptimized={true} 
+                          />
+                        ) : (
+                          <div className="placeholder-img"><i className="far fa-image"></i></div>
+                        )}
+                        <div className="news-date-badge">
+                          <i className="far fa-calendar-alt"></i>
+                          {displayDate}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="news-content">
+                      <h3 className="news-title">
+                        {displayTitle}
+                      </h3>
+                      <p className="news-desc">
+                        {displaySummary}
+                      </p>
+                      <div className="news-footer">
+                        <Link href={`/news/${item.id}`} className="read-more" style={{ textDecoration: 'none' }}>
+                          {t('news.list.readMore')} <i className="fas fa-arrow-right"></i>
+                        </Link>
+                      </div>
+                    </div>
+                  </article>
+                );
+              })
+            )}
+          </div>
+
+          {/* ── SENTINEL + YÜKLEME GÖSTERGESİ ─────────────────────── */}
+          <div ref={sentinelRef} style={{ height: '1px' }} />
+
+          {loadingMore && !searchQuery && (
+            <div className="load-more-indicator">
+              <div className="loader-ring small">
+                <div></div><div></div><div></div><div></div>
+              </div>
+              <span className="loader-text">{t('news.list.loadMore')}</span>
+            </div>
+          )}
+
+          {!hasMore && news.length > 0 && !searchQuery && (
+            <p className="end-of-list">{t('news.list.end')}</p>
+          )}
+        </div>
+      </section>
       
       <ScrollToTop />
       <style jsx>{`
@@ -435,6 +508,55 @@ export default function NewsClient({ initialContent, initialNews, initialHasMore
           --shadow-card:  0 4px 24px rgba(0,0,0,0.06), 0 1px 4px rgba(0,0,0,0.04);
           --shadow-hover: 0 20px 60px rgba(26,92,56,0.18), 0 4px 16px rgba(0,0,0,0.06);
           --radius:       24px;
+        }
+
+        /* YENİ ARAMA KUTUSU (ÖN YÜZ İÇİN UYUMLU) */
+        .client-search-wrap {
+          position: relative;
+          width: 100%;
+          max-width: 350px;
+          display: flex;
+          align-items: center;
+        }
+        .search-icon {
+          position: absolute;
+          left: 18px;
+          color: var(--green-mid);
+          font-size: 1rem;
+        }
+        .client-search-input {
+          width: 100%;
+          background: #fff;
+          border: 2px solid var(--border);
+          border-radius: 50px;
+          padding: 14px 20px 14px 44px;
+          font-family: 'Inter', sans-serif;
+          font-size: 0.95rem;
+          color: var(--text-dark);
+          transition: all 0.3s ease;
+          box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+          outline: none;
+        }
+        .client-search-input:focus {
+          border-color: var(--green-mid);
+          box-shadow: 0 6px 20px rgba(39,174,96,0.15);
+        }
+        .client-search-input::placeholder {
+          color: #a0aec0;
+        }
+        .client-search-clear {
+          position: absolute;
+          right: 14px;
+          background: none;
+          border: none;
+          color: #9ca3af;
+          cursor: pointer;
+          padding: 6px;
+          font-size: 1rem;
+          transition: color 0.2s ease;
+        }
+        .client-search-clear:hover {
+          color: var(--red);
         }
 
         /* LOADER */
@@ -530,6 +652,11 @@ export default function NewsClient({ initialContent, initialNews, initialHasMore
         .empty-state { grid-column: 1 / -1; text-align: center; padding: 80px 40px; color: var(--text-soft); }
         .empty-state i { font-size: 3rem; opacity: 0.4; margin-bottom: 20px; display: block; }
         .empty-state p { font-size: 1rem; }
+
+        @media (max-width: 768px) {
+          .section-head { flex-direction: column; align-items: flex-start !important; gap: 15px; }
+          .client-search-wrap { max-width: 100%; }
+        }
 
         @media (max-width: 640px) {
           .page-header { min-height: 100svh; }

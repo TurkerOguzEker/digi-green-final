@@ -1,7 +1,6 @@
 'use client';
 import { useEffect, useState, useRef } from 'react';
 import { supabase } from '../../lib/supabase';
-import ScrollToTop from '../../components/ScrollToTop';
 import { useLanguage } from '../../context/LanguageContext';
 
 // ─── SAYFA GENELİ ARKA PLAN AĞI ────────────────────────────────────────────
@@ -257,7 +256,8 @@ export default function ResultsPage() {
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(true);
   
-  // ✨ YENİ: Ekranda görünecek maksimum dosya sayısı (Sonsuz kaydırma için)
+  // ARAMA VE SAYFALAMA STATE'LERİ
+  const [searchQuery, setSearchQuery] = useState('');
   const [visibleCount, setVisibleCount] = useState(9); 
 
   const { language, t } = useLanguage();
@@ -278,6 +278,17 @@ export default function ResultsPage() {
     fetchData();
   }, []);
 
+  // YENI: ARAMA FILTRESI
+  const filteredResults = results.filter(item => {
+    const searchVal = searchQuery.toLowerCase();
+    return (
+      item.title?.toLowerCase().includes(searchVal) ||
+      item.title_en?.toLowerCase().includes(searchVal) ||
+      item.description?.toLowerCase().includes(searchVal) ||
+      item.description_en?.toLowerCase().includes(searchVal)
+    );
+  });
+
   // Kart Animasyonları Gözlemcisi
   useEffect(() => {
     if (loading) return;
@@ -285,35 +296,33 @@ export default function ResultsPage() {
       entries.forEach(entry => { 
         if (entry.isIntersecting) {
           entry.target.classList.add('active');
-          observer.unobserve(entry.target); // Animasyon bitince bir daha tetikleme
+          observer.unobserve(entry.target);
         }
       });
     }, { threshold: 0.05, rootMargin: "0px 0px 50px 0px" });
     
-    // Yalnızca henüz aktif olmayan yeni yüklenmiş öğeleri gözlemle
     document.querySelectorAll('.reveal:not(.active)').forEach(el => observer.observe(el));
     return () => observer.disconnect();
-  }, [loading, results, visibleCount]);
+  }, [loading, filteredResults, visibleCount]);
 
-  // ✨ YENİ: Sayfa Aşağı Kaydıkça Veri Yükleyen Gözlemci (Infinite Scroll)
+  // Sayfa Aşağı Kaydıkça Veri Yükleyen Gözlemci (Infinite Scroll)
   useEffect(() => {
-    if (loading || results.length === 0) return;
+    if (loading || filteredResults.length === 0) return;
     
     const sentinel = document.getElementById('load-more-sentinel');
     if (!sentinel) return;
 
     const loadMoreObserver = new IntersectionObserver((entries) => {
-      if (entries[0].isIntersecting && visibleCount < results.length) {
-        // Yumuşak bir yüklenme hissi için ufak bir bekleme
+      if (entries[0].isIntersecting && visibleCount < filteredResults.length) {
         setTimeout(() => {
-          setVisibleCount(prev => prev + 6); // Her kaydırmada 6 tane daha ekle
+          setVisibleCount(prev => prev + 6);
         }, 400);
       }
-    }, { rootMargin: "0px 0px 200px 0px" }); // Kullanıcı en alta gelmeden 200px önce tetikle
+    }, { rootMargin: "0px 0px 200px 0px" });
 
     loadMoreObserver.observe(sentinel);
     return () => loadMoreObserver.disconnect();
-  }, [loading, visibleCount, results.length]);
+  }, [loading, visibleCount, filteredResults.length]);
 
   const getDynamicContent = (trKey, defaultTranslationKey) => {
     if (language === 'en') {
@@ -384,21 +393,41 @@ export default function ResultsPage() {
           <section id="icerik" className="section-padding">
             <div className="container" style={{ maxWidth: '1160px' }}>
 
-              {/* Bölüm başlığı */}
-              <div className="section-head reveal">
-                <p className="section-label">{getDynamicContent('results_sec_label', 'results.section.label')}</p>
-                <h2 className="section-title">{getDynamicContent('results_sec_title', 'results.section.title')}</h2>
+              {/* ✨ ARAMA KUTUSU VE BAŞLIK YAN YANA ✨ */}
+              <div className="section-head reveal" style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'flex-end', gap: '20px' }}>
+                <div>
+                  <p className="section-label">{getDynamicContent('results_sec_label', 'results.section.label')}</p>
+                  <h2 className="section-title">{getDynamicContent('results_sec_title', 'results.section.title')}</h2>
+                </div>
+
+                <div className="client-search-wrap">
+                  <i className="fas fa-search search-icon"></i>
+                  <input 
+                    type="text" 
+                    className="client-search-input" 
+                    placeholder={language === 'en' ? 'Search files...' : 'Dosyalarda ara...'}
+                    value={searchQuery}
+                    onChange={(e) => {
+                      setSearchQuery(e.target.value);
+                      setVisibleCount(9); // Arama yapıldığında sayfalamayı sıfırla
+                    }}
+                  />
+                  {searchQuery && (
+                    <button className="client-search-clear" onClick={() => setSearchQuery('')}>
+                      <i className="fas fa-times"></i>
+                    </button>
+                  )}
+                </div>
               </div>
 
               <div className="results-grid">
-                {results.length === 0 ? (
+                {filteredResults.length === 0 ? (
                   <div className="empty-state reveal">
                     <i className="fas fa-folder-open"></i>
-                    <p>{t('results.list.empty')}</p>
+                    <p>{searchQuery ? (language === 'en' ? 'No results found.' : 'Arama sonucu bulunamadı.') : t('results.list.empty')}</p>
                   </div>
                 ) : (
-                  // ✨ YENİ: Diziyi sadece "visibleCount" (örneğin ilk 9, sonra 15) kadar keserek ekrana basıyoruz
-                  results.slice(0, visibleCount).map((item, index) => {
+                  filteredResults.slice(0, visibleCount).map((item, index) => {
                     const delay = `${(index % 3) * 0.12 + 0.1}s`;
                     const isMedia = item.icon === 'video' || item.icon === 'app';
                     const fileExt = getFileExtension(item.link);
@@ -457,8 +486,7 @@ export default function ResultsPage() {
                 )}
               </div>
 
-              {/* ✨ YENİ: Sonsuz Kaydırma Tetikleyicisi (Görünmez İzleyici ve Yükleme Simgesi) */}
-              {results.length > 0 && visibleCount < results.length && (
+              {filteredResults.length > 0 && visibleCount < filteredResults.length && (
                 <div id="load-more-sentinel" style={{ textAlign: 'center', padding: '40px 0', width: '100%' }}>
                   <div className="loader-ring small">
                     <div></div><div></div><div></div><div></div>
@@ -469,8 +497,7 @@ export default function ResultsPage() {
                 </div>
               )}
 
-              {/* ✨ EKSİK OLAN KISIM: Tümü yüklendiğinde çıkacak mesaj */}
-              {results.length > 0 && visibleCount >= results.length && (
+              {filteredResults.length > 0 && visibleCount >= filteredResults.length && !searchQuery && (
                 <div className="reveal active" style={{ textAlign: 'center', padding: '40px 0', width: '100%' }}>
                   <div style={{ 
                     display: 'inline-flex', 
@@ -515,6 +542,55 @@ export default function ResultsPage() {
           --shadow-card:  0 4px 24px rgba(0,0,0,0.06), 0 1px 4px rgba(0,0,0,0.04);
           --shadow-hover: 0 20px 60px rgba(26,92,56,0.18), 0 4px 16px rgba(0,0,0,0.06);
           --radius:       24px;
+        }
+
+        /* YENİ ARAMA KUTUSU (ÖN YÜZ İÇİN UYUMLU) */
+        .client-search-wrap {
+          position: relative;
+          width: 100%;
+          max-width: 350px;
+          display: flex;
+          align-items: center;
+        }
+        .search-icon {
+          position: absolute;
+          left: 18px;
+          color: var(--green-mid);
+          font-size: 1rem;
+        }
+        .client-search-input {
+          width: 100%;
+          background: #fff;
+          border: 2px solid var(--border);
+          border-radius: 50px;
+          padding: 14px 20px 14px 44px;
+          font-family: 'Inter', sans-serif;
+          font-size: 0.95rem;
+          color: var(--text-dark);
+          transition: all 0.3s ease;
+          box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+          outline: none;
+        }
+        .client-search-input:focus {
+          border-color: var(--green-mid);
+          box-shadow: 0 6px 20px rgba(39,174,96,0.15);
+        }
+        .client-search-input::placeholder {
+          color: #a0aec0;
+        }
+        .client-search-clear {
+          position: absolute;
+          right: 14px;
+          background: none;
+          border: none;
+          color: #9ca3af;
+          cursor: pointer;
+          padding: 6px;
+          font-size: 1rem;
+          transition: color 0.2s ease;
+        }
+        .client-search-clear:hover {
+          color: var(--red);
         }
 
         /* LOADER */
@@ -628,6 +704,11 @@ export default function ResultsPage() {
         .empty-state { grid-column: 1 / -1; text-align: center; padding: 80px 40px; color: var(--text-soft); }
         .empty-state i { font-size: 3rem; opacity: 0.4; margin-bottom: 20px; display: block; }
         .empty-state p { font-size: 1rem; }
+
+        @media (max-width: 768px) {
+          .section-head { flex-direction: column; align-items: flex-start !important; gap: 15px; }
+          .client-search-wrap { max-width: 100%; }
+        }
 
         @media (max-width: 640px) {
           .page-header { min-height: 100svh; padding: 0; }

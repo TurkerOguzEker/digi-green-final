@@ -1,4 +1,3 @@
-// src/app/admin/activities/page.js
 'use client';
 import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
@@ -142,6 +141,9 @@ export default function AdminActivitiesPage() {
   const [activities, setActivities] = useState([]);
   const [unreadMsgCount, setUnreadMsgCount] = useState(0);
 
+  // YENI: Arama State'i
+  const [searchQuery, setSearchQuery] = useState('');
+
   // Form State
   const [activityForm, setActivityForm] = useState({ id: null, title: '', title_en: '', type: 'Toplanti (TPM)', type_en: '', location: '', location_en: '', date: '', summary: '', summary_en: '', description: '', description_en: '', image_url: '' });
   const [isEditing, setIsEditing] = useState(false);
@@ -265,6 +267,19 @@ export default function AdminActivitiesPage() {
     setActivityForm({ ...item });
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
+
+  // YENI: Arama Fonksiyonu (Filtreleme)
+  const filteredActivities = activities.filter(item => {
+    const searchVal = searchQuery.toLowerCase();
+    return (
+      item.title?.toLowerCase().includes(searchVal) ||
+      item.title_en?.toLowerCase().includes(searchVal) ||
+      item.type?.toLowerCase().includes(searchVal) ||
+      item.type_en?.toLowerCase().includes(searchVal) ||
+      item.location?.toLowerCase().includes(searchVal) ||
+      item.location_en?.toLowerCase().includes(searchVal)
+    );
+  });
 
   const commonProps = { settings, handleSettingChange, updateSetting, uploadFile };
 
@@ -398,8 +413,6 @@ export default function AdminActivitiesPage() {
 
         .adm-input-full { background: var(--surface-2); border: 1px solid var(--border); border-radius: 8px; color: var(--text-primary); font-family: var(--font); font-size: 0.875rem; padding: 10px 14px; transition: border-color var(--transition), box-shadow var(--transition); outline: none; width: 100%; }
         .adm-input-full:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow); }
-        .adm-select-full { background: var(--surface-2); border: 1px solid var(--border); border-radius: 8px; color: var(--text-primary); font-family: var(--font); font-size: 0.875rem; padding: 10px 14px; transition: border-color var(--transition); outline: none; width: 100%; cursor: pointer; appearance: none; }
-        .adm-select-full:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow); }
         .adm-textarea-full { background: var(--surface-2); border: 1px solid var(--border); border-radius: 8px; color: var(--text-primary); font-family: var(--font); font-size: 0.875rem; padding: 10px 14px; transition: border-color var(--transition), box-shadow var(--transition); outline: none; width: 100%; resize: vertical; line-height: 1.5; }
         .adm-textarea-full:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow); }
         .adm-form-submit { width: 100%; height: 44px; background: var(--accent); color: #000; border: none; border-radius: 8px; font-family: var(--font); font-size: 0.9rem; font-weight: 700; cursor: pointer; transition: var(--transition); margin-top: 4px; }
@@ -437,12 +450,20 @@ export default function AdminActivitiesPage() {
         .adm-badge-blue { background: var(--blue-dim); color: var(--blue); border: 1px solid rgba(59,130,246,0.25); }
         .adm-empty { text-align: center; padding: 40px; color: var(--text-muted); font-size: 0.875rem; border: 1px dashed var(--border); border-radius: var(--radius-lg); }
         .adm-empty i { display: block; font-size: 2rem; margin-bottom: 12px; opacity: 0.4; }
+
+        /* YENI ARAMA KUTUSU CSS */
+        .adm-search-wrap { position: relative; margin-bottom: 16px; width: 100%; display: flex; align-items: center; }
+        .adm-search-wrap i { position: absolute; left: 14px; color: var(--text-muted); font-size: 0.85rem; }
+        .adm-search-input { width: 100%; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 10px 14px 10px 38px; color: var(--text-primary); font-family: var(--font); font-size: 0.875rem; transition: all var(--transition); outline: none; }
+        .adm-search-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow); background: var(--surface-2); }
+        .adm-search-clear { position: absolute; right: 12px; background: none; border: none; color: var(--text-muted); cursor: pointer; padding: 4px; transition: color var(--transition); }
+        .adm-search-clear:hover { color: var(--text-primary); }
       `}</style>
 
       <div className="adm-layout">
         <aside className="adm-sidebar">
           <div className="adm-brand-wrapper">
-            <Link href="/" className="adm-brand-card" title="Site Ana Sayfasina Git">
+            <Link href="/admin" className="adm-brand-card" title="Site Ana Sayfasina Git">
               <div className="adm-brand-icon">
                 <i className="fas fa-leaf" />
               </div>
@@ -724,10 +745,35 @@ export default function AdminActivitiesPage() {
               </div>
               
               <div style={{marginTop:'24px'}}>
-                <div style={{fontSize:'0.8rem', fontWeight:'700', color:'var(--text-muted)', textTransform:'uppercase', letterSpacing:'0.08em', marginBottom:'12px'}}>Mevcut Faaliyetler ({activities.length})</div>
-                {activities.length === 0 ? (
-                  <div className="adm-empty"><i className="fas fa-calendar" />Faaliyet bulunamadi.</div>
-                ) : activities.map(item => (
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '12px' }}>
+                  <div style={{fontSize:'0.8rem', fontWeight:'700', color:'var(--text-muted)', textTransform:'uppercase', letterSpacing:'0.08em'}}>
+                    Mevcut Faaliyetler ({filteredActivities.length})
+                  </div>
+                  
+                  {/* ✨ ARAMA KUTUSU BURADA ✨ */}
+                  <div className="adm-search-wrap" style={{ width: '300px', marginBottom: 0 }}>
+                    <i className="fas fa-search" />
+                    <input 
+                      type="text" 
+                      className="adm-search-input" 
+                      placeholder="Faaliyet ara..." 
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                    />
+                    {searchQuery && (
+                      <button className="adm-search-clear" onClick={() => setSearchQuery('')}>
+                        <i className="fas fa-times" />
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                {filteredActivities.length === 0 ? (
+                  <div className="adm-empty">
+                    <i className="fas fa-calendar" />
+                    {searchQuery ? 'Arama sonucu bulunamadi.' : 'Faaliyet bulunamadi.'}
+                  </div>
+                ) : filteredActivities.map(item => (
                   <div key={item.id} className="adm-item-row">
                     <div className="adm-item-info">
                       <strong>{item.title}</strong>
