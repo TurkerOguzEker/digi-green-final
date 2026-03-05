@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '../../lib/supabase';
 import Link from 'next/link';
@@ -28,11 +28,14 @@ const fallbackMonthly = [
 export default function AdminDashboardPage() {
   const router = useRouter();
   const [profileOpen, setProfileOpen] = useState(false);
+  const [notifOpen, setNotifOpen] = useState(false);
   const [isAboutMenuOpen, setIsAboutMenuOpen] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [currentUser, setCurrentUser] = useState(null);
-  const [currentTime, setCurrentTime] = useState(new Date());
   
+  const [currentUser, setCurrentUser] = useState(null);
+  const [userRole, setUserRole] = useState('Editor'); // ✨ KULLANICI ROLÜ EKLENDİ ✨
+  
+  const [currentTime, setCurrentTime] = useState(new Date());
   const [onlineUsers, setOnlineUsers] = useState(0);
   const [totalViews, setTotalViews] = useState(0);
   const [totalUsers, setTotalUsers] = useState(0);
@@ -46,23 +49,42 @@ export default function AdminDashboardPage() {
   const [stats, setStats] = useState({ unreadMsgCount: 0, newsCount: 0, activitiesCount: 0, partnersCount: 0, resultsCount: 0, logsCount: 0 });
   const [recentLogs, setRecentLogs] = useState([]);
   const [contentDist, setContentDist] = useState([]);
+  
+  const [loginAlerts, setLoginAlerts] = useState([]);
+  const notifRef = useRef(null);
 
   useEffect(() => {
     const t = setInterval(() => setCurrentTime(new Date()), 1000);
     return () => clearInterval(t);
   }, []);
 
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (notifRef.current && !notifRef.current.contains(event.target)) {
+        setNotifOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [notifRef]);
+
   const fetchDashboardData = useCallback(async () => {
     const fetchStartTime = performance.now();
     try {
-      const [msg, news, act, par, res, logCount, logsList] = await Promise.all([
+      const [msg, news, act, par, res, logCount, logsList, loginLogs] = await Promise.all([
         supabase.from('contact_messages').select('*', { count: 'exact', head: true }).eq('is_read', false),
         supabase.from('news').select('created_at'),
         supabase.from('activities').select('created_at'),
         supabase.from('partners').select('*', { count: 'exact', head: true }),
         supabase.from('results').select('*', { count: 'exact', head: true }),
         supabase.from('admin_logs').select('*', { count: 'exact', head: true }),
-        supabase.from('admin_logs').select('*').order('created_at', { ascending: false }).limit(5)
+        supabase.from('admin_logs').select('*').order('created_at', { ascending: false }).limit(5),
+        supabase.from('login_logs')
+                .select('*')
+                .eq('status', 'success')
+                .gte('created_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString())
+                .order('created_at', { ascending: false })
+                .limit(10)
       ]);
 
       const newsData = news.data || [];
@@ -74,6 +96,7 @@ export default function AdminDashboardPage() {
       };
       setStats(newStats);
       if(logsList.data) setRecentLogs(logsList.data);
+      if(loginLogs.data) setLoginAlerts(loginLogs.data);
 
       setContentDist([
         { name: 'Haberler', value: newStats.newsCount, color: '#22c55e' },
@@ -140,41 +163,53 @@ export default function AdminDashboardPage() {
     async function init() {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) { router.push('/login'); return; }
-      if (mounted) setCurrentUser(session.user);
+      
+      if (mounted) {
+        setCurrentUser(session.user);
+        // ✨ ROLÜ ÇEK
+        const { data: profile } = await supabase.from('user_profiles').select('role').eq('id', session.user.id).single();
+        if (profile) setUserRole(profile.role);
+      }
+      
       await fetchDashboardData();
     }
     init();
     
     const interval = setInterval(fetchDashboardData, 60000); 
-    
     return () => { mounted = false; clearInterval(interval); };
   }, [router, fetchDashboardData]);
 
   const currentPath = typeof window !== 'undefined' ? window.location.pathname : '';
-  const NAV = [
-    { id: 'dashboard', label: 'Dashboard', icon: 'fas fa-chart-pie', group: 'Genel', link: '/admin', active: currentPath === '/admin' },
-    { id: 'messages', label: 'Mesajlar', icon: 'fas fa-inbox', badge: stats.unreadMsgCount, group: 'Genel', link: '/admin/messages', active: currentPath === '/admin/messages' },
-    { id: 'home', label: 'Ana Sayfa', icon: 'fas fa-house', group: 'İçerik', link: '/admin/homepage', active: currentPath === '/admin/homepage' },
-    { id: 'about', label: 'Hakkında', icon: 'fas fa-circle-info', group: 'İçerik', subItems: [
-      { id: 'general', label: 'Genel Hakkinda', tab: 'general' },
-      { id: 'consortium', label: 'Konsorsiyum', tab: 'consortium' },
-      { id: 'impact', label: 'Proje Etkisi', tab: 'impact' },
-      { id: 'plan', label: 'Proje Plani', tab: 'plan' },
-      { id: 'roadmap', label: 'Yol Haritasi', tab: 'roadmap' },
-      { id: 'strategy', label: 'Strateji', tab: 'strategy' },
-    ]},
-    { id: 'news', label: 'Haberler', icon: 'fas fa-newspaper', badge: stats.newsCount, group: 'İçerik', link: '/admin/news', active: currentPath === '/admin/news' },
-    { id: 'activities', label: 'Faaliyetler', icon: 'fas fa-calendar-check', badge: stats.activitiesCount, group: 'İçerik', link: '/admin/activities', active: currentPath === '/admin/activities' },
-    { id: 'partners', label: 'Ortaklar', icon: 'fas fa-handshake', badge: stats.partnersCount, group: 'İçerik', link: '/admin/partners', active: currentPath === '/admin/partners' },
-    { id: 'results', label: 'Dosyalar', icon: 'fas fa-file-circle-check', badge: stats.resultsCount, group: 'İçerik', link: '/admin/results', active: currentPath === '/admin/results' },
-    { id: 'contact', label: 'İletişim', icon: 'fas fa-phone', group: 'İçerik', link: '/admin/contact', active: currentPath === '/admin/contact' },
-    { id: 'site', label: 'Header/Footer', icon: 'fas fa-sliders', group: 'İçerik', link: '/admin/site', active: currentPath === '/admin/site' },
-    { id: 'users', label: 'Kullanıcılar', icon: 'fas fa-users', group: 'Ayarlar', link: '/admin/users', active: currentPath === '/admin/users' },
-    { id: 'logs', label: 'Loglar', icon: 'fas fa-list', group: 'Ayarlar', link: '/admin/logs', active: currentPath === '/admin/logs' },
-    { id: 'security', label: 'Şifre & Güvenlik', icon: 'fas fa-lock', group: 'Ayarlar', link: '/admin/security', active: currentPath === '/admin/security' },
-  ];
   
-  const groupedNav = NAV.reduce((acc, item) => {
+  // ✨ MENÜYÜ ROLÜNE GÖRE FİLTRELEME YAPIYORUZ
+  const fullNAV = [
+    { id: 'dashboard', label: 'Dashboard', icon: 'fas fa-chart-pie', group: 'Genel', link: '/admin', active: currentPath === '/admin', roles: ['Super Admin', 'Admin', 'Editor'] },
+    { id: 'messages', label: `Mesajlar`, icon: 'fas fa-inbox', badge: stats.unreadMsgCount, group: 'Genel', link: '/admin/messages', active: currentPath === '/admin/messages', roles: ['Super Admin', 'Admin', 'Editor'] },
+    { id: 'home', label: 'Ana Sayfa', icon: 'fas fa-house', group: 'Icerik', link: '/admin/homepage', active: currentPath === '/admin/homepage', roles: ['Super Admin', 'Admin'] },
+    { 
+      id: 'about', label: 'Hakkinda', icon: 'fas fa-circle-info', group: 'Icerik', roles: ['Super Admin', 'Admin'],
+      subItems: [
+        { id: 'general', label: 'Genel Hakkinda', tab: 'general' },
+        { id: 'consortium', label: 'Konsorsiyum', tab: 'consortium' },
+        { id: 'impact', label: 'Proje Etkisi', tab: 'impact' },
+        { id: 'plan', label: 'Proje Plani', tab: 'plan' },  
+        { id: 'roadmap', label: 'Yol Haritasi', tab: 'roadmap' },
+        { id: 'strategy', label: 'Strateji', tab: 'strategy' }
+      ]
+    },
+    { id: 'news', label: 'Haberler', icon: 'fas fa-newspaper', badge: stats.newsCount, group: 'Icerik', link: '/admin/news', active: currentPath === '/admin/news', roles: ['Super Admin', 'Admin', 'Editor'] },
+    { id: 'activities', label: 'Faaliyetler', icon: 'fas fa-calendar-check', badge: stats.activitiesCount, group: 'Icerik', link: '/admin/activities', active: currentPath === '/admin/activities', roles: ['Super Admin', 'Admin', 'Editor'] },
+    { id: 'partners', label: 'Ortaklar', icon: 'fas fa-handshake', badge: stats.partnersCount, group: 'Icerik', link: '/admin/partners', active: currentPath === '/admin/partners', roles: ['Super Admin', 'Admin'] },
+    { id: 'results', label: 'Dosyalar', icon: 'fas fa-file-circle-check', badge: stats.resultsCount, group: 'Icerik', link: '/admin/results', active: currentPath === '/admin/results', roles: ['Super Admin', 'Admin', 'Editor'] },
+    { id: 'contact', label: 'Iletisim', icon: 'fas fa-phone', group: 'Icerik', link: '/admin/contact', active: currentPath === '/admin/contact', roles: ['Super Admin', 'Admin'] },
+    { id: 'site', label: 'Header/Footer', icon: 'fas fa-sliders', group: 'Icerik', link: '/admin/site', active: currentPath === '/admin/site', roles: ['Super Admin', 'Admin'] },
+    { id: 'users', label: 'Kullanicilar', icon: 'fas fa-users', group: 'Ayarlar', link: '/admin/users', active: currentPath === '/admin/users', roles: ['Super Admin'] },
+    { id: 'logs', label: 'Loglar', icon: 'fas fa-list', group: 'Ayarlar', link: '/admin/logs', active: currentPath === '/admin/logs', roles: ['Super Admin'] },
+    { id: 'security', label: 'Sifre & Guvenlik', icon: 'fas fa-lock', group: 'Ayarlar', link: '/admin/security', active: currentPath === '/admin/security', roles: ['Super Admin', 'Admin', 'Editor'] },
+  ];
+
+  const allowedNav = fullNAV.filter(nav => nav.roles.includes(userRole));
+  const groupedNav = allowedNav.reduce((acc, item) => {
     if (!acc[item.group]) acc[item.group] = []; acc[item.group].push(item); return acc;
   }, {});
 
@@ -225,7 +260,8 @@ export default function AdminDashboardPage() {
         .adm-brand-icon { width: 38px; height: 38px; border-radius: 10px; background: linear-gradient(135deg, #22c55e, #16a34a); display: flex; align-items: center; justify-content: center; font-size: 1rem; color: #fff; flex-shrink: 0; box-shadow: 0 4px 12px rgba(34,197,94,0.35); }
         .adm-brand-logo { font-family: var(--font-display); font-weight: 800; font-size: 1.05rem; color: #fff; line-height: 1; letter-spacing: 0.5px; }
         .adm-brand-logo span { color: #22c55e; }
-        .adm-brand-sub { font-size: 0.6rem; color: #6b7280; letter-spacing: 1.2px; text-transform: uppercase; font-weight: 600; margin-top: 3px; }
+        .adm-brand-sub { font-size: 0.6rem; color: #6b7280; letter-spacing: 1.2px; text-transform: uppercase; font-weight: 600; margin-top: 3px; display: flex; align-items: center; gap: 5px; transition: color 0.3s; }
+        .adm-brand-card:hover .adm-brand-sub { color: var(--accent); }
         .adm-nav { padding: 14px 10px; flex: 1; }
         .adm-nav-section { margin-bottom: 22px; }
         .adm-nav-label { font-size: 0.6rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-muted); padding: 0 10px; margin-bottom: 5px; }
@@ -273,11 +309,27 @@ export default function AdminDashboardPage() {
         .activity-feed .activity-item:last-child { border-bottom: none; }
         .health-bar { height: 6px; border-radius: 3px; background: rgba(255,255,255,0.06); margin-top: 6px; overflow: hidden; }
         .health-bar-fill { height: 100%; border-radius: 3px; transition: width 1s ease; }
-        
         .page-list-item { display: flex; align-items: center; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid var(--border); }
         .page-list-item:last-child { border-bottom: none; }
         .page-path { font-size: 0.8rem; color: #e6edf3; font-weight: 500; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 250px;}
         .page-views { font-family: var(--font-mono); font-size: 0.8rem; color: var(--accent); font-weight: 700; background: var(--accent-dim); padding: 2px 8px; border-radius: 12px;}
+
+        /* BİLDİRİM MENÜSÜ CSS EKLENTİSİ */
+        .adm-notif-btn { background: none; border: 1px solid var(--border); border-radius: 8px; color: var(--text-secondary); width: 38px; height: 38px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s; position: relative; }
+        .adm-notif-btn:hover, .adm-notif-btn.active { color: var(--text-primary); border-color: var(--accent); background: var(--surface-3); }
+        .adm-notif-badge { position: absolute; top: -4px; right: -4px; background: var(--red); color: #fff; font-size: 0.55rem; font-weight: 800; min-width: 16px; height: 16px; border-radius: 8px; display: flex; align-items: center; justify-content: center; border: 2px solid var(--surface); padding: 0 4px; }
+        .adm-notif-dropdown { position: absolute; top: calc(100% + 12px); right: -10px; width: 340px; background: #111318; border: 1px solid var(--border); border-radius: 14px; box-shadow: 0 20px 50px rgba(0,0,0,0.6); z-index: 100; animation: topbarDropdown 0.2s ease; overflow: hidden; }
+        .adm-notif-header { padding: 16px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.02); }
+        .adm-notif-title { font-family: var(--font-display); font-size: 0.9rem; font-weight: 700; color: var(--text-primary); }
+        .adm-notif-body { max-height: 300px; overflow-y: auto; }
+        .adm-notif-body::-webkit-scrollbar { width: 4px; } .adm-notif-body::-webkit-scrollbar-thumb { background: var(--border-hover); border-radius: 4px; }
+        .adm-notif-item { padding: 14px 16px; border-bottom: 1px solid rgba(255,255,255,0.04); display: flex; gap: 12px; align-items: flex-start; transition: background 0.2s; }
+        .adm-notif-item:hover { background: rgba(255,255,255,0.03); }
+        .adm-notif-item:last-child { border-bottom: none; }
+        .adm-notif-icon { width: 32px; height: 32px; border-radius: 8px; background: var(--accent-dim); color: var(--accent); display: flex; align-items: center; justify-content: center; font-size: 0.85rem; flex-shrink: 0; }
+        .adm-notif-text { font-size: 0.8rem; color: var(--text-primary); line-height: 1.4; margin-bottom: 4px; }
+        .adm-notif-text span { color: var(--accent); font-weight: 600; }
+        .adm-notif-time { font-size: 0.65rem; color: var(--text-muted); display: flex; align-items: center; gap: 4px; }
 
         @keyframes fadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes fadeDown { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: translateY(0); } }
@@ -352,10 +404,52 @@ export default function AdminDashboardPage() {
                 </div>
               </div>
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
               <div className="adm-clock">
                 <i className="fas fa-clock" style={{ fontSize: '0.75rem', opacity: 0.7 }} />
                 {fmtTime(currentTime)}
+              </div>
+              
+              {/* ✨ BİLDİRİM BUTONU ✨ */}
+              <div style={{ position: 'relative' }} ref={notifRef}>
+                <button className={`adm-notif-btn ${notifOpen ? 'active' : ''}`} onClick={() => setNotifOpen(!notifOpen)}>
+                  <i className="fas fa-bell" />
+                  {loginAlerts.length > 0 && <span className="adm-notif-badge">{loginAlerts.length}</span>}
+                </button>
+                
+                {notifOpen && (
+                  <div className="adm-notif-dropdown">
+                    <div className="adm-notif-header">
+                      <div className="adm-notif-title">Son Giriş Yapanlar</div>
+                      <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)', background: 'var(--surface-3)', padding: '2px 6px', borderRadius: '4px' }}>Son 24 Saat</span>
+                    </div>
+                    <div className="adm-notif-body">
+                      {loginAlerts.length === 0 ? (
+                        <div style={{ padding: '30px 20px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.8rem' }}>
+                          <i className="fas fa-check-circle" style={{ fontSize: '1.5rem', marginBottom: '10px', opacity: 0.4, display: 'block' }}></i>
+                          Yeni bir giriş kaydı bulunmuyor.
+                        </div>
+                      ) : (
+                        loginAlerts.map(alert => (
+                          <div key={alert.id} className="adm-notif-item">
+                            <div className="adm-notif-icon"><i className="fas fa-right-to-bracket" /></div>
+                            <div>
+                              <div className="adm-notif-text">
+                                <span>{alert.user_email}</span> kullanıcısı sisteme giriş yaptı.
+                              </div>
+                              <div className="adm-notif-time">
+                                <i className="fas fa-desktop" /> {alert.device || 'Bilinmeyen Cihaz'} • {timeAgo(alert.created_at)}
+                              </div>
+                            </div>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                    <Link href="/admin/security" style={{ display: 'block', background: 'rgba(34,197,94,0.05)', color: 'var(--accent)', textAlign: 'center', padding: '12px', fontSize: '0.75rem', fontWeight: 700, textDecoration: 'none', borderTop: '1px solid var(--border)', transition: 'background 0.2s' }} onMouseOver={e=>e.target.style.background='rgba(34,197,94,0.1)'} onMouseOut={e=>e.target.style.background='rgba(34,197,94,0.05)'}>
+                      Güvenlik Detaylarına Git
+                    </Link>
+                  </div>
+                )}
               </div>
               
               <div style={{ position: 'relative' }}>
@@ -382,10 +476,10 @@ export default function AdminDashboardPage() {
                         </div>
                       </div>
                       <button onClick={async () => { 
-  document.cookie = 'sb-access-token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT'; 
-  await supabase.auth.signOut(); 
-  router.push('/login'); 
-}} style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 9, padding: '10px 12px', background: 'transparent', border: '1px solid transparent', borderRadius: 9, cursor: 'pointer', color: '#f87171', fontSize: '0.84rem', fontWeight: 500, transition: 'all 0.15s', textAlign: 'left', fontFamily: 'var(--font)' }}>
+                        document.cookie = 'sb-access-token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT'; 
+                        await supabase.auth.signOut(); 
+                        router.push('/login'); 
+                      }} style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 9, padding: '10px 12px', background: 'transparent', border: '1px solid transparent', borderRadius: 9, cursor: 'pointer', color: '#f87171', fontSize: '0.84rem', fontWeight: 500, transition: 'all 0.15s', textAlign: 'left', fontFamily: 'var(--font)' }}>
                         <i className="fas fa-arrow-right-from-bracket" style={{ fontSize: '0.9rem', width: 16 }} />
                         Çıkış Yap
                       </button>
@@ -534,6 +628,7 @@ export default function AdminDashboardPage() {
                   </div>
                 </div>
 
+                {/* ✨ EYLEMLER DE ROL BAZLI OLDU ✨ */}
                 <div className="chart-card">
                   <div className="chart-header">
                     <div className="chart-title">Hızlı Eylemler</div>
@@ -542,7 +637,9 @@ export default function AdminDashboardPage() {
                     <QuickAction icon="fas fa-plus" label="Yeni Haber" color="var(--accent)" bg="rgba(34,197,94,0.1)" link="/admin/news" />
                     <QuickAction icon="fas fa-calendar-plus" label="Yeni Faaliyet" color="var(--blue)" bg="rgba(59,130,246,0.1)" link="/admin/activities" />
                     <QuickAction icon="fas fa-inbox" label="Mesajlar" color="var(--red)" bg="rgba(239,68,68,0.1)" link="/admin/messages" />
-                    <QuickAction icon="fas fa-handshake" label="Yeni Ortak" color="var(--yellow)" bg="rgba(245,158,11,0.1)" link="/admin/partners" />
+                    {(userRole === 'Super Admin' || userRole === 'Admin') && (
+                      <QuickAction icon="fas fa-handshake" label="Yeni Ortak" color="var(--yellow)" bg="rgba(245,158,11,0.1)" link="/admin/partners" />
+                    )}
                   </div>
                 </div>
               </div>

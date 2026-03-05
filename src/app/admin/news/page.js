@@ -134,14 +134,21 @@ export default function AdminNewsPage() {
   const [loading, setLoading] = useState(true);
   
   const [currentUser, setCurrentUser] = useState(null);
+  const [userRole, setUserRole] = useState('Editor'); // ✨ KULLANICI ROLÜ
   const [userIp, setUserIp] = useState('Bilinmiyor');
 
   // Data States
   const [settings, setSettings] = useState([]);
   const [news, setNews] = useState([]);
-  const [unreadMsgCount, setUnreadMsgCount] = useState(0);
   
-  // YENI: Arama State'i
+  // Badge States
+  const [unreadMsgCount, setUnreadMsgCount] = useState(0);
+  const [newsCount, setNewsCount] = useState(0);
+  const [activitiesCount, setActivitiesCount] = useState(0);
+  const [partnersCount, setPartnersCount] = useState(0);
+  const [resultsCount, setResultsCount] = useState(0);
+  
+  // Arama State'i
   const [searchQuery, setSearchQuery] = useState('');
 
   // Form State
@@ -158,13 +165,23 @@ export default function AdminNewsPage() {
 
   const fetchPageData = useCallback(async () => {
     try {
-      const s = await supabase.from('settings').select('*').order('id');
-      const n = await supabase.from('news').select('*').order('date', { ascending: false });
-      const { count } = await supabase.from('contact_messages').select('*', { count: 'exact', head: true }).eq('is_read', false);
+      const [s, n, msg, act, par, res] = await Promise.all([
+        supabase.from('settings').select('*').order('id'),
+        supabase.from('news').select('*').order('date', { ascending: false }),
+        supabase.from('contact_messages').select('*', { count: 'exact', head: true }).eq('is_read', false),
+        supabase.from('activities').select('*', { count: 'exact', head: true }),
+        supabase.from('partners').select('*', { count: 'exact', head: true }),
+        supabase.from('results').select('*', { count: 'exact', head: true }),
+      ]);
         
       setSettings(s.data || []);
       setNews(n.data || []);
-      if (count) setUnreadMsgCount(count);
+      if (msg.count) setUnreadMsgCount(msg.count);
+      if (n.data) setNewsCount(n.data.length);
+      if (act.count) setActivitiesCount(act.count);
+      if (par.count) setPartnersCount(par.count);
+      if (res.count) setResultsCount(res.count);
+
     } catch (error) {
       console.error("Veri hatasi:", error);
     } finally {
@@ -177,7 +194,13 @@ export default function AdminNewsPage() {
     async function load() {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) { router.push('/login'); return; }
-      if (isMounted) setCurrentUser(session.user);
+      
+      if (isMounted) {
+        setCurrentUser(session.user);
+        // ✨ ROLÜ ÇEK
+        const { data: profile } = await supabase.from('user_profiles').select('role').eq('id', session.user.id).single();
+        if (profile) setUserRole(profile.role);
+      }
 
       try {
         const res = await fetch('https://api.ipify.org?format=json');
@@ -212,6 +235,11 @@ export default function AdminNewsPage() {
   };
 
   async function updateSetting(key, value) {
+    // GÜVENLİK: Eğer editörse işlem yapmasına izin verme
+  if (userRole === 'Editor') {
+    showToast('Bu ayarı değiştirme yetkiniz bulunmuyor.', 'error');
+    return;
+  }
     const { error } = await supabase.from('settings').upsert({ key, value }, { onConflict: 'key' });
     if (error) {
       showToast('Hata: ' + error.message, 'error'); 
@@ -268,7 +296,7 @@ export default function AdminNewsPage() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
-  // YENI: Arama Fonksiyonu (Filtreleme)
+  // Arama Fonksiyonu
   const filteredNews = news.filter(item => {
     const searchVal = searchQuery.toLowerCase();
     return (
@@ -281,13 +309,15 @@ export default function AdminNewsPage() {
 
   const commonProps = { settings, handleSettingChange, updateSetting, uploadFile };
 
-   const currentPath = typeof window !== 'undefined' ? window.location.pathname : '';
-  const NAV = [
-    { id: 'dashboard', label: 'Dashboard', icon: 'fas fa-chart-pie', group: 'Genel', link: '/admin', active: currentPath === '/admin' },
-    { id: 'messages', label: `Mesajlar`, icon: 'fas fa-inbox', badge: typeof unreadMsgCount !== 'undefined' ? unreadMsgCount : 0, group: 'Genel', link: '/admin/messages', active: currentPath === '/admin/messages' },
-    { id: 'home', label: 'Ana Sayfa', icon: 'fas fa-house', group: 'Icerik', link: '/admin/homepage', active: currentPath === '/admin/homepage' },
+  const currentPath = typeof window !== 'undefined' ? window.location.pathname : '';
+  
+  // ✨ MENÜYÜ ROLÜNE GÖRE FİLTRELEME YAPIYORUZ
+  const fullNAV = [
+    { id: 'dashboard', label: 'Dashboard', icon: 'fas fa-chart-pie', group: 'Genel', link: '/admin', active: currentPath === '/admin', roles: ['Super Admin', 'Admin', 'Editor'] },
+    { id: 'messages', label: `Mesajlar`, icon: 'fas fa-inbox', badge: unreadMsgCount, group: 'Genel', link: '/admin/messages', active: currentPath === '/admin/messages', roles: ['Super Admin', 'Admin', 'Editor'] },
+    { id: 'home', label: 'Ana Sayfa', icon: 'fas fa-house', group: 'Icerik', link: '/admin/homepage', active: currentPath === '/admin/homepage', roles: ['Super Admin', 'Admin'] },
     { 
-      id: 'about', label: 'Hakkinda', icon: 'fas fa-circle-info', group: 'Icerik',
+      id: 'about', label: 'Hakkinda', icon: 'fas fa-circle-info', group: 'Icerik', roles: ['Super Admin', 'Admin'],
       subItems: [
         { id: 'general', label: 'Genel Hakkinda', tab: 'general' },
         { id: 'consortium', label: 'Konsorsiyum', tab: 'consortium' },
@@ -297,18 +327,19 @@ export default function AdminNewsPage() {
         { id: 'strategy', label: 'Strateji', tab: 'strategy' }
       ]
     },
-    { id: 'news', label: 'Haberler', icon: 'fas fa-newspaper', badge: typeof newsCount !== 'undefined' ? newsCount : (typeof news !== 'undefined' ? news.length : 0), group: 'Icerik', link: '/admin/news', active: currentPath === '/admin/news' },
-    { id: 'activities', label: 'Faaliyetler', icon: 'fas fa-calendar-check', badge: typeof activitiesCount !== 'undefined' ? activitiesCount : (typeof activities !== 'undefined' ? activities.length : 0), group: 'Icerik', link: '/admin/activities', active: currentPath === '/admin/activities' },
-    { id: 'partners', label: 'Ortaklar', icon: 'fas fa-handshake', badge: typeof partnersCount !== 'undefined' ? partnersCount : (typeof partners !== 'undefined' ? partners.length : 0), group: 'Icerik', link: '/admin/partners', active: currentPath === '/admin/partners' },
-    { id: 'results', label: 'Dosyalar', icon: 'fas fa-file-circle-check', badge: typeof resultsCount !== 'undefined' ? resultsCount : (typeof results !== 'undefined' ? results.length : 0), group: 'Icerik', link: '/admin/results', active: currentPath === '/admin/results' },
-    { id: 'contact', label: 'Iletisim', icon: 'fas fa-phone', group: 'Icerik', link: '/admin/contact', active: currentPath === '/admin/contact' },
-    { id: 'site', label: 'Header/Footer', icon: 'fas fa-sliders', group: 'Icerik', link: '/admin/site', active: currentPath === '/admin/site' },
-    { id: 'users', label: 'Kullanicilar', icon: 'fas fa-users', group: 'Ayarlar', link: '/admin/users', active: currentPath === '/admin/users' },
-    { id: 'logs', label: 'Loglar', icon: 'fas fa-list', group: 'Ayarlar', link: '/admin/logs', active: currentPath === '/admin/logs' },
-    { id: 'security', label: 'Sifre & Guvenlik', icon: 'fas fa-lock', group: 'Ayarlar', link: '/admin/security', active: currentPath === '/admin/security' },
+    { id: 'news', label: 'Haberler', icon: 'fas fa-newspaper', badge: newsCount, group: 'Icerik', link: '/admin/news', active: currentPath === '/admin/news', roles: ['Super Admin', 'Admin', 'Editor'] },
+    { id: 'activities', label: 'Faaliyetler', icon: 'fas fa-calendar-check', badge: activitiesCount, group: 'Icerik', link: '/admin/activities', active: currentPath === '/admin/activities', roles: ['Super Admin', 'Admin', 'Editor'] },
+    { id: 'partners', label: 'Ortaklar', icon: 'fas fa-handshake', badge: partnersCount, group: 'Icerik', link: '/admin/partners', active: currentPath === '/admin/partners', roles: ['Super Admin', 'Admin'] },
+    { id: 'results', label: 'Dosyalar', icon: 'fas fa-file-circle-check', badge: resultsCount, group: 'Icerik', link: '/admin/results', active: currentPath === '/admin/results', roles: ['Super Admin', 'Admin', 'Editor'] },
+    { id: 'contact', label: 'Iletisim', icon: 'fas fa-phone', group: 'Icerik', link: '/admin/contact', active: currentPath === '/admin/contact', roles: ['Super Admin', 'Admin'] },
+    { id: 'site', label: 'Header/Footer', icon: 'fas fa-sliders', group: 'Icerik', link: '/admin/site', active: currentPath === '/admin/site', roles: ['Super Admin', 'Admin'] },
+    { id: 'users', label: 'Kullanicilar', icon: 'fas fa-users', group: 'Ayarlar', link: '/admin/users', active: currentPath === '/admin/users', roles: ['Super Admin'] },
+    { id: 'logs', label: 'Loglar', icon: 'fas fa-list', group: 'Ayarlar', link: '/admin/logs', active: currentPath === '/admin/logs', roles: ['Super Admin'] },
+    { id: 'security', label: 'Sifre & Guvenlik', icon: 'fas fa-lock', group: 'Ayarlar', link: '/admin/security', active: currentPath === '/admin/security', roles: ['Super Admin', 'Admin', 'Editor'] },
   ];
 
-  const groupedNav = NAV.reduce((acc, item) => {
+  const allowedNav = fullNAV.filter(nav => nav.roles.includes(userRole));
+  const groupedNav = allowedNav.reduce((acc, item) => {
     if (!acc[item.group]) acc[item.group] = [];
     acc[item.group].push(item);
     return acc;
@@ -348,7 +379,6 @@ export default function AdminNewsPage() {
         .adm-nav-icon { width: 18px; height: 18px; display: flex; align-items: center; justify-content: center; font-size: 0.85rem; flex-shrink: 0; transition: var(--transition); }
         .adm-nav-badge { margin-left: auto; background: var(--accent); color: #000; font-size: 0.65rem; font-weight: 700; padding: 2px 7px; border-radius: 20px; min-width: 20px; text-align: center; }
 
-        /* Alt Menu (Accordion) CSS */
         .adm-nav-submenu { display: flex; flex-direction: column; gap: 2px; padding-left: 38px; padding-right: 8px; margin-top: 2px; margin-bottom: 8px; animation: fadeDown 0.2s ease;}
         .adm-nav-subitem { display: flex; align-items: center; padding: 8px 12px; font-size: 0.8rem; color: var(--text-secondary); background: transparent; border: none; border-radius: 8px; cursor: pointer; transition: var(--transition); text-align: left; }
         .adm-nav-subitem:hover { color: var(--text-primary); background: rgba(255,255,255,0.03); }
@@ -561,16 +591,6 @@ export default function AdminNewsPage() {
                   outline: 'none',
                   userSelect: 'none',
                 }}
-                onMouseEnter={e => {
-                  e.currentTarget.style.borderColor = 'var(--accent, #6366f1)';
-                  e.currentTarget.style.background = 'var(--surface-3, rgba(255,255,255,0.08))';
-                }}
-                onMouseLeave={e => {
-                  if (!profileOpen) {
-                    e.currentTarget.style.borderColor = 'var(--border, rgba(255,255,255,0.08))';
-                    e.currentTarget.style.background = 'var(--surface-2, rgba(255,255,255,0.04))';
-                  }
-                }}
               >
                 <div style={{
                   width: '28px', height: '28px',
@@ -624,35 +644,38 @@ export default function AdminNewsPage() {
                 <div className="adm-page-title">Haberler & <em>Duyurular</em></div>
               </div>
 
-              <div className="adm-section">
-                <SectionHeader iconClass="fas fa-layer-group" title="Sayfa Ust Bilgileri (Hero)" />
-                <div className="adm-form-grid2">
-                  <SettingInput label="Ust Ufak Baslik (TR)" settingKey="news_hero_eyebrow" {...commonProps} />
-                  <SettingInput label="Ust Ufak Baslik (EN)" settingKey="news_hero_eyebrow_en" {...commonProps} />
-                  <SettingInput label="Ana Baslik Satir 1 (TR)" settingKey="news_hero_title1" {...commonProps} />
-                  <SettingInput label="Ana Baslik Satir 1 (EN)" settingKey="news_hero_title1_en" {...commonProps} />
-                  <SettingInput label="Vurgulu Baslik Satir 2 (TR)" settingKey="news_hero_title2" {...commonProps} />
-                  <SettingInput label="Vurgulu Baslik Satir 2 (EN)" settingKey="news_hero_title2_en" {...commonProps} />
-                </div>
-                <div className="adm-form-grid2" style={{marginTop:'10px'}}>
-                  <SettingInput label="Giris Aciklamasi (TR)" settingKey="news_page_desc" type="textarea" {...commonProps} />
-                  <SettingInput label="Giris Aciklamasi (EN)" settingKey="news_page_desc_en" type="textarea" {...commonProps} />
-                </div>
-                <div className="adm-form-grid2" style={{marginTop:'10px'}}>
-                  <SettingInput label="Kaydirma Butonu (TR)" settingKey="news_hero_scroll" {...commonProps} />
-                  <SettingInput label="Kaydirma Butonu (EN)" settingKey="news_hero_scroll_en" {...commonProps} />
-                </div>
+              {/* ✨ EĞER KULLANICI SUPER ADMIN VEYA ADMIN İSE TASARIM AYARLARINI GÖSTER ✨ */}
+              {(userRole === 'Super Admin' || userRole === 'Admin') && (
+                <div className="adm-section">
+                  <SectionHeader iconClass="fas fa-layer-group" title="Sayfa Ust Bilgileri (Hero)" />
+                  <div className="adm-form-grid2">
+                    <SettingInput label="Ust Ufak Baslik (TR)" settingKey="news_hero_eyebrow" {...commonProps} />
+                    <SettingInput label="Ust Ufak Baslik (EN)" settingKey="news_hero_eyebrow_en" {...commonProps} />
+                    <SettingInput label="Ana Baslik Satir 1 (TR)" settingKey="news_hero_title1" {...commonProps} />
+                    <SettingInput label="Ana Baslik Satir 1 (EN)" settingKey="news_hero_title1_en" {...commonProps} />
+                    <SettingInput label="Vurgulu Baslik Satir 2 (TR)" settingKey="news_hero_title2" {...commonProps} />
+                    <SettingInput label="Vurgulu Baslik Satir 2 (EN)" settingKey="news_hero_title2_en" {...commonProps} />
+                  </div>
+                  <div className="adm-form-grid2" style={{marginTop:'10px'}}>
+                    <SettingInput label="Giris Aciklamasi (TR)" settingKey="news_page_desc" type="textarea" {...commonProps} />
+                    <SettingInput label="Giris Aciklamasi (EN)" settingKey="news_page_desc_en" type="textarea" {...commonProps} />
+                  </div>
+                  <div className="adm-form-grid2" style={{marginTop:'10px'}}>
+                    <SettingInput label="Kaydirma Butonu (TR)" settingKey="news_hero_scroll" {...commonProps} />
+                    <SettingInput label="Kaydirma Butonu (EN)" settingKey="news_hero_scroll_en" {...commonProps} />
+                  </div>
 
-                <div className="adm-divider" style={{margin: '20px 0'}} />
+                  <div className="adm-divider" style={{margin: '20px 0'}} />
 
-                <SectionHeader iconClass="fas fa-bars" title="Icerik Bolumu Basliklari" />
-                <div className="adm-form-grid2">
-                  <SettingInput label="Bolum Etiketi (TR)" settingKey="news_sec_label" {...commonProps} />
-                  <SettingInput label="Bolum Etiketi (EN)" settingKey="news_sec_label_en" {...commonProps} />
-                  <SettingInput label="Bolum Basligi (TR)" settingKey="news_sec_title" {...commonProps} />
-                  <SettingInput label="Bolum Basligi (EN)" settingKey="news_sec_title_en" {...commonProps} />
+                  <SectionHeader iconClass="fas fa-bars" title="Icerik Bolumu Basliklari" />
+                  <div className="adm-form-grid2">
+                    <SettingInput label="Bolum Etiketi (TR)" settingKey="news_sec_label" {...commonProps} />
+                    <SettingInput label="Bolum Etiketi (EN)" settingKey="news_sec_label_en" {...commonProps} />
+                    <SettingInput label="Bolum Basligi (TR)" settingKey="news_sec_title" {...commonProps} />
+                    <SettingInput label="Bolum Basligi (EN)" settingKey="news_sec_title_en" {...commonProps} />
+                  </div>
                 </div>
-              </div>
+              )}
 
               <div className="adm-form-card">
                 <div className="adm-form-card-title">
@@ -741,9 +764,9 @@ export default function AdminNewsPage() {
                 </div>
 
                 {filteredNews.length === 0 ? (
-                  <div className="adm-empty">
-                    <i className="fas fa-newspaper" />
-                    {searchQuery ? 'Arama sonucu bulunamadi.' : 'Haber bulunamadi.'}
+                  <div className="adm-empty" style={{ textAlign: 'center', padding: '40px', background: 'var(--surface)', borderRadius: '14px', border: '1px dashed var(--border)' }}>
+                    <i className="fas fa-newspaper" style={{ fontSize: '2rem', color: 'var(--text-muted)', marginBottom: '10px' }} />
+                    <div style={{ color: 'var(--text-secondary)' }}>{searchQuery ? 'Arama sonucu bulunamadi.' : 'Haber bulunamadi.'}</div>
                   </div>
                 ) : filteredNews.map(item => (
                   <div key={item.id} className="adm-item-row">

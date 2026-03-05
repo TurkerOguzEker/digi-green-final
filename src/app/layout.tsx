@@ -26,6 +26,7 @@ export async function generateMetadata() {
     : '/favicon.ico';
 
   return {
+    metadataBase: new URL('https://digigreenfuture.eu'), // ✨ EKLENEN SATIR BURASI (Uyarıyı çözen kısım)
     title: 'DIGI-GREEN FUTURE | Dijital Yeşil Dönüşüm',
     description: 'Kapaklı Belediyesi liderliğinde yürütülen, iklim değişikliği ile mücadelede dijital araçları kullanmayı hedefleyen Erasmus+ projesi.',
     keywords: 'çevre, dijital dönüşüm, sürdürülebilirlik, erasmus+, kapaklı belediyesi, yeşil gelecek',

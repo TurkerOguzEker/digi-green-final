@@ -4,20 +4,39 @@ import { supabase } from '../../lib/supabase';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
+// Cihaz ve Tarayıcı bilgisini ayrıştıran yardımcı fonksiyon
+const parseUserAgent = (ua) => {
+  let browser = "Tarayıcı";
+  let os = "İşletim Sistemi";
+  
+  if (ua.includes("Chrome")) browser = "Chrome";
+  else if (ua.includes("Firefox")) browser = "Firefox";
+  else if (ua.includes("Safari") && !ua.includes("Chrome")) browser = "Safari";
+  else if (ua.includes("Edge")) browser = "Edge";
+
+  if (ua.includes("Win")) os = "Windows";
+  else if (ua.includes("Mac")) os = "macOS";
+  else if (ua.includes("Linux")) os = "Linux";
+  else if (ua.includes("Android")) os = "Android";
+  else if (ua.includes("iPhone") || ua.includes("iPad")) os = "iOS";
+
+  return `${browser} — ${os}`;
+};
+
 export default function LoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const [errorMsg, setErrorMsg] = useState(''); // Hataları ekranda göstermek için state
+  const [errorMsg, setErrorMsg] = useState(''); 
 
-const handleLogin = async (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
     setLoading(true);
     setErrorMsg(''); 
     
     try {
-      // 1. Supabase giriş isteği (data objesini de alıyoruz)
+      // 1. Supabase giriş isteği
       const { data, error } = await supabase.auth.signInWithPassword({
           email,
           password,
@@ -25,11 +44,57 @@ const handleLogin = async (e) => {
 
       if (error) {
           setErrorMsg('Giriş başarısız: ' + error.message);
+          
+          // İSTEĞE BAĞLI: Başarısız giriş denemelerini de loglamak isterseniz (Şifre yanlış vs.)
+          let userIp = 'Bilinmiyor';
+          try {
+            const res = await fetch('https://api.ipify.org?format=json');
+            const ipData = await res.json();
+            userIp = ipData.ip;
+          } catch(e) {}
+          
+          const userAgent = typeof window !== 'undefined' ? parseUserAgent(navigator.userAgent) : 'Bilinmeyen Cihaz';
+          
+          await supabase.from('login_logs').insert([{
+            user_email: email,
+            device: userAgent,
+            location: 'Bilinmiyor',
+            ip_address: userIp,
+            status: 'error'
+          }]);
+
       } else {
-          // 2. İŞTE SİHİRLİ DOKUNUŞ: Middleware'in bizi içeri alması için çerez (cookie) oluşturuyoruz!
+          // 2. GİRİŞ BAŞARILI: IP ve Cihaz bilgisini alıp loglara yazıyoruz
+          let userIp = 'Bilinmiyor';
+          try {
+            const res = await fetch('https://api.ipify.org?format=json');
+            const ipData = await res.json();
+            userIp = ipData.ip;
+          } catch(e) {}
+
+          const userAgent = typeof window !== 'undefined' ? parseUserAgent(navigator.userAgent) : 'Bilinmeyen Cihaz';
+
+          // Admin Loglarına (Genel işlemler tablosu) yaz
+          await supabase.from('admin_logs').insert([{
+            action: 'Sisteme başarılı giriş yapıldı.',
+            user_email: email,
+            page_section: 'Giriş',
+            ip_address: userIp
+          }]);
+
+          // Giriş Geçmişi Loglarına (Özel login tablosu) yaz
+          await supabase.from('login_logs').insert([{
+            user_email: email,
+            device: userAgent,
+            location: 'Türkiye', // İleride detaylı konum API'si eklenebilir
+            ip_address: userIp,
+            status: 'success'
+          }]);
+
+          // 3. Middleware'in bizi içeri alması için çerez (cookie) oluşturuyoruz
           document.cookie = `sb-access-token=${data.session.access_token}; path=/; max-age=86400;`;
           
-          // 3. Başarılı olursa admin paneline yönlendir
+          // 4. Admin paneline yönlendir
           router.push('/admin');
           router.refresh(); 
       }

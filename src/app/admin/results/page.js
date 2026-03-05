@@ -211,6 +211,11 @@ export default function AdminResultsPage() {
   };
 
   async function updateSetting(key, value) {
+    // GÜVENLİK: Eğer editörse işlem yapmasına izin verme
+  if (userRole === 'Editor') {
+    showToast('Bu ayarı değiştirme yetkiniz bulunmuyor.', 'error');
+    return;
+  }
     const { error } = await supabase.from('settings').upsert({ key, value }, { onConflict: 'key' });
     if (error) {
       showToast('Hata: ' + error.message, 'error'); 

@@ -1,60 +1,45 @@
-// Yeni Kullanıcı veya Güncelleme İşlemi
-  const handleSaveUser = async (e) => {
-    e.preventDefault();
-    setSubmitting(true);
-    
-    try {
-      const res = await fetch('/api/admin/users', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action: userModal.mode === 'add' ? 'CREATE' : 'UPDATE',
-          ...userModal.data
-        })
+import { createClient } from '@supabase/supabase-js';
+import { NextResponse } from 'next/server';
+
+const supabaseAdmin = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE_KEY
+);
+
+export async function POST(request) {
+  try {
+    const { action, id, email, password, role, is_blocked } = await request.json();
+
+    if (action === 'CREATE') {
+      const { data, error } = await supabaseAdmin.auth.admin.createUser({
+        email: email,
+        password: password,
+        email_confirm: true
       });
-
-      // Gelen yanıtın JSON olup olmadığını kontrol et
-      const contentType = res.headers.get("content-type");
-      if (contentType && contentType.indexOf("application/json") !== -1) {
-        const result = await res.json();
-        if (!res.ok) throw new Error(result.error || 'Bilinmeyen bir hata olustu.');
-      } else {
-        throw new Error('API Baglantisi kurulamadi. Lütfen "src/app/api/admin/users/route.js" dosyasini kontrol edin ve sunucuyu yeniden baslatin.');
-      }
+      if (error) throw error;
       
-      showToast(userModal.mode === 'add' ? 'Kullanici basariyla olusturuldu.' : 'Kullanici guncellendi.', 'success');
-      setUserModal({ ...userModal, isOpen: false });
-      fetchPageData();
-    } catch (err) {
-      showToast('Hata: ' + err.message, 'error');
-    } finally {
-      setSubmitting(false);
+      await supabaseAdmin.from('user_profiles').update({ role: role }).eq('id', data.user.id);
+      return NextResponse.json({ success: true });
+    } 
+    
+    if (action === 'UPDATE') {
+      const banDuration = is_blocked ? '876000h' : 'none'; 
+      await supabaseAdmin.auth.admin.updateUserById(id, { ban_duration: banDuration });
+      
+      const { error } = await supabaseAdmin.from('user_profiles').update({ role, is_blocked }).eq('id', id);
+      if (error) throw error;
+      return NextResponse.json({ success: true });
     }
-  };
 
-  // Silme İşlemi
-  const handleDeleteUser = (id) => {
-    showConfirm('Bu kullaniciyi ve tum yetkilerini kalici olarak silmek istediginize emin misiniz?', async () => {
-      try {
-        const res = await fetch('/api/admin/users', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action: 'DELETE', id })
-        });
-        
-        const contentType = res.headers.get("content-type");
-        if (contentType && contentType.indexOf("application/json") !== -1) {
-          const result = await res.json();
-          if (!res.ok) throw new Error(result.error);
-        } else {
-          throw new Error('API Baglantisi kurulamadi.');
-        }
-        
-        showToast('Kullanici silindi.', 'success');
-        setUsersList(prev => prev.filter(u => u.id !== id));
-      } catch (err) {
-        showToast('Hata: ' + err.message, 'error');
-      }
-      closeConfirm();
-    });
-  };
+    if (action === 'DELETE') {
+      const { error } = await supabaseAdmin.auth.admin.deleteUser(id);
+      if (error) throw error;
+      return NextResponse.json({ success: true });
+    }
+
+    return NextResponse.json({ error: 'Geçersiz işlem.' }, { status: 400 });
+
+  } catch (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+}

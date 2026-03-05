@@ -26,9 +26,45 @@ const ConfirmModal = ({ isOpen, message, onConfirm, onCancel }) => {
         <div className="adm-modal-icon"><i className="fas fa-exclamation-triangle" style={{color:'var(--red)'}} /></div>
         <h3>Emin misiniz?</h3><p>{message}</p>
         <div className="adm-modal-btns">
-          <button className="adm-btn adm-btn-ghost" onClick={onCancel}>Vazgec</button>
+          <button className="adm-btn adm-btn-ghost" onClick={onCancel}>Vazgeç</button>
           <button className="adm-btn adm-btn-danger" style={{background:'var(--red)', color:'white', border:'none'}} onClick={onConfirm}>Evet, Onayla</button>
         </div>
+      </div>
+    </div>
+  );
+};
+
+/* ✨ YENİ: PASSWORD STRENGTH COMPONENT'İ ✨ */
+const PasswordStrength = ({ password }) => {
+  const getStrength = (pwd) => {
+    if (!pwd) return { score: 0, label: '', color: '' };
+    let score = 0;
+    if (pwd.length >= 8) score++;
+    if (pwd.length >= 12) score++;
+    if (/[A-Z]/.test(pwd)) score++;
+    if (/[0-9]/.test(pwd)) score++;
+    if (/[^A-Za-z0-9]/.test(pwd)) score++;
+    if (score <= 1) return { score, label: 'Çok Zayıf', color: '#ef4444' };
+    if (score === 2) return { score, label: 'Zayıf', color: '#f97316' };
+    if (score === 3) return { score, label: 'Orta', color: '#eab308' };
+    if (score === 4) return { score, label: 'Güçlü', color: '#22c55e' };
+    return { score: 5, label: 'Çok Güçlü', color: '#10b981' };
+  };
+  const { score, label, color } = getStrength(password);
+  if (!password) return null;
+  return (
+    <div style={{ marginTop: '8px' }}>
+      <div style={{ display: 'flex', gap: '4px', marginBottom: '6px' }}>
+        {[1,2,3,4,5].map(i => (
+          <div key={i} style={{
+            flex: 1, height: '4px', borderRadius: '2px',
+            background: i <= score ? color : 'rgba(255,255,255,0.08)',
+            transition: 'background 0.3s ease'
+          }} />
+        ))}
+      </div>
+      <div style={{ fontSize: '0.72rem', color, fontWeight: 600, letterSpacing: '0.04em' }}>
+        {label}
       </div>
     </div>
   );
@@ -55,15 +91,14 @@ const UserModal = ({ isOpen, mode, formData, setFormData, onClose, onSave, loadi
             <div className="adm-form-item">
               <label style={{fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', textTransform: 'uppercase'}}>Sifre (En az 6 karakter)</label>
               <input className="adm-input" type="text" placeholder="******" value={formData.password} onChange={e=>setFormData({...formData, password: e.target.value})} required minLength={6} style={{width: '100%', boxSizing:'border-box'}} />
+              <PasswordStrength password={formData.password} /> {/* ✨ ZORLUK DERECESİ EKLENDİ */}
             </div>
           )}
           
           <div className="adm-form-item">
             <label style={{fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', textTransform: 'uppercase'}}>Yetki Rolu</label>
             <select className="adm-input" value={formData.role} onChange={e=>setFormData({...formData, role: e.target.value})} style={{width: '100%', boxSizing:'border-box', cursor:'pointer', appearance:'none'}}>
-              <option value="Admin">Admin</option>
-              <option value="Editor">Editor</option>
-              <option value="Super Admin">Super Admin</option>
+              <option value="Editor">Editor</option> {/* ✨ SADECE EDİTÖR SEÇENEĞİ KALDI */}
             </select>
           </div>
           
@@ -97,7 +132,6 @@ export default function AdminUsersPage() {
   
   const [currentUser, setCurrentUser] = useState(null);
   
-  // Users Data State
   const [usersList, setUsersList] = useState([]);
 
   const [unreadMsgCount, setUnreadMsgCount] = useState(0);
@@ -106,10 +140,9 @@ export default function AdminUsersPage() {
   const [partnersCount, setPartnersCount] = useState(0);
   const [resultsCount, setResultsCount] = useState(0);
 
-  // Modal & Form States
   const [toast, setToast] = useState(null);
   const [confirmModal, setConfirmModal] = useState({ isOpen: false, message: '', onConfirm: null });
-  const [userModal, setUserModal] = useState({ isOpen: false, mode: 'add', data: { id: '', email: '', password: '', role: 'Admin', is_blocked: false } });
+  const [userModal, setUserModal] = useState({ isOpen: false, mode: 'add', data: { id: '', email: '', password: '', role: 'Editor', is_blocked: false } });
   const [submitting, setSubmitting] = useState(false);
 
   const showToast = (message, type = 'success') => { setToast({ message, type }); setTimeout(() => setToast(null), 3500); };
@@ -118,7 +151,6 @@ export default function AdminUsersPage() {
 
   const fetchPageData = useCallback(async () => {
     try {
-      // Rozet sayıları
       const { count: msgCount } = await supabase.from('contact_messages').select('*', { count: 'exact', head: true }).eq('is_read', false);
       const { count: nCount } = await supabase.from('news').select('*', { count: 'exact', head: true });
       const { count: aCount } = await supabase.from('activities').select('*', { count: 'exact', head: true });
@@ -131,7 +163,6 @@ export default function AdminUsersPage() {
       if (pCount) setPartnersCount(pCount);
       if (rCount) setResultsCount(rCount);
 
-      // Kullanıcı Profillerini Çek
       const { data: profiles } = await supabase.from('user_profiles').select('*').order('created_at', { ascending: true });
       if (profiles) setUsersList(profiles);
 
@@ -154,7 +185,6 @@ export default function AdminUsersPage() {
     return () => { isMounted = false; };
   }, [router, fetchPageData]);
 
-  // Yeni Kullanıcı veya Güncelleme İşlemi (API Üzerinden)
   const handleSaveUser = async (e) => {
     e.preventDefault();
     setSubmitting(true);
@@ -168,9 +198,14 @@ export default function AdminUsersPage() {
           ...userModal.data
         })
       });
-      const result = await res.json();
       
-      if (!res.ok) throw new Error(result.error || 'Bilinmeyen bir hata olustu.');
+      const contentType = res.headers.get("content-type");
+      if (contentType && contentType.indexOf("application/json") !== -1) {
+        const result = await res.json();
+        if (!res.ok) throw new Error(result.error || 'Bilinmeyen bir hata olustu.');
+      } else {
+        throw new Error('Sunucu yaniti JSON degil. API URL yolu veya route.js dosyasi hatali.');
+      }
       
       showToast(userModal.mode === 'add' ? 'Kullanici basariyla olusturuldu.' : 'Kullanici guncellendi.', 'success');
       setUserModal({ ...userModal, isOpen: false });
@@ -182,7 +217,6 @@ export default function AdminUsersPage() {
     }
   };
 
-  // Silme İşlemi (API Üzerinden)
   const handleDeleteUser = (id) => {
     showConfirm('Bu kullaniciyi ve tum yetkilerini kalici olarak silmek istediginize emin misiniz?', async () => {
       try {
@@ -191,8 +225,14 @@ export default function AdminUsersPage() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ action: 'DELETE', id })
         });
-        const result = await res.json();
-        if (!res.ok) throw new Error(result.error);
+
+        const contentType = res.headers.get("content-type");
+        if (contentType && contentType.indexOf("application/json") !== -1) {
+          const result = await res.json();
+          if (!res.ok) throw new Error(result.error);
+        } else {
+          throw new Error('Sunucu yaniti JSON degil. API URL yolu veya route.js dosyasi hatali.');
+        }
         
         showToast('Kullanici silindi.', 'success');
         setUsersList(prev => prev.filter(u => u.id !== id));
@@ -203,10 +243,11 @@ export default function AdminUsersPage() {
     });
   };
 
+  const currentPath = typeof window !== 'undefined' ? window.location.pathname : '';
   const NAV = [
-    { id: 'dashboard', label: 'Dashboard', icon: 'fas fa-chart-pie', group: 'Genel', link: '/admin' },
-    { id: 'messages', label: `Mesajlar`, icon: 'fas fa-inbox', badge: unreadMsgCount, group: 'Genel', link: '/admin/messages' },
-    { id: 'home', label: 'Ana Sayfa', icon: 'fas fa-house', group: 'Icerik', link: '/admin/homepage' },
+    { id: 'dashboard', label: 'Dashboard', icon: 'fas fa-chart-pie', group: 'Genel', link: '/admin', active: currentPath === '/admin' },
+    { id: 'messages', label: `Mesajlar`, icon: 'fas fa-inbox', badge: typeof unreadMsgCount !== 'undefined' ? unreadMsgCount : 0, group: 'Genel', link: '/admin/messages', active: currentPath === '/admin/messages' },
+    { id: 'home', label: 'Ana Sayfa', icon: 'fas fa-house', group: 'Icerik', link: '/admin/homepage', active: currentPath === '/admin/homepage' },
     { 
       id: 'about', label: 'Hakkinda', icon: 'fas fa-circle-info', group: 'Icerik',
       subItems: [
@@ -218,15 +259,15 @@ export default function AdminUsersPage() {
         { id: 'strategy', label: 'Strateji', tab: 'strategy' }
       ]
     },
-    { id: 'news', label: 'Haberler', icon: 'fas fa-newspaper', badge: newsCount, group: 'Icerik', link: '/admin/news' },
-    { id: 'activities', label: 'Faaliyetler', icon: 'fas fa-calendar-check', badge: activitiesCount, group: 'Icerik', link: '/admin/activities' },
-    { id: 'partners', label: 'Ortaklar', icon: 'fas fa-handshake', badge: partnersCount, group: 'Icerik', link: '/admin/partners' },
-    { id: 'results', label: 'Dosyalar', icon: 'fas fa-file-circle-check', badge: resultsCount, group: 'Icerik', link: '/admin/results' },
-    { id: 'contact', label: 'Iletisim', icon: 'fas fa-phone', group: 'Icerik', link: '/admin/contact' },
-    { id: 'site', label: 'Header/Footer', icon: 'fas fa-sliders', group: 'Icerik', link: '/admin/site' },
-    { id: 'users', label: 'Kullanicilar', icon: 'fas fa-users', group: 'Ayarlar', link: '/admin/users', active: true },
-    { id: 'logs', label: 'Loglar', icon: 'fas fa-list', group: 'Ayarlar', link: '/admin/logs' },
-    { id: 'security', label: 'Sifre & Guvenlik', icon: 'fas fa-lock', group: 'Ayarlar', link: '/admin/security' },
+    { id: 'news', label: 'Haberler', icon: 'fas fa-newspaper', badge: typeof newsCount !== 'undefined' ? newsCount : (typeof news !== 'undefined' ? news.length : 0), group: 'Icerik', link: '/admin/news', active: currentPath === '/admin/news' },
+    { id: 'activities', label: 'Faaliyetler', icon: 'fas fa-calendar-check', badge: typeof activitiesCount !== 'undefined' ? activitiesCount : (typeof activities !== 'undefined' ? activities.length : 0), group: 'Icerik', link: '/admin/activities', active: currentPath === '/admin/activities' },
+    { id: 'partners', label: 'Ortaklar', icon: 'fas fa-handshake', badge: typeof partnersCount !== 'undefined' ? partnersCount : (typeof partners !== 'undefined' ? partners.length : 0), group: 'Icerik', link: '/admin/partners', active: currentPath === '/admin/partners' },
+    { id: 'results', label: 'Dosyalar', icon: 'fas fa-file-circle-check', badge: typeof resultsCount !== 'undefined' ? resultsCount : (typeof results !== 'undefined' ? results.length : 0), group: 'Icerik', link: '/admin/results', active: currentPath === '/admin/results' },
+    { id: 'contact', label: 'Iletisim', icon: 'fas fa-phone', group: 'Icerik', link: '/admin/contact', active: currentPath === '/admin/contact' },
+    { id: 'site', label: 'Header/Footer', icon: 'fas fa-sliders', group: 'Icerik', link: '/admin/site', active: currentPath === '/admin/site' },
+    { id: 'users', label: 'Kullanicilar', icon: 'fas fa-users', group: 'Ayarlar', link: '/admin/users', active: currentPath === '/admin/users' },
+    { id: 'logs', label: 'Loglar', icon: 'fas fa-list', group: 'Ayarlar', link: '/admin/logs', active: currentPath === '/admin/logs' },
+    { id: 'security', label: 'Sifre & Guvenlik', icon: 'fas fa-lock', group: 'Ayarlar', link: '/admin/security', active: currentPath === '/admin/security' },
   ];
 
   const groupedNav = NAV.reduce((acc, item) => {
@@ -495,7 +536,7 @@ export default function AdminUsersPage() {
                 {/* ✨ YENİ KULLANICI EKLE BUTONU ✨ */}
                 <button 
                   className="adm-btn adm-btn-save" 
-                  onClick={() => setUserModal({ isOpen: true, mode: 'add', data: { id: '', email: '', password: '', role: 'Admin', is_blocked: false } })}
+                  onClick={() => setUserModal({ isOpen: true, mode: 'add', data: { id: '', email: '', password: '', role: 'Editor', is_blocked: false } })}
                 >
                   <i className="fas fa-plus"></i> Yeni Kullanici
                 </button>
@@ -512,7 +553,6 @@ export default function AdminUsersPage() {
                      </tr>
                    </thead>
                    <tbody>
-                     {/* ✨ LİSTEYİ VERİTABANINDAN ÇEKİP BASTIRDIK ✨ */}
                      {usersList.map(user => (
                        <tr key={user.id} style={{borderBottom: '1px solid var(--border)'}}>
                          <td style={{padding: '16px 20px', fontWeight: '600', color: 'var(--text-primary)'}}>
@@ -521,7 +561,7 @@ export default function AdminUsersPage() {
                          </td>
                          <td style={{padding: '16px 20px'}}>
                            <span className={`adm-badge ${user.role === 'Super Admin' ? 'adm-badge-green' : user.role === 'Admin' ? 'adm-badge-blue' : 'adm-badge-gray'}`}>
-                             {user.role || 'Admin'}
+                             {user.role || 'Editor'}
                            </span>
                          </td>
                          <td style={{padding: '16px 20px'}}>
@@ -536,7 +576,6 @@ export default function AdminUsersPage() {
                                <i className="fas fa-pen" /> Duzenle
                              </button>
                              
-                             {/* Kendisini silmesini engelliyoruz */}
                              {user.id !== currentUser?.id && (
                                <button className="adm-btn adm-btn-danger" onClick={() => handleDeleteUser(user.id)} style={{height:'32px', fontSize:'0.78rem'}}>
                                  <i className="fas fa-trash" /> Sil
