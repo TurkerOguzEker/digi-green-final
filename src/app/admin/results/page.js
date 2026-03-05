@@ -137,7 +137,18 @@ export default function AdminResultsPage() {
   const [partnersCount, setPartnersCount] = useState(0);
 
   // Form State
-  const [resultForm, setResultForm] = useState({ id: null, title: '', title_en: '', description: '', description_en: '', status: 'Planlaniyor', status_en: '', link: '', icon: 'file' });
+ // Form State - Başlangıç değerlerini boş string yaparak hatayı engelliyoruz
+const [resultForm, setResultForm] = useState({ 
+  id: null, 
+  title: '', 
+  title_en: '', 
+  description: '', 
+  description_en: '', 
+  status: 'Planlaniyor', 
+  status_en: 'Planned', 
+  link: '', 
+  icon: 'file' 
+});
   const [isEditing, setIsEditing] = useState(false);
 
   const [toast, setToast] = useState(null);
@@ -283,7 +294,17 @@ export default function AdminResultsPage() {
     await logAction(`Dosyalar tablosunda islem yapildi. (Ekleme/Guncelleme)`);
     fetchPageData(); 
     showToast('Basariyla kaydedildi.', 'success');
-    setResultForm({ id: null, title: '', title_en: '', description: '', description_en: '', status: 'Planlaniyor', status_en: '', link: '', icon: 'file' });
+    setResultForm({ 
+  id: null, 
+  title: '', 
+  title_en: '', 
+  description: '', 
+  description_en: '', 
+  status: 'Planlaniyor', 
+  status_en: 'Planned', 
+  link: '', 
+  icon: 'file' 
+});
   }
 
   function startEdit(item) {
@@ -709,10 +730,12 @@ export default function AdminResultsPage() {
                        <label>Dosya Basligi (TR) *</label>
                        <input className="adm-input-full" placeholder="Dosya basligi..." value={resultForm.title} onChange={e => setResultForm({...resultForm, title: e.target.value})} required />
                      </div>
-                     <div className="adm-form-item">
-                       <label>Dosya Basligi (EN)</label>
-                       <input className="adm-input-full" placeholder="File title..." value={resultForm.title_en} onChange={e => setResultForm({...resultForm, title_en: e.target.value})} />
-                     </div>
+                     <input 
+  className="adm-input-full" 
+  placeholder="File title..." 
+  value={resultForm.title_en || ''} // ✨ Buraya || '' ekledik
+  onChange={e => setResultForm({...resultForm, title_en: e.target.value})} 
+/>
                  </div>
 
                  <div className="adm-form-grid2">

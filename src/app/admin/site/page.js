@@ -1,4 +1,3 @@
-// src/app/admin/site/page.js
 'use client';
 import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
@@ -78,6 +77,7 @@ export default function AdminSiteSettingsPage() {
   const [loading, setLoading] = useState(true);
   
   const [currentUser, setCurrentUser] = useState(null);
+  const [userRole, setUserRole] = useState('Editor'); // ✨ Rol State'i
   const [userIp, setUserIp] = useState('Bilinmiyor');
 
   // Data States
@@ -123,7 +123,21 @@ export default function AdminSiteSettingsPage() {
     async function load() {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) { router.push('/login'); return; }
-      if (isMounted) setCurrentUser(session.user);
+
+      // ✨ GÜVENLİK BEKÇİSİ (CLIENT-SIDE GUARD) ✨
+      const { data: profile } = await supabase.from('user_profiles').select('role').eq('id', session.user.id).single();
+      const role = profile?.role || 'Editor';
+
+      // Eğer Editör girmeye çalışıyorsa, sayfayı hiç yüklemeden anında Dashboard'a fırlat!
+      if (role === 'Editor') {
+        router.replace('/admin');
+        return; 
+      }
+
+      if (isMounted) {
+        setCurrentUser(session.user);
+        setUserRole(role);
+      }
 
       try {
         const res = await fetch('https://api.ipify.org?format=json');
@@ -158,6 +172,8 @@ export default function AdminSiteSettingsPage() {
   };
 
   async function updateSetting(key, value) {
+    if (userRole === 'Editor') return; // Ekstra Güvenlik Koruması
+
     const { error } = await supabase.from('settings').upsert({ key, value }, { onConflict: 'key' });
     if (error) {
       showToast('Hata: ' + error.message, 'error'); 
@@ -181,12 +197,14 @@ export default function AdminSiteSettingsPage() {
   const commonProps = { settings, handleSettingChange, updateSetting, uploadFile };
 
   const currentPath = typeof window !== 'undefined' ? window.location.pathname : '';
-  const NAV = [
-    { id: 'dashboard', label: 'Dashboard', icon: 'fas fa-chart-pie', group: 'Genel', link: '/admin', active: currentPath === '/admin' },
-    { id: 'messages', label: `Mesajlar`, icon: 'fas fa-inbox', badge: typeof unreadMsgCount !== 'undefined' ? unreadMsgCount : 0, group: 'Genel', link: '/admin/messages', active: currentPath === '/admin/messages' },
-    { id: 'home', label: 'Ana Sayfa', icon: 'fas fa-house', group: 'Icerik', link: '/admin/homepage', active: currentPath === '/admin/homepage' },
+  
+  // ✨ MENÜ FİLTRELEME İÇİN ROLLER EKLENDİ
+  const fullNAV = [
+    { id: 'dashboard', label: 'Dashboard', icon: 'fas fa-chart-pie', group: 'Genel', link: '/admin', active: currentPath === '/admin', roles: ['Super Admin', 'Admin', 'Editor'] },
+    { id: 'messages', label: `Mesajlar`, icon: 'fas fa-inbox', badge: unreadMsgCount, group: 'Genel', link: '/admin/messages', active: currentPath === '/admin/messages', roles: ['Super Admin', 'Admin', 'Editor'] },
+    { id: 'home', label: 'Ana Sayfa', icon: 'fas fa-house', group: 'Icerik', link: '/admin/homepage', active: currentPath === '/admin/homepage', roles: ['Super Admin', 'Admin'] },
     { 
-      id: 'about', label: 'Hakkinda', icon: 'fas fa-circle-info', group: 'Icerik',
+      id: 'about', label: 'Hakkinda', icon: 'fas fa-circle-info', group: 'Icerik', roles: ['Super Admin', 'Admin'],
       subItems: [
         { id: 'general', label: 'Genel Hakkinda', tab: 'general' },
         { id: 'consortium', label: 'Konsorsiyum', tab: 'consortium' },
@@ -196,24 +214,23 @@ export default function AdminSiteSettingsPage() {
         { id: 'strategy', label: 'Strateji', tab: 'strategy' }
       ]
     },
-    { id: 'news', label: 'Haberler', icon: 'fas fa-newspaper', badge: typeof newsCount !== 'undefined' ? newsCount : (typeof news !== 'undefined' ? news.length : 0), group: 'Icerik', link: '/admin/news', active: currentPath === '/admin/news' },
-    { id: 'activities', label: 'Faaliyetler', icon: 'fas fa-calendar-check', badge: typeof activitiesCount !== 'undefined' ? activitiesCount : (typeof activities !== 'undefined' ? activities.length : 0), group: 'Icerik', link: '/admin/activities', active: currentPath === '/admin/activities' },
-    { id: 'partners', label: 'Ortaklar', icon: 'fas fa-handshake', badge: typeof partnersCount !== 'undefined' ? partnersCount : (typeof partners !== 'undefined' ? partners.length : 0), group: 'Icerik', link: '/admin/partners', active: currentPath === '/admin/partners' },
-    { id: 'results', label: 'Dosyalar', icon: 'fas fa-file-circle-check', badge: typeof resultsCount !== 'undefined' ? resultsCount : (typeof results !== 'undefined' ? results.length : 0), group: 'Icerik', link: '/admin/results', active: currentPath === '/admin/results' },
-    { id: 'contact', label: 'Iletisim', icon: 'fas fa-phone', group: 'Icerik', link: '/admin/contact', active: currentPath === '/admin/contact' },
-    { id: 'site', label: 'Header/Footer', icon: 'fas fa-sliders', group: 'Icerik', link: '/admin/site', active: currentPath === '/admin/site' },
-    { id: 'users', label: 'Kullanicilar', icon: 'fas fa-users', group: 'Ayarlar', link: '/admin/users', active: currentPath === '/admin/users' },
-    { id: 'logs', label: 'Loglar', icon: 'fas fa-list', group: 'Ayarlar', link: '/admin/logs', active: currentPath === '/admin/logs' },
-    { id: 'security', label: 'Sifre & Guvenlik', icon: 'fas fa-lock', group: 'Ayarlar', link: '/admin/security', active: currentPath === '/admin/security' },
+    { id: 'news', label: 'Haberler', icon: 'fas fa-newspaper', badge: newsCount, group: 'Icerik', link: '/admin/news', active: currentPath === '/admin/news', roles: ['Super Admin', 'Admin', 'Editor'] },
+    { id: 'activities', label: 'Faaliyetler', icon: 'fas fa-calendar-check', badge: activitiesCount, group: 'Icerik', link: '/admin/activities', active: currentPath === '/admin/activities', roles: ['Super Admin', 'Admin', 'Editor'] },
+    { id: 'partners', label: 'Ortaklar', icon: 'fas fa-handshake', badge: partnersCount, group: 'Icerik', link: '/admin/partners', active: currentPath === '/admin/partners', roles: ['Super Admin', 'Admin'] },
+    { id: 'results', label: 'Dosyalar', icon: 'fas fa-file-circle-check', badge: resultsCount, group: 'Icerik', link: '/admin/results', active: currentPath === '/admin/results', roles: ['Super Admin', 'Admin', 'Editor'] },
+    { id: 'contact', label: 'Iletisim', icon: 'fas fa-phone', group: 'Icerik', link: '/admin/contact', active: currentPath === '/admin/contact', roles: ['Super Admin', 'Admin'] },
+    { id: 'site', label: 'Header/Footer', icon: 'fas fa-sliders', group: 'Icerik', link: '/admin/site', active: currentPath === '/admin/site', roles: ['Super Admin', 'Admin'] },
+    { id: 'users', label: 'Kullanicilar', icon: 'fas fa-users', group: 'Ayarlar', link: '/admin/users', active: currentPath === '/admin/users', roles: ['Super Admin'] },
+    { id: 'logs', label: 'Loglar', icon: 'fas fa-list', group: 'Ayarlar', link: '/admin/logs', active: currentPath === '/admin/logs', roles: ['Super Admin', 'Admin', 'Editor'] },
+    { id: 'security', label: 'Sifre & Guvenlik', icon: 'fas fa-lock', group: 'Ayarlar', link: '/admin/security', active: currentPath === '/admin/security', roles: ['Super Admin', 'Admin'] },
   ];
 
-  const groupedNav = NAV.reduce((acc, item) => {
+  const allowedNav = fullNAV.filter(nav => nav.roles.includes(userRole));
+  const groupedNav = allowedNav.reduce((acc, item) => {
     if (!acc[item.group]) acc[item.group] = [];
     acc[item.group].push(item);
     return acc;
   }, {});
-
-  const currentTab = NAV.find(n => n.id === 'site');
 
   if (loading) return <div className="adm-loading"><div className="adm-loading-spinner" /><p>Yukleniyor...</p></div>;
 
@@ -259,8 +276,8 @@ export default function AdminSiteSettingsPage() {
         .adm-topbar-title { font-family: var(--font-display); font-size: 0.95rem; font-weight: 700; color: var(--text-primary); flex: 1; }
         
         .adm-content { padding: 32px; flex: 1; }
-        .adm-page-header { margin-bottom: 28px; }
-        .adm-page-title { font-family: var(--font-display); font-size: 1.5rem; font-weight: 700; color: var(--text-primary); letter-spacing: -0.02em; line-height: 1.2; text-transform: capitalize; }
+        .adm-page-header { margin-bottom: 28px; display: flex; justify-content: space-between; align-items: flex-end; }
+        .adm-page-title { font-family: var(--font-display); font-size: 1.5rem; font-weight: 700; color: var(--text-primary); letter-spacing: -0.02em; line-height: 1.2; text-transform: capitalize; display: flex; align-items: center; gap: 10px; }
         .adm-page-title em { color: var(--accent); font-style: normal; }
         .adm-section { margin-bottom: 36px; background: var(--surface-2); padding: 20px; border-radius: 14px; border: 1px dashed var(--border); }
 
@@ -282,7 +299,7 @@ export default function AdminSiteSettingsPage() {
         .adm-btn { display: inline-flex; align-items: center; justify-content: center; gap: 7px; border: none; border-radius: 8px; font-family: var(--font); font-size: 0.8rem; font-weight: 600; cursor: pointer; transition: var(--transition); white-space: nowrap; line-height: 1; padding: 0 16px; height: 38px; }
         .adm-btn-save { background: var(--accent); color: #000; }
         .adm-btn-save:hover { background: #16a34a; transform: translateY(-1px); box-shadow: 0 4px 14px var(--accent-glow); }
-        
+
         .adm-img-field { display: flex; gap: 8px; align-items: center; width: 100%; }
         .adm-img-preview-wrap { flex: 1; display: flex; align-items: center; background: var(--surface-2); border: 1px solid var(--border); border-radius: 8px; padding: 6px 10px; gap: 10px; overflow: hidden; }
         .adm-img-thumb { width: 32px; height: 32px; object-fit: cover; border-radius: 5px; flex-shrink: 0; }
@@ -311,6 +328,10 @@ export default function AdminSiteSettingsPage() {
         @keyframes spin { to { transform: rotate(360deg); } }
         @keyframes slideIn { from { transform: translateX(110%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
         @keyframes topbarDropdown { from { opacity: 0; transform: translateY(-6px) scale(0.97); } to { opacity: 1; transform: translateY(0); } }
+
+        /* YENI: Link Butonu CSS */
+        .adm-external-link { background: var(--surface-2); border: 1px solid var(--border); color: var(--text-secondary); width: 34px; height: 34px; border-radius: 8px; display: flex; align-items: center; justify-content: center; text-decoration: none; transition: all var(--transition); margin-left: 10px; }
+        .adm-external-link:hover { background: var(--accent-dim); color: var(--accent); border-color: var(--accent); transform: translateY(-1px); box-shadow: 0 4px 12px var(--accent-glow); }
       `}</style>
 
       <div className="adm-layout">
@@ -335,6 +356,7 @@ export default function AdminSiteSettingsPage() {
               <div key={group} className="adm-nav-section">
                 <div className="adm-nav-label">{group}</div>
                 {items.map(item => {
+                  
                   if (item.subItems) {
                     return (
                       <div key={item.id}>
@@ -377,6 +399,7 @@ export default function AdminSiteSettingsPage() {
                       </Link>
                     );
                   }
+
                   return null;
                 })}
               </div>
@@ -387,22 +410,20 @@ export default function AdminSiteSettingsPage() {
         <main className="adm-main">
           <div className="adm-topbar">
             <div className="adm-topbar-title">
-              {currentTab && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                  <div style={{
-                    width: '34px', height: '34px',
-                    background: 'linear-gradient(135deg, var(--accent), var(--accent-dim, #6366f180))',
-                    borderRadius: '10px',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    boxShadow: '0 4px 12px var(--accent-glow, rgba(99,102,241,0.35))',
-                  }}>
-                    <i className={currentTab.icon} style={{ color: '#fff', fontSize: '0.85rem' }} />
-                  </div>
-                  <span style={{ fontWeight: 600, letterSpacing: '-0.01em' }}>
-                    {currentTab.label}
-                  </span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <div style={{
+                  width: '34px', height: '34px',
+                  background: 'linear-gradient(135deg, var(--accent), var(--accent-dim, #6366f180))',
+                  borderRadius: '10px',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  boxShadow: '0 4px 12px var(--accent-glow, rgba(99,102,241,0.35))',
+                }}>
+                  <i className="fas fa-sliders" style={{ color: '#fff', fontSize: '0.85rem' }} />
                 </div>
-              )}
+                <span style={{ fontWeight: 600, letterSpacing: '-0.01em' }}>
+                  Header / Footer Ayarlari
+                </span>
+              </div>
             </div>
             
             <div style={{ position: 'relative', display: 'flex', alignItems: 'center', height: '100%' }}>
@@ -421,14 +442,38 @@ export default function AdminSiteSettingsPage() {
                   outline: 'none',
                   userSelect: 'none',
                 }}
+                onMouseEnter={e => {
+                  e.currentTarget.style.borderColor = 'var(--accent, #6366f1)';
+                  e.currentTarget.style.background = 'var(--surface-3, rgba(255,255,255,0.08))';
+                }}
+                onMouseLeave={e => {
+                  if (!profileOpen) {
+                    e.currentTarget.style.borderColor = 'var(--border, rgba(255,255,255,0.08))';
+                    e.currentTarget.style.background = 'var(--surface-2, rgba(255,255,255,0.04))';
+                  }
+                }}
               >
-                <div style={{ width: '28px', height: '28px', background: 'linear-gradient(135deg, #22c55e, #16a34a)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 700, fontSize: '0.85rem', lineHeight: 1, paddingBottom: '1px', flexShrink: 0, boxShadow: '0 2px 8px rgba(34, 197, 94, 0.4)' }}>
+                <div style={{
+                  width: '28px', height: '28px',
+                  background: 'linear-gradient(135deg, #22c55e, #16a34a)',
+                  borderRadius: '50%',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  color: '#fff', fontWeight: 700, fontSize: '0.85rem',
+                  lineHeight: 1, paddingBottom: '1px',
+                  flexShrink: 0,
+                  boxShadow: '0 2px 8px rgba(34, 197, 94, 0.4)',
+                }}>
                   {currentUser?.email ? currentUser.email.charAt(0).toUpperCase() : 'A'}
                 </div>
+
                 <span style={{ fontSize: '0.85rem', fontWeight: 500, maxWidth: '130px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                   {currentUser?.email?.split('@')[0] || 'Admin'}
                 </span>
-                <i className={`fas fa-chevron-${profileOpen ? 'up' : 'down'}`} style={{ fontSize: '0.7rem', opacity: 0.5, transition: 'transform 0.2s ease', transform: profileOpen ? 'rotate(180deg)' : 'rotate(0deg)' }} />
+
+                <i
+                  className={`fas fa-chevron-${profileOpen ? 'up' : 'down'}`}
+                  style={{ fontSize: '0.7rem', opacity: 0.5, transition: 'transform 0.2s ease', transform: profileOpen ? 'rotate(180deg)' : 'rotate(0deg)' }}
+                />
               </button>
 
               {profileOpen && (
@@ -440,11 +485,11 @@ export default function AdminSiteSettingsPage() {
                         {currentUser?.email ? currentUser.email.charAt(0).toUpperCase() : 'A'}
                       </div>
                       <div style={{ overflow: 'hidden' }}>
-                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', margin: 0 }}>Oturum acik</div>
-                        <div style={{ fontSize: '0.85rem', fontWeight: 600, color: '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{currentUser?.email}</div>
+                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '2px' }}>Oturum acik</div>
+                        <div style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{currentUser?.email}</div>
                       </div>
                     </div>
-                    <button onClick={async () => { await supabase.auth.signOut(); router.push('/login'); }} style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '10px', padding: '11px 14px', background: 'transparent', border: '1px solid transparent', borderRadius: '10px', cursor: 'pointer', color: '#f87171', fontSize: '0.875rem', fontWeight: 500, transition: 'all 0.15s ease', textAlign: 'left' }}>
+                    <button onClick={async () => { await supabase.auth.signOut(); router.push('/login'); }} style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '10px', padding: '11px 14px', background: 'transparent', border: '1px solid transparent', borderRadius: '10px', cursor: 'pointer', color: '#f87171', fontSize: '0.875rem', fontWeight: 500, transition: 'all 0.15s ease', textAlign: 'left' }} onMouseEnter={e => { e.currentTarget.style.background = 'rgba(248,113,113,0.1)'; e.currentTarget.style.borderColor = 'rgba(248,113,113,0.25)'; }} onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.borderColor = 'transparent'; }}>
                       <i className="fas fa-arrow-right-from-bracket" style={{ fontSize: '0.9rem', width: '16px' }} />
                       Cikis Yap
                     </button>
@@ -457,7 +502,13 @@ export default function AdminSiteSettingsPage() {
           <div className="adm-content">
             <div className="adm-fade-in">
               <div className="adm-page-header">
-                <div className="adm-page-title">Header / <em>Footer</em></div>
+                <div className="adm-page-title">
+                  Header / <em>Footer</em>
+                  {/* ✨ SİTEYE GİT BUTONU EKLENDİ ✨ */}
+                  <a href="/" target="_blank" rel="noopener noreferrer" className="adm-external-link" title="Sitede Goruntule">
+                    <i className="fas fa-external-link-alt"></i>
+                  </a>
+                </div>
               </div>
 
               <div className="adm-section" style={{ background: 'var(--surface-2)', padding: '20px', borderRadius: '14px', border: '1px dashed var(--border)', marginBottom: '30px' }}>

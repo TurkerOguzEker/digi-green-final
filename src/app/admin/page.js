@@ -51,6 +51,7 @@ export default function AdminDashboardPage() {
   const [contentDist, setContentDist] = useState([]);
   
   const [loginAlerts, setLoginAlerts] = useState([]);
+  const [notifSeen, setNotifSeen] = useState(false); // ← EKLE
   const notifRef = useRef(null);
 
   useEffect(() => {
@@ -158,7 +159,7 @@ export default function AdminDashboardPage() {
     } catch (err) { console.error('Dashboard error:', err); } finally { setLoading(false); }
   }, []);
 
-  useEffect(() => {
+useEffect(() => {
     let mounted = true;
     async function init() {
       const { data: { session } } = await supabase.auth.getSession();
@@ -166,7 +167,7 @@ export default function AdminDashboardPage() {
       
       if (mounted) {
         setCurrentUser(session.user);
-        // ✨ ROLÜ ÇEK
+        // Sadece rolü çekiyoruz, kimseyi Dışarı ATMIYORUZ çünkü burası Ana Dashboard
         const { data: profile } = await supabase.from('user_profiles').select('role').eq('id', session.user.id).single();
         if (profile) setUserRole(profile.role);
       }
@@ -412,10 +413,28 @@ export default function AdminDashboardPage() {
               
               {/* ✨ BİLDİRİM BUTONU ✨ */}
               <div style={{ position: 'relative' }} ref={notifRef}>
-                <button className={`adm-notif-btn ${notifOpen ? 'active' : ''}`} onClick={() => setNotifOpen(!notifOpen)}>
-                  <i className="fas fa-bell" />
-                  {loginAlerts.length > 0 && <span className="adm-notif-badge">{loginAlerts.length}</span>}
-                </button>
+               {(userRole === 'Super Admin' || userRole === 'Admin') && (
+  <div style={{ position: 'relative' }} ref={notifRef}>
+    <button
+      className={`adm-notif-btn ${notifOpen ? 'active' : ''}`}
+      onClick={() => {
+        setNotifOpen(!notifOpen);
+        setNotifSeen(true); // rozeti kaldır
+      }}
+    >
+      <i className="fas fa-bell" />
+      {loginAlerts.length > 0 && !notifSeen && (
+        <span className="adm-notif-badge">{loginAlerts.length}</span>
+      )}
+    </button>
+
+    {notifOpen && (
+      <div className="adm-notif-dropdown">
+        {/* ... dropdown içeriği aynı kalır ... */}
+      </div>
+    )}
+  </div>
+)}
                 
                 {notifOpen && (
                   <div className="adm-notif-dropdown">

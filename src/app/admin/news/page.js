@@ -134,7 +134,7 @@ export default function AdminNewsPage() {
   const [loading, setLoading] = useState(true);
   
   const [currentUser, setCurrentUser] = useState(null);
-  const [userRole, setUserRole] = useState('Editor'); // ✨ KULLANICI ROLÜ
+  const [userRole, setUserRole] = useState('Editor'); 
   const [userIp, setUserIp] = useState('Bilinmiyor');
 
   // Data States
@@ -152,7 +152,10 @@ export default function AdminNewsPage() {
   const [searchQuery, setSearchQuery] = useState('');
 
   // Form State
-  const [newsForm, setNewsForm] = useState({ id: null, title: '', title_en: '', summary: '', summary_en: '', description: '', description_en: '', image_url: '', date: '' });
+  const [newsForm, setNewsForm] = useState({ 
+    id: null, title: '', title_en: '', summary: '', summary_en: '', 
+    description: '', description_en: '', image_url: '', date: '', gallery: [] 
+  });
   const [isEditing, setIsEditing] = useState(false);
 
   const [toast, setToast] = useState(null);
@@ -197,7 +200,6 @@ export default function AdminNewsPage() {
       
       if (isMounted) {
         setCurrentUser(session.user);
-        // ✨ ROLÜ ÇEK
         const { data: profile } = await supabase.from('user_profiles').select('role').eq('id', session.user.id).single();
         if (profile) setUserRole(profile.role);
       }
@@ -235,11 +237,10 @@ export default function AdminNewsPage() {
   };
 
   async function updateSetting(key, value) {
-    // GÜVENLİK: Eğer editörse işlem yapmasına izin verme
-  if (userRole === 'Editor') {
-    showToast('Bu ayarı değiştirme yetkiniz bulunmuyor.', 'error');
-    return;
-  }
+    if (userRole === 'Editor') {
+      showToast('Bu ayarı değiştirme yetkiniz bulunmuyor.', 'error');
+      return;
+    }
     const { error } = await supabase.from('settings').upsert({ key, value }, { onConflict: 'key' });
     if (error) {
       showToast('Hata: ' + error.message, 'error'); 
@@ -269,7 +270,6 @@ export default function AdminNewsPage() {
           catch (err) { console.error("Storage silme hatasi:", err); }
         }
       }
-
       await supabase.from('news').delete().eq('id', id);
       await logAction(`Haberler tablosundan bir kayit silindi. (ID: ${id})`);
       fetchPageData(); 
@@ -279,24 +279,54 @@ export default function AdminNewsPage() {
 
   async function saveItem(e) {
     e.preventDefault();
-    const { id, ...data } = newsForm;
-    let result = id ? await supabase.from('news').update(data).eq('id', id) : await supabase.from('news').insert([data]);
+    const dataToSave = {
+      ...newsForm,
+      gallery: JSON.stringify(newsForm.gallery) 
+    };
+
+    let result = newsForm.id 
+      ? await supabase.from('news').update(dataToSave).eq('id', newsForm.id) 
+      : await supabase.from('news').insert([dataToSave]);
+      
     if (result?.error) { showToast('Hata: ' + result.error.message, 'error'); return; }
     
     setIsEditing(false); 
     await logAction(`Haberler tablosunda islem yapildi. (Ekleme/Guncelleme)`);
     fetchPageData(); 
     showToast('Basariyla kaydedildi.', 'success');
-    setNewsForm({ id: null, title: '', title_en: '', summary: '', summary_en: '', description: '', description_en: '', image_url: '', date: '' });
+    setNewsForm({ id: null, title: '', title_en: '', summary: '', summary_en: '', description: '', description_en: '', image_url: '', date: '', gallery: [] });
   }
 
   function startEdit(item) {
     setIsEditing(true);
-    setNewsForm({ ...item });
+    let parsedGallery = [];
+    if(item.gallery) {
+       try { parsedGallery = typeof item.gallery === 'string' ? JSON.parse(item.gallery) : item.gallery; } 
+       catch(e) { parsedGallery = []; }
+    }
+    setNewsForm({ ...item, gallery: parsedGallery || [] });
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
-  // Arama Fonksiyonu
+  const handleAddGalleryImage = async (e) => {
+    setLoading(true);
+    const file = e.target.files[0];
+    if (file) {
+      const url = await uploadFile(file);
+      if (url) {
+        setNewsForm(prev => ({ ...prev, gallery: [...prev.gallery, url] }));
+      }
+    }
+    setLoading(false);
+  };
+
+  const removeGalleryImage = (index) => {
+    setNewsForm(prev => ({
+      ...prev,
+      gallery: prev.gallery.filter((_, i) => i !== index)
+    }));
+  };
+
   const filteredNews = news.filter(item => {
     const searchVal = searchQuery.toLowerCase();
     return (
@@ -308,10 +338,8 @@ export default function AdminNewsPage() {
   });
 
   const commonProps = { settings, handleSettingChange, updateSetting, uploadFile };
-
   const currentPath = typeof window !== 'undefined' ? window.location.pathname : '';
   
-  // ✨ MENÜYÜ ROLÜNE GÖRE FİLTRELEME YAPIYORUZ
   const fullNAV = [
     { id: 'dashboard', label: 'Dashboard', icon: 'fas fa-chart-pie', group: 'Genel', link: '/admin', active: currentPath === '/admin', roles: ['Super Admin', 'Admin', 'Editor'] },
     { id: 'messages', label: `Mesajlar`, icon: 'fas fa-inbox', badge: unreadMsgCount, group: 'Genel', link: '/admin/messages', active: currentPath === '/admin/messages', roles: ['Super Admin', 'Admin', 'Editor'] },
@@ -334,7 +362,7 @@ export default function AdminNewsPage() {
     { id: 'contact', label: 'Iletisim', icon: 'fas fa-phone', group: 'Icerik', link: '/admin/contact', active: currentPath === '/admin/contact', roles: ['Super Admin', 'Admin'] },
     { id: 'site', label: 'Header/Footer', icon: 'fas fa-sliders', group: 'Icerik', link: '/admin/site', active: currentPath === '/admin/site', roles: ['Super Admin', 'Admin'] },
     { id: 'users', label: 'Kullanicilar', icon: 'fas fa-users', group: 'Ayarlar', link: '/admin/users', active: currentPath === '/admin/users', roles: ['Super Admin'] },
-   { id: 'logs', label: 'Loglar', icon: 'fas fa-list', group: 'Ayarlar', link: '/admin/logs', active: currentPath === '/admin/logs', roles: ['Super Admin', 'Admin', 'Editor'] },
+    { id: 'logs', label: 'Loglar', icon: 'fas fa-list', group: 'Ayarlar', link: '/admin/logs', active: currentPath === '/admin/logs', roles: ['Super Admin', 'Admin', 'Editor'] },
     { id: 'security', label: 'Sifre & Guvenlik', icon: 'fas fa-lock', group: 'Ayarlar', link: '/admin/security', active: currentPath === '/admin/security', roles: ['Super Admin'] },
   ];
 
@@ -389,8 +417,8 @@ export default function AdminNewsPage() {
         .adm-topbar-title { font-family: var(--font-display); font-size: 0.95rem; font-weight: 700; color: var(--text-primary); flex: 1; }
         
         .adm-content { padding: 32px; flex: 1; }
-        .adm-page-header { margin-bottom: 28px; }
-        .adm-page-title { font-family: var(--font-display); font-size: 1.5rem; font-weight: 700; color: var(--text-primary); letter-spacing: -0.02em; line-height: 1.2; text-transform: capitalize; }
+        .adm-page-header { margin-bottom: 28px; display: flex; justify-content: space-between; align-items: flex-end; }
+        .adm-page-title { font-family: var(--font-display); font-size: 1.5rem; font-weight: 700; color: var(--text-primary); letter-spacing: -0.02em; line-height: 1.2; display: flex; align-items: center; gap: 10px; }
         .adm-page-title em { color: var(--accent); font-style: normal; }
         .adm-section { margin-bottom: 36px; background: var(--surface-2); padding: 20px; border-radius: 14px; border: 1px dashed var(--border); }
 
@@ -448,7 +476,6 @@ export default function AdminNewsPage() {
         .adm-divider { border: none; border-top: 1px dashed var(--border); margin: 16px 0; }
         .adm-fade-in { animation: fadeUp 0.25s cubic-bezier(0.4,0,0.2,1); }
         @keyframes fadeUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
-        @keyframes fadeDown { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: translateY(0); } }
 
         .adm-toast { position: fixed; top: 20px; right: 20px; z-index: 9999; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 14px 18px; box-shadow: 0 8px 32px rgba(0,0,0,0.6); display: flex; align-items: center; gap: 12px; min-width: 280px; animation: slideIn 0.25s cubic-bezier(0.4,0,0.2,1); }
         .adm-toast-icon { width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 0.9rem; flex-shrink: 0; }
@@ -481,6 +508,10 @@ export default function AdminNewsPage() {
         .adm-search-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow); background: var(--surface-2); }
         .adm-search-clear { position: absolute; right: 12px; background: none; border: none; color: var(--text-muted); cursor: pointer; padding: 4px; transition: color var(--transition); }
         .adm-search-clear:hover { color: var(--text-primary); }
+        
+        /* YENI: Link Butonu CSS */
+        .adm-external-link { background: var(--surface-2); border: 1px solid var(--border); color: var(--text-secondary); width: 34px; height: 34px; border-radius: 8px; display: flex; align-items: center; justify-content: center; text-decoration: none; transition: all var(--transition); margin-left: 10px; }
+        .adm-external-link:hover { background: var(--accent-dim); color: var(--accent); border-color: var(--accent); transform: translateY(-1px); box-shadow: 0 4px 12px var(--accent-glow); }
       `}</style>
 
       <div className="adm-layout">
@@ -628,7 +659,7 @@ export default function AdminNewsPage() {
                         <div style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{currentUser?.email}</div>
                       </div>
                     </div>
-                    <button onClick={async () => { await supabase.auth.signOut(); router.push('/login'); }} style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '10px', padding: '11px 14px', background: 'transparent', border: '1px solid transparent', borderRadius: '10px', cursor: 'pointer', color: '#f87171', fontSize: '0.875rem', fontWeight: 500, transition: 'all 0.15s ease', textAlign: 'left' }} onMouseEnter={e => { e.currentTarget.style.background = 'rgba(248,113,113,0.1)'; e.currentTarget.style.borderColor = 'rgba(248,113,113,0.25)'; }} onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.borderColor = 'transparent'; }}>
+                    <button onClick={async () => { await supabase.auth.signOut(); router.push('/login'); }} style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '10px', padding: '11px 14px', background: 'transparent', border: '1px solid transparent', borderRadius: '10px', cursor: 'pointer', color: '#f87171', fontSize: '0.875rem', fontWeight: 500, transition: 'all 0.15s ease', textAlign: 'left' }}>
                       <i className="fas fa-arrow-right-from-bracket" style={{ fontSize: '0.9rem', width: '16px' }} />
                       Cikis Yap
                     </button>
@@ -641,10 +672,15 @@ export default function AdminNewsPage() {
           <div className="adm-content">
             <div className="adm-fade-in">
               <div className="adm-page-header">
-                <div className="adm-page-title">Haberler & <em>Duyurular</em></div>
+                <div className="adm-page-title">
+                  Haberler & <em>Duyurular</em>
+                  {/* ✨ SİTEYE GİT BUTONU EKLENDİ ✨ */}
+                  <a href="/news" target="_blank" rel="noopener noreferrer" className="adm-external-link" title="Sitede Goruntule">
+                    <i className="fas fa-external-link-alt"></i>
+                  </a>
+                </div>
               </div>
 
-              {/* ✨ EĞER KULLANICI SUPER ADMIN VEYA ADMIN İSE TASARIM AYARLARINI GÖSTER ✨ */}
               {(userRole === 'Super Admin' || userRole === 'Admin') && (
                 <div className="adm-section">
                   <SectionHeader iconClass="fas fa-layer-group" title="Sayfa Ust Bilgileri (Hero)" />
@@ -703,8 +739,34 @@ export default function AdminNewsPage() {
                   </div>
                   
                   <div className="adm-form-item">
-                    <label>Gorsel</label>
-                    <FileInput value={newsForm.image_url} onChange={url => setNewsForm({...newsForm, image_url: url})} placeholder="Haber gorseli..." uploadFile={uploadFile} showToast={showToast} />
+                    <label>Ana Gorsel (Kapak)</label>
+                    <FileInput value={newsForm.image_url} onChange={url => setNewsForm({...newsForm, image_url: url})} placeholder="Haber ana gorseli..." uploadFile={uploadFile} showToast={showToast} />
+                  </div>
+
+                  {/* ✨ ÇOKLU GÖRSEL (GALERİ) ALANI ✨ */}
+                  <div className="adm-form-item" style={{ padding: '15px', background: 'var(--surface-2)', border: '1px dashed var(--border)', borderRadius: '8px' }}>
+                    <label style={{ color: 'var(--accent)', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <i className="fas fa-images"></i> Detay Sayfası Galerisi (Çoklu Görsel)
+                    </label>
+                    
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', marginBottom: '15px' }}>
+                      {newsForm.gallery?.map((img, idx) => (
+                        <div key={idx} style={{ position: 'relative', width: '100px', height: '70px', borderRadius: '6px', overflow: 'hidden', border: '1px solid var(--border)' }}>
+                          <img src={img} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                          <button 
+                            type="button" 
+                            onClick={() => removeGalleryImage(idx)} 
+                            style={{ position: 'absolute', top: 0, right: 0, background: 'rgba(239,68,68,0.8)', color: 'white', border: 'none', width: '24px', height: '24px', cursor: 'pointer' }}>
+                            <i className="fas fa-times" style={{ fontSize: '0.7rem' }}></i>
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+
+                    <label className="adm-upload-btn" style={{ width: 'auto', padding: '0 15px', height: '36px', display: 'inline-flex', fontSize: '0.8rem', fontWeight: 600 }}>
+                      <i className="fas fa-plus" style={{ marginRight: '6px' }}></i> Galeriye Resim Ekle
+                      <input type="file" hidden accept="image/*" onChange={handleAddGalleryImage} disabled={loading} />
+                    </label>
                   </div>
                   
                   <div className="adm-form-grid2">

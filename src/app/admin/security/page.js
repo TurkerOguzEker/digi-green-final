@@ -134,6 +134,7 @@ export default function AdminSecurityPage() {
   const [isAboutMenuOpen, setIsAboutMenuOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [currentUser, setCurrentUser] = useState(null);
+  const [userRole, setUserRole] = useState('Editor'); // ✨ KULLANICI ROLÜ
   const [userIp, setUserIp] = useState('Bilinmiyor');
   const [userAgent, setUserAgent] = useState('Bilinmeyen Cihaz');
   
@@ -220,9 +221,20 @@ export default function AdminSecurityPage() {
     async function load() {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) { router.push('/login'); return; }
+
+      // ✨ GÜVENLİK BEKÇİSİ (CLIENT-SIDE GUARD) ✨
+      const { data: profile } = await supabase.from('user_profiles').select('role').eq('id', session.user.id).single();
+      const role = profile?.role || 'Editor';
+
+      // Eğer Editör girmeye çalışıyorsa, sayfayı hiç yüklemeden anında Dashboard'a fırlat!
+      if (role === 'Editor') {
+        router.replace('/admin');
+        return; 
+      }
       
       if (isMounted) {
         setCurrentUser(session.user);
+        setUserRole(role);
         setUserAgent(parseUserAgent(navigator.userAgent));
         
         const savedAlerts = localStorage.getItem(`admin_alerts_${session.user.id}`);
@@ -334,29 +346,36 @@ export default function AdminSecurityPage() {
   }
 
   const currentPath = typeof window !== 'undefined' ? window.location.pathname : '';
-  const NAV = [
-    { id: 'dashboard', label: 'Dashboard', icon: 'fas fa-chart-pie', group: 'Genel', link: '/admin', active: currentPath === '/admin' },
-    { id: 'messages', label: 'Mesajlar', icon: 'fas fa-inbox', badge: unreadMsgCount, group: 'Genel', link: '/admin/messages', active: currentPath === '/admin/messages' },
-    { id: 'home', label: 'Ana Sayfa', icon: 'fas fa-house', group: 'Icerik', link: '/admin/homepage', active: currentPath === '/admin/homepage' },
-    { id: 'about', label: 'Hakkinda', icon: 'fas fa-circle-info', group: 'Icerik', subItems: [
-      { id: 'general', label: 'Genel Hakkinda', tab: 'general' },
-      { id: 'consortium', label: 'Konsorsiyum', tab: 'consortium' },
-      { id: 'impact', label: 'Proje Etkisi', tab: 'impact' },
-      { id: 'plan', label: 'Proje Plani', tab: 'plan' },
-      { id: 'roadmap', label: 'Yol Haritasi', tab: 'roadmap' },
-      { id: 'strategy', label: 'Strateji', tab: 'strategy' }
-    ]},
-    { id: 'news', label: 'Haberler', icon: 'fas fa-newspaper', badge: newsCount, group: 'Icerik', link: '/admin/news', active: currentPath === '/admin/news' },
-    { id: 'activities', label: 'Faaliyetler', icon: 'fas fa-calendar-check', badge: activitiesCount, group: 'Icerik', link: '/admin/activities', active: currentPath === '/admin/activities' },
-    { id: 'partners', label: 'Ortaklar', icon: 'fas fa-handshake', badge: partnersCount, group: 'Icerik', link: '/admin/partners', active: currentPath === '/admin/partners' },
-    { id: 'results', label: 'Dosyalar', icon: 'fas fa-file-circle-check', badge: resultsCount, group: 'Icerik', link: '/admin/results', active: currentPath === '/admin/results' },
-    { id: 'contact', label: 'Iletisim', icon: 'fas fa-phone', group: 'Icerik', link: '/admin/contact', active: currentPath === '/admin/contact' },
-    { id: 'site', label: 'Header/Footer', icon: 'fas fa-sliders', group: 'Icerik', link: '/admin/site', active: currentPath === '/admin/site' },
-    { id: 'users', label: 'Kullanicilar', icon: 'fas fa-users', group: 'Ayarlar', link: '/admin/users', active: currentPath === '/admin/users' },
-    { id: 'logs', label: 'Loglar', icon: 'fas fa-list', group: 'Ayarlar', link: '/admin/logs', active: currentPath === '/admin/logs' },
-    { id: 'security', label: 'Sifre & Guvenlik', icon: 'fas fa-lock', group: 'Ayarlar', link: '/admin/security', active: currentPath === '/admin/security' },
+  
+  // ✨ MENÜ FİLTRELEME İÇİN ROLLER EKLENDİ
+  const fullNAV = [
+    { id: 'dashboard', label: 'Dashboard', icon: 'fas fa-chart-pie', group: 'Genel', link: '/admin', active: currentPath === '/admin', roles: ['Super Admin', 'Admin', 'Editor'] },
+    { id: 'messages', label: `Mesajlar`, icon: 'fas fa-inbox', badge: unreadMsgCount, group: 'Genel', link: '/admin/messages', active: currentPath === '/admin/messages', roles: ['Super Admin', 'Admin', 'Editor'] },
+    { id: 'home', label: 'Ana Sayfa', icon: 'fas fa-house', group: 'Icerik', link: '/admin/homepage', active: currentPath === '/admin/homepage', roles: ['Super Admin', 'Admin'] },
+    { 
+      id: 'about', label: 'Hakkinda', icon: 'fas fa-circle-info', group: 'Icerik', roles: ['Super Admin', 'Admin'],
+      subItems: [
+        { id: 'general', label: 'Genel Hakkinda', tab: 'general' },
+        { id: 'consortium', label: 'Konsorsiyum', tab: 'consortium' },
+        { id: 'impact', label: 'Proje Etkisi', tab: 'impact' },
+        { id: 'plan', label: 'Proje Plani', tab: 'plan' },  
+        { id: 'roadmap', label: 'Yol Haritasi', tab: 'roadmap' },
+        { id: 'strategy', label: 'Strateji', tab: 'strategy' }
+      ]
+    },
+    { id: 'news', label: 'Haberler', icon: 'fas fa-newspaper', badge: newsCount, group: 'Icerik', link: '/admin/news', active: currentPath === '/admin/news', roles: ['Super Admin', 'Admin', 'Editor'] },
+    { id: 'activities', label: 'Faaliyetler', icon: 'fas fa-calendar-check', badge: activitiesCount, group: 'Icerik', link: '/admin/activities', active: currentPath === '/admin/activities', roles: ['Super Admin', 'Admin', 'Editor'] },
+    { id: 'partners', label: 'Ortaklar', icon: 'fas fa-handshake', badge: partnersCount, group: 'Icerik', link: '/admin/partners', active: currentPath === '/admin/partners', roles: ['Super Admin', 'Admin'] },
+    { id: 'results', label: 'Dosyalar', icon: 'fas fa-file-circle-check', badge: resultsCount, group: 'Icerik', link: '/admin/results', active: currentPath === '/admin/results', roles: ['Super Admin', 'Admin', 'Editor'] },
+    { id: 'contact', label: 'Iletisim', icon: 'fas fa-phone', group: 'Icerik', link: '/admin/contact', active: currentPath === '/admin/contact', roles: ['Super Admin', 'Admin'] },
+    { id: 'site', label: 'Header/Footer', icon: 'fas fa-sliders', group: 'Icerik', link: '/admin/site', active: currentPath === '/admin/site', roles: ['Super Admin', 'Admin'] },
+    { id: 'users', label: 'Kullanicilar', icon: 'fas fa-users', group: 'Ayarlar', link: '/admin/users', active: currentPath === '/admin/users', roles: ['Super Admin'] },
+    { id: 'logs', label: 'Loglar', icon: 'fas fa-list', group: 'Ayarlar', link: '/admin/logs', active: currentPath === '/admin/logs', roles: ['Super Admin', 'Admin', 'Editor'] },
+    { id: 'security', label: 'Sifre & Guvenlik', icon: 'fas fa-lock', group: 'Ayarlar', link: '/admin/security', active: currentPath === '/admin/security', roles: ['Super Admin', 'Admin'] },
   ];
-  const groupedNav = NAV.reduce((acc, item) => {
+
+  const allowedNav = fullNAV.filter(nav => nav.roles.includes(userRole));
+  const groupedNav = allowedNav.reduce((acc, item) => {
     if (!acc[item.group]) acc[item.group] = [];
     acc[item.group].push(item);
     return acc;
@@ -435,7 +454,7 @@ export default function AdminSecurityPage() {
         .adm-nav-btn.active .adm-nav-icon { color: var(--accent); }
         .adm-nav-icon { width: 16px; display: flex; align-items: center; justify-content: center; font-size: 0.82rem; flex-shrink: 0; }
         .adm-nav-badge { margin-left: auto; background: var(--accent); color: #000; font-size: 0.62rem; font-weight: 700; padding: 2px 7px; border-radius: 20px; min-width: 20px; text-align: center; }
-        .adm-nav-submenu { display: flex; flex-direction: column; gap: 1px; padding-left: 34px; padding-right: 6px; margin-top: 2px; margin-bottom: 6px; animation: fadeDown 0.2s ease; }
+        .adm-nav-submenu { display: flex; flex-direction: column; gap: 1px; padding-left: 34px; padding-right: 6px; margin: 2px 0 6px; animation: fadeDown 0.2s ease; }
         .adm-nav-subitem { display: flex; align-items: center; padding: 7px 10px; font-size: 0.78rem; color: var(--text-secondary); background: transparent; border: none; border-radius: 7px; cursor: pointer; transition: var(--transition); text-align: left; gap: 8px; }
         .adm-nav-subitem:hover { color: var(--text-primary); background: rgba(255,255,255,0.03); }
 

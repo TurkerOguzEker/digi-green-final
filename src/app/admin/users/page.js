@@ -173,11 +173,24 @@ export default function AdminUsersPage() {
     }
   }, []);
 
-  useEffect(() => {
+ useEffect(() => {
     let isMounted = true;
     async function load() {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) { router.push('/login'); return; }
+
+      // ✨ GÜVENLİK BEKÇİSİ (CLIENT-SIDE GUARD) ✨
+      // Kullanıcının rolünü veritabanından çekiyoruz
+      const { data: profile } = await supabase.from('user_profiles').select('role').eq('id', session.user.id).single();
+      const role = profile?.role || 'Editor';
+
+      // Eğer sayfaya giren kişi Editör ise, verileri yüklemeden anında Dashboard'a fırlat!
+      if (role === 'Editor') {
+        router.replace('/admin');
+        return; // Sayfanın geri kalanını yüklemeyi durdurur
+      }
+      // ✨ GÜVENLİK BEKÇİSİ BİTİŞİ ✨
+
       if (isMounted) setCurrentUser(session.user);
       await fetchPageData();
     }

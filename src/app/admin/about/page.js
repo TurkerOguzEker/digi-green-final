@@ -1,4 +1,3 @@
-// src/app/admin/about/page.js
 'use client';
 import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
@@ -102,6 +101,7 @@ export default function AdminAboutPage() {
   
   const [loading, setLoading] = useState(true);
   const [currentUser, setCurrentUser] = useState(null);
+  const [userRole, setUserRole] = useState('Editor'); // Rol State'i
   const [userIp, setUserIp] = useState('Bilinmiyor');
   const [settings, setSettings] = useState([]);
   const [toast, setToast] = useState(null);
@@ -144,7 +144,21 @@ export default function AdminAboutPage() {
     async function load() {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) { router.push('/login'); return; }
-      if (isMounted) setCurrentUser(session.user);
+
+      // ✨ GÜVENLİK BEKÇİSİ (CLIENT-SIDE GUARD) ✨
+      const { data: profile } = await supabase.from('user_profiles').select('role').eq('id', session.user.id).single();
+      const role = profile?.role || 'Editor';
+
+      // Eğer Editör girmeye çalışıyorsa, sayfayı hiç yüklemeden anında fırlat!
+      if (role === 'Editor') {
+        router.replace('/admin');
+        return; 
+      }
+
+      if (isMounted) {
+        setCurrentUser(session.user);
+        setUserRole(role);
+      }
 
       try {
         const res = await fetch('https://api.ipify.org?format=json');
@@ -182,6 +196,8 @@ export default function AdminAboutPage() {
   };
 
   async function updateSetting(key, value) {
+    if (userRole === 'Editor') return; // Güvenlik Koruması
+
     const { error } = await supabase.from('settings').upsert({ key, value }, { onConflict: 'key' });
     if (error) {
       showToast('Hata: ' + error.message, 'error'); 
@@ -220,10 +236,10 @@ export default function AdminAboutPage() {
         { id: 'strategy', label: 'Strateji', tab: 'strategy' }
       ]
     },
-    { id: 'news', label: 'Haberler', icon: 'fas fa-newspaper', badge: typeof newsCount !== 'undefined' ? newsCount : (typeof news !== 'undefined' ? news.length : 0), group: 'Icerik', link: '/admin/news', active: currentPath === '/admin/news' },
-    { id: 'activities', label: 'Faaliyetler', icon: 'fas fa-calendar-check', badge: typeof activitiesCount !== 'undefined' ? activitiesCount : (typeof activities !== 'undefined' ? activities.length : 0), group: 'Icerik', link: '/admin/activities', active: currentPath === '/admin/activities' },
-    { id: 'partners', label: 'Ortaklar', icon: 'fas fa-handshake', badge: typeof partnersCount !== 'undefined' ? partnersCount : (typeof partners !== 'undefined' ? partners.length : 0), group: 'Icerik', link: '/admin/partners', active: currentPath === '/admin/partners' },
-    { id: 'results', label: 'Dosyalar', icon: 'fas fa-file-circle-check', badge: typeof resultsCount !== 'undefined' ? resultsCount : (typeof results !== 'undefined' ? results.length : 0), group: 'Icerik', link: '/admin/results', active: currentPath === '/admin/results' },
+    { id: 'news', label: 'Haberler', icon: 'fas fa-newspaper', badge: typeof newsCount !== 'undefined' ? newsCount : 0, group: 'Icerik', link: '/admin/news', active: currentPath === '/admin/news' },
+    { id: 'activities', label: 'Faaliyetler', icon: 'fas fa-calendar-check', badge: typeof activitiesCount !== 'undefined' ? activitiesCount : 0, group: 'Icerik', link: '/admin/activities', active: currentPath === '/admin/activities' },
+    { id: 'partners', label: 'Ortaklar', icon: 'fas fa-handshake', badge: typeof partnersCount !== 'undefined' ? partnersCount : 0, group: 'Icerik', link: '/admin/partners', active: currentPath === '/admin/partners' },
+    { id: 'results', label: 'Dosyalar', icon: 'fas fa-file-circle-check', badge: typeof resultsCount !== 'undefined' ? resultsCount : 0, group: 'Icerik', link: '/admin/results', active: currentPath === '/admin/results' },
     { id: 'contact', label: 'Iletisim', icon: 'fas fa-phone', group: 'Icerik', link: '/admin/contact', active: currentPath === '/admin/contact' },
     { id: 'site', label: 'Header/Footer', icon: 'fas fa-sliders', group: 'Icerik', link: '/admin/site', active: currentPath === '/admin/site' },
     { id: 'users', label: 'Kullanicilar', icon: 'fas fa-users', group: 'Ayarlar', link: '/admin/users', active: currentPath === '/admin/users' },
@@ -283,7 +299,7 @@ export default function AdminAboutPage() {
         
         .adm-content { padding: 32px; flex: 1; }
         .adm-page-header { margin-bottom: 28px; }
-        .adm-page-title { font-family: var(--font-display); font-size: 1.5rem; font-weight: 700; color: var(--text-primary); letter-spacing: -0.02em; line-height: 1.2; text-transform: capitalize; }
+        .adm-page-title { font-family: var(--font-display); font-size: 1.5rem; font-weight: 700; color: var(--text-primary); letter-spacing: -0.02em; line-height: 1.2; text-transform: capitalize; display: flex; align-items: center; gap: 10px; }
         .adm-page-title em { color: var(--accent); font-style: normal; }
         .adm-page-desc { font-size: 0.875rem; color: var(--text-secondary); margin-top: 4px; }
         .adm-section { margin-bottom: 36px; }
@@ -340,6 +356,10 @@ export default function AdminAboutPage() {
         .adm-loading-spinner { width: 40px; height: 40px; border: 3px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; }
         @keyframes spin { to { transform: rotate(360deg); } }
         @keyframes topbarDropdown { from { opacity: 0; transform: translateY(-6px) scale(0.97); } to { opacity: 1; transform: translateY(0) scale(1); } }
+
+        /* YENI: Link Butonu CSS */
+        .adm-external-link { background: var(--surface-2); border: 1px solid var(--border); color: var(--text-secondary); width: 34px; height: 34px; border-radius: 8px; display: flex; align-items: center; justify-content: center; text-decoration: none; transition: all var(--transition); }
+        .adm-external-link:hover { background: var(--accent-dim); color: var(--accent); border-color: var(--accent); transform: translateY(-1px); box-shadow: 0 4px 12px var(--accent-glow); }
       `}</style>
 
       <div className="adm-layout">
@@ -474,7 +494,7 @@ export default function AdminAboutPage() {
                   color: '#fff', fontWeight: 700, fontSize: '0.85rem',
                   lineHeight: 1, paddingBottom: '1px',
                   flexShrink: 0,
-                  boxShadow: '0 2px 8px rgba(34, 197, 94, 0.4)',
+                  boxShadow: '0 2px 8px rgba(99,102,241,0.4)',
                 }}>
                   {currentUser?.email ? currentUser.email.charAt(0).toUpperCase() : 'A'}
                 </div>
@@ -492,14 +512,14 @@ export default function AdminAboutPage() {
               {profileOpen && (
                 <>
                   <div style={{ position: 'fixed', inset: 0, zIndex: 99 }} onClick={() => setProfileOpen(false)} />
-                  <div style={{ position: 'absolute', top: 'calc(100% + 10px)', right: 0, width: '240px', background: 'var(--surface-2, #1e1e2e)', border: '1px solid var(--border, rgba(255,255,255,0.1))', borderRadius: '16px', padding: '8px', boxShadow: '0 20px 40px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.04) inset', zIndex: 100, animation: 'topbarDropdown 0.18s cubic-bezier(0.16,1,0.3,1)' }}>
+                  <div style={{ position: 'absolute', top: 'calc(100% + 10px)', right: 0, width: '240px', background: '#111318', border: '1px solid var(--border, rgba(255,255,255,0.1))', borderRadius: '16px', padding: '8px', boxShadow: '0 20px 40px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.04) inset', zIndex: 100, animation: 'topbarDropdown 0.18s cubic-bezier(0.16,1,0.3,1)' }}>
                     <div style={{ padding: '12px 14px', marginBottom: '6px', background: 'var(--surface-3, rgba(255,255,255,0.04))', borderRadius: '10px', display: 'flex', alignItems: 'center', gap: '12px' }}>
                       <div style={{ width: '38px', height: '38px', flexShrink: 0, background: 'linear-gradient(135deg, var(--accent, #6366f1), #8b5cf6)', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 700, fontSize: '1.1rem', lineHeight: 1, paddingBottom: '2px' }}>
                         {currentUser?.email ? currentUser.email.charAt(0).toUpperCase() : 'A'}
                       </div>
                       <div style={{ overflow: 'hidden' }}>
-                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '2px' }}>Oturum acik</div>
-                        <div style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{currentUser?.email}</div>
+                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', margin: 0 }}>Oturum acik</div>
+                        <div style={{ fontSize: '0.85rem', fontWeight: 600, color: '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{currentUser?.email}</div>
                       </div>
                     </div>
                     <button onClick={async () => { await supabase.auth.signOut(); router.push('/login'); }} style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '10px', padding: '11px 14px', background: 'transparent', border: '1px solid transparent', borderRadius: '10px', cursor: 'pointer', color: '#f87171', fontSize: '0.875rem', fontWeight: 500, transition: 'all 0.15s ease', textAlign: 'left' }} onMouseEnter={e => { e.currentTarget.style.background = 'rgba(248,113,113,0.1)'; e.currentTarget.style.borderColor = 'rgba(248,113,113,0.25)'; }} onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.borderColor = 'transparent'; }}>
@@ -517,6 +537,15 @@ export default function AdminAboutPage() {
               
               {subTab === 'general' && (
                 <div className="adm-fade-in">
+                  <div className="adm-page-header">
+                    <div className="adm-page-title">
+                      Hakkinda <em>(Genel)</em>
+                      {/* ✨ SİTEYE GİT BUTONU EKLENDİ ✨ */}
+                      <a href="/about" target="_blank" rel="noopener noreferrer" className="adm-external-link" title="Sitede Goruntule">
+                        <i className="fas fa-external-link-alt"></i>
+                      </a>
+                    </div>
+                  </div>
                   <SectionHeader iconClass="fas fa-layer-group" title="Genel Hakkinda (Hero) Bolumu" />
                   <div className="adm-form-grid2">
                     <SettingInput label="Ust Ufak Baslik (TR)" settingKey="about_hero_eyebrow" {...commonProps} />
@@ -707,6 +736,15 @@ export default function AdminAboutPage() {
 
               {subTab === 'consortium' && (
                 <div className="adm-fade-in">
+                  <div className="adm-page-header">
+                    <div className="adm-page-title">
+                      Hakkinda <em>(Konsorsiyum)</em>
+                      {/* ✨ SİTEYE GİT BUTONU EKLENDİ ✨ */}
+                      <a href="/about/consortium" target="_blank" rel="noopener noreferrer" className="adm-external-link" title="Sitede Goruntule">
+                        <i className="fas fa-external-link-alt"></i>
+                      </a>
+                    </div>
+                  </div>
                   <SectionHeader iconClass="fas fa-layer-group" title="Sayfa Girisi (Hero)" />
                   <div className="adm-form-grid2">
                     <SettingInput label="Ust Ufak Baslik (TR)" settingKey="consortium_hero_eyebrow" {...commonProps} />
@@ -944,7 +982,15 @@ export default function AdminAboutPage() {
 
               {subTab === 'impact' && (
                 <div className="adm-fade-in">
-                  
+                  <div className="adm-page-header">
+                    <div className="adm-page-title">
+                      Hakkinda <em>(Proje Etkisi)</em>
+                      {/* ✨ SİTEYE GİT BUTONU EKLENDİ ✨ */}
+                      <a href="/about/impact" target="_blank" rel="noopener noreferrer" className="adm-external-link" title="Sitede Goruntule">
+                        <i className="fas fa-external-link-alt"></i>
+                      </a>
+                    </div>
+                  </div>
                   <SectionHeader iconClass="fas fa-layer-group" title="Hero (Giris) Bolumu" />
                   <div className="adm-form-grid2">
                     <SettingInput label="Ust Ufak Baslik (TR)" settingKey="impact_hero_eyebrow" {...commonProps} />
@@ -1056,7 +1102,15 @@ export default function AdminAboutPage() {
 
               {subTab === 'plan' && (
                 <div className="adm-fade-in">
-                  
+                  <div className="adm-page-header">
+                    <div className="adm-page-title">
+                      Hakkinda <em>(Proje Plani)</em>
+                      {/* ✨ SİTEYE GİT BUTONU EKLENDİ ✨ */}
+                      <a href="/about/plan" target="_blank" rel="noopener noreferrer" className="adm-external-link" title="Sitede Goruntule">
+                        <i className="fas fa-external-link-alt"></i>
+                      </a>
+                    </div>
+                  </div>
                   <SectionHeader iconClass="fas fa-layer-group" title="Hero (Giris) Bolumu" />
                   <div className="adm-form-grid2">
                     <SettingInput label="Ust Ufak Baslik (TR)" settingKey="plan_hero_eyebrow" {...commonProps} />
@@ -1153,7 +1207,15 @@ export default function AdminAboutPage() {
 
               {subTab === 'roadmap' && (
                 <div className="adm-fade-in">
-                  
+                  <div className="adm-page-header">
+                    <div className="adm-page-title">
+                      Hakkinda <em>(Yol Haritasi)</em>
+                      {/* ✨ SİTEYE GİT BUTONU EKLENDİ ✨ */}
+                      <a href="/about/roadmap" target="_blank" rel="noopener noreferrer" className="adm-external-link" title="Sitede Goruntule">
+                        <i className="fas fa-external-link-alt"></i>
+                      </a>
+                    </div>
+                  </div>
                   <SectionHeader iconClass="fas fa-layer-group" title="Hero (Giris) Bolumu" />
                   <div className="adm-form-grid2">
                     <SettingInput label="Ust Ufak Baslik (TR)" settingKey="roadmap_hero_eyebrow" {...commonProps} />
@@ -1208,7 +1270,15 @@ export default function AdminAboutPage() {
 
               {subTab === 'strategy' && (
                 <div className="adm-fade-in">
-                  
+                  <div className="adm-page-header">
+                    <div className="adm-page-title">
+                      Hakkinda <em>(Strateji)</em>
+                      {/* ✨ SİTEYE GİT BUTONU EKLENDİ ✨ */}
+                      <a href="/about/strategy" target="_blank" rel="noopener noreferrer" className="adm-external-link" title="Sitede Goruntule">
+                        <i className="fas fa-external-link-alt"></i>
+                      </a>
+                    </div>
+                  </div>
                   <SectionHeader iconClass="fas fa-layer-group" title="Hero (Giris) Bolumu" />
                   <div className="adm-form-grid2">
                     <SettingInput label="Ust Ufak Baslik (TR)" settingKey="strategy_hero_eyebrow" {...commonProps} />
