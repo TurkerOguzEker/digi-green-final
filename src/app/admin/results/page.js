@@ -120,6 +120,7 @@ export default function AdminResultsPage() {
   const [loading, setLoading] = useState(true);
   
   const [currentUser, setCurrentUser] = useState(null);
+  const [userRole, setUserRole] = useState('Editor'); // ✨ KULLANICI ROLÜ
   const [userIp, setUserIp] = useState('Bilinmiyor');
 
   // Data States
@@ -149,21 +150,22 @@ export default function AdminResultsPage() {
 
   const fetchPageData = useCallback(async () => {
     try {
-      const s = await supabase.from('settings').select('*').order('id');
-      const r = await supabase.from('results').select('*').order('id');
-      
-      const { count: msgCount } = await supabase.from('contact_messages').select('*', { count: 'exact', head: true }).eq('is_read', false);
-      const { count: nCount } = await supabase.from('news').select('*', { count: 'exact', head: true });
-      const { count: aCount } = await supabase.from('activities').select('*', { count: 'exact', head: true });
-      const { count: pCount } = await supabase.from('partners').select('*', { count: 'exact', head: true });
+      const [s, r, msg, n, act, par] = await Promise.all([
+        supabase.from('settings').select('*').order('id'),
+        supabase.from('results').select('*').order('id'),
+        supabase.from('contact_messages').select('*', { count: 'exact', head: true }).eq('is_read', false),
+        supabase.from('news').select('*', { count: 'exact', head: true }),
+        supabase.from('activities').select('*', { count: 'exact', head: true }),
+        supabase.from('partners').select('*', { count: 'exact', head: true })
+      ]);
         
       setSettings(s.data || []);
       setResults(r.data || []);
       
-      if (msgCount) setUnreadMsgCount(msgCount);
-      if (nCount) setNewsCount(nCount);
-      if (aCount) setActivitiesCount(aCount);
-      if (pCount) setPartnersCount(pCount);
+      if (msg.count) setUnreadMsgCount(msg.count);
+      if (n.count) setNewsCount(n.count);
+      if (act.count) setActivitiesCount(act.count);
+      if (par.count) setPartnersCount(par.count);
     } catch (error) {
       console.error("Veri hatasi:", error);
     } finally {
@@ -176,7 +178,13 @@ export default function AdminResultsPage() {
     async function load() {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) { router.push('/login'); return; }
-      if (isMounted) setCurrentUser(session.user);
+      
+      if (isMounted) {
+        setCurrentUser(session.user);
+        // ✨ ROLÜ ÇEK
+        const { data: profile } = await supabase.from('user_profiles').select('role').eq('id', session.user.id).single();
+        if (profile) setUserRole(profile.role);
+      }
 
       try {
         const res = await fetch('https://api.ipify.org?format=json');
@@ -211,11 +219,11 @@ export default function AdminResultsPage() {
   };
 
   async function updateSetting(key, value) {
-    // GÜVENLİK: Eğer editörse işlem yapmasına izin verme
-  if (userRole === 'Editor') {
-    showToast('Bu ayarı değiştirme yetkiniz bulunmuyor.', 'error');
-    return;
-  }
+    // ✨ GÜVENLİK: Eğer editörse işlem yapmasına izin verme
+    if (userRole === 'Editor') {
+      showToast('Bu ayarı değiştirme yetkiniz bulunmuyor.', 'error');
+      return;
+    }
     const { error } = await supabase.from('settings').upsert({ key, value }, { onConflict: 'key' });
     if (error) {
       showToast('Hata: ' + error.message, 'error'); 
@@ -298,12 +306,14 @@ export default function AdminResultsPage() {
   const commonProps = { settings, handleSettingChange, updateSetting, uploadFile };
 
   const currentPath = typeof window !== 'undefined' ? window.location.pathname : '';
-  const NAV = [
-    { id: 'dashboard', label: 'Dashboard', icon: 'fas fa-chart-pie', group: 'Genel', link: '/admin', active: currentPath === '/admin' },
-    { id: 'messages', label: `Mesajlar`, icon: 'fas fa-inbox', badge: typeof unreadMsgCount !== 'undefined' ? unreadMsgCount : 0, group: 'Genel', link: '/admin/messages', active: currentPath === '/admin/messages' },
-    { id: 'home', label: 'Ana Sayfa', icon: 'fas fa-house', group: 'Icerik', link: '/admin/homepage', active: currentPath === '/admin/homepage' },
+  
+  // ✨ MENÜYÜ ROLÜNE GÖRE FİLTRELEME YAPIYORUZ
+  const fullNAV = [
+    { id: 'dashboard', label: 'Dashboard', icon: 'fas fa-chart-pie', group: 'Genel', link: '/admin', active: currentPath === '/admin', roles: ['Super Admin', 'Admin', 'Editor'] },
+    { id: 'messages', label: `Mesajlar`, icon: 'fas fa-inbox', badge: typeof unreadMsgCount !== 'undefined' ? unreadMsgCount : 0, group: 'Genel', link: '/admin/messages', active: currentPath === '/admin/messages', roles: ['Super Admin', 'Admin', 'Editor'] },
+    { id: 'home', label: 'Ana Sayfa', icon: 'fas fa-house', group: 'Icerik', link: '/admin/homepage', active: currentPath === '/admin/homepage', roles: ['Super Admin', 'Admin'] },
     { 
-      id: 'about', label: 'Hakkinda', icon: 'fas fa-circle-info', group: 'Icerik',
+      id: 'about', label: 'Hakkinda', icon: 'fas fa-circle-info', group: 'Icerik', roles: ['Super Admin', 'Admin'],
       subItems: [
         { id: 'general', label: 'Genel Hakkinda', tab: 'general' },
         { id: 'consortium', label: 'Konsorsiyum', tab: 'consortium' },
@@ -313,24 +323,26 @@ export default function AdminResultsPage() {
         { id: 'strategy', label: 'Strateji', tab: 'strategy' }
       ]
     },
-    { id: 'news', label: 'Haberler', icon: 'fas fa-newspaper', badge: typeof newsCount !== 'undefined' ? newsCount : (typeof news !== 'undefined' ? news.length : 0), group: 'Icerik', link: '/admin/news', active: currentPath === '/admin/news' },
-    { id: 'activities', label: 'Faaliyetler', icon: 'fas fa-calendar-check', badge: typeof activitiesCount !== 'undefined' ? activitiesCount : (typeof activities !== 'undefined' ? activities.length : 0), group: 'Icerik', link: '/admin/activities', active: currentPath === '/admin/activities' },
-    { id: 'partners', label: 'Ortaklar', icon: 'fas fa-handshake', badge: typeof partnersCount !== 'undefined' ? partnersCount : (typeof partners !== 'undefined' ? partners.length : 0), group: 'Icerik', link: '/admin/partners', active: currentPath === '/admin/partners' },
-    { id: 'results', label: 'Dosyalar', icon: 'fas fa-file-circle-check', badge: typeof resultsCount !== 'undefined' ? resultsCount : (typeof results !== 'undefined' ? results.length : 0), group: 'Icerik', link: '/admin/results', active: currentPath === '/admin/results' },
-    { id: 'contact', label: 'Iletisim', icon: 'fas fa-phone', group: 'Icerik', link: '/admin/contact', active: currentPath === '/admin/contact' },
-    { id: 'site', label: 'Header/Footer', icon: 'fas fa-sliders', group: 'Icerik', link: '/admin/site', active: currentPath === '/admin/site' },
-    { id: 'users', label: 'Kullanicilar', icon: 'fas fa-users', group: 'Ayarlar', link: '/admin/users', active: currentPath === '/admin/users' },
-    { id: 'logs', label: 'Loglar', icon: 'fas fa-list', group: 'Ayarlar', link: '/admin/logs', active: currentPath === '/admin/logs' },
-    { id: 'security', label: 'Sifre & Guvenlik', icon: 'fas fa-lock', group: 'Ayarlar', link: '/admin/security', active: currentPath === '/admin/security' },
+    { id: 'news', label: 'Haberler', icon: 'fas fa-newspaper', badge: typeof newsCount !== 'undefined' ? newsCount : (typeof news !== 'undefined' ? news.length : 0), group: 'Icerik', link: '/admin/news', active: currentPath === '/admin/news', roles: ['Super Admin', 'Admin', 'Editor'] },
+    { id: 'activities', label: 'Faaliyetler', icon: 'fas fa-calendar-check', badge: typeof activitiesCount !== 'undefined' ? activitiesCount : (typeof activities !== 'undefined' ? activities.length : 0), group: 'Icerik', link: '/admin/activities', active: currentPath === '/admin/activities', roles: ['Super Admin', 'Admin', 'Editor'] },
+    { id: 'partners', label: 'Ortaklar', icon: 'fas fa-handshake', badge: typeof partnersCount !== 'undefined' ? partnersCount : (typeof partners !== 'undefined' ? partners.length : 0), group: 'Icerik', link: '/admin/partners', active: currentPath === '/admin/partners', roles: ['Super Admin', 'Admin'] },
+    { id: 'results', label: 'Dosyalar', icon: 'fas fa-file-circle-check', badge: typeof resultsCount !== 'undefined' ? resultsCount : (typeof results !== 'undefined' ? results.length : 0), group: 'Icerik', link: '/admin/results', active: currentPath === '/admin/results', roles: ['Super Admin', 'Admin', 'Editor'] },
+    { id: 'contact', label: 'Iletisim', icon: 'fas fa-phone', group: 'Icerik', link: '/admin/contact', active: currentPath === '/admin/contact', roles: ['Super Admin', 'Admin'] },
+    { id: 'site', label: 'Header/Footer', icon: 'fas fa-sliders', group: 'Icerik', link: '/admin/site', active: currentPath === '/admin/site', roles: ['Super Admin', 'Admin'] },
+    { id: 'users', label: 'Kullanicilar', icon: 'fas fa-users', group: 'Ayarlar', link: '/admin/users', active: currentPath === '/admin/users', roles: ['Super Admin'] },
+    { id: 'logs', label: 'Loglar', icon: 'fas fa-list', group: 'Ayarlar', link: '/admin/logs', active: currentPath === '/admin/logs', roles: ['Super Admin', 'Admin', 'Editor'] },
+    // ✨ Editörün Şifre & Güvenlik sekmesini görmesini engelledik: roles: ['Super Admin', 'Admin']
+    { id: 'security', label: 'Sifre & Guvenlik', icon: 'fas fa-lock', group: 'Ayarlar', link: '/admin/security', active: currentPath === '/admin/security', roles: ['Super Admin', 'Admin'] },
   ];
 
-  const groupedNav = NAV.reduce((acc, item) => {
+  const allowedNav = fullNAV.filter(nav => nav.roles.includes(userRole));
+  const groupedNav = allowedNav.reduce((acc, item) => {
     if (!acc[item.group]) acc[item.group] = [];
     acc[item.group].push(item);
     return acc;
   }, {});
 
-  const currentTab = NAV.find(n => n.id === 'results');
+  const currentTab = fullNAV.find(n => n.id === 'results');
 
   if (loading) return <div className="adm-loading"><div className="adm-loading-spinner" /><p>Yukleniyor...</p></div>;
 
@@ -464,7 +476,11 @@ export default function AdminResultsPage() {
         @keyframes spin { to { transform: rotate(360deg); } }
         @keyframes slideIn { from { transform: translateX(110%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
         @keyframes topbarDropdown { from { opacity: 0; transform: translateY(-6px) scale(0.97); } to { opacity: 1; transform: translateY(0); } }
-        
+        .adm-badge { display: inline-flex; align-items: center; padding: 2px 9px; border-radius: 20px; font-size: 0.68rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; }
+        .adm-badge-blue { background: var(--blue-dim); color: var(--blue); border: 1px solid rgba(59,130,246,0.25); }
+        .adm-empty { text-align: center; padding: 40px; color: var(--text-muted); font-size: 0.875rem; border: 1px dashed var(--border); border-radius: var(--radius-lg); }
+        .adm-empty i { display: block; font-size: 2rem; margin-bottom: 12px; opacity: 0.4; }
+
         /* YENI ARAMA KUTUSU CSS */
         .adm-search-wrap { position: relative; margin-bottom: 16px; width: 100%; display: flex; align-items: center; }
         .adm-search-wrap i { position: absolute; left: 14px; color: var(--text-muted); font-size: 0.85rem; }
@@ -621,14 +637,14 @@ export default function AdminResultsPage() {
               {profileOpen && (
                 <>
                   <div style={{ position: 'fixed', inset: 0, zIndex: 99 }} onClick={() => setProfileOpen(false)} />
-                  <div style={{ position: 'absolute', top: 'calc(100% + 12px)', right: 0, width: '240px', background: '#111318', border: '1px solid var(--border, rgba(255,255,255,0.1))', borderRadius: '16px', padding: '8px', boxShadow: '0 20px 40px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.04) inset', zIndex: 100, animation: 'topbarDropdown 0.18s cubic-bezier(0.16,1,0.3,1)' }}>
+                  <div style={{ position: 'absolute', top: 'calc(100% + 12px)', right: 0, width: '240px', background: '#111318', border: '1px solid var(--border, rgba(255,255,255,0.1))', borderRadius: '16px', padding: '8px', boxShadow: '0 20px 40px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.04) inset', zIndex: 100, animation: 'topbarDropdown 0.18s cubic-bezier(0.16,1,0.3,1)' }}>
                     <div style={{ padding: '12px 14px', marginBottom: '6px', background: 'var(--surface-3, rgba(255,255,255,0.04))', borderRadius: '10px', display: 'flex', alignItems: 'center', gap: '12px' }}>
                       <div style={{ width: '38px', height: '38px', flexShrink: 0, background: 'linear-gradient(135deg, var(--accent, #6366f1), #8b5cf6)', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 700, fontSize: '1.1rem', lineHeight: 1, paddingBottom: '2px' }}>
                         {currentUser?.email ? currentUser.email.charAt(0).toUpperCase() : 'A'}
                       </div>
                       <div style={{ overflow: 'hidden' }}>
                         <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '2px' }}>Oturum acik</div>
-                        <div style={{ fontSize: '0.85rem', fontWeight: 600, color: '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{currentUser?.email}</div>
+                        <div style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{currentUser?.email}</div>
                       </div>
                     </div>
                     <button onClick={async () => { await supabase.auth.signOut(); router.push('/login'); }} style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '10px', padding: '11px 14px', background: 'transparent', border: '1px solid transparent', borderRadius: '10px', cursor: 'pointer', color: '#f87171', fontSize: '0.875rem', fontWeight: 500, transition: 'all 0.15s ease', textAlign: 'left' }} onMouseEnter={e => { e.currentTarget.style.background = 'rgba(248,113,113,0.1)'; e.currentTarget.style.borderColor = 'rgba(248,113,113,0.25)'; }} onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.borderColor = 'transparent'; }}>
@@ -647,35 +663,38 @@ export default function AdminResultsPage() {
                 <div className="adm-page-title">Proje <em>Dosyalari</em></div>
               </div>
 
-              <div className="adm-section" style={{ background: 'var(--surface-2)', padding: '20px', borderRadius: '14px', border: '1px dashed var(--border)', marginBottom: '30px' }}>
-                <SectionHeader iconClass="fas fa-layer-group" title="Sayfa Ust Bilgileri (Hero)" />
-                <div className="adm-form-grid2">
-                  <SettingInput label="Ust Ufak Baslik (TR)" settingKey="results_hero_eyebrow" {...commonProps} />
-                  <SettingInput label="Ust Ufak Baslik (EN)" settingKey="results_hero_eyebrow_en" {...commonProps} />
-                  <SettingInput label="Ana Baslik Satir 1 (TR)" settingKey="results_hero_title1" {...commonProps} />
-                  <SettingInput label="Ana Baslik Satir 1 (EN)" settingKey="results_hero_title1_en" {...commonProps} />
-                  <SettingInput label="Vurgulu Baslik Satir 2 (TR)" settingKey="results_hero_title2" {...commonProps} />
-                  <SettingInput label="Vurgulu Baslik Satir 2 (EN)" settingKey="results_hero_title2_en" {...commonProps} />
-                </div>
-                <div className="adm-form-grid2" style={{marginTop:'10px'}}>
-                  <SettingInput label="Giris Aciklamasi (TR)" settingKey="results_page_desc" type="textarea" {...commonProps} />
-                  <SettingInput label="Giris Aciklamasi (EN)" settingKey="results_page_desc_en" type="textarea" {...commonProps} />
-                </div>
-                <div className="adm-form-grid2" style={{marginTop:'10px'}}>
-                  <SettingInput label="Kaydirma Butonu (TR)" settingKey="results_hero_scroll" {...commonProps} />
-                  <SettingInput label="Kaydirma Butonu (EN)" settingKey="results_hero_scroll_en" {...commonProps} />
-                </div>
+              {/* ✨ EĞER KULLANICI SUPER ADMIN VEYA ADMIN İSE TASARIM AYARLARINI GÖSTER ✨ */}
+              {(userRole === 'Super Admin' || userRole === 'Admin') && (
+                <div className="adm-section" style={{ background: 'var(--surface-2)', padding: '20px', borderRadius: '14px', border: '1px dashed var(--border)', marginBottom: '30px' }}>
+                  <SectionHeader iconClass="fas fa-layer-group" title="Sayfa Ust Bilgileri (Hero)" />
+                  <div className="adm-form-grid2">
+                    <SettingInput label="Ust Ufak Baslik (TR)" settingKey="results_hero_eyebrow" {...commonProps} />
+                    <SettingInput label="Ust Ufak Baslik (EN)" settingKey="results_hero_eyebrow_en" {...commonProps} />
+                    <SettingInput label="Ana Baslik Satir 1 (TR)" settingKey="results_hero_title1" {...commonProps} />
+                    <SettingInput label="Ana Baslik Satir 1 (EN)" settingKey="results_hero_title1_en" {...commonProps} />
+                    <SettingInput label="Vurgulu Baslik Satir 2 (TR)" settingKey="results_hero_title2" {...commonProps} />
+                    <SettingInput label="Vurgulu Baslik Satir 2 (EN)" settingKey="results_hero_title2_en" {...commonProps} />
+                  </div>
+                  <div className="adm-form-grid2" style={{marginTop:'10px'}}>
+                    <SettingInput label="Giris Aciklamasi (TR)" settingKey="results_page_desc" type="textarea" {...commonProps} />
+                    <SettingInput label="Giris Aciklamasi (EN)" settingKey="results_page_desc_en" type="textarea" {...commonProps} />
+                  </div>
+                  <div className="adm-form-grid2" style={{marginTop:'10px'}}>
+                    <SettingInput label="Kaydirma Butonu (TR)" settingKey="results_hero_scroll" {...commonProps} />
+                    <SettingInput label="Kaydirma Butonu (EN)" settingKey="results_hero_scroll_en" {...commonProps} />
+                  </div>
 
-                <div className="adm-divider" style={{margin: '20px 0'}} />
+                  <div className="adm-divider" style={{margin: '20px 0'}} />
 
-                <SectionHeader iconClass="fas fa-bars" title="Icerik Bolumu Basliklari" />
-                <div className="adm-form-grid2">
-                  <SettingInput label="Bolum Etiketi (TR)" settingKey="results_sec_label" {...commonProps} />
-                  <SettingInput label="Bolum Etiketi (EN)" settingKey="results_sec_label_en" {...commonProps} />
-                  <SettingInput label="Bolum Basligi (TR)" settingKey="results_sec_title" {...commonProps} />
-                  <SettingInput label="Bolum Basligi (EN)" settingKey="results_sec_title_en" {...commonProps} />
+                  <SectionHeader iconClass="fas fa-bars" title="Icerik Bolumu Basliklari" />
+                  <div className="adm-form-grid2">
+                    <SettingInput label="Bolum Etiketi (TR)" settingKey="results_sec_label" {...commonProps} />
+                    <SettingInput label="Bolum Etiketi (EN)" settingKey="results_sec_label_en" {...commonProps} />
+                    <SettingInput label="Bolum Basligi (TR)" settingKey="results_sec_title" {...commonProps} />
+                    <SettingInput label="Bolum Basligi (EN)" settingKey="results_sec_title_en" {...commonProps} />
+                  </div>
                 </div>
-              </div>
+              )}
 
               <div className="adm-form-card">
                 <div className="adm-form-card-title">
@@ -684,56 +703,56 @@ export default function AdminResultsPage() {
                   </div>
                 </div>
                <form onSubmit={saveItem} style={{display:'grid', gap:'14px'}}>
-                  
-                  <div className="adm-form-grid2">
-                      <div className="adm-form-item">
-                        <label>Dosya Basligi (TR) *</label>
-                        <input className="adm-input-full" placeholder="Dosya basligi..." value={resultForm.title} onChange={e => setResultForm({...resultForm, title: e.target.value})} required />
-                      </div>
-                      <div className="adm-form-item">
-                        <label>Dosya Basligi (EN)</label>
-                        <input className="adm-input-full" placeholder="File title..." value={resultForm.title_en} onChange={e => setResultForm({...resultForm, title_en: e.target.value})} />
-                      </div>
-                  </div>
+                 
+                 <div className="adm-form-grid2">
+                     <div className="adm-form-item">
+                       <label>Dosya Basligi (TR) *</label>
+                       <input className="adm-input-full" placeholder="Dosya basligi..." value={resultForm.title} onChange={e => setResultForm({...resultForm, title: e.target.value})} required />
+                     </div>
+                     <div className="adm-form-item">
+                       <label>Dosya Basligi (EN)</label>
+                       <input className="adm-input-full" placeholder="File title..." value={resultForm.title_en} onChange={e => setResultForm({...resultForm, title_en: e.target.value})} />
+                     </div>
+                 </div>
 
-                  <div className="adm-form-grid2">
-                      <div className="adm-form-item">
-                        <label>Aciklama (TR)</label>
-                        <textarea className="adm-textarea-full" placeholder="Aciklama..." value={resultForm.description} onChange={e => setResultForm({...resultForm, description: e.target.value})} rows={3} />
-                      </div>
-                      <div className="adm-form-item">
-                        <label>Aciklama (EN)</label>
-                        <textarea className="adm-textarea-full" placeholder="Description..." value={resultForm.description_en} onChange={e => setResultForm({...resultForm, description_en: e.target.value})} rows={3} />
-                      </div>
-                  </div>
+                 <div className="adm-form-grid2">
+                     <div className="adm-form-item">
+                       <label>Aciklama (TR)</label>
+                       <textarea className="adm-textarea-full" placeholder="Aciklama..." value={resultForm.description} onChange={e => setResultForm({...resultForm, description: e.target.value})} rows={3} />
+                     </div>
+                     <div className="adm-form-item">
+                       <label>Aciklama (EN)</label>
+                       <textarea className="adm-textarea-full" placeholder="Description..." value={resultForm.description_en} onChange={e => setResultForm({...resultForm, description_en: e.target.value})} rows={3} />
+                     </div>
+                 </div>
 
-                  <div className="adm-form-grid2">
-                      <div className="adm-form-item">
-                        <label>Durum (TR)</label>
-                        <select className="adm-select-full" value={resultForm.status} onChange={e => setResultForm({...resultForm, status: e.target.value})}>
-                          <option value="Planlaniyor">Planlaniyor</option>
-                          <option value="Devam Ediyor">Devam Ediyor</option>
-                          <option value="Tamamlandi">Tamamlandi</option>
-                        </select>
-                      </div>
-                      <div className="adm-form-item">
-                        <label>Durum (EN)</label>
-                        <select className="adm-select-full" value={resultForm.status_en} onChange={e => setResultForm({...resultForm, status_en: e.target.value})}>
-                          <option value="Planned">Planned</option>
-                          <option value="In Progress">In Progress</option>
-                          <option value="Completed">Completed</option>
-                        </select>
-                      </div>
-                  </div>
+                 <div className="adm-form-grid2">
+                     <div className="adm-form-item">
+                       <label>Durum (TR)</label>
+                       <select className="adm-select-full" value={resultForm.status} onChange={e => setResultForm({...resultForm, status: e.target.value})}>
+                         <option value="Planlaniyor">Planlaniyor</option>
+                         <option value="Devam Ediyor">Devam Ediyor</option>
+                         <option value="Tamamlandi">Tamamlandi</option>
+                       </select>
+                     </div>
+                     <div className="adm-form-item">
+                       <label>Durum (EN)</label>
+                       <select className="adm-select-full" value={resultForm.status_en} onChange={e => setResultForm({...resultForm, status_en: e.target.value})}>
+                         <option value="Planned">Planned</option>
+                         <option value="In Progress">In Progress</option>
+                         <option value="Completed">Completed</option>
+                       </select>
+                     </div>
+                 </div>
 
-                  <div className="adm-form-item">
-                    <label>Dosya / Link</label>
-                    <FileInput value={resultForm.link} onChange={url => setResultForm({...resultForm, link: url})} placeholder="Dosya yukleyin veya URL girin..." uploadFile={uploadFile} showToast={showToast} />
-                  </div>
-                  <button type="submit" className="adm-form-submit">
-                    {isEditing ? 'Guncelle' : '+ Ekle'}
-                  </button>
-                </form>
+                 <div className="adm-form-item">
+                   <label>Dosya / Link</label>
+                   <FileInput value={resultForm.link} onChange={url => setResultForm({...resultForm, link: url})} placeholder="Dosya yukleyin veya URL girin..." uploadFile={uploadFile} showToast={showToast} />
+                 </div>
+                 <button type="submit" className="adm-form-submit">
+                   {isEditing ? 'Guncelle' : '+ Ekle'}
+                 </button>
+               </form>
               </div>
               
               <div style={{marginTop:'24px'}}>
@@ -761,9 +780,9 @@ export default function AdminResultsPage() {
                 </div>
 
                 {filteredResults.length === 0 ? (
-                  <div className="adm-empty">
-                    <i className="fas fa-file" />
-                    {searchQuery ? 'Arama sonucu bulunamadi.' : 'Dosya bulunamadi.'}
+                  <div className="adm-empty" style={{ textAlign: 'center', padding: '40px', background: 'var(--surface)', borderRadius: '14px', border: '1px dashed var(--border)' }}>
+                    <i className="fas fa-file" style={{ fontSize: '2rem', color: 'var(--text-muted)', marginBottom: '10px' }} />
+                    <div style={{ color: 'var(--text-secondary)' }}>{searchQuery ? 'Arama sonucu bulunamadi.' : 'Dosya bulunamadi.'}</div>
                   </div>
                 ) : filteredResults.map(item => (
                   <div key={item.id} className="adm-item-row">

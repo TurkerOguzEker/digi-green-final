@@ -204,8 +204,8 @@ export default function AdminDashboardPage() {
     { id: 'contact', label: 'Iletisim', icon: 'fas fa-phone', group: 'Icerik', link: '/admin/contact', active: currentPath === '/admin/contact', roles: ['Super Admin', 'Admin'] },
     { id: 'site', label: 'Header/Footer', icon: 'fas fa-sliders', group: 'Icerik', link: '/admin/site', active: currentPath === '/admin/site', roles: ['Super Admin', 'Admin'] },
     { id: 'users', label: 'Kullanicilar', icon: 'fas fa-users', group: 'Ayarlar', link: '/admin/users', active: currentPath === '/admin/users', roles: ['Super Admin'] },
-    { id: 'logs', label: 'Loglar', icon: 'fas fa-list', group: 'Ayarlar', link: '/admin/logs', active: currentPath === '/admin/logs', roles: ['Super Admin'] },
-    { id: 'security', label: 'Sifre & Guvenlik', icon: 'fas fa-lock', group: 'Ayarlar', link: '/admin/security', active: currentPath === '/admin/security', roles: ['Super Admin', 'Admin', 'Editor'] },
+    { id: 'logs', label: 'Loglar', icon: 'fas fa-list', group: 'Ayarlar', link: '/admin/logs', active: currentPath === '/admin/logs', roles: ['Super Admin', 'Admin', 'Editor'] },
+    { id: 'security', label: 'Sifre & Guvenlik', icon: 'fas fa-lock', group: 'Ayarlar', link: '/admin/security', active: currentPath === '/admin/security', roles: ['Super Admin'] },
   ];
 
   const allowedNav = fullNAV.filter(nav => nav.roles.includes(userRole));
@@ -340,7 +340,7 @@ export default function AdminDashboardPage() {
       <div className="adm-layout">
         <aside className="adm-sidebar">
           <div className="adm-brand-wrapper">
-            <Link href="/" className="adm-brand-card">
+            <Link href="/admin" className="adm-brand-card">
               <div className="adm-brand-icon"><i className="fas fa-leaf" /></div>
               <div>
                 <div className="adm-brand-logo"><span>DIGI-<span>GREEN</span></span></div>

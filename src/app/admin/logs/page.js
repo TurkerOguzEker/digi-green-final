@@ -1,4 +1,3 @@
-// src/app/admin/logs/page.js
 'use client';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
@@ -10,10 +9,17 @@ export default function LogsPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [currentUser, setCurrentUser] = useState(null);
+  const [userRole, setUserRole] = useState('Editor'); // ✨ KULLANICI ROLÜ EKLENDİ ✨
   const [profileOpen, setProfileOpen] = useState(false);
   const [isAboutMenuOpen, setIsAboutMenuOpen] = useState(false); 
   const [logs, setLogs] = useState([]);
+  
+  // Badge Counts
   const [unreadMsgCount, setUnreadMsgCount] = useState(0);
+  const [newsCount, setNewsCount] = useState(0);
+  const [activitiesCount, setActivitiesCount] = useState(0);
+  const [partnersCount, setPartnersCount] = useState(0);
+  const [resultsCount, setResultsCount] = useState(0);
 
   useEffect(() => {
     let isMounted = true;
@@ -21,9 +27,15 @@ export default function LogsPage() {
     async function loadData() {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) { router.push('/login'); return; }
-      if (isMounted) setCurrentUser(session.user);
+      
+      if (isMounted) {
+        setCurrentUser(session.user);
+        // ✨ ROLÜ ÇEK
+        const { data: profile } = await supabase.from('user_profiles').select('role').eq('id', session.user.id).single();
+        if (profile) setUserRole(profile.role);
+      }
 
-      // Sadece loglari cekiyoruz (Performans icin mukemmel)
+      // Loglari cekiyoruz
       const { data: logData } = await supabase
         .from('admin_logs')
         .select('*')
@@ -31,14 +43,23 @@ export default function LogsPage() {
         .limit(100);
       if (isMounted && logData) setLogs(logData);
 
-      // Sol menudeki mesaj bildirim sayisi icin sadece okunmamis sayisini cekiyoruz
-      const { count } = await supabase
-        .from('contact_messages')
-        .select('*', { count: 'exact', head: true })
-        .eq('is_read', false);
-      if (isMounted && count) setUnreadMsgCount(count);
+      // Badge bildirim sayilari
+      const [msg, n, act, par, res] = await Promise.all([
+        supabase.from('contact_messages').select('*', { count: 'exact', head: true }).eq('is_read', false),
+        supabase.from('news').select('*', { count: 'exact', head: true }),
+        supabase.from('activities').select('*', { count: 'exact', head: true }),
+        supabase.from('partners').select('*', { count: 'exact', head: true }),
+        supabase.from('results').select('*', { count: 'exact', head: true })
+      ]);
 
-      if (isMounted) setLoading(false);
+      if (isMounted) {
+        if (msg.count) setUnreadMsgCount(msg.count);
+        if (n.count) setNewsCount(n.count);
+        if (act.count) setActivitiesCount(act.count);
+        if (par.count) setPartnersCount(par.count);
+        if (res.count) setResultsCount(res.count);
+        setLoading(false);
+      }
     }
 
     loadData();
@@ -47,12 +68,14 @@ export default function LogsPage() {
   }, [router]);
 
   const currentPath = typeof window !== 'undefined' ? window.location.pathname : '';
-  const NAV = [
-    { id: 'dashboard', label: 'Dashboard', icon: 'fas fa-chart-pie', group: 'Genel', link: '/admin', active: currentPath === '/admin' },
-    { id: 'messages', label: `Mesajlar`, icon: 'fas fa-inbox', badge: typeof unreadMsgCount !== 'undefined' ? unreadMsgCount : 0, group: 'Genel', link: '/admin/messages', active: currentPath === '/admin/messages' },
-    { id: 'home', label: 'Ana Sayfa', icon: 'fas fa-house', group: 'Icerik', link: '/admin/homepage', active: currentPath === '/admin/homepage' },
+  
+  // ✨ MENÜYÜ ROLÜNE GÖRE FİLTRELEME YAPIYORUZ
+  const fullNAV = [
+    { id: 'dashboard', label: 'Dashboard', icon: 'fas fa-chart-pie', group: 'Genel', link: '/admin', active: currentPath === '/admin', roles: ['Super Admin', 'Admin', 'Editor'] },
+    { id: 'messages', label: `Mesajlar`, icon: 'fas fa-inbox', badge: unreadMsgCount, group: 'Genel', link: '/admin/messages', active: currentPath === '/admin/messages', roles: ['Super Admin', 'Admin', 'Editor'] },
+    { id: 'home', label: 'Ana Sayfa', icon: 'fas fa-house', group: 'Icerik', link: '/admin/homepage', active: currentPath === '/admin/homepage', roles: ['Super Admin', 'Admin'] },
     { 
-      id: 'about', label: 'Hakkinda', icon: 'fas fa-circle-info', group: 'Icerik',
+      id: 'about', label: 'Hakkinda', icon: 'fas fa-circle-info', group: 'Icerik', roles: ['Super Admin', 'Admin'],
       subItems: [
         { id: 'general', label: 'Genel Hakkinda', tab: 'general' },
         { id: 'consortium', label: 'Konsorsiyum', tab: 'consortium' },
@@ -62,24 +85,25 @@ export default function LogsPage() {
         { id: 'strategy', label: 'Strateji', tab: 'strategy' }
       ]
     },
-    { id: 'news', label: 'Haberler', icon: 'fas fa-newspaper', badge: typeof newsCount !== 'undefined' ? newsCount : 0, group: 'Icerik', link: '/admin/news', active: currentPath === '/admin/news' },
-    { id: 'activities', label: 'Faaliyetler', icon: 'fas fa-calendar-check', badge: typeof activitiesCount !== 'undefined' ? activitiesCount : 0, group: 'Icerik', link: '/admin/activities', active: currentPath === '/admin/activities' },
-    { id: 'partners', label: 'Ortaklar', icon: 'fas fa-handshake', badge: typeof partnersCount !== 'undefined' ? partnersCount : 0, group: 'Icerik', link: '/admin/partners', active: currentPath === '/admin/partners' },
-    { id: 'results', label: 'Dosyalar', icon: 'fas fa-file-circle-check', badge: typeof resultsCount !== 'undefined' ? resultsCount : 0, group: 'Icerik', link: '/admin/results', active: currentPath === '/admin/results' },
-    { id: 'contact', label: 'Iletisim', icon: 'fas fa-phone', group: 'Icerik', link: '/admin/contact', active: currentPath === '/admin/contact' },
-    { id: 'site', label: 'Header/Footer', icon: 'fas fa-sliders', group: 'Icerik', link: '/admin/site', active: currentPath === '/admin/site' },
-    { id: 'users', label: 'Kullanicilar', icon: 'fas fa-users', group: 'Ayarlar', link: '/admin/users', active: currentPath === '/admin/users' },
-    { id: 'logs', label: 'Loglar', icon: 'fas fa-list', group: 'Ayarlar', link: '/admin/logs', active: currentPath === '/admin/logs' },
-    { id: 'security', label: 'Sifre & Guvenlik', icon: 'fas fa-lock', group: 'Ayarlar', link: '/admin/security', active: currentPath === '/admin/security' },
+    { id: 'news', label: 'Haberler', icon: 'fas fa-newspaper', badge: newsCount, group: 'Icerik', link: '/admin/news', active: currentPath === '/admin/news', roles: ['Super Admin', 'Admin', 'Editor'] },
+    { id: 'activities', label: 'Faaliyetler', icon: 'fas fa-calendar-check', badge: activitiesCount, group: 'Icerik', link: '/admin/activities', active: currentPath === '/admin/activities', roles: ['Super Admin', 'Admin', 'Editor'] },
+    { id: 'partners', label: 'Ortaklar', icon: 'fas fa-handshake', badge: partnersCount, group: 'Icerik', link: '/admin/partners', active: currentPath === '/admin/partners', roles: ['Super Admin', 'Admin'] },
+    { id: 'results', label: 'Dosyalar', icon: 'fas fa-file-circle-check', badge: resultsCount, group: 'Icerik', link: '/admin/results', active: currentPath === '/admin/results', roles: ['Super Admin', 'Admin', 'Editor'] },
+    { id: 'contact', label: 'Iletisim', icon: 'fas fa-phone', group: 'Icerik', link: '/admin/contact', active: currentPath === '/admin/contact', roles: ['Super Admin', 'Admin'] },
+    { id: 'site', label: 'Header/Footer', icon: 'fas fa-sliders', group: 'Icerik', link: '/admin/site', active: currentPath === '/admin/site', roles: ['Super Admin', 'Admin'] },
+    { id: 'users', label: 'Kullanicilar', icon: 'fas fa-users', group: 'Ayarlar', link: '/admin/users', active: currentPath === '/admin/users', roles: ['Super Admin'] },
+    { id: 'logs', label: 'Loglar', icon: 'fas fa-list', group: 'Ayarlar', link: '/admin/logs', active: currentPath === '/admin/logs', roles: ['Super Admin', 'Admin', 'Editor'] }, // Editör izni eklendi
+    { id: 'security', label: 'Sifre & Guvenlik', icon: 'fas fa-lock', group: 'Ayarlar', link: '/admin/security', active: currentPath === '/admin/security', roles: ['Super Admin', 'Admin'] },
   ];
 
-  const groupedNav = NAV.reduce((acc, item) => {
+  const allowedNav = fullNAV.filter(nav => nav.roles.includes(userRole));
+  const groupedNav = allowedNav.reduce((acc, item) => {
     if (!acc[item.group]) acc[item.group] = [];
     acc[item.group].push(item);
     return acc;
   }, {});
 
-  const currentTab = NAV.find(n => n.id === 'logs');
+  const currentTab = fullNAV.find(n => n.id === 'logs');
 
   if (loading) return <div className="adm-loading"><div className="adm-loading-spinner" /><p>Loglar yukleniyor...</p></div>;
 
@@ -235,7 +259,7 @@ export default function LogsPage() {
               )}
             </div>
             
-            <div style={{ position: 'relative' }}>
+            <div style={{ position: 'relative', display: 'flex', alignItems: 'center', height: '100%' }}>
               <button
                 onClick={() => setProfileOpen(!profileOpen)}
                 style={{

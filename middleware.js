@@ -3,55 +3,56 @@ import { NextResponse } from 'next/server';
 export async function middleware(request) {
   const url = request.nextUrl.clone();
 
-  // Sadece /admin ile başlayan adreslerde çalışır
   if (url.pathname.startsWith('/admin')) {
     
-    // 1. Tarayıcıda bizim atadığımız erişim token'ı var mı?
     const tokenCookie = request.cookies.get('sb-access-token');
     
-    // Token yoksa (giriş yapmamışsa) direkt login'e fırlat
     if (!tokenCookie || !tokenCookie.value) {
       url.pathname = '/login';
       return NextResponse.redirect(url);
     }
 
-    const token = tokenCookie.value;
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-
     try {
-      // 2. Token'ı kullanarak Supabase'den kullanıcının kim olduğunu (ID'sini) güvenli bir şekilde soruyoruz
-      const userRes = await fetch(`${supabaseUrl}/auth/v1/user`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'apikey': supabaseKey
-        }
-      });
+      const token = tokenCookie.value;
       
-      if (!userRes.ok) throw new Error('Geçersiz oturum');
-      const userData = await userRes.json();
+      const base64Url = token.split('.')[1];
+      const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+      const payload = JSON.parse(atob(base64));
+      const userId = payload.sub;
 
-      // 3. Kullanıcının ID'si ile veritabanından Rolünü (Admin/Editor) çekiyoruz
-      const profileRes = await fetch(`${supabaseUrl}/rest/v1/user_profiles?id=eq.${userData.id}&select=role`, {
+      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+      const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY; 
+
+      const profileRes = await fetch(`${supabaseUrl}/rest/v1/user_profiles?id=eq.${userId}&select=role,is_blocked`, {
         headers: {
-          'Authorization': `Bearer ${token}`,
-          'apikey': supabaseKey
-        }
+          'apikey': serviceKey,
+          'Authorization': `Bearer ${serviceKey}`,
+          'Content-Type': 'application/json'
+        },
+        cache: 'no-store' 
       });
 
-      let role = 'Editor'; // Bir hata olursa güvenliği en üstte tutmak için varsayılanı en düşük yetki (Editör) yapıyoruz
-      
+      let role = 'Editor'; 
+      let isBlocked = false;
+
       if (profileRes.ok) {
         const profiles = await profileRes.json();
         if (profiles && profiles.length > 0) {
           role = profiles[0].role;
+          isBlocked = profiles[0].is_blocked;
         }
       }
 
-      // ✨ EDİTÖRLERİN URL ÇUBUĞUNDAN BİLE GİREMEYECEĞİ YASAKLI SAYFALAR ✨
+      if (isBlocked) {
+        url.pathname = '/login';
+        const response = NextResponse.redirect(url);
+        response.cookies.delete('sb-access-token');
+        return response;
+      }
+
+      // ✨ EDİTÖRLERİN YASAKLI OLDUĞU SAYFALAR (Loglar buradan çıkarıldı) ✨
       const restrictedPaths = [
         '/admin/users',
-        '/admin/logs',
         '/admin/site',
         '/admin/homepage',
         '/admin/about',
@@ -59,17 +60,14 @@ export async function middleware(request) {
         '/admin/partners'
       ];
 
-      // Ziyaretçinin gitmek istediği URL yasaklı listede var mı?
       const isRestricted = restrictedPaths.some(path => url.pathname.startsWith(path));
 
-      // 4. Eğer rolü 'Editor' ise ve yasaklı bir sayfaya adres çubuğundan elle girmeye çalışıyorsa:
-      if (role === 'Editor' && isRestricted) {
-        url.pathname = '/admin'; // Onu anında ana Dashboard'a geri fırlat!
+      if (role !== 'Super Admin' && role !== 'Admin' && isRestricted) {
+        url.pathname = '/admin'; 
         return NextResponse.redirect(url);
       }
 
     } catch (error) {
-      // Eğer token süresi dolmuş veya bozulmuşsa güvenliğe al ve login'e at
       url.pathname = '/login';
       const response = NextResponse.redirect(url);
       response.cookies.delete('sb-access-token');
@@ -77,11 +75,9 @@ export async function middleware(request) {
     }
   }
   
-  // Sorun yoksa veya admin sayfasına girmiyorsa normal devam et
   return NextResponse.next();
 }
 
-// Bu kuralın sadece hangi sayfalarda çalışacağını belirliyoruz
 export const config = {
   matcher: ['/admin/:path*'],
 };
