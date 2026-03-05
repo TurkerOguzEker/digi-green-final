@@ -91,14 +91,14 @@ const UserModal = ({ isOpen, mode, formData, setFormData, onClose, onSave, loadi
             <div className="adm-form-item">
               <label style={{fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', textTransform: 'uppercase'}}>Sifre (En az 6 karakter)</label>
               <input className="adm-input" type="text" placeholder="******" value={formData.password} onChange={e=>setFormData({...formData, password: e.target.value})} required minLength={6} style={{width: '100%', boxSizing:'border-box'}} />
-              <PasswordStrength password={formData.password} /> {/* ✨ ZORLUK DERECESİ EKLENDİ */}
+              <PasswordStrength password={formData.password} />
             </div>
           )}
           
           <div className="adm-form-item">
             <label style={{fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', textTransform: 'uppercase'}}>Yetki Rolu</label>
             <select className="adm-input" value={formData.role} onChange={e=>setFormData({...formData, role: e.target.value})} style={{width: '100%', boxSizing:'border-box', cursor:'pointer', appearance:'none'}}>
-              <option value="Editor">Editor</option> {/* ✨ SADECE EDİTÖR SEÇENEĞİ KALDI */}
+              <option value="Editor">Editor</option> 
             </select>
           </div>
           
@@ -173,23 +173,20 @@ export default function AdminUsersPage() {
     }
   }, []);
 
- useEffect(() => {
+  useEffect(() => {
     let isMounted = true;
     async function load() {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) { router.push('/login'); return; }
 
       // ✨ GÜVENLİK BEKÇİSİ (CLIENT-SIDE GUARD) ✨
-      // Kullanıcının rolünü veritabanından çekiyoruz
       const { data: profile } = await supabase.from('user_profiles').select('role').eq('id', session.user.id).single();
       const role = profile?.role || 'Editor';
 
-      // Eğer sayfaya giren kişi Editör ise, verileri yüklemeden anında Dashboard'a fırlat!
       if (role === 'Editor') {
         router.replace('/admin');
-        return; // Sayfanın geri kalanını yüklemeyi durdurur
+        return; 
       }
-      // ✨ GÜVENLİK BEKÇİSİ BİTİŞİ ✨
 
       if (isMounted) setCurrentUser(session.user);
       await fetchPageData();
@@ -203,7 +200,8 @@ export default function AdminUsersPage() {
     setSubmitting(true);
     
     try {
-      const res = await fetch('/api/admin/users', {
+      // ❗ URL GÜNCELLENDİ ❗
+      const res = await fetch('/admin/api/users', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -233,7 +231,8 @@ export default function AdminUsersPage() {
   const handleDeleteUser = (id) => {
     showConfirm('Bu kullaniciyi ve tum yetkilerini kalici olarak silmek istediginize emin misiniz?', async () => {
       try {
-        const res = await fetch('/api/admin/users', {
+        // ❗ URL GÜNCELLENDİ ❗
+        const res = await fetch('/admin/api/users', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ action: 'DELETE', id })
@@ -528,10 +527,47 @@ export default function AdminUsersPage() {
                         <div style={{ fontSize: '0.85rem', fontWeight: 600, color: '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{currentUser?.email}</div>
                       </div>
                     </div>
-                    <button onClick={async () => { await supabase.auth.signOut(); router.push('/login'); }} style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '10px', padding: '11px 14px', background: 'transparent', border: '1px solid transparent', borderRadius: '10px', cursor: 'pointer', color: '#f87171', fontSize: '0.875rem', fontWeight: 500, transition: 'all 0.15s ease', textAlign: 'left' }}>
-                      <i className="fas fa-arrow-right-from-bracket" style={{ fontSize: '0.9rem', width: '16px' }} />
-                      Cikis Yap
-                    </button>
+                    <button
+  onClick={async () => {
+    // 1. Çıkış yapıldığını veritabanına bildir
+    if (currentUser?.email) {
+      await supabase.from('login_logs').insert([{ 
+        user_email: currentUser.email, 
+        location: 'Çıkış Yapıldı', 
+        status: 'logout' 
+      }]);
+    }
+    // 2. Oturumu kapat ve logine at
+    document.cookie = 'sb-access-token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+    await supabase.auth.signOut(); 
+    router.push('/login'); 
+  }}
+  style={{
+    width: '100%',
+    display: 'flex', alignItems: 'center', gap: '10px',
+    padding: '11px 14px',
+    background: 'transparent',
+    border: '1px solid transparent',
+    borderRadius: '10px',
+    cursor: 'pointer',
+    color: '#f87171',
+    fontSize: '0.875rem',
+    fontWeight: 500,
+    transition: 'all 0.15s ease',
+    textAlign: 'left',
+  }}
+  onMouseEnter={e => {
+    e.currentTarget.style.background = 'rgba(248,113,113,0.1)';
+    e.currentTarget.style.borderColor = 'rgba(248,113,113,0.25)';
+  }}
+  onMouseLeave={e => {
+    e.currentTarget.style.background = 'transparent';
+    e.currentTarget.style.borderColor = 'transparent';
+  }}
+>
+  <i className="fas fa-arrow-right-from-bracket" style={{ fontSize: '0.9rem', width: '16px' }} />
+  Çıkış Yap
+</button>
                   </div>
                 </>
               )}
@@ -585,15 +621,26 @@ export default function AdminUsersPage() {
                          <td style={{padding: '16px 20px', textAlign: 'right'}}>
                            <div className="adm-item-actions" style={{justifyContent: 'flex-end'}}>
                              
-                             <button className="adm-btn adm-btn-ghost" onClick={() => setUserModal({ isOpen: true, mode: 'edit', data: user })} style={{height:'32px', fontSize:'0.78rem'}}>
-                               <i className="fas fa-pen" /> Duzenle
-                             </button>
-                             
-                             {user.id !== currentUser?.id && (
-                               <button className="adm-btn adm-btn-danger" onClick={() => handleDeleteUser(user.id)} style={{height:'32px', fontSize:'0.78rem'}}>
-                                 <i className="fas fa-trash" /> Sil
-                               </button>
+                             {/* ✨ SUPER ADMIN KONTROLÜ BURADA BAŞLIYOR ✨ */}
+                             {user.role === 'Super Admin' ? (
+                               <span style={{color: 'var(--text-muted)', fontSize: '0.75rem', fontWeight: '600'}}>
+                                 <i className="fas fa-lock" style={{marginRight: '5px'}}></i> Sabit
+                               </span>
+                             ) : (
+                               <>
+                                 <button className="adm-btn adm-btn-ghost" onClick={() => setUserModal({ isOpen: true, mode: 'edit', data: user })} style={{height:'32px', fontSize:'0.78rem'}}>
+                                   <i className="fas fa-pen" /> Duzenle
+                                 </button>
+                                 
+                                 {user.id !== currentUser?.id && (
+                                   <button className="adm-btn adm-btn-danger" onClick={() => handleDeleteUser(user.id)} style={{height:'32px', fontSize:'0.78rem'}}>
+                                     <i className="fas fa-trash" /> Sil
+                                   </button>
+                                 )}
+                               </>
                              )}
+                             {/* ✨ SUPER ADMIN KONTROLÜ BURADA BİTİYOR ✨ */}
+
                            </div>
                          </td>
                        </tr>

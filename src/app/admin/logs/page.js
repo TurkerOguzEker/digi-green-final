@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '../../../lib/supabase';
 import Link from 'next/link';
@@ -9,10 +9,17 @@ export default function LogsPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [currentUser, setCurrentUser] = useState(null);
-  const [userRole, setUserRole] = useState('Editor'); // ✨ KULLANICI ROLÜ EKLENDİ ✨
+  const [userRole, setUserRole] = useState('Editor'); 
   const [profileOpen, setProfileOpen] = useState(false);
   const [isAboutMenuOpen, setIsAboutMenuOpen] = useState(false); 
+  
+  // ✨ LOG VE SAYFALAMA (PAGINATION) STATE'LERİ ✨
   const [logs, setLogs] = useState([]);
+  const [page, setPage] = useState(0);
+  const [hasMore, setHasMore] = useState(true);
+  const [isFetchingMore, setIsFetchingMore] = useState(false);
+  const loaderRef = useRef(null);
+  const LOGS_PER_PAGE = 30; // Her kaydırmada yüklenecek log sayısı
   
   // Badge Counts
   const [unreadMsgCount, setUnreadMsgCount] = useState(0);
@@ -21,6 +28,36 @@ export default function LogsPage() {
   const [partnersCount, setPartnersCount] = useState(0);
   const [resultsCount, setResultsCount] = useState(0);
 
+  // ✨ LOGLARI SUPABASE'DEN SAYFA SAYFA ÇEKEN FONKSİYON ✨
+  const fetchLogs = useCallback(async (pageNumber) => {
+    setIsFetchingMore(true);
+    const from = pageNumber * LOGS_PER_PAGE;
+    const to = from + LOGS_PER_PAGE - 1;
+
+    const { data: logData, error } = await supabase
+      .from('admin_logs')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .range(from, to);
+
+    if (!error && logData) {
+      // Eğer gelen veri limitimizden azsa, demek ki veritabanında daha fazla log kalmadı
+      if (logData.length < LOGS_PER_PAGE) {
+        setHasMore(false);
+      }
+      
+      setLogs(prevLogs => {
+        // Eğer ilk sayfaysa direkt datayı koy, değilse eski listenin sonuna ekle
+        if (pageNumber === 0) return logData;
+        return [...prevLogs, ...logData];
+      });
+    } else {
+      setHasMore(false);
+    }
+    setIsFetchingMore(false);
+  }, []);
+
+  // ✨ İLK YÜKLEME ✨
   useEffect(() => {
     let isMounted = true;
 
@@ -30,18 +67,12 @@ export default function LogsPage() {
       
       if (isMounted) {
         setCurrentUser(session.user);
-        // ✨ ROLÜ ÇEK
         const { data: profile } = await supabase.from('user_profiles').select('role').eq('id', session.user.id).single();
         if (profile) setUserRole(profile.role);
       }
 
-      // Loglari cekiyoruz
-      const { data: logData } = await supabase
-        .from('admin_logs')
-        .select('*')
-        .order('created_at', { ascending: false })
-        .limit(100);
-      if (isMounted && logData) setLogs(logData);
+      // İlk sayfa logları çek
+      await fetchLogs(0);
 
       // Badge bildirim sayilari
       const [msg, n, act, par, res] = await Promise.all([
@@ -53,11 +84,11 @@ export default function LogsPage() {
       ]);
 
       if (isMounted) {
-        if (msg.count) setUnreadMsgCount(msg.count);
-        if (n.count) setNewsCount(n.count);
-        if (act.count) setActivitiesCount(act.count);
-        if (par.count) setPartnersCount(par.count);
-        if (res.count) setResultsCount(res.count);
+        if (msg?.count) setUnreadMsgCount(msg.count);
+        if (n?.count) setNewsCount(n.count);
+        if (act?.count) setActivitiesCount(act.count);
+        if (par?.count) setPartnersCount(par.count);
+        if (res?.count) setResultsCount(res.count);
         setLoading(false);
       }
     }
@@ -65,11 +96,39 @@ export default function LogsPage() {
     loadData();
 
     return () => { isMounted = false; };
-  }, [router]);
+  }, [router, fetchLogs]);
+
+  // ✨ SCROLL TAKİBİ (SAYFANIN ALTINA GELDİĞİNİ ANLAMA) ✨
+  useEffect(() => {
+    const observer = new IntersectionObserver((entries) => {
+      const target = entries[0];
+      // Kullanıcı loader div'ini gördüyse, yüklenecek veri varsa ve şu an yüklenmiyorsa sayfa sayısını artır
+      if (target.isIntersecting && hasMore && !isFetchingMore && !loading) {
+        setPage((prevPage) => prevPage + 1);
+      }
+    }, {
+      root: null,
+      rootMargin: '20px', // Div'e 20px kala tetikle
+      threshold: 1.0
+    });
+
+    if (loaderRef.current) observer.observe(loaderRef.current);
+    
+    return () => {
+      if (loaderRef.current) observer.unobserve(loaderRef.current);
+    };
+  }, [hasMore, isFetchingMore, loading]);
+
+  // Sayfa sayısı arttıkça yeni logları çek
+  useEffect(() => {
+    if (page > 0) {
+      fetchLogs(page);
+    }
+  }, [page, fetchLogs]);
+
 
   const currentPath = typeof window !== 'undefined' ? window.location.pathname : '';
   
-  // ✨ MENÜYÜ ROLÜNE GÖRE FİLTRELEME YAPIYORUZ
   const fullNAV = [
     { id: 'dashboard', label: 'Dashboard', icon: 'fas fa-chart-pie', group: 'Genel', link: '/admin', active: currentPath === '/admin', roles: ['Super Admin', 'Admin', 'Editor'] },
     { id: 'messages', label: `Mesajlar`, icon: 'fas fa-inbox', badge: unreadMsgCount, group: 'Genel', link: '/admin/messages', active: currentPath === '/admin/messages', roles: ['Super Admin', 'Admin', 'Editor'] },
@@ -92,7 +151,7 @@ export default function LogsPage() {
     { id: 'contact', label: 'Iletisim', icon: 'fas fa-phone', group: 'Icerik', link: '/admin/contact', active: currentPath === '/admin/contact', roles: ['Super Admin', 'Admin'] },
     { id: 'site', label: 'Header/Footer', icon: 'fas fa-sliders', group: 'Icerik', link: '/admin/site', active: currentPath === '/admin/site', roles: ['Super Admin', 'Admin'] },
     { id: 'users', label: 'Kullanicilar', icon: 'fas fa-users', group: 'Ayarlar', link: '/admin/users', active: currentPath === '/admin/users', roles: ['Super Admin'] },
-    { id: 'logs', label: 'Loglar', icon: 'fas fa-list', group: 'Ayarlar', link: '/admin/logs', active: currentPath === '/admin/logs', roles: ['Super Admin', 'Admin', 'Editor'] }, // Editör izni eklendi
+    { id: 'logs', label: 'Loglar', icon: 'fas fa-list', group: 'Ayarlar', link: '/admin/logs', active: currentPath === '/admin/logs', roles: ['Super Admin', 'Admin', 'Editor'] },
     { id: 'security', label: 'Sifre & Guvenlik', icon: 'fas fa-lock', group: 'Ayarlar', link: '/admin/security', active: currentPath === '/admin/security', roles: ['Super Admin', 'Admin'] },
   ];
 
@@ -136,17 +195,19 @@ export default function LogsPage() {
         .adm-nav-icon { width: 18px; height: 18px; display: flex; align-items: center; justify-content: center; font-size: 0.85rem; flex-shrink: 0; transition: var(--transition); }
         .adm-nav-badge { margin-left: auto; background: var(--accent); color: #000; font-size: 0.65rem; font-weight: 700; padding: 2px 7px; border-radius: 20px; min-width: 20px; text-align: center; }
 
-        /* Alt Menu (Accordion) CSS */
         .adm-nav-submenu { display: flex; flex-direction: column; gap: 2px; padding-left: 38px; padding-right: 8px; margin-top: 2px; margin-bottom: 8px; animation: fadeDown 0.2s ease;}
         .adm-nav-subitem { display: flex; align-items: center; padding: 8px 12px; font-size: 0.8rem; color: var(--text-secondary); background: transparent; border: none; border-radius: 8px; cursor: pointer; transition: var(--transition); text-align: left; }
         .adm-nav-subitem:hover { color: var(--text-primary); background: rgba(255,255,255,0.03); }
         .adm-nav-subitem.active { color: var(--accent); background: var(--accent-dim); font-weight: 600; }
 
         .adm-main { margin-left: var(--sidebar-w); flex: 1; display: flex; flex-direction: column; min-height: 100vh; }
-        .adm-topbar { height: 76px; background: var(--surface); border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; padding: 0 32px; position: sticky; top: 0; z-index: 50; }
+        
+        /* ✨ SABİT (FIXED) HEADER CSS GÜNCELLEMESİ ✨ */
+        .adm-topbar { height: 76px; background: rgba(22, 27, 34, 0.85); border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; padding: 0 32px; position: fixed; top: 0; left: var(--sidebar-w); width: calc(100% - var(--sidebar-w)); z-index: 50; backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
+        .adm-content { padding: 108px 32px 32px 32px; flex: 1; max-width: 1600px; margin: 0 auto; width: 100%; }
+        
         .adm-topbar-title { font-family: var(--font-display); font-size: 0.95rem; font-weight: 700; color: var(--text-primary); flex: 1; }
         
-        .adm-content { padding: 32px; flex: 1; }
         .adm-page-header { margin-bottom: 28px; }
         .adm-page-title { font-family: var(--font-display); font-size: 1.5rem; font-weight: 700; color: var(--text-primary); letter-spacing: -0.02em; line-height: 1.2; }
         .adm-page-title em { color: var(--accent); font-style: normal; }
@@ -322,10 +383,47 @@ export default function LogsPage() {
                         <div style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{currentUser?.email}</div>
                       </div>
                     </div>
-                    <button onClick={async () => { await supabase.auth.signOut(); router.push('/login'); }} style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '10px', padding: '11px 14px', background: 'transparent', border: '1px solid transparent', borderRadius: '10px', cursor: 'pointer', color: '#f87171', fontSize: '0.875rem', fontWeight: 500, transition: 'all 0.15s ease', textAlign: 'left' }} onMouseEnter={e => { e.currentTarget.style.background = 'rgba(248,113,113,0.1)'; e.currentTarget.style.borderColor = 'rgba(248,113,113,0.25)'; }} onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.borderColor = 'transparent'; }}>
-                      <i className="fas fa-arrow-right-from-bracket" style={{ fontSize: '0.9rem', width: '16px' }} />
-                      Cikis Yap
-                    </button>
+                   <button
+  onClick={async () => {
+    // 1. Çıkış yapıldığını veritabanına bildir
+    if (currentUser?.email) {
+      await supabase.from('login_logs').insert([{ 
+        user_email: currentUser.email, 
+        location: 'Çıkış Yapıldı', 
+        status: 'logout' 
+      }]);
+    }
+    // 2. Oturumu kapat ve logine at
+    document.cookie = 'sb-access-token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+    await supabase.auth.signOut(); 
+    router.push('/login'); 
+  }}
+  style={{
+    width: '100%',
+    display: 'flex', alignItems: 'center', gap: '10px',
+    padding: '11px 14px',
+    background: 'transparent',
+    border: '1px solid transparent',
+    borderRadius: '10px',
+    cursor: 'pointer',
+    color: '#f87171',
+    fontSize: '0.875rem',
+    fontWeight: 500,
+    transition: 'all 0.15s ease',
+    textAlign: 'left',
+  }}
+  onMouseEnter={e => {
+    e.currentTarget.style.background = 'rgba(248,113,113,0.1)';
+    e.currentTarget.style.borderColor = 'rgba(248,113,113,0.25)';
+  }}
+  onMouseLeave={e => {
+    e.currentTarget.style.background = 'transparent';
+    e.currentTarget.style.borderColor = 'transparent';
+  }}
+>
+  <i className="fas fa-arrow-right-from-bracket" style={{ fontSize: '0.9rem', width: '16px' }} />
+  Çıkış Yap
+</button>
                   </div>
                 </>
               )}
@@ -336,10 +434,10 @@ export default function LogsPage() {
             <div className="adm-fade-in">
               <div className="adm-page-header">
                 <div className="adm-page-title">Sistem <em>Loglari</em></div>
-                <div className="adm-page-desc">Admin paneli uzerinde gerceklestirilen son etkinlikler.</div>
+                <div className="adm-page-desc">Admin paneli uzerinde gerceklestirilen etkinlikler.</div>
               </div>
               <div className="adm-card" style={{padding: '0'}}>
-               <table style={{width: '100%', textAlign: 'left', borderCollapse: 'collapse'}}>
+                <table style={{width: '100%', textAlign: 'left', borderCollapse: 'collapse'}}>
                    <thead>
                      <tr style={{borderBottom: '1px solid var(--border)', background: 'var(--surface-2)', color: 'var(--text-secondary)', fontSize:'0.75rem', textTransform:'uppercase', letterSpacing:'0.05em'}}>
                        <th style={{padding: '16px 20px'}}>Islem Tarihi</th>
@@ -371,6 +469,24 @@ export default function LogsPage() {
                      ))}
                    </tbody>
                  </table>
+                 
+                 {/* ✨ İNFINITE SCROLL YÜKLEME GÖSTERGESİ ✨ */}
+                 {hasMore && (
+                    <div ref={loaderRef} style={{ padding: '24px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
+                      {isFetchingMore ? (
+                        <span><i className="fas fa-spinner fa-spin" style={{marginRight: '8px'}}></i> Daha fazla log yükleniyor...</span>
+                      ) : (
+                        <span>Aşağı kaydırarak devam edin...</span>
+                      )}
+                    </div>
+                 )}
+                 
+                 {/* ✨ TÜM VERİ BİTTİĞİNDE ÇIKAN UYARI ✨ */}
+                 {!hasMore && logs.length > 0 && (
+                    <div style={{ padding: '20px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.85rem', borderTop: '1px solid var(--border)' }}>
+                      Mevcut tüm logların sonuna ulaştınız.
+                    </div>
+                 )}
               </div>
             </div>
           </div>

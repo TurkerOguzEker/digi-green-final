@@ -232,7 +232,7 @@ export default function MessagesPage() {
     await supabase.from('contact_messages').update({ is_starred: newStatus }).eq('id', msg.id);
   }
 
-  // Siteden Direkt E-Posta Gonderme Fonksiyonu (HATA YONETIMI GELISTIRILDI)
+  // Siteden Direkt E-Posta Gonderme Fonksiyonu
   async function handleSendReply(msg) {
     if (!replyText.trim()) {
       showToast('Lütfen bir yanıt yazın.', 'error');
@@ -252,9 +252,7 @@ export default function MessagesPage() {
         })
       });
 
-      // API 200 harici bir kod döndürdüyse (örn 404, 500) hata fırlat
       if (!res.ok) {
-        // Eğer sunucu HTML sayfası döndürdüyse JSON çevirmeyi denemeden direkt hata fırlat
         const contentType = res.headers.get("content-type");
         if (contentType && contentType.indexOf("application/json") !== -1) {
           const errorData = await res.json();
@@ -264,7 +262,6 @@ export default function MessagesPage() {
         }
       }
 
-      // Başarılı ise
       await supabase.from('contact_messages').update({ is_replied: true }).eq('id', msg.id);
       setMessages(prev => prev.map(m => m.id === msg.id ? { ...m, is_replied: true } : m));
 
@@ -457,8 +454,30 @@ export default function MessagesPage() {
         .msg-body-text { font-size: 0.875rem; color: #d1d5db; line-height: 1.8; white-space: pre-wrap; margin: 0; }
         .msg-body-footer { display: flex; align-items: center; gap: 10px; margin-top: 18px; padding-top: 15px; border-top: 1px dashed rgba(255,255,255,0.05); }
         
-        .msg-reply-link { display: inline-flex; align-items: center; gap: 7px; background: rgba(34,197,94,0.1); border: 1px solid rgba(34,197,94,0.25); color: #22c55e; cursor: pointer; padding: 7px 14px; border-radius: 8px; font-size: 0.8rem; font-weight: 500; transition: all 0.2s; }
-        .msg-reply-link:hover { background: rgba(34,197,94,0.18); }
+        /* ✨ YENİ ŞIK YANITLA BUTONU ✨ */
+        .msg-reply-btn {
+          display: inline-flex;
+          align-items: center;
+          gap: 8px;
+          background: linear-gradient(135deg, #22c55e, #16a34a);
+          color: #fff;
+          cursor: pointer;
+          padding: 9px 22px;
+          border-radius: 9px;
+          border: none;
+          font-size: 0.85rem;
+          font-weight: 600;
+          letter-spacing: 0.03em;
+          transition: all 0.3s ease;
+          box-shadow: 0 4px 15px rgba(34,197,94,0.3);
+        }
+        .msg-reply-btn:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 8px 20px rgba(34,197,94,0.4);
+        }
+        .msg-reply-btn:active {
+          transform: translateY(0);
+        }
 
         /* INLINE REPLY KUTUSU CSS */
         .inline-reply-box { margin-top: 15px; background: #111318; border: 1px solid rgba(34,197,94,0.3); border-radius: 10px; padding: 16px; animation: fadeDown 0.2s ease; }
@@ -971,8 +990,9 @@ export default function MessagesPage() {
                                 
                                 {!isReplying ? (
                                   <div className="msg-body-footer">
+                                    {/* ✨ YENİ ŞIK YANITLA BUTONU BURADA ✨ */}
                                     <button 
-                                      className="msg-reply-link"
+                                      className="msg-reply-btn"
                                       onClick={(e) => {
                                         e.stopPropagation();
                                         setReplyingTo(msg.id);
@@ -980,7 +1000,7 @@ export default function MessagesPage() {
                                       }}
                                     >
                                       <i className="fas fa-reply" />
-                                      Site Üzerinden Yanıtla
+                                      Yanıtla
                                     </button>
                                   </div>
                                 ) : (

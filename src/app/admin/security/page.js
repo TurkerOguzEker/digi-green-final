@@ -134,14 +134,14 @@ export default function AdminSecurityPage() {
   const [isAboutMenuOpen, setIsAboutMenuOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [currentUser, setCurrentUser] = useState(null);
-  const [userRole, setUserRole] = useState('Editor'); // ✨ KULLANICI ROLÜ
+  const [userRole, setUserRole] = useState('Editor');
   const [userIp, setUserIp] = useState('Bilinmiyor');
   const [userAgent, setUserAgent] = useState('Bilinmeyen Cihaz');
   
-  const [showOld, setShowOld] = useState(false);
   const [showNew, setShowNew] = useState(false);
 
-  const [oldPassword, setOldPassword] = useState('');
+  // ✨ YENİ ŞİFRE DEĞİŞTİRME STATE'LERİ
+  const [targetEmail, setTargetEmail] = useState(''); 
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -153,6 +153,7 @@ export default function AdminSecurityPage() {
   // Dinamik Veriler
   const [actionLogs, setActionLogs] = useState([]);
   const [loginHistory, setLoginHistory] = useState([]);
+  const [activeSessions, setActiveSessions] = useState([]); // ✨ YENİ AKTİF OTURUMLAR LİSTESİ
   const [confirmModal, setConfirmModal] = useState({ isOpen: false, message: '', onConfirm: null });
 
   // Badge Counts
@@ -201,13 +202,45 @@ export default function AdminSecurityPage() {
       if (aCount) setActivitiesCount(aCount);
 
       if (userEmail) {
-        // Son İşlemler (Tüm admin işlemleri)
+        // Son İşlemler
         const { data: logs } = await supabase.from('admin_logs').select('*').eq('user_email', userEmail).order('created_at', { ascending: false }).limit(5);
         if (logs) setActionLogs(logs);
 
-        // Giriş Geçmişi (Sadece login/logout)
+        // Giriş Geçmişi
         const { data: logins } = await supabase.from('login_logs').select('*').order('created_at', { ascending: false }).limit(6);
         if (logins) setLoginHistory(logins);
+
+        // ✨ TÜM AKTİF OTURUMLARI ÇEKME (ÇIKIŞ YAPANLARI GİZLEME) ✨
+        const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+        const { data: allLogs } = await supabase
+          .from('login_logs')
+          .select('user_email, device, ip_address, created_at, location, status')
+          .gte('created_at', yesterday)
+          .order('created_at', { ascending: false });
+
+        if (allLogs) {
+          // 1. Her kullanıcının sadece EN SON yaptığı işlemi bul
+          const latestLogsMap = new Map();
+          allLogs.forEach(log => {
+            if (!latestLogsMap.has(log.user_email)) {
+              latestLogsMap.set(log.user_email, log);
+            }
+          });
+
+          // 2. En son işlemi 'logout' olanları listeden çıkart, sadece aktifleri bırak
+          const activeSessions = Array.from(latestLogsMap.values()).filter(log => {
+            const isLogoutEvent = log.location === 'Çıkış Yapıldı' || log.location === 'Güvenli Çıkış' || log.location === 'Zaman Aşımı' || log.status === 'logout';
+            return !isLogoutEvent && log.status === 'success';
+          });
+
+          setActiveSessions(activeSessions);
+        }
+
+        // Veritabanından zaman aşımı ayarını çek
+        const { data: settings } = await supabase.from('system_settings').select('value').eq('id', 'session_timeout').single();
+        if (settings?.value?.minutes) {
+          setSessionTimeout(settings.value.minutes.toString());
+        }
       }
     } catch (error) {
       console.error('Veri hatasi:', error);
@@ -222,11 +255,9 @@ export default function AdminSecurityPage() {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) { router.push('/login'); return; }
 
-      // ✨ GÜVENLİK BEKÇİSİ (CLIENT-SIDE GUARD) ✨
       const { data: profile } = await supabase.from('user_profiles').select('role').eq('id', session.user.id).single();
       const role = profile?.role || 'Editor';
 
-      // Eğer Editör girmeye çalışıyorsa, sayfayı hiç yüklemeden anında Dashboard'a fırlat!
       if (role === 'Editor') {
         router.replace('/admin');
         return; 
@@ -234,13 +265,12 @@ export default function AdminSecurityPage() {
       
       if (isMounted) {
         setCurrentUser(session.user);
+        setTargetEmail(session.user.email); // Varsayılan olarak kendi maili gelsin
         setUserRole(role);
         setUserAgent(parseUserAgent(navigator.userAgent));
         
         const savedAlerts = localStorage.getItem(`admin_alerts_${session.user.id}`);
-        const savedTimeout = localStorage.getItem(`admin_timeout_${session.user.id}`);
         if (savedAlerts !== null) setLoginAlerts(savedAlerts === 'true');
-        if (savedTimeout !== null) setSessionTimeout(savedTimeout);
       }
 
       try {
@@ -255,34 +285,6 @@ export default function AdminSecurityPage() {
     return () => { isMounted = false; };
   }, [router, fetchPageData]);
 
-  // ✨ OTOMATİK ÇIKIŞ (INACTIVITY TIMEOUT) SİSTEMİ ✨
-  useEffect(() => {
-    if (!currentUser) return;
-    let timeoutId;
-    const timeoutMs = parseInt(sessionTimeout) * 60 * 1000;
-
-    const resetTimer = () => {
-      clearTimeout(timeoutId);
-      timeoutId = setTimeout(async () => {
-        // Süre dolduğunda çıkış yap ve log kaydet
-        await supabase.from('admin_logs').insert([{ action: 'Sistemden otomatik çıkış yapıldı (Zaman Aşımı)', user_email: currentUser.email, page_section: 'Güvenlik', ip_address: userIp }]);
-        await supabase.from('login_logs').insert([{ user_email: currentUser.email, device: userAgent, location: 'Zaman Aşımı', ip_address: userIp, status: 'error' }]);
-        await supabase.auth.signOut();
-        router.push('/login');
-      }, timeoutMs);
-    };
-
-    // Kullanıcının fare, klavye veya scroll hareketlerini dinle
-    const events = ['mousemove', 'keydown', 'scroll', 'click'];
-    events.forEach(event => window.addEventListener(event, resetTimer));
-    resetTimer(); // İlk sayacı başlat
-
-    return () => {
-      events.forEach(event => window.removeEventListener(event, resetTimer));
-      clearTimeout(timeoutId);
-    };
-  }, [currentUser, sessionTimeout, userIp, userAgent, router]);
-
   // Ayarları Kaydetme
   const handleAlertToggle = (v) => {
     setLoginAlerts(v);
@@ -290,20 +292,46 @@ export default function AdminSecurityPage() {
     showToast(v ? 'Giriş bildirimleri açıldı.' : 'Giriş bildirimleri kapatıldı.');
   };
 
-  const handleTimeoutChange = (e) => {
+  // ✨ ZAMAN AŞIMI GÜNCELLEMESİ (VERİTABANINA)
+  const handleTimeoutChange = async (e) => {
     const v = e.target.value;
     setSessionTimeout(v);
-    localStorage.setItem(`admin_timeout_${currentUser?.id}`, v);
-    showToast(`Oturum zaman aşımı ${v} dakika olarak ayarlandı.`);
+    
+    try {
+      await fetch('/api/admin/security', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'UPDATE_TIMEOUT', timeoutMinutes: v })
+      });
+      showToast(`Tüm sistem için oturum zaman aşımı ${v} dakika olarak ayarlandı.`);
+    } catch (err) {
+      showToast('Ayar kaydedilirken hata oluştu', 'error');
+    }
   };
 
-  // Tüm Oturumları Sonlandırma
-  const handleGlobalSignOut = () => {
-    showConfirm('Bu işlem, tüm cihazlardaki oturumlarınızı kapatacaktır. Yeniden giriş yapmanız gerekecek. Onaylıyor musunuz?', async () => {
+  // ✨ TÜM OTURUMLARI SONLANDIRMA (KICK ALL)
+  const handleKickAll = () => {
+    showConfirm('Kendiniz dahil TÜM yöneticilerin (Editörler ve Adminler) oturumu kapatılacak. Emin misiniz?', async () => {
       try {
-        await logAction('Sistemden güvenli çıkış yapıldı.');
-        await supabase.from('login_logs').insert([{ user_email: currentUser.email, device: userAgent, location: 'Güvenli Çıkış', ip_address: userIp, status: 'success' }]);
-        await supabase.auth.signOut({ scope: 'global' });
+        await logAction('Tüm kullanıcıların oturumu zorla sonlandırıldı.');
+        
+        // API'ye KICK_ALL isteği at
+        await fetch('/api/admin/security', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'KICK_ALL' })
+        });
+
+        // Çıkış işlemini logla
+        await supabase.from('login_logs').insert([{ 
+          user_email: currentUser.email, 
+          location: 'Tümünü Sonlandır', 
+          status: 'logout' 
+        }]);
+
+        // Kendi oturumunu kapat
+        await supabase.auth.signOut();
+        document.cookie = 'sb-access-token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
         router.push('/login');
       } catch (err) {
         showToast('Çıkış yapılamadı.', 'error');
@@ -312,21 +340,27 @@ export default function AdminSecurityPage() {
     });
   };
 
+  // ✨ İSTENİLEN MAİLİN ŞİFRESİNİ GÜNCELLEME (API ÜZERİNDEN)
   const handlePasswordChange = async (e) => {
     e.preventDefault();
+    if (!targetEmail) { showToast('Lütfen bir e-posta adresi girin.', 'error'); return; }
     if (newPassword.length < 6) { showToast('Yeni şifre en az 6 karakter olmalıdır.', 'error'); return; }
     if (newPassword !== confirmPassword) { showToast('Yeni şifreler eşleşmiyor!', 'error'); return; }
+    
     setSubmitting(true);
     try {
-      if (oldPassword) {
-        const { error: verifyError } = await supabase.auth.signInWithPassword({ email: currentUser.email, password: oldPassword });
-        if (verifyError) throw new Error('Mevcut şifrenizi yanlış girdiniz!');
-      }
-      const { error } = await supabase.auth.updateUser({ password: newPassword });
-      if (error) throw new Error(error.message);
-      showToast('Şifreniz başarıyla güncellendi!', 'success');
-      setOldPassword(''); setNewPassword(''); setConfirmPassword('');
-      await logAction('Yönetici şifresi güncellendi.');
+      const res = await fetch('/api/admin/security', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'UPDATE_PASSWORD', email: targetEmail, newPassword })
+      });
+      
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+
+      showToast(`Başarılı! ${targetEmail} hesabının şifresi güncellendi ve varsa açık oturumu kapatıldı.`, 'success');
+      setNewPassword(''); setConfirmPassword('');
+      await logAction(`${targetEmail} kullanıcısının şifresi güncellendi.`);
     } catch (err) {
       showToast('Hata: ' + err.message, 'error');
     } finally {
@@ -345,9 +379,23 @@ export default function AdminSecurityPage() {
     fetchPageData(currentUser.email); 
   }
 
+  // ✨ GÜVENLİ BİREYSEL ÇIKIŞ FONKSİYONU
+  const handleSignOut = async () => {
+    if (currentUser?.email) {
+      await supabase.from('login_logs').insert([{ 
+        user_email: currentUser.email, 
+        location: 'Çıkış Yapıldı', 
+        status: 'logout' 
+      }]);
+    }
+    
+    document.cookie = 'sb-access-token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+    await supabase.auth.signOut(); 
+    router.push('/login');
+  };
+
   const currentPath = typeof window !== 'undefined' ? window.location.pathname : '';
   
-  // ✨ MENÜ FİLTRELEME İÇİN ROLLER EKLENDİ
   const fullNAV = [
     { id: 'dashboard', label: 'Dashboard', icon: 'fas fa-chart-pie', group: 'Genel', link: '/admin', active: currentPath === '/admin', roles: ['Super Admin', 'Admin', 'Editor'] },
     { id: 'messages', label: `Mesajlar`, icon: 'fas fa-inbox', badge: unreadMsgCount, group: 'Genel', link: '/admin/messages', active: currentPath === '/admin/messages', roles: ['Super Admin', 'Admin', 'Editor'] },
@@ -525,7 +573,7 @@ export default function AdminSecurityPage() {
         .session-icon { width: 36px; height: 36px; border-radius: 10px; background: var(--surface-3); display: flex; align-items: center; justify-content: center; font-size: 0.95rem; color: var(--text-secondary); flex-shrink: 0; }
         .session-row.current .session-icon { color: var(--accent); }
         .session-info { flex: 1; min-width: 0; }
-        .session-device { font-size: 0.83rem; font-weight: 600; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .session-device { font-size: 0.83rem; font-weight: 600; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: flex; align-items: center; gap: 8px; }
         .session-meta { font-size: 0.73rem; color: var(--text-secondary); margin-top: 2px; display: flex; align-items: center; gap: 8px; }
         .session-meta .dot { width: 3px; height: 3px; border-radius: 50%; background: var(--text-muted); flex-shrink: 0; }
         .session-ip { font-family: var(--font-mono); font-size: 0.68rem; color: var(--text-muted); flex-shrink: 0; }
@@ -662,7 +710,8 @@ export default function AdminSecurityPage() {
                         <div style={{ fontSize: '0.82rem', fontWeight: 600, color: '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '140px' }}>{currentUser?.email}</div>
                       </div>
                     </div>
-                    <button onClick={async () => { await supabase.auth.signOut(); router.push('/login'); }} style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 14px', background: 'transparent', border: '1px solid transparent', borderRadius: '9px', cursor: 'pointer', color: '#f87171', fontSize: '0.85rem', fontWeight: 500, transition: 'all 0.15s' }}>
+                    {/* ✨ GÜNCELLENMİŞ ÇIKIŞ BUTONU ✨ */}
+                    <button onClick={handleSignOut} style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 14px', background: 'transparent', border: '1px solid transparent', borderRadius: '9px', cursor: 'pointer', color: '#f87171', fontSize: '0.85rem', fontWeight: 500, transition: 'all 0.15s' }}>
                       <i className="fas fa-arrow-right-from-bracket" style={{ fontSize: '0.85rem' }} />Çıkış Yap
                     </button>
                   </div>
@@ -715,21 +764,12 @@ export default function AdminSecurityPage() {
                     <div className="sec-card-icon" style={{ background: 'rgba(34,197,94,0.12)', color: '#22c55e' }}>
                       <i className="fas fa-key" />
                     </div>
-                    Şifre Güncelle
+                    Şifre Güncelle (Admin İşlemi)
                   </div>
                   <form onSubmit={handlePasswordChange} className="form-grid">
                     <div className="form-item">
-                      <label>Giriş Yapılan Hesap</label>
-                      <input className="adm-input" value={currentUser?.email || ''} disabled />
-                    </div>
-                    <div className="form-item">
-                      <label>Mevcut Şifre <span style={{ color: 'var(--red)' }}>*</span></label>
-                      <div className="inp-wrap">
-                        <input type={showOld ? 'text' : 'password'} placeholder="Mevcut şifreniz..." className="adm-input" value={oldPassword} onChange={e => setOldPassword(e.target.value)} required />
-                        <button type="button" className="inp-eye" onClick={() => setShowOld(!showOld)}>
-                          <i className={`fas fa-eye${showOld ? '-slash' : ''}`} />
-                        </button>
-                      </div>
+                      <label>Hangi Hesabın Şifresi Değişecek? <span style={{ color: 'var(--red)' }}>*</span></label>
+                      <input type="email" className="adm-input" value={targetEmail} onChange={e => setTargetEmail(e.target.value)} required placeholder="ornek@email.com" />
                     </div>
                     <div className="form-item">
                       <label>Yeni Şifre <span style={{ color: 'var(--red)' }}>*</span></label>
@@ -753,7 +793,7 @@ export default function AdminSecurityPage() {
                       </div>
                     </div>
                     <button type="submit" className="adm-submit" disabled={submitting}>
-                      {submitting ? <><i className="fas fa-spinner fa-spin" style={{marginRight:'5px'}}></i> Güncelleniyor...</> : <><i className="fas fa-shield-halved" style={{marginRight:'5px'}}></i> Şifreyi Güncelle</>}
+                      {submitting ? <><i className="fas fa-spinner fa-spin" style={{marginRight:'5px'}}></i> Güncelleniyor...</> : <><i className="fas fa-shield-halved" style={{marginRight:'5px'}}></i> Şifreyi Değiştir ve Oturumunu Kapat</>}
                     </button>
                   </form>
                 </div>
@@ -765,7 +805,7 @@ export default function AdminSecurityPage() {
                       <div className="sec-card-icon" style={{ background: 'rgba(59,130,246,0.12)', color: '#3b82f6' }}>
                         <i className="fas fa-sliders" />
                       </div>
-                      Güvenlik Ayarları
+                      Genel Güvenlik Ayarları
                     </div>
                     <div className="toggle-list">
                       <div className="toggle-row">
@@ -778,8 +818,8 @@ export default function AdminSecurityPage() {
                       </div>
                       <div className="toggle-row">
                         <div className="toggle-info">
-                          <strong>Oturum Zaman Aşımı</strong>
-                          <span>Hareketsizlik sonrası oturumu kapat</span>
+                          <strong>Sistem Oturum Zaman Aşımı</strong>
+                          <span>Hareketsizlik sonrası tüm kullanıcıları at</span>
                         </div>
                         <select className="timeout-select" value={sessionTimeout} onChange={handleTimeoutChange}>
                           <option value="15">15 dk</option>
@@ -804,45 +844,60 @@ export default function AdminSecurityPage() {
                       <div className="danger-card">
                         <div>
                           <div style={{ fontSize: '0.84rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '2px' }}>Tüm Oturumları Sonlandır</div>
-                          <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Tüm cihazlardaki aktif oturumları kapat</div>
+                          <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Kendiniz ve diğer herkesin oturumu kapanır</div>
                         </div>
-                        <button className="danger-btn" onClick={handleGlobalSignOut}>
-                          <i className="fas fa-right-from-bracket" style={{ marginRight: '6px' }} />Sonlandır
+                        <button className="danger-btn" onClick={handleKickAll}>
+                          <i className="fas fa-skull-crossbones" style={{ marginRight: '6px' }} />Herkesi At
                         </button>
                       </div>
                     </div>
                   </div>
                 </div>
 
-                {/* ── AKTİF OTURUMLAR (Dinamik Cihaz Bilgisi) ── */}
+                {/* ── AKTİF OTURUMLAR (ÇIKIŞ YAPANLARI GİZLER) ── */}
                 <div className="sec-card sec-full">
                   <div className="sec-card-title">
                     <div className="sec-card-icon" style={{ background: 'rgba(234,179,8,0.1)', color: '#eab308' }}>
                       <i className="fas fa-display" />
                     </div>
-                    Aktif Oturumlar
+                    Aktif Oturumlar (Tüm Kullanıcılar)
                   </div>
                   <div className="session-list">
-                    <div className="session-row current">
-                      <div className="session-icon">
-                        <i className={userAgent.includes('Mobile') || userAgent.includes('iOS') || userAgent.includes('Android') ? 'fas fa-mobile-screen' : 'fas fa-desktop'} />
-                      </div>
-                      <div className="session-info">
-                        <div className="session-device">{userAgent}</div>
-                        <div className="session-meta">
-                          <i className="fas fa-location-dot" style={{ fontSize: '0.65rem', opacity: 0.5 }} />
-                          Tahmini Konum
-                          <span className="dot" />
-                          Şu an aktif
-                        </div>
-                      </div>
-                      <div className="session-ip">{userIp}</div>
-                      <span className="session-current-badge"><i className="fas fa-circle" style={{ fontSize: '0.5rem', marginRight: '5px', animation: 'pulse 2s infinite' }} />Aktif Cihaz</span>
-                    </div>
+                    {activeSessions.length === 0 ? (
+                      <div style={{ padding: '20px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.85rem' }}>Aktif oturum bulunamadı.</div>
+                    ) : (
+                      activeSessions.map((session, index) => {
+                        const isMe = session.user_email === currentUser?.email;
+                        return (
+                          <div key={index} className={`session-row ${isMe ? 'current' : ''}`}>
+                            <div className="session-icon">
+                              <i className={session.device?.includes('Mobile') || session.device?.includes('iOS') || session.device?.includes('Android') ? 'fas fa-mobile-screen' : 'fas fa-desktop'} />
+                            </div>
+                            <div className="session-info">
+                              <div className="session-device">
+                                <span style={{color: 'var(--text-primary)'}}>{session.user_email}</span> 
+                                <span style={{marginLeft: '6px', fontSize: '0.75rem', opacity: 0.6, fontWeight: 'normal'}}>({session.device})</span>
+                              </div>
+                              <div className="session-meta">
+                                <i className="fas fa-location-dot" style={{ fontSize: '0.65rem', opacity: 0.5 }} />
+                                {session.ip_address}
+                                <span className="dot" />
+                                {new Date(session.created_at).toLocaleString('tr-TR', { day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit' })}
+                              </div>
+                            </div>
+                            {isMe ? (
+                              <span className="session-current-badge"><i className="fas fa-circle" style={{ fontSize: '0.5rem', marginRight: '5px', animation: 'pulse 2s infinite' }} />Senin Cihazın</span>
+                            ) : (
+                              <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Diğer Kullanıcı</span>
+                            )}
+                          </div>
+                        );
+                      })
+                    )}
                   </div>
                 </div>
 
-                {/* ── GİRİŞ GEÇMİŞİ (Dinamik Login Logları) ── */}
+                {/* ── GİRİŞ GEÇMİŞİ ── */}
                 <div className="sec-card sec-full">
                   <div className="sec-card-title">
                     <div className="sec-card-icon" style={{ background: 'rgba(59,130,246,0.1)', color: '#3b82f6' }}>
@@ -881,7 +936,7 @@ export default function AdminSecurityPage() {
                   </div>
                 </div>
 
-                {/* ── SON İŞLEMLER (Dinamik Admin Logları) ── */}
+                {/* ── SON İŞLEMLER ── */}
                 <div className="sec-card sec-full">
                   <div className="sec-card-title">
                     <div className="sec-card-icon" style={{ background: 'rgba(168,85,247,0.1)', color: '#a855f7' }}>

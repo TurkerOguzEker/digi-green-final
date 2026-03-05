@@ -33,7 +33,7 @@ export default function AdminDashboardPage() {
   const [loading, setLoading] = useState(true);
   
   const [currentUser, setCurrentUser] = useState(null);
-  const [userRole, setUserRole] = useState('Editor'); // ✨ KULLANICI ROLÜ EKLENDİ ✨
+  const [userRole, setUserRole] = useState('Editor');
   
   const [currentTime, setCurrentTime] = useState(new Date());
   const [onlineUsers, setOnlineUsers] = useState(0);
@@ -50,8 +50,10 @@ export default function AdminDashboardPage() {
   const [recentLogs, setRecentLogs] = useState([]);
   const [contentDist, setContentDist] = useState([]);
   
+  // ✨ YENİ BİLDİRİM STATE'LERİ ✨
   const [loginAlerts, setLoginAlerts] = useState([]);
-  const [notifSeen, setNotifSeen] = useState(false); // ← EKLE
+  const [notifLastSeen, setNotifLastSeen] = useState(null);
+  const [unseenCount, setUnseenCount] = useState(0);
   const notifRef = useRef(null);
 
   useEffect(() => {
@@ -72,7 +74,10 @@ export default function AdminDashboardPage() {
   const fetchDashboardData = useCallback(async () => {
     const fetchStartTime = performance.now();
     try {
-      const [msg, news, act, par, res, logCount, logsList, loginLogs] = await Promise.all([
+      // 1. Session'ı al (Kullanıcının id'sine göre bildirim tarihini çekeceğiz)
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      const promises = [
         supabase.from('contact_messages').select('*', { count: 'exact', head: true }).eq('is_read', false),
         supabase.from('news').select('created_at'),
         supabase.from('activities').select('created_at'),
@@ -86,18 +91,41 @@ export default function AdminDashboardPage() {
                 .gte('created_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString())
                 .order('created_at', { ascending: false })
                 .limit(10)
-      ]);
+      ];
 
-      const newsData = news.data || [];
-      const actData = act.data || [];
+      // Eğer oturum varsa profil bilgisini de ekle
+      if (session) {
+        promises.push(supabase.from('user_profiles').select('role, notif_last_seen').eq('id', session.user.id).single());
+      }
+
+      const results = await Promise.all(promises);
+      const [msg, news, act, par, res, logCount, logsList, loginLogs, profileReq] = results;
+
+      // ✨ BİLDİRİM HESAPLAMA ✨
+      if (profileReq?.data) {
+        const pData = profileReq.data;
+        setUserRole(pData.role);
+        
+        const lastSeenDate = new Date(pData.notif_last_seen || 0);
+        setNotifLastSeen(lastSeenDate);
+        
+        if (loginLogs?.data) {
+          const unseen = loginLogs.data.filter(log => new Date(log.created_at) > lastSeenDate).length;
+          setUnseenCount(unseen);
+        }
+      }
+
+      const newsData = news?.data || [];
+      const actData = act?.data || [];
 
       const newStats = {
-        unreadMsgCount: msg.count || 0, newsCount: newsData.length, activitiesCount: actData.length,
-        partnersCount: par.count || 0, resultsCount: res.count || 0, logsCount: logCount.count || 0,
+        unreadMsgCount: msg?.count || 0, newsCount: newsData.length, activitiesCount: actData.length,
+        partnersCount: par?.count || 0, resultsCount: res?.count || 0, logsCount: logCount?.count || 0,
       };
+      
       setStats(newStats);
-      if(logsList.data) setRecentLogs(logsList.data);
-      if(loginLogs.data) setLoginAlerts(loginLogs.data);
+      if(logsList?.data) setRecentLogs(logsList.data);
+      if(loginLogs?.data) setLoginAlerts(loginLogs.data);
 
       setContentDist([
         { name: 'Haberler', value: newStats.newsCount, color: '#22c55e' },
@@ -159,7 +187,7 @@ export default function AdminDashboardPage() {
     } catch (err) { console.error('Dashboard error:', err); } finally { setLoading(false); }
   }, []);
 
-useEffect(() => {
+  useEffect(() => {
     let mounted = true;
     async function init() {
       const { data: { session } } = await supabase.auth.getSession();
@@ -167,9 +195,6 @@ useEffect(() => {
       
       if (mounted) {
         setCurrentUser(session.user);
-        // Sadece rolü çekiyoruz, kimseyi Dışarı ATMIYORUZ çünkü burası Ana Dashboard
-        const { data: profile } = await supabase.from('user_profiles').select('role').eq('id', session.user.id).single();
-        if (profile) setUserRole(profile.role);
       }
       
       await fetchDashboardData();
@@ -182,7 +207,6 @@ useEffect(() => {
 
   const currentPath = typeof window !== 'undefined' ? window.location.pathname : '';
   
-  // ✨ MENÜYÜ ROLÜNE GÖRE FİLTRELEME YAPIYORUZ
   const fullNAV = [
     { id: 'dashboard', label: 'Dashboard', icon: 'fas fa-chart-pie', group: 'Genel', link: '/admin', active: currentPath === '/admin', roles: ['Super Admin', 'Admin', 'Editor'] },
     { id: 'messages', label: `Mesajlar`, icon: 'fas fa-inbox', badge: stats.unreadMsgCount, group: 'Genel', link: '/admin/messages', active: currentPath === '/admin/messages', roles: ['Super Admin', 'Admin', 'Editor'] },
@@ -278,13 +302,12 @@ useEffect(() => {
         .adm-online-dot { width: 7px; height: 7px; border-radius: 50%; background: #22c55e; box-shadow: 0 0 6px #22c55e; animation: pulse-dot 2s infinite; }
         @keyframes pulse-dot { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
         .adm-main { margin-left: var(--sidebar-w); width: calc(100% - var(--sidebar-w)); display: flex; flex-direction: column; min-height: 100vh; }
-        .adm-topbar { height: 68px; background: var(--surface); border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; padding: 0 28px; position: sticky; top: 0; z-index: 50; backdrop-filter: blur(12px); }
-        .adm-topbar-left { display: flex; align-items: center; gap: 14px; }
+.adm-topbar { height: 68px; background: rgba(22, 27, 34, 0.85); border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; padding: 0 28px; position: fixed; top: 0; left: var(--sidebar-w); width: calc(100% - var(--sidebar-w)); z-index: 50; backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }        .adm-topbar-left { display: flex; align-items: center; gap: 14px; }
         .adm-topbar-icon { width: 34px; height: 34px; background: linear-gradient(135deg, #22c55e, #16a34a); border-radius: 10px; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(34,197,94,0.3); }
         .adm-page-title-sm { font-family: var(--font-display); font-weight: 700; font-size: 0.92rem; color: var(--text-primary); }
         .adm-breadcrumb { font-size: 0.75rem; color: var(--text-muted); display: flex; align-items: center; gap: 6px; }
         .adm-clock { display: flex; align-items: center; gap: 8px; padding: 6px 14px; border-radius: 8px; background: var(--surface-2); border: 1px solid var(--border); font-family: var(--font-mono); font-size: 0.82rem; color: var(--accent); letter-spacing: 0.05em; font-weight: 500; }
-        .adm-content { padding: 28px; flex: 1; max-width: 1600px; margin: 0 auto; width: 100%; }
+        .adm-content { padding: 96px 28px 28px 28px; flex: 1; max-width: 1600px; margin: 0 auto; width: 100%; }
         .adm-welcome { background: linear-gradient(135deg, #0f2d1a 0%, #0d1f2d 60%, #1a0f2d 100%); border: 1px solid rgba(34,197,94,0.2); border-radius: var(--radius-lg); padding: 28px 32px; margin-bottom: 24px; display: flex; align-items: center; justify-content: space-between; position: relative; overflow: hidden; animation: fadeUp 0.35s cubic-bezier(0.4,0,0.2,1); }
         .adm-welcome::before { content: ''; position: absolute; top: -60px; right: -40px; width: 200px; height: 200px; border-radius: 50%; background: radial-gradient(circle, rgba(34,197,94,0.12) 0%, transparent 70%); pointer-events: none; }
         .adm-welcome-greeting { font-family: var(--font-display); font-size: 1.5rem; font-weight: 800; color: #fff; line-height: 1.2; margin-bottom: 6px; }
@@ -315,7 +338,7 @@ useEffect(() => {
         .page-path { font-size: 0.8rem; color: #e6edf3; font-weight: 500; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 250px;}
         .page-views { font-family: var(--font-mono); font-size: 0.8rem; color: var(--accent); font-weight: 700; background: var(--accent-dim); padding: 2px 8px; border-radius: 12px;}
 
-        /* BİLDİRİM MENÜSÜ CSS EKLENTİSİ */
+        /* ✨ GÜNCELLENMİŞ BİLDİRİM MENÜSÜ CSS EKLENTİSİ ✨ */
         .adm-notif-btn { background: none; border: 1px solid var(--border); border-radius: 8px; color: var(--text-secondary); width: 38px; height: 38px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s; position: relative; }
         .adm-notif-btn:hover, .adm-notif-btn.active { color: var(--text-primary); border-color: var(--accent); background: var(--surface-3); }
         .adm-notif-badge { position: absolute; top: -4px; right: -4px; background: var(--red); color: #fff; font-size: 0.55rem; font-weight: 800; min-width: 16px; height: 16px; border-radius: 8px; display: flex; align-items: center; justify-content: center; border: 2px solid var(--surface); padding: 0 4px; }
@@ -324,8 +347,9 @@ useEffect(() => {
         .adm-notif-title { font-family: var(--font-display); font-size: 0.9rem; font-weight: 700; color: var(--text-primary); }
         .adm-notif-body { max-height: 300px; overflow-y: auto; }
         .adm-notif-body::-webkit-scrollbar { width: 4px; } .adm-notif-body::-webkit-scrollbar-thumb { background: var(--border-hover); border-radius: 4px; }
-        .adm-notif-item { padding: 14px 16px; border-bottom: 1px solid rgba(255,255,255,0.04); display: flex; gap: 12px; align-items: flex-start; transition: background 0.2s; }
+        .adm-notif-item { padding: 14px 16px; border-bottom: 1px solid rgba(255,255,255,0.04); display: flex; gap: 12px; align-items: flex-start; transition: background 0.2s; border-left: 2px solid transparent; }
         .adm-notif-item:hover { background: rgba(255,255,255,0.03); }
+        .adm-notif-item.is-new { background: rgba(34,197,94,0.05); border-left-color: var(--accent); }
         .adm-notif-item:last-child { border-bottom: none; }
         .adm-notif-icon { width: 32px; height: 32px; border-radius: 8px; background: var(--accent-dim); color: var(--accent); display: flex; align-items: center; justify-content: center; font-size: 0.85rem; flex-shrink: 0; }
         .adm-notif-text { font-size: 0.8rem; color: var(--text-primary); line-height: 1.4; margin-bottom: 4px; }
@@ -411,65 +435,75 @@ useEffect(() => {
                 {fmtTime(currentTime)}
               </div>
               
-              {/* ✨ BİLDİRİM BUTONU ✨ */}
-              <div style={{ position: 'relative' }} ref={notifRef}>
-               {(userRole === 'Super Admin' || userRole === 'Admin') && (
-  <div style={{ position: 'relative' }} ref={notifRef}>
-    <button
-      className={`adm-notif-btn ${notifOpen ? 'active' : ''}`}
-      onClick={() => {
-        setNotifOpen(!notifOpen);
-        setNotifSeen(true); // rozeti kaldır
-      }}
-    >
-      <i className="fas fa-bell" />
-      {loginAlerts.length > 0 && !notifSeen && (
-        <span className="adm-notif-badge">{loginAlerts.length}</span>
-      )}
-    </button>
+              {/* ✨ BİLDİRİM BUTONU (VERİTABANI BAĞLANTILI) ✨ */}
+              {(userRole === 'Super Admin' || userRole === 'Admin') && (
+                <div style={{ position: 'relative' }} ref={notifRef}>
+                  <button
+                    className={`adm-notif-btn ${notifOpen ? 'active' : ''}`}
+                    onClick={async () => {
+                      setNotifOpen(!notifOpen);
+                      
+                      // Bildirim menüsü AÇILIYORSA ve OKUNMAMIŞ bildirim varsa
+                      if (!notifOpen && unseenCount > 0) {
+                        const now = new Date().toISOString();
+                        
+                        // 1. Ekranda rozeti hemen kaldır
+                        setUnseenCount(0);
+                        
+                        // 2. Veritabanında güncelle
+                        if (currentUser?.id) {
+                          await supabase
+                            .from('user_profiles')
+                            .update({ notif_last_seen: now })
+                            .eq('id', currentUser.id);
+                        }
+                      }
+                    }}
+                  >
+                    <i className="fas fa-bell" />
+                    {unseenCount > 0 && (
+                      <span className="adm-notif-badge">{unseenCount}</span>
+                    )}
+                  </button>
 
-    {notifOpen && (
-      <div className="adm-notif-dropdown">
-        {/* ... dropdown içeriği aynı kalır ... */}
-      </div>
-    )}
-  </div>
-)}
-                
-                {notifOpen && (
-                  <div className="adm-notif-dropdown">
-                    <div className="adm-notif-header">
-                      <div className="adm-notif-title">Son Giriş Yapanlar</div>
-                      <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)', background: 'var(--surface-3)', padding: '2px 6px', borderRadius: '4px' }}>Son 24 Saat</span>
-                    </div>
-                    <div className="adm-notif-body">
-                      {loginAlerts.length === 0 ? (
-                        <div style={{ padding: '30px 20px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.8rem' }}>
-                          <i className="fas fa-check-circle" style={{ fontSize: '1.5rem', marginBottom: '10px', opacity: 0.4, display: 'block' }}></i>
-                          Yeni bir giriş kaydı bulunmuyor.
-                        </div>
-                      ) : (
-                        loginAlerts.map(alert => (
-                          <div key={alert.id} className="adm-notif-item">
-                            <div className="adm-notif-icon"><i className="fas fa-right-to-bracket" /></div>
-                            <div>
-                              <div className="adm-notif-text">
-                                <span>{alert.user_email}</span> kullanıcısı sisteme giriş yaptı.
-                              </div>
-                              <div className="adm-notif-time">
-                                <i className="fas fa-desktop" /> {alert.device || 'Bilinmeyen Cihaz'} • {timeAgo(alert.created_at)}
-                              </div>
-                            </div>
+                  {notifOpen && (
+                    <div className="adm-notif-dropdown">
+                      <div className="adm-notif-header">
+                        <div className="adm-notif-title">Son Giriş Yapanlar</div>
+                        <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)', background: 'var(--surface-3)', padding: '2px 6px', borderRadius: '4px' }}>Son 24 Saat</span>
+                      </div>
+                      <div className="adm-notif-body">
+                        {loginAlerts.length === 0 ? (
+                          <div style={{ padding: '30px 20px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.8rem' }}>
+                            <i className="fas fa-check-circle" style={{ fontSize: '1.5rem', marginBottom: '10px', opacity: 0.4, display: 'block' }}></i>
+                            Yeni bir giriş kaydı bulunmuyor.
                           </div>
-                        ))
-                      )}
+                        ) : (
+                          loginAlerts.map(alert => {
+                            const isNew = new Date(alert.created_at) > notifLastSeen;
+                            return (
+                              <div key={alert.id} className={`adm-notif-item ${isNew ? 'is-new' : ''}`}>
+                                <div className="adm-notif-icon"><i className="fas fa-right-to-bracket" /></div>
+                                <div>
+                                  <div className="adm-notif-text">
+                                    <span>{alert.user_email}</span> kullanıcısı sisteme giriş yaptı.
+                                  </div>
+                                  <div className="adm-notif-time">
+                                    <i className="fas fa-desktop" /> {alert.device || 'Bilinmeyen Cihaz'} • {timeAgo(alert.created_at)}
+                                  </div>
+                                </div>
+                              </div>
+                            );
+                          })
+                        )}
+                      </div>
+                      <Link href="/admin/security" style={{ display: 'block', background: 'rgba(34,197,94,0.05)', color: 'var(--accent)', textAlign: 'center', padding: '12px', fontSize: '0.75rem', fontWeight: 700, textDecoration: 'none', borderTop: '1px solid var(--border)', transition: 'background 0.2s' }} onMouseOver={e=>e.target.style.background='rgba(34,197,94,0.1)'} onMouseOut={e=>e.target.style.background='rgba(34,197,94,0.05)'}>
+                        Güvenlik Detaylarına Git
+                      </Link>
                     </div>
-                    <Link href="/admin/security" style={{ display: 'block', background: 'rgba(34,197,94,0.05)', color: 'var(--accent)', textAlign: 'center', padding: '12px', fontSize: '0.75rem', fontWeight: 700, textDecoration: 'none', borderTop: '1px solid var(--border)', transition: 'background 0.2s' }} onMouseOver={e=>e.target.style.background='rgba(34,197,94,0.1)'} onMouseOut={e=>e.target.style.background='rgba(34,197,94,0.05)'}>
-                      Güvenlik Detaylarına Git
-                    </Link>
-                  </div>
-                )}
-              </div>
+                  )}
+                </div>
+              )}
               
               <div style={{ position: 'relative' }}>
                 <button onClick={() => setProfileOpen(!profileOpen)} style={{ display: 'flex', alignItems: 'center', gap: 9, padding: '5px 12px 5px 5px', background: profileOpen ? 'rgba(34,197,94,0.08)' : 'var(--surface-2)', border: `1px solid ${profileOpen ? 'rgba(34,197,94,0.35)' : 'var(--border)'}`, borderRadius: 999, cursor: 'pointer', color: 'var(--text-primary)', transition: 'all 0.2s', outline: 'none' }}>
@@ -647,7 +681,6 @@ useEffect(() => {
                   </div>
                 </div>
 
-                {/* ✨ EYLEMLER DE ROL BAZLI OLDU ✨ */}
                 <div className="chart-card">
                   <div className="chart-header">
                     <div className="chart-title">Hızlı Eylemler</div>

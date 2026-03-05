@@ -667,10 +667,47 @@ export default function AdminActivitiesPage() {
                         <div style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{currentUser?.email}</div>
                       </div>
                     </div>
-                    <button onClick={async () => { await supabase.auth.signOut(); router.push('/login'); }} style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '10px', padding: '11px 14px', background: 'transparent', border: '1px solid transparent', borderRadius: '10px', cursor: 'pointer', color: '#f87171', fontSize: '0.875rem', fontWeight: 500, transition: 'all 0.15s ease', textAlign: 'left' }}>
-                      <i className="fas fa-arrow-right-from-bracket" style={{ fontSize: '0.9rem', width: '16px' }} />
-                      Cikis Yap
-                    </button>
+                   <button
+  onClick={async () => {
+    // 1. Çıkış yapıldığını veritabanına bildir
+    if (currentUser?.email) {
+      await supabase.from('login_logs').insert([{ 
+        user_email: currentUser.email, 
+        location: 'Çıkış Yapıldı', 
+        status: 'logout' 
+      }]);
+    }
+    // 2. Oturumu kapat ve logine at
+    document.cookie = 'sb-access-token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+    await supabase.auth.signOut(); 
+    router.push('/login'); 
+  }}
+  style={{
+    width: '100%',
+    display: 'flex', alignItems: 'center', gap: '10px',
+    padding: '11px 14px',
+    background: 'transparent',
+    border: '1px solid transparent',
+    borderRadius: '10px',
+    cursor: 'pointer',
+    color: '#f87171',
+    fontSize: '0.875rem',
+    fontWeight: 500,
+    transition: 'all 0.15s ease',
+    textAlign: 'left',
+  }}
+  onMouseEnter={e => {
+    e.currentTarget.style.background = 'rgba(248,113,113,0.1)';
+    e.currentTarget.style.borderColor = 'rgba(248,113,113,0.25)';
+  }}
+  onMouseLeave={e => {
+    e.currentTarget.style.background = 'transparent';
+    e.currentTarget.style.borderColor = 'transparent';
+  }}
+>
+  <i className="fas fa-arrow-right-from-bracket" style={{ fontSize: '0.9rem', width: '16px' }} />
+  Çıkış Yap
+</button>
                   </div>
                 </>
               )}
