@@ -151,7 +151,7 @@ export default function AdminActivitiesPage() {
   // Arama State'i
   const [searchQuery, setSearchQuery] = useState('');
 
-  // Form State (✨ gallery eklendi)
+  // Form State
   const [activityForm, setActivityForm] = useState({ id: null, title: '', title_en: '', type: 'Toplanti (TPM)', type_en: '', location: '', location_en: '', date: '', summary: '', summary_en: '', description: '', description_en: '', image_url: '', gallery: [] });
   const [isEditing, setIsEditing] = useState(false);
 
@@ -257,20 +257,47 @@ export default function AdminActivitiesPage() {
     }]);
   }
 
-  async function deleteItem(id, fileUrl = '') {
+  // ✨ GÜNCELLENDİ: Ana Görsel ve Galeri Resimlerini Beraber Kusursuz Siler ✨
+  async function deleteItem(item) {
     showConfirm('Bu faaliyeti kalici olarak silmek istediginize emin misiniz?', async () => {
-      if (fileUrl) {
-        const fileNameToDelete = fileUrl.split('/images/')[1];
-        if (fileNameToDelete) {
-          try { await supabase.storage.from('images').remove([fileNameToDelete]); } 
-          catch (err) { console.error("Storage silme hatasi:", err); }
+      let filesToDelete = [];
+
+      // 1. Ana görselin dosya adını güvenli bir şekilde URL'den ayıkla
+      if (item.image_url) {
+        const mainFile = decodeURIComponent(item.image_url.split('/').pop().split('?')[0]);
+        if (mainFile) filesToDelete.push(mainFile);
+      }
+
+      // 2. Galerideki resimlerin dosya adlarını ayıkla
+      if (item.gallery) {
+        let parsedGallery = [];
+        try { parsedGallery = typeof item.gallery === 'string' ? JSON.parse(item.gallery) : item.gallery; } 
+        catch(e) { parsedGallery = []; }
+        
+        parsedGallery.forEach(url => {
+          const galFile = decodeURIComponent(url.split('/').pop().split('?')[0]);
+          if (galFile) filesToDelete.push(galFile);
+        });
+      }
+
+      // 3. Supabase Storage'dan Dosyaları Toplu Sil
+      if (filesToDelete.length > 0) {
+        const { error: storageError } = await supabase.storage.from('images').remove(filesToDelete);
+        if (storageError) {
+          console.error("Storage silme hatasi:", storageError);
         }
       }
 
-      await supabase.from('activities').delete().eq('id', id);
-      await logAction(`Faaliyetler tablosundan bir kayit silindi. (ID: ${id})`);
-      fetchPageData(); 
-      showToast('Basariyla silindi.', 'success');
+      // 4. Veritabanından satırı sil
+      const { error: dbError } = await supabase.from('activities').delete().eq('id', item.id);
+      
+      if (dbError) {
+        showToast('Hata: ' + dbError.message, 'error');
+      } else {
+        await logAction(`Faaliyetler tablosundan bir kayit silindi. (ID: ${item.id})`);
+        fetchPageData(); 
+        showToast('Basariyla tamamen silindi.', 'success');
+      }
     });
   }
 
@@ -318,11 +345,31 @@ export default function AdminActivitiesPage() {
     setLoading(false);
   };
 
-  const removeGalleryImage = (index) => {
-    setActivityForm(prev => ({
-      ...prev,
-      gallery: prev.gallery.filter((_, i) => i !== index)
-    }));
+  // ✨ GÜNCELLENDİ: Galeriden resim silindiğinde Supabase'den de KALICI siler ✨
+  const removeGalleryImage = async (index) => {
+    const urlToDelete = activityForm.gallery[index];
+    
+    // 1. Supabase Storage'dan dosyayı kalıcı siliyoruz
+    if (urlToDelete) {
+      const fileName = decodeURIComponent(urlToDelete.split('/').pop().split('?')[0]);
+      if (fileName) {
+        const { error: storageError } = await supabase.storage.from('images').remove([fileName]);
+        if (storageError) {
+          console.error("Storage'dan silinirken hata:", storageError);
+        }
+      }
+    }
+
+    // 2. Ekranda (React State) görseli kaldır
+    const updatedGallery = activityForm.gallery.filter((_, i) => i !== index);
+    setActivityForm(prev => ({ ...prev, gallery: updatedGallery }));
+    
+    // 3. Eğer daha önceden kaydedilmiş bir faaliyetse, DB'yi anında güncelle
+    if (activityForm.id) {
+      await supabase.from('activities').update({ gallery: JSON.stringify(updatedGallery) }).eq('id', activityForm.id);
+      fetchPageData(); 
+    }
+    showToast('Gorsel kalici olarak silindi.', 'success');
   };
 
   // Arama Fonksiyonu (Filtreleme)
@@ -409,6 +456,7 @@ export default function AdminActivitiesPage() {
         .adm-nav-icon { width: 18px; height: 18px; display: flex; align-items: center; justify-content: center; font-size: 0.85rem; flex-shrink: 0; transition: var(--transition); }
         .adm-nav-badge { margin-left: auto; background: var(--accent); color: #000; font-size: 0.65rem; font-weight: 700; padding: 2px 7px; border-radius: 20px; min-width: 20px; text-align: center; }
 
+        /* Alt Menu (Accordion) CSS */
         .adm-nav-submenu { display: flex; flex-direction: column; gap: 2px; padding-left: 38px; padding-right: 8px; margin-top: 2px; margin-bottom: 8px; animation: fadeDown 0.2s ease;}
         .adm-nav-subitem { display: flex; align-items: center; padding: 8px 12px; font-size: 0.8rem; color: var(--text-secondary); background: transparent; border: none; border-radius: 8px; cursor: pointer; transition: var(--transition); text-align: left; }
         .adm-nav-subitem:hover { color: var(--text-primary); background: rgba(255,255,255,0.03); }
@@ -442,10 +490,6 @@ export default function AdminActivitiesPage() {
         .adm-btn { display: inline-flex; align-items: center; justify-content: center; gap: 7px; border: none; border-radius: 8px; font-family: var(--font); font-size: 0.8rem; font-weight: 600; cursor: pointer; transition: var(--transition); white-space: nowrap; line-height: 1; padding: 0 16px; height: 38px; }
         .adm-btn-save { background: var(--accent); color: #000; }
         .adm-btn-save:hover { background: #16a34a; transform: translateY(-1px); box-shadow: 0 4px 14px var(--accent-glow); }
-        .adm-btn-danger { background: transparent; border: 1px solid rgba(239,68,68,0.3); color: var(--red); }
-        .adm-btn-danger:hover { background: var(--red-dim); border-color: rgba(239,68,68,0.6); }
-        .adm-btn-ghost { background: var(--surface-2); border: 1px solid var(--border); color: var(--text-secondary); }
-        .adm-btn-ghost:hover { border-color: var(--border-hover); color: var(--text-primary); }
 
         .adm-img-field { display: flex; gap: 8px; align-items: center; width: 100%; }
         .adm-img-preview-wrap { flex: 1; display: flex; align-items: center; background: var(--surface-2); border: 1px solid var(--border); border-radius: 8px; padding: 6px 10px; gap: 10px; overflow: hidden; }
@@ -471,6 +515,8 @@ export default function AdminActivitiesPage() {
 
         .adm-input-full { background: var(--surface-2); border: 1px solid var(--border); border-radius: 8px; color: var(--text-primary); font-family: var(--font); font-size: 0.875rem; padding: 10px 14px; transition: border-color var(--transition), box-shadow var(--transition); outline: none; width: 100%; }
         .adm-input-full:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow); }
+        .adm-select-full { background: var(--surface-2); border: 1px solid var(--border); border-radius: 8px; color: var(--text-primary); font-family: var(--font); font-size: 0.875rem; padding: 10px 14px; transition: border-color var(--transition); outline: none; width: 100%; cursor: pointer; appearance: none; }
+        .adm-select-full:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow); }
         .adm-textarea-full { background: var(--surface-2); border: 1px solid var(--border); border-radius: 8px; color: var(--text-primary); font-family: var(--font); font-size: 0.875rem; padding: 10px 14px; transition: border-color var(--transition), box-shadow var(--transition); outline: none; width: 100%; resize: vertical; line-height: 1.5; }
         .adm-textarea-full:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow); }
         .adm-form-submit { width: 100%; height: 44px; background: var(--accent); color: #000; border: none; border-radius: 8px; font-family: var(--font); font-size: 0.9rem; font-weight: 700; cursor: pointer; transition: var(--transition); margin-top: 4px; }
@@ -504,10 +550,6 @@ export default function AdminActivitiesPage() {
         @keyframes spin { to { transform: rotate(360deg); } }
         @keyframes slideIn { from { transform: translateX(110%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
         @keyframes topbarDropdown { from { opacity: 0; transform: translateY(-6px) scale(0.97); } to { opacity: 1; transform: translateY(0); } }
-        .adm-badge { display: inline-flex; align-items: center; padding: 2px 9px; border-radius: 20px; font-size: 0.68rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; }
-        .adm-badge-blue { background: var(--blue-dim); color: var(--blue); border: 1px solid rgba(59,130,246,0.25); }
-        .adm-empty { text-align: center; padding: 40px; color: var(--text-muted); font-size: 0.875rem; border: 1px dashed var(--border); border-radius: var(--radius-lg); }
-        .adm-empty i { display: block; font-size: 2rem; margin-bottom: 12px; opacity: 0.4; }
 
         /* YENI ARAMA KUTUSU CSS */
         .adm-search-wrap { position: relative; margin-bottom: 16px; width: 100%; display: flex; align-items: center; }
@@ -545,6 +587,7 @@ export default function AdminActivitiesPage() {
                 <div className="adm-nav-label">{group}</div>
                 {items.map(item => {
                   
+                  // Alt menulu (Dropdown) Eleman Icin Render
                   if (item.subItems) {
                     return (
                       <div key={item.id}>
@@ -574,6 +617,7 @@ export default function AdminActivitiesPage() {
                     );
                   }
 
+                  // Normal Linkli Eleman Icin Render
                   if (item.link) {
                     return (
                       <Link 
@@ -657,17 +701,17 @@ export default function AdminActivitiesPage() {
               {profileOpen && (
                 <>
                   <div style={{ position: 'fixed', inset: 0, zIndex: 99 }} onClick={() => setProfileOpen(false)} />
-                  <div style={{ position: 'absolute', top: 'calc(100% + 10px)', right: 0, width: '240px', background: '#111318', border: '1px solid var(--border, rgba(255,255,255,0.1))', borderRadius: '16px', padding: '8px', boxShadow: '0 20px 40px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.04) inset', zIndex: 100, animation: 'topbarDropdown 0.18s cubic-bezier(0.16,1,0.3,1)' }}>
+                  <div style={{ position: 'absolute', top: 'calc(100% + 10px)', right: 0, width: '240px', background: '#111318', border: '1px solid var(--border, rgba(255,255,255,0.1))', borderRadius: '16px', padding: '8px', boxShadow: '0 20px 40px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.04) inset', zIndex: 100, animation: 'topbarDropdown 0.18s cubic-bezier(0.16,1,0.3,1)' }}>
                     <div style={{ padding: '12px 14px', marginBottom: '6px', background: 'var(--surface-3, rgba(255,255,255,0.04))', borderRadius: '10px', display: 'flex', alignItems: 'center', gap: '12px' }}>
                       <div style={{ width: '38px', height: '38px', flexShrink: 0, background: 'linear-gradient(135deg, var(--accent, #6366f1), #8b5cf6)', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 700, fontSize: '1.1rem', lineHeight: 1, paddingBottom: '2px' }}>
                         {currentUser?.email ? currentUser.email.charAt(0).toUpperCase() : 'A'}
                       </div>
                       <div style={{ overflow: 'hidden' }}>
                         <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '2px' }}>Oturum acik</div>
-                        <div style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{currentUser?.email}</div>
+                        <div style={{ fontSize: '0.85rem', fontWeight: 600, color: '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{currentUser?.email}</div>
                       </div>
                     </div>
-                   <button
+                    <button
   onClick={async () => {
     // 1. Çıkış yapıldığını veritabanına bildir
     if (currentUser?.email) {
@@ -910,7 +954,7 @@ export default function AdminActivitiesPage() {
                       <button className="adm-btn adm-btn-ghost" onClick={() => startEdit(item)} style={{height:'32px', fontSize:'0.78rem'}}>
                         <i className="fas fa-pen" /> Duzenle
                       </button>
-                      <button className="adm-btn adm-btn-danger" onClick={() => deleteItem(item.id, item.image_url)}>
+                      <button className="adm-btn adm-btn-danger" onClick={() => deleteItem(item)}>
                         <i className="fas fa-trash" />
                       </button>
                     </div>

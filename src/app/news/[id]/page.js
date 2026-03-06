@@ -2,6 +2,10 @@ import { supabase } from '../../../lib/supabase';
 import NewsDetailClient from './NewsDetailClient';
 import { notFound } from 'next/navigation';
 
+// ✨ NEXT.JS CACHE'İ İPTAL ETME (HER ZAMAN EN GÜNCEL VERİYİ GÖSTERİR) ✨
+export const revalidate = 0;
+export const dynamic = 'force-dynamic';
+
 // ✨ Google, WhatsApp, LinkedIn Paylaşımları İçin Dinamik SEO (Metadata) ✨
 export async function generateMetadata({ params }) {
   // Next.js 15 kurallarına göre params artık asenkron olarak çözülmeli
@@ -30,7 +34,7 @@ export default async function NewsDetailPage({ params }) {
   const resolvedParams = await params;
   const id = resolvedParams.id;
   
-  // Veriyi sunucuda (Server) anında çekiyoruz. Yükleniyor ekranına gerek yok!
+  // Veriyi sunucuda (Server) anında çekiyoruz. 
   const { data: newsItem } = await supabase.from('news').select('*').eq('id', id).single();
 
   // Eğer haber silinmişse veya yoksa otomatik Next.js 404 sayfasına atar

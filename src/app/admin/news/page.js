@@ -261,19 +261,47 @@ export default function AdminNewsPage() {
     }]);
   }
 
-  async function deleteItem(id, fileUrl = '') {
+  // ✨ GÜNCELLENDİ: Ana Görsel ve Galeri Resimlerini Beraber Kusursuz Siler ✨
+  async function deleteItem(item) {
     showConfirm('Bu haberi kalici olarak silmek istediginize emin misiniz?', async () => {
-      if (fileUrl) {
-        const fileNameToDelete = fileUrl.split('/images/')[1];
-        if (fileNameToDelete) {
-          try { await supabase.storage.from('images').remove([fileNameToDelete]); } 
-          catch (err) { console.error("Storage silme hatasi:", err); }
+      let filesToDelete = [];
+
+      // 1. Ana görselin dosya adını güvenli bir şekilde URL'den ayıkla
+      if (item.image_url) {
+        const mainFile = decodeURIComponent(item.image_url.split('/').pop().split('?')[0]);
+        if (mainFile) filesToDelete.push(mainFile);
+      }
+
+      // 2. Galerideki resimlerin dosya adlarını ayıkla
+      if (item.gallery) {
+        let parsedGallery = [];
+        try { parsedGallery = typeof item.gallery === 'string' ? JSON.parse(item.gallery) : item.gallery; } 
+        catch(e) { parsedGallery = []; }
+        
+        parsedGallery.forEach(url => {
+          const galFile = decodeURIComponent(url.split('/').pop().split('?')[0]);
+          if (galFile) filesToDelete.push(galFile);
+        });
+      }
+
+      // 3. Supabase Storage'dan Dosyaları Toplu Sil
+      if (filesToDelete.length > 0) {
+        const { error: storageError } = await supabase.storage.from('images').remove(filesToDelete);
+        if (storageError) {
+          console.error("Storage silme hatasi:", storageError);
         }
       }
-      await supabase.from('news').delete().eq('id', id);
-      await logAction(`Haberler tablosundan bir kayit silindi. (ID: ${id})`);
-      fetchPageData(); 
-      showToast('Basariyla silindi.', 'success');
+
+      // 4. Veritabanından satırı sil
+      const { error: dbError } = await supabase.from('news').delete().eq('id', item.id);
+      
+      if (dbError) {
+        showToast('Hata: ' + dbError.message, 'error');
+      } else {
+        await logAction(`Haberler tablosundan bir kayit silindi. (ID: ${item.id})`);
+        fetchPageData(); 
+        showToast('Basariyla tamamen silindi.', 'success');
+      }
     });
   }
 
@@ -320,11 +348,35 @@ export default function AdminNewsPage() {
     setLoading(false);
   };
 
-  const removeGalleryImage = (index) => {
+  // ✨ GÜNCELLENDİ: Galeriden resim silindiğinde Supabase'den de KALICI siler ✨
+  const removeGalleryImage = async (index) => {
+    const urlToDelete = newsForm.gallery[index];
+    
+    // 1. Supabase Storage'dan dosyayı kalıcı siliyoruz
+    if (urlToDelete) {
+      const fileName = decodeURIComponent(urlToDelete.split('/').pop().split('?')[0]);
+      if (fileName) {
+        const { error: storageError } = await supabase.storage.from('images').remove([fileName]);
+        if (storageError) {
+          console.error("Storage'dan silinirken hata:", storageError);
+        }
+      }
+    }
+
+    // 2. Ekranda (React State) görseli kaldır
+    const updatedGallery = newsForm.gallery.filter((_, i) => i !== index);
     setNewsForm(prev => ({
       ...prev,
-      gallery: prev.gallery.filter((_, i) => i !== index)
+      gallery: updatedGallery
     }));
+    
+    // 3. Eğer daha önceden kaydedilmiş bir haberse, DB'yi anında güncelle
+    if (newsForm.id) {
+      await supabase.from('news').update({ gallery: JSON.stringify(updatedGallery) }).eq('id', newsForm.id);
+      fetchPageData(); 
+    }
+
+    showToast('Gorsel kalici olarak silindi.', 'success');
   };
 
   const filteredNews = news.filter(item => {
@@ -363,7 +415,7 @@ export default function AdminNewsPage() {
     { id: 'site', label: 'Header/Footer', icon: 'fas fa-sliders', group: 'Icerik', link: '/admin/site', active: currentPath === '/admin/site', roles: ['Super Admin', 'Admin'] },
     { id: 'users', label: 'Kullanicilar', icon: 'fas fa-users', group: 'Ayarlar', link: '/admin/users', active: currentPath === '/admin/users', roles: ['Super Admin'] },
     { id: 'logs', label: 'Loglar', icon: 'fas fa-list', group: 'Ayarlar', link: '/admin/logs', active: currentPath === '/admin/logs', roles: ['Super Admin', 'Admin', 'Editor'] },
-    { id: 'security', label: 'Sifre & Guvenlik', icon: 'fas fa-lock', group: 'Ayarlar', link: '/admin/security', active: currentPath === '/admin/security', roles: ['Super Admin'] },
+    { id: 'security', label: 'Sifre & Guvenlik', icon: 'fas fa-lock', group: 'Ayarlar', link: '/admin/security', active: currentPath === '/admin/security', roles: ['Super Admin', 'Admin'] },
   ];
 
   const allowedNav = fullNAV.filter(nav => nav.roles.includes(userRole));
@@ -407,6 +459,7 @@ export default function AdminNewsPage() {
         .adm-nav-icon { width: 18px; height: 18px; display: flex; align-items: center; justify-content: center; font-size: 0.85rem; flex-shrink: 0; transition: var(--transition); }
         .adm-nav-badge { margin-left: auto; background: var(--accent); color: #000; font-size: 0.65rem; font-weight: 700; padding: 2px 7px; border-radius: 20px; min-width: 20px; text-align: center; }
 
+        /* Alt Menu (Accordion) CSS */
         .adm-nav-submenu { display: flex; flex-direction: column; gap: 2px; padding-left: 38px; padding-right: 8px; margin-top: 2px; margin-bottom: 8px; animation: fadeDown 0.2s ease;}
         .adm-nav-subitem { display: flex; align-items: center; padding: 8px 12px; font-size: 0.8rem; color: var(--text-secondary); background: transparent; border: none; border-radius: 8px; cursor: pointer; transition: var(--transition); text-align: left; }
         .adm-nav-subitem:hover { color: var(--text-primary); background: rgba(255,255,255,0.03); }
@@ -420,6 +473,7 @@ export default function AdminNewsPage() {
         .adm-page-header { margin-bottom: 28px; display: flex; justify-content: space-between; align-items: flex-end; }
         .adm-page-title { font-family: var(--font-display); font-size: 1.5rem; font-weight: 700; color: var(--text-primary); letter-spacing: -0.02em; line-height: 1.2; display: flex; align-items: center; gap: 10px; }
         .adm-page-title em { color: var(--accent); font-style: normal; }
+        .adm-page-desc { font-size: 0.85rem; color: var(--text-secondary); margin-top: 6px; }
         .adm-section { margin-bottom: 36px; background: var(--surface-2); padding: 20px; border-radius: 14px; border: 1px dashed var(--border); }
 
         .adm-section-header { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid var(--border); }
@@ -463,11 +517,14 @@ export default function AdminNewsPage() {
         .adm-form-card-title { font-family: var(--font-display); font-size: 0.9rem; font-weight: 700; color: var(--text-primary); margin-bottom: 20px; display: flex; align-items: center; gap: 8px; justify-content: space-between; }
         .adm-form-card-title i { color: var(--accent); }
         .adm-form-grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .adm-form-grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
         .adm-form-item { display: flex; flex-direction: column; gap: 6px; }
         .adm-form-item label { font-size: 0.75rem; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.05em; }
 
         .adm-input-full { background: var(--surface-2); border: 1px solid var(--border); border-radius: 8px; color: var(--text-primary); font-family: var(--font); font-size: 0.875rem; padding: 10px 14px; transition: border-color var(--transition), box-shadow var(--transition); outline: none; width: 100%; }
         .adm-input-full:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow); }
+        .adm-select-full { background: var(--surface-2); border: 1px solid var(--border); border-radius: 8px; color: var(--text-primary); font-family: var(--font); font-size: 0.875rem; padding: 10px 14px; transition: border-color var(--transition); outline: none; width: 100%; cursor: pointer; appearance: none; }
+        .adm-select-full:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow); }
         .adm-textarea-full { background: var(--surface-2); border: 1px solid var(--border); border-radius: 8px; color: var(--text-primary); font-family: var(--font); font-size: 0.875rem; padding: 10px 14px; transition: border-color var(--transition), box-shadow var(--transition); outline: none; width: 100%; resize: vertical; line-height: 1.5; }
         .adm-textarea-full:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow); }
         .adm-form-submit { width: 100%; height: 44px; background: var(--accent); color: #000; border: none; border-radius: 8px; font-family: var(--font); font-size: 0.9rem; font-weight: 700; cursor: pointer; transition: var(--transition); margin-top: 4px; }
@@ -476,6 +533,7 @@ export default function AdminNewsPage() {
         .adm-divider { border: none; border-top: 1px dashed var(--border); margin: 16px 0; }
         .adm-fade-in { animation: fadeUp 0.25s cubic-bezier(0.4,0,0.2,1); }
         @keyframes fadeUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes fadeDown { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: translateY(0); } }
 
         .adm-toast { position: fixed; top: 20px; right: 20px; z-index: 9999; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 14px 18px; box-shadow: 0 8px 32px rgba(0,0,0,0.6); display: flex; align-items: center; gap: 12px; min-width: 280px; animation: slideIn 0.25s cubic-bezier(0.4,0,0.2,1); }
         .adm-toast-icon { width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 0.9rem; flex-shrink: 0; }
@@ -488,7 +546,7 @@ export default function AdminNewsPage() {
 
         .adm-modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); backdrop-filter: blur(4px); z-index: 10000; display: flex; align-items: center; justify-content: center; animation: fadeIn 0.15s ease; }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-        .adm-modal { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 28px 32px; width: 400px; max-width: 90vw; text-align: center; box-shadow: 0 20px 60px rgba(0,0,0,0.5); animation: scaleIn 0.2s cubic-bezier(0.4,0,0.2,1); }
+        .adm-modal { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); width: 400px; max-width: 90vw; text-align: center; box-shadow: 0 20px 60px rgba(0,0,0,0.5); animation: scaleIn 0.2s cubic-bezier(0.4,0,0.2,1); }
         @keyframes scaleIn { from { transform: scale(0.92); opacity: 0; } to { transform: scale(1); opacity: 1; } }
         .adm-modal-icon { width: 48px; height: 48px; background: var(--red-dim); border: 1px solid rgba(239,68,68,0.25); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; color: var(--red); margin: 0 auto 16px; }
         .adm-modal h3 { font-family: var(--font-display); font-size: 1.1rem; font-weight: 700; color: var(--text-primary); margin-bottom: 8px; }
@@ -537,6 +595,7 @@ export default function AdminNewsPage() {
                 <div className="adm-nav-label">{group}</div>
                 {items.map(item => {
                   
+                  // Alt menulu (Dropdown) Eleman Icin Render
                   if (item.subItems) {
                     return (
                       <div key={item.id}>
@@ -566,6 +625,7 @@ export default function AdminNewsPage() {
                     );
                   }
 
+                  // Normal Linkli Eleman Icin Render
                   if (item.link) {
                     return (
                       <Link 
@@ -649,57 +709,57 @@ export default function AdminNewsPage() {
               {profileOpen && (
                 <>
                   <div style={{ position: 'fixed', inset: 0, zIndex: 99 }} onClick={() => setProfileOpen(false)} />
-                  <div style={{ position: 'absolute', top: 'calc(100% + 10px)', right: 0, width: '240px', background: '#111318', border: '1px solid var(--border, rgba(255,255,255,0.1))', borderRadius: '16px', padding: '8px', boxShadow: '0 20px 40px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.04) inset', zIndex: 100, animation: 'topbarDropdown 0.18s cubic-bezier(0.16,1,0.3,1)' }}>
+                  <div style={{ position: 'absolute', top: 'calc(100% + 10px)', right: 0, width: '240px', background: '#111318', border: '1px solid var(--border, rgba(255,255,255,0.1))', borderRadius: '16px', padding: '8px', boxShadow: '0 20px 40px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.04) inset', zIndex: 100, animation: 'topbarDropdown 0.18s cubic-bezier(0.16,1,0.3,1)' }}>
                     <div style={{ padding: '12px 14px', marginBottom: '6px', background: 'var(--surface-3, rgba(255,255,255,0.04))', borderRadius: '10px', display: 'flex', alignItems: 'center', gap: '12px' }}>
                       <div style={{ width: '38px', height: '38px', flexShrink: 0, background: 'linear-gradient(135deg, var(--accent, #6366f1), #8b5cf6)', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 700, fontSize: '1.1rem', lineHeight: 1, paddingBottom: '2px' }}>
                         {currentUser?.email ? currentUser.email.charAt(0).toUpperCase() : 'A'}
                       </div>
                       <div style={{ overflow: 'hidden' }}>
                         <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '2px' }}>Oturum acik</div>
-                        <div style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{currentUser?.email}</div>
+                        <div style={{ fontSize: '0.85rem', fontWeight: 600, color: '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '140px' }}>{currentUser?.email}</div>
                       </div>
                     </div>
-                   <button
-  onClick={async () => {
-    // 1. Çıkış yapıldığını veritabanına bildir
-    if (currentUser?.email) {
-      await supabase.from('login_logs').insert([{ 
-        user_email: currentUser.email, 
-        location: 'Çıkış Yapıldı', 
-        status: 'logout' 
-      }]);
-    }
-    // 2. Oturumu kapat ve logine at
-    document.cookie = 'sb-access-token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
-    await supabase.auth.signOut(); 
-    router.push('/login'); 
-  }}
-  style={{
-    width: '100%',
-    display: 'flex', alignItems: 'center', gap: '10px',
-    padding: '11px 14px',
-    background: 'transparent',
-    border: '1px solid transparent',
-    borderRadius: '10px',
-    cursor: 'pointer',
-    color: '#f87171',
-    fontSize: '0.875rem',
-    fontWeight: 500,
-    transition: 'all 0.15s ease',
-    textAlign: 'left',
-  }}
-  onMouseEnter={e => {
-    e.currentTarget.style.background = 'rgba(248,113,113,0.1)';
-    e.currentTarget.style.borderColor = 'rgba(248,113,113,0.25)';
-  }}
-  onMouseLeave={e => {
-    e.currentTarget.style.background = 'transparent';
-    e.currentTarget.style.borderColor = 'transparent';
-  }}
->
-  <i className="fas fa-arrow-right-from-bracket" style={{ fontSize: '0.9rem', width: '16px' }} />
-  Çıkış Yap
-</button>
+                    <button
+                      onClick={async () => {
+                        // 1. Çıkış yapıldığını veritabanına bildir
+                        if (currentUser?.email) {
+                          await supabase.from('login_logs').insert([{ 
+                            user_email: currentUser.email, 
+                            location: 'Çıkış Yapıldı', 
+                            status: 'logout' 
+                          }]);
+                        }
+                        // 2. Oturumu kapat ve logine at
+                        document.cookie = 'sb-access-token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+                        await supabase.auth.signOut(); 
+                        router.push('/login'); 
+                      }}
+                      style={{
+                        width: '100%',
+                        display: 'flex', alignItems: 'center', gap: '10px',
+                        padding: '11px 14px',
+                        background: 'transparent',
+                        border: '1px solid transparent',
+                        borderRadius: '10px',
+                        cursor: 'pointer',
+                        color: '#f87171',
+                        fontSize: '0.875rem',
+                        fontWeight: 500,
+                        transition: 'all 0.15s ease',
+                        textAlign: 'left',
+                      }}
+                      onMouseEnter={e => {
+                        e.currentTarget.style.background = 'rgba(248,113,113,0.1)';
+                        e.currentTarget.style.borderColor = 'rgba(248,113,113,0.25)';
+                      }}
+                      onMouseLeave={e => {
+                        e.currentTarget.style.background = 'transparent';
+                        e.currentTarget.style.borderColor = 'transparent';
+                      }}
+                    >
+                      <i className="fas fa-arrow-right-from-bracket" style={{ fontSize: '0.9rem', width: '16px' }} />
+                      Çıkış Yap
+                    </button>
                   </div>
                 </>
               )}
@@ -877,7 +937,7 @@ export default function AdminNewsPage() {
                       <button className="adm-btn adm-btn-ghost" onClick={() => startEdit(item)} style={{height:'32px', fontSize:'0.78rem'}}>
                         <i className="fas fa-pen" /> Duzenle
                       </button>
-                      <button className="adm-btn adm-btn-danger" onClick={() => deleteItem(item.id, item.image_url)}>
+                      <button className="adm-btn adm-btn-danger" onClick={() => deleteItem(item)}>
                         <i className="fas fa-trash" />
                       </button>
                     </div>
