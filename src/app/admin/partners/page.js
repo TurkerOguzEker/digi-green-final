@@ -139,6 +139,7 @@ export default function AdminPartnersPage() {
 
   const [toast, setToast] = useState(null);
   const [modal, setModal] = useState({ isOpen: false, message: '', onConfirm: null });
+  const [formKey, setFormKey] = useState(0);
 
   const showToast = (message, type = 'success') => { setToast({ message, type }); setTimeout(() => setToast(null), 3500); };
   const showConfirm = (message, onConfirm) => setModal({ isOpen: true, message, onConfirm });
@@ -175,19 +176,10 @@ export default function AdminPartnersPage() {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) { router.push('/login'); return; }
 
-      // ✨ GÜVENLİK BEKÇİSİ (CLIENT-SIDE GUARD) ✨
-      const { data: profile } = await supabase.from('user_profiles').select('role').eq('id', session.user.id).single();
-      const role = profile?.role || 'Editor';
-
-      // Eğer Editör girmeye çalışıyorsa, sayfayı hiç yüklemeden anında Dashboard'a fırlat!
-      if (role === 'Editor') {
-        router.replace('/admin');
-        return; 
-      }
-
       if (isMounted) {
         setCurrentUser(session.user);
-        setUserRole(role);
+        const { data: profile } = await supabase.from('user_profiles').select('role').eq('id', session.user.id).single();
+        if (profile) setUserRole(profile.role);
       }
 
       try {
@@ -223,7 +215,10 @@ export default function AdminPartnersPage() {
   };
 
   async function updateSetting(key, value) {
-    if (userRole === 'Editor') return; // Ekstra Güvenlik Koruması
+    if (userRole === 'Editor') {
+        showToast('Bu ayarı değiştirme yetkiniz bulunmuyor.', 'error');
+        return;
+    }
 
     const { error } = await supabase.from('settings').upsert({ key, value }, { onConflict: 'key' });
     if (error) {
@@ -245,43 +240,61 @@ export default function AdminPartnersPage() {
     }]);
   }
 
-  async function deleteItem(id, fileUrls = []) {
+  async function deleteItem(item) {
     showConfirm('Bu ortagi kalici olarak silmek istediginize emin misiniz?', async () => {
-      if (fileUrls && fileUrls.length > 0) {
-        const fileNamesToDelete = fileUrls.filter(url => url).map(url => {
-            const parts = url.split('/images/');
-            return parts.length > 1 ? parts[1] : null;
-          }).filter(name => name);
+      let filesToDelete = [];
 
-        if (fileNamesToDelete.length > 0) {
-          try { await supabase.storage.from('images').remove(fileNamesToDelete); } 
-          catch (err) { console.error("Storage silme hatasi:", err); }
-        }
+      if (item.image_url) {
+        const mainFile = decodeURIComponent(item.image_url.split('/').pop().split('?')[0]);
+        if (mainFile) filesToDelete.push(mainFile);
+      }
+      if (item.flag_url) {
+        const flagFile = decodeURIComponent(item.flag_url.split('/').pop().split('?')[0]);
+        if (flagFile) filesToDelete.push(flagFile);
       }
 
-      await supabase.from('partners').delete().eq('id', id);
-      await logAction(`Ortaklar tablosundan bir kayit silindi. (ID: ${id})`);
+      if (filesToDelete.length > 0) {
+        try { await supabase.storage.from('images').remove(filesToDelete); } 
+        catch (err) { console.error("Storage silme hatasi:", err); }
+      }
+
+      await supabase.from('partners').delete().eq('id', item.id);
+      await logAction(`Ortaklar tablosundan bir kayit silindi. (ID: ${item.id})`);
       fetchPageData(); 
       showToast('Basariyla silindi.', 'success');
     });
   }
 
+  const resetForm = () => {
+    setIsEditing(false);
+    setPartnerForm({ id: null, name: '', name_en: '', country: '', country_en: '', image_url: '', flag_url: '', website: '', description: '', description_en: '', role: 'Ortak', role_en: '' });
+    setFormKey(prev => prev + 1);
+  };
+
   async function saveItem(e) {
     e.preventDefault();
-    const { id, ...data } = partnerForm;
-    let result = id ? await supabase.from('partners').update(data).eq('id', id) : await supabase.from('partners').insert([data]);
+    
+    const { id, ...dataToSave } = partnerForm;
+
+    let result;
+    if (id) {
+        result = await supabase.from('partners').update(dataToSave).eq('id', id);
+    } else {
+        result = await supabase.from('partners').insert([dataToSave]);
+    }
+
     if (result?.error) { showToast('Hata: ' + result.error.message, 'error'); return; }
     
-    setIsEditing(false); 
     await logAction(`Ortaklar tablosunda islem yapildi. (Ekleme/Guncelleme)`);
     fetchPageData(); 
     showToast('Basariyla kaydedildi.', 'success');
-    setPartnerForm({ id: null, name: '', name_en: '', country: '', country_en: '', image_url: '', flag_url: '', website: '', description: '', description_en: '', role: 'Ortak', role_en: '' });
+    resetForm(); 
   }
 
   function startEdit(item) {
     setIsEditing(true);
     setPartnerForm({ ...item });
+    setFormKey(prev => prev + 1);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
@@ -346,184 +359,59 @@ export default function AdminPartnersPage() {
         .adm-brand-card:hover .adm-brand-sub { color: #22c55e; }
 
         .adm-nav { padding: 16px 12px; flex: 1; }
-        .adm-nav-section { margin-bottom: 24px; }
-        .adm-nav-label { font-size: 0.65rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-muted); padding: 0 8px; margin-bottom: 6px; }
         .adm-nav-btn { display: flex; align-items: center; gap: 10px; width: 100%; padding: 9px 10px; border-radius: 8px; border: none; background: transparent; color: var(--text-secondary); font-family: var(--font); font-size: 0.875rem; font-weight: 500; cursor: pointer; transition: var(--transition); text-align: left; position: relative; margin-bottom: 2px; }
         .adm-nav-btn:hover { background: var(--surface-2); color: var(--text-primary); }
         .adm-nav-btn.active { background: var(--accent-dim); color: var(--accent); }
-        .adm-nav-btn.active .adm-nav-icon { color: var(--accent); }
-        .adm-nav-icon { width: 18px; height: 18px; display: flex; align-items: center; justify-content: center; font-size: 0.85rem; flex-shrink: 0; transition: var(--transition); }
         .adm-nav-badge { margin-left: auto; background: var(--accent); color: #000; font-size: 0.65rem; font-weight: 700; padding: 2px 7px; border-radius: 20px; min-width: 20px; text-align: center; }
-
-        /* Alt Menu (Accordion) CSS */
-        .adm-nav-submenu { display: flex; flex-direction: column; gap: 2px; padding-left: 38px; padding-right: 8px; margin-top: 2px; margin-bottom: 8px; animation: fadeDown 0.2s ease;}
-        .adm-nav-subitem { display: flex; align-items: center; padding: 8px 12px; font-size: 0.8rem; color: var(--text-secondary); background: transparent; border: none; border-radius: 8px; cursor: pointer; transition: var(--transition); text-align: left; }
-        .adm-nav-subitem:hover { color: var(--text-primary); background: rgba(255,255,255,0.03); }
-        .adm-nav-subitem.active { color: var(--accent); background: var(--accent-dim); font-weight: 600; }
 
         .adm-main { margin-left: var(--sidebar-w); flex: 1; display: flex; flex-direction: column; min-height: 100vh; }
         .adm-topbar { height: 76px; background: var(--surface); border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; padding: 0 32px; position: sticky; top: 0; z-index: 50; }
         .adm-topbar-title { font-family: var(--font-display); font-size: 0.95rem; font-weight: 700; color: var(--text-primary); flex: 1; }
         
         .adm-content { padding: 32px; flex: 1; }
-        .adm-page-header { margin-bottom: 28px; display: flex; justify-content: space-between; align-items: flex-end; }
+        
+        /* ✨ CSS: Başlık ve Butonun Yan Yana Gelmesi İçin Güncellendi ✨ */
+        .adm-page-header { margin-bottom: 28px; display: flex; justify-content: space-between; align-items: flex-end;}
         .adm-page-title { font-family: var(--font-display); font-size: 1.5rem; font-weight: 700; color: var(--text-primary); letter-spacing: -0.02em; line-height: 1.2; display: flex; align-items: center; gap: 10px; }
         .adm-page-title em { color: var(--accent); font-style: normal; }
-        .adm-section { margin-bottom: 36px; background: var(--surface-2); padding: 20px; border-radius: 14px; border: 1px dashed var(--border); }
-
-        .adm-section-header { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid var(--border); }
-        .adm-section-num { width: 26px; height: 26px; background: var(--accent-dim); border: 1px solid rgba(34,197,94,0.3); border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 0.7rem; font-weight: 700; color: var(--accent); flex-shrink: 0; font-family: var(--font-display); }
-        .adm-section-title { font-family: var(--font-display); font-size: 0.875rem; font-weight: 700; color: var(--text-primary); letter-spacing: 0.02em; text-transform: uppercase; }
-
-        .adm-field { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; margin-bottom: 10px; transition: border-color var(--transition); }
-        .adm-field:hover { border-color: var(--border-hover); }
-        .adm-field-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
-        .adm-field-label { font-size: 0.8rem; font-weight: 600; color: var(--text-secondary); letter-spacing: 0.01em; }
-        .adm-field-key { font-size: 0.65rem; color: var(--text-muted); font-family: monospace; background: var(--surface-2); padding: 2px 7px; border-radius: 4px; border: 1px solid var(--border); }
-        .adm-field-row { display: flex; gap: 8px; align-items: flex-start; }
-        .adm-input { flex: 1; background: var(--surface-2); border: 1px solid var(--border); border-radius: 8px; color: var(--text-primary); font-family: var(--font); font-size: 0.875rem; padding: 10px 14px; transition: border-color var(--transition), box-shadow var(--transition); outline: none; width: 100%; }
-        .adm-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow); }
-        .adm-textarea { flex: 1; background: var(--surface-2); border: 1px solid var(--border); border-radius: 8px; color: var(--text-primary); font-family: var(--font); font-size: 0.875rem; padding: 10px 14px; resize: vertical; transition: border-color var(--transition), box-shadow var(--transition); outline: none; width: 100%; line-height: 1.5; }
-        .adm-textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow); }
         
-        .adm-btn { display: inline-flex; align-items: center; justify-content: center; gap: 7px; border: none; border-radius: 8px; font-family: var(--font); font-size: 0.8rem; font-weight: 600; cursor: pointer; transition: var(--transition); white-space: nowrap; line-height: 1; padding: 0 16px; height: 38px; }
+        .adm-section { margin-bottom: 36px; background: var(--surface-2); padding: 20px; border-radius: 14px; border: 1px dashed var(--border); }
         .adm-btn-save { background: var(--accent); color: #000; }
         .adm-btn-save:hover { background: #16a34a; transform: translateY(-1px); box-shadow: 0 4px 14px var(--accent-glow); }
-        .adm-btn-danger { background: transparent; border: 1px solid rgba(239,68,68,0.3); color: var(--red); }
-        .adm-btn-danger:hover { background: var(--red-dim); border-color: rgba(239,68,68,0.6); }
-        .adm-btn-ghost { background: var(--surface-2); border: 1px solid var(--border); color: var(--text-secondary); }
-        .adm-btn-ghost:hover { border-color: var(--border-hover); color: var(--text-primary); }
-
-        .adm-img-field { display: flex; gap: 8px; align-items: center; width: 100%; }
-        .adm-img-preview-wrap { flex: 1; display: flex; align-items: center; background: var(--surface-2); border: 1px solid var(--border); border-radius: 8px; padding: 6px 10px; gap: 10px; overflow: hidden; }
-        .adm-img-thumb { width: 32px; height: 32px; object-fit: cover; border-radius: 5px; flex-shrink: 0; }
-        .adm-img-url-input { flex: 1; background: transparent; border: none; color: var(--text-primary); font-family: var(--font); font-size: 0.8rem; outline: none; }
-        .adm-upload-btn { width: 38px; height: 38px; background: var(--surface-2); border: 1px solid var(--border); border-radius: 8px; color: var(--text-secondary); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 0.85rem; transition: var(--transition); flex-shrink: 0; position: relative; overflow: hidden; }
-        .adm-upload-btn:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-dim); }
-        .adm-upload-btn input[type=file] { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
-
-        .adm-item-row { display: flex; align-items: center; justify-content: space-between; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; margin-bottom: 8px; transition: border-color var(--transition); }
-        .adm-item-row:hover { border-color: var(--border-hover); }
-        .adm-item-info strong { display: block; font-size: 0.875rem; font-weight: 600; color: var(--text-primary); margin-bottom: 2px; }
-        .adm-item-info span { font-size: 0.75rem; color: var(--text-secondary); }
-        .adm-item-actions { display: flex; gap: 8px; align-items: center; }
-
-        .adm-form-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 24px; margin-bottom: 24px; }
-        .adm-form-card-title { font-family: var(--font-display); font-size: 0.9rem; font-weight: 700; color: var(--text-primary); margin-bottom: 20px; display: flex; align-items: center; gap: 8px; justify-content: space-between; }
-        .adm-form-card-title i { color: var(--accent); }
-        .adm-form-grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-        .adm-form-item { display: flex; flex-direction: column; gap: 6px; }
-        .adm-form-item label { font-size: 0.75rem; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.05em; }
-
-        .adm-input-full { background: var(--surface-2); border: 1px solid var(--border); border-radius: 8px; color: var(--text-primary); font-family: var(--font); font-size: 0.875rem; padding: 10px 14px; transition: border-color var(--transition), box-shadow var(--transition); outline: none; width: 100%; }
-        .adm-input-full:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow); }
-        .adm-select-full { background: var(--surface-2); border: 1px solid var(--border); border-radius: 8px; color: var(--text-primary); font-family: var(--font); font-size: 0.875rem; padding: 10px 14px; transition: border-color var(--transition); outline: none; width: 100%; cursor: pointer; appearance: none; }
-        .adm-select-full:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow); }
-        .adm-textarea-full { background: var(--surface-2); border: 1px solid var(--border); border-radius: 8px; color: var(--text-primary); font-family: var(--font); font-size: 0.875rem; padding: 10px 14px; transition: border-color var(--transition), box-shadow var(--transition); outline: none; width: 100%; resize: vertical; line-height: 1.5; }
-        .adm-textarea-full:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow); }
-        .adm-form-submit { width: 100%; height: 44px; background: var(--accent); color: #000; border: none; border-radius: 8px; font-family: var(--font); font-size: 0.9rem; font-weight: 700; cursor: pointer; transition: var(--transition); margin-top: 4px; }
-        .adm-form-submit:hover { background: #16a34a; transform: translateY(-1px); box-shadow: 0 6px 18px var(--accent-glow); }
-
-        .adm-divider { border: none; border-top: 1px dashed var(--border); margin: 16px 0; }
-        .adm-fade-in { animation: fadeUp 0.25s cubic-bezier(0.4,0,0.2,1); }
-        @keyframes fadeUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
-        @keyframes fadeDown { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: translateY(0); } }
-
-        .adm-toast { position: fixed; top: 20px; right: 20px; z-index: 9999; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 14px 18px; box-shadow: 0 8px 32px rgba(0,0,0,0.6); display: flex; align-items: center; gap: 12px; min-width: 280px; animation: slideIn 0.25s cubic-bezier(0.4,0,0.2,1); }
-        .adm-toast-icon { width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 0.9rem; flex-shrink: 0; }
-        .adm-toast-icon.success { background: var(--accent-dim); color: var(--accent); border: 1px solid rgba(34,197,94,0.25); }
-        .adm-toast-icon.error { background: var(--red-dim); color: var(--red); border: 1px solid rgba(239,68,68,0.25); }
-        .adm-toast-text strong { display: block; font-size: 0.85rem; font-weight: 600; color: var(--text-primary); }
-        .adm-toast-text span { font-size: 0.8rem; color: var(--text-secondary); }
-        .adm-toast-close { margin-left: auto; background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 1rem; padding: 4px; transition: color var(--transition); flex-shrink: 0; }
-        .adm-toast-close:hover { color: var(--text-primary); }
-
-        .adm-loading { height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; background: var(--bg); gap: 16px; font-family: var(--font); color: var(--text-primary); }
-        .adm-loading-spinner { width: 40px; height: 40px; border: 3px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; }
-        @keyframes spin { to { transform: rotate(360deg); } }
-        @keyframes topbarDropdown { from { opacity: 0; transform: translateY(-6px) scale(0.97); } to { opacity: 1; transform: translateY(0) scale(1); } }
         
         .adm-badge { display: inline-flex; align-items: center; padding: 2px 9px; border-radius: 20px; font-size: 0.68rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; }
         .adm-badge-green { background: var(--accent-dim); color: var(--accent); border: 1px solid rgba(34,197,94,0.25); }
         .adm-badge-yellow { background: rgba(245,158,11,0.12); color: var(--yellow); border: 1px solid rgba(245,158,11,0.25); }
-        .adm-empty { text-align: center; padding: 40px; color: var(--text-muted); font-size: 0.875rem; border: 1px dashed var(--border); border-radius: var(--radius-lg); }
-        .adm-empty i { display: block; font-size: 2rem; margin-bottom: 12px; opacity: 0.4; }
-
-        /* YENI: Link Butonu CSS */
-        .adm-external-link { background: var(--surface-2); border: 1px solid var(--border); color: var(--text-secondary); width: 34px; height: 34px; border-radius: 8px; display: flex; align-items: center; justify-content: center; text-decoration: none; transition: all var(--transition); margin-left: 10px; }
+        
+        .adm-external-link { background: var(--surface-2); border: 1px solid var(--border); color: var(--text-secondary); width: 34px; height: 34px; border-radius: 8px; display: flex; align-items: center; justify-content: center; text-decoration: none; transition: all var(--transition); }
         .adm-external-link:hover { background: var(--accent-dim); color: var(--accent); border-color: var(--accent); transform: translateY(-1px); box-shadow: 0 4px 12px var(--accent-glow); }
+        
+        @keyframes topbarDropdown { from { opacity: 0; transform: translateY(-6px) scale(0.97); } to { opacity: 1; transform: translateY(0); } }
+        .adm-fade-in { animation: fadeUp 0.25s cubic-bezier(0.4,0,0.2,1); }
+        @keyframes fadeUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
       `}</style>
 
       <div className="adm-layout">
         <aside className="adm-sidebar">
           <div className="adm-brand-wrapper">
-            <Link href="/admin" className="adm-brand-card" title="Site Ana Sayfasina Git">
-              <div className="adm-brand-icon">
-                <i className="fas fa-leaf" />
-              </div>
+            <Link href="/admin" className="adm-brand-card">
+              <div className="adm-brand-icon"><i className="fas fa-leaf" /></div>
               <div className="adm-brand-text">
                 <div className="adm-brand-logo"><span>DIGI-<span>GREEN</span></span></div>
-                <div className="adm-brand-sub">
-                  Yonetim Paneli 
-                  <i className="fas fa-external-link-alt" style={{ marginLeft: '6px', fontSize: '0.6rem' }} />
-                </div>
+                <div className="adm-brand-sub">Yonetim Paneli</div>
               </div>
             </Link>
           </div>
-          
           <nav className="adm-nav">
             {Object.entries(groupedNav).map(([group, items]) => (
               <div key={group} className="adm-nav-section">
-                <div className="adm-nav-label">{group}</div>
-                {items.map(item => {
-                  
-                  // Alt menulu (Dropdown) Eleman Icin Render
-                  if (item.subItems) {
-                    return (
-                      <div key={item.id}>
-                        <button 
-                          className={`adm-nav-btn ${item.active ? 'active' : ''}`}
-                          onClick={() => setIsAboutMenuOpen(!isAboutMenuOpen)}
-                        >
-                          <span className="adm-nav-icon"><i className={item.icon} /></span>{item.label}
-                          <i className={`fas fa-chevron-${isAboutMenuOpen ? 'up' : 'down'}`} style={{ marginLeft: 'auto', fontSize: '0.7rem', transition: 'all 0.2s', opacity: 0.6 }} />
-                        </button>
-                        
-                        {isAboutMenuOpen && (
-                          <div className="adm-nav-submenu">
-                            {item.subItems.map(sub => (
-                              <button
-                                key={sub.id}
-                                className={`adm-nav-subitem`}
-                                onClick={() => router.push(`/admin/about?tab=${sub.tab}`, { scroll: false })}
-                              >
-                                <span style={{width:'4px', height:'4px', borderRadius:'50%', background:'currentColor', marginRight:'8px', display:'inline-block', opacity: 0.4}}></span>
-                                {sub.label}
-                              </button>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    );
-                  }
-
-                  // Normal Linkli Eleman Icin Render
-                  if (item.link) {
-                    return (
-                      <Link 
-                        href={item.link} 
-                        key={item.id} 
-                        className={`adm-nav-btn ${item.active ? 'active' : ''}`} 
-                        style={{ textDecoration: 'none', color: 'inherit' }}
-                      >
-                        <span className="adm-nav-icon"><i className={item.icon} /></span>{item.label}
-                        {item.badge > 0 && <span className="adm-nav-badge">{item.badge}</span>}
-                      </Link>
-                    );
-                  }
-
-                  return null;
-                })}
+               <div className="adm-nav-label" style={{fontSize: '0.65rem', fontWeight: 600, textTransform: 'uppercase', color: 'var(--text-muted)', padding: '0 8px', marginBottom: '6px'}}>{group}</div>
+                {items.map(item => (
+                  <Link href={item.link || '#'} key={item.id} className={`adm-nav-btn ${item.active ? 'active' : ''}`} style={{textDecoration:'none', color:'inherit'}}>
+                    <span style={{width:'18px', textAlign:'center'}}><i className={item.icon} /></span>{item.label}
+                    {item.badge > 0 && <span className="adm-nav-badge">{item.badge}</span>}
+                  </Link>
+                ))}
               </div>
             ))}
           </nav>
@@ -533,288 +421,193 @@ export default function AdminPartnersPage() {
           <div className="adm-topbar">
             <div className="adm-topbar-title">
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <div style={{
-                  width: '34px', height: '34px',
-                  background: 'linear-gradient(135deg, var(--accent), var(--accent-dim, #6366f180))',
-                  borderRadius: '10px',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  boxShadow: '0 4px 12px var(--accent-glow, rgba(99,102,241,0.35))',
-                }}>
+                <div style={{ width: '34px', height: '34px', background: 'linear-gradient(135deg, var(--accent), var(--accent-dim))', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   <i className="fas fa-handshake" style={{ color: '#fff', fontSize: '0.85rem' }} />
                 </div>
-                <span style={{ fontWeight: 600, letterSpacing: '-0.01em' }}>
-                  Ortaklar ve Kurumlar
-                </span>
+                <span style={{ fontWeight: 600 }}>Ortaklar ve Kurumlar</span>
               </div>
             </div>
             
-            <div style={{ position: 'relative', display: 'flex', alignItems: 'center', height: '100%' }}>
-              <button
-                onClick={() => setProfileOpen(!profileOpen)}
-                style={{
-                  display: 'flex', alignItems: 'center', gap: '10px',
-                  padding: '6px 14px 6px 6px',
-                  background: profileOpen ? 'var(--surface-3, rgba(255,255,255,0.08))' : 'var(--surface-2, rgba(255,255,255,0.04))',
-                  border: '1px solid',
-                  borderColor: profileOpen ? 'var(--accent, #6366f1)' : 'var(--border, rgba(255,255,255,0.08))',
-                  borderRadius: '999px',
-                  cursor: 'pointer',
-                  color: 'var(--text-primary)',
-                  transition: 'all 0.2s ease',
-                  outline: 'none',
-                  userSelect: 'none',
-                }}
-                onMouseEnter={e => {
-                  e.currentTarget.style.borderColor = 'var(--accent, #6366f1)';
-                  e.currentTarget.style.background = 'var(--surface-3, rgba(255,255,255,0.08))';
-                }}
-                onMouseLeave={e => {
-                  if (!profileOpen) {
-                    e.currentTarget.style.borderColor = 'var(--border, rgba(255,255,255,0.08))';
-                    e.currentTarget.style.background = 'var(--surface-2, rgba(255,255,255,0.04))';
-                  }
-                }}
-              >
-                <div style={{
-                  width: '28px', height: '28px',
-                  background: 'linear-gradient(135deg, #22c55e, #16a34a)',
-                  borderRadius: '50%',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  color: '#fff', fontWeight: 700, fontSize: '0.85rem',
-                  lineHeight: 1, paddingBottom: '1px',
-                  flexShrink: 0,
-                  boxShadow: '0 2px 8px rgba(34, 197, 94, 0.4)',
-                }}>
+            <div style={{ position: 'relative' }}>
+              <button onClick={() => setProfileOpen(!profileOpen)} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '6px 14px 6px 6px', background: 'var(--surface-2)', border: '1px solid var(--border)', borderRadius: '999px', cursor: 'pointer', color: 'var(--text-primary)' }}>
+                <div style={{ width: '28px', height: '28px', background: 'linear-gradient(135deg, #22c55e, #16a34a)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: '0.85rem' }}>
                   {currentUser?.email ? currentUser.email.charAt(0).toUpperCase() : 'A'}
                 </div>
-
                 <span style={{ fontSize: '0.85rem', fontWeight: 500, maxWidth: '130px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                   {currentUser?.email?.split('@')[0] || 'Admin'}
                 </span>
-
-                <i
-                  className={`fas fa-chevron-${profileOpen ? 'up' : 'down'}`}
-                  style={{ fontSize: '0.7rem', opacity: 0.5, transition: 'transform 0.2s ease', transform: profileOpen ? 'rotate(180deg)' : 'rotate(0deg)' }}
-                />
+                <i className={`fas fa-chevron-${profileOpen ? 'up' : 'down'}`} style={{ fontSize: '0.7rem', opacity: 0.5 }} />
               </button>
-
+              
               {profileOpen && (
-                <>
-                  <div style={{ position: 'fixed', inset: 0, zIndex: 99 }} onClick={() => setProfileOpen(false)} />
-                  <div style={{ position: 'absolute', top: 'calc(100% + 12px)', right: 0, width: '240px', background: '#111318', border: '1px solid var(--border, rgba(255,255,255,0.1))', borderRadius: '16px', padding: '8px', boxShadow: '0 20px 40px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.04) inset', zIndex: 100, animation: 'topbarDropdown 0.18s cubic-bezier(0.16,1,0.3,1)' }}>
-                    <div style={{ padding: '12px 14px', marginBottom: '6px', background: 'var(--surface-3, rgba(255,255,255,0.04))', borderRadius: '10px', display: 'flex', alignItems: 'center', gap: '12px' }}>
-                      <div style={{ width: '38px', height: '38px', flexShrink: 0, background: 'linear-gradient(135deg, var(--accent, #6366f1), #8b5cf6)', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 700, fontSize: '1.1rem', lineHeight: 1, paddingBottom: '2px' }}>
-                        {currentUser?.email ? currentUser.email.charAt(0).toUpperCase() : 'A'}
-                      </div>
-                      <div style={{ overflow: 'hidden' }}>
-                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '2px' }}>
-                          Oturum acik
-                        </div>
-                        <div style={{ fontSize: '0.85rem', fontWeight: 600, color: '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{currentUser?.email}</div>
-                      </div>
+                <div style={{ position: 'absolute', top: 'calc(100% + 10px)', right: 0, width: '240px', background: '#111318', border: '1px solid var(--border, rgba(255,255,255,0.1))', borderRadius: '16px', padding: '8px', boxShadow: '0 20px 40px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.04) inset', zIndex: 100, animation: 'topbarDropdown 0.2s ease' }}>
+                  <div style={{ padding: '12px 14px', marginBottom: '6px', background: 'var(--surface-3, rgba(255,255,255,0.04))', borderRadius: '10px', display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <div style={{ width: '38px', height: '38px', flexShrink: 0, background: 'linear-gradient(135deg, var(--accent, #6366f1), #8b5cf6)', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 700, fontSize: '1.1rem', lineHeight: 1, paddingBottom: '2px' }}>
+                      {currentUser?.email ? currentUser.email.charAt(0).toUpperCase() : 'A'}
                     </div>
-                    {/* ✨ GÜNCELLENMİŞ ÇIKIŞ BUTONU ✨ */}
-                    <button
-                      onClick={async () => {
-                        // 1. Çıkış yapıldığını veritabanına bildir
-                        if (currentUser?.email) {
-                          await supabase.from('login_logs').insert([{ 
-                            user_email: currentUser.email, 
-                            location: 'Çıkış Yapıldı', 
-                            status: 'logout' 
-                          }]);
-                        }
-                        // 2. Oturumu kapat ve logine at
-                        document.cookie = 'sb-access-token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
-                        await supabase.auth.signOut(); 
-                        router.push('/login'); 
-                      }}
-                      style={{
-                        width: '100%',
-                        display: 'flex', alignItems: 'center', gap: '10px',
-                        padding: '11px 14px',
-                        background: 'transparent',
-                        border: '1px solid transparent',
-                        borderRadius: '10px',
-                        cursor: 'pointer',
-                        color: '#f87171',
-                        fontSize: '0.875rem',
-                        fontWeight: 500,
-                        transition: 'all 0.15s ease',
-                        textAlign: 'left',
-                      }}
-                      onMouseEnter={e => {
-                        e.currentTarget.style.background = 'rgba(248,113,113,0.1)';
-                        e.currentTarget.style.borderColor = 'rgba(248,113,113,0.25)';
-                      }}
-                      onMouseLeave={e => {
-                        e.currentTarget.style.background = 'transparent';
-                        e.currentTarget.style.borderColor = 'transparent';
-                      }}
-                    >
-                      <i className="fas fa-arrow-right-from-bracket" style={{ fontSize: '0.9rem', width: '16px' }} />
-                      Çıkış Yap
-                    </button>
+                    <div style={{ overflow: 'hidden' }}>
+                      <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '2px' }}>Oturum acik</div>
+                      <div style={{ fontSize: '0.85rem', fontWeight: 600, color: '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '140px' }}>{currentUser?.email}</div>
+                    </div>
                   </div>
-                </>
+                  <button onClick={async () => { 
+                    if (currentUser?.email) {
+                      await supabase.from('login_logs').insert([{ user_email: currentUser.email, location: 'Çıkış Yapıldı', status: 'logout' }]);
+                    }
+                    document.cookie = 'sb-access-token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+                    await supabase.auth.signOut(); 
+                    router.push('/login'); 
+                  }} style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '10px', padding: '11px 14px', background: 'transparent', border: '1px solid transparent', borderRadius: '10px', cursor: 'pointer', color: '#f87171', fontSize: '0.875rem', fontWeight: 500, transition: 'all 0.15s ease', textAlign: 'left' }}
+                  onMouseEnter={e => { e.currentTarget.style.background = 'rgba(248,113,113,0.1)'; e.currentTarget.style.borderColor = 'rgba(248,113,113,0.25)'; }}
+                  onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.borderColor = 'transparent'; }}>
+                    <i className="fas fa-arrow-right-from-bracket" style={{ fontSize: '0.9rem', width: '16px' }} /> Çıkış Yap
+                  </button>
+                </div>
               )}
             </div>
           </div>
 
           <div className="adm-content">
-
             <div className="adm-fade-in">
+              
+              {/* ✨ BAŞLIK VE YENİ SEKMEYE GİT BUTONU DÜZELTİLDİ ✨ */}
               <div className="adm-page-header">
                 <div className="adm-page-title">
-                  Ortaklar & <em>Kurumlar</em>
-                  {/* ✨ SİTEYE GİT BUTONU EKLENDİ ✨ */}
+                  <span>Ortaklar & <em>Kurumlar</em></span>
                   <a href="/partners" target="_blank" rel="noopener noreferrer" className="adm-external-link" title="Sitede Goruntule">
                     <i className="fas fa-external-link-alt"></i>
                   </a>
                 </div>
               </div>
 
-              <div className="adm-section" style={{ background: 'var(--surface-2)', padding: '20px', borderRadius: '14px', border: '1px dashed var(--border)', marginBottom: '30px' }}>
-                <SectionHeader iconClass="fas fa-layer-group" title="Sayfa Ust Bilgileri (Hero)" />
-                <div className="adm-form-grid2">
-                  <SettingInput label="Ust Ufak Baslik (TR)" settingKey="partners_hero_eyebrow" {...commonProps} />
-                  <SettingInput label="Ust Ufak Baslik (EN)" settingKey="partners_hero_eyebrow_en" {...commonProps} />
-                  <SettingInput label="Ana Baslik Satir 1 (TR)" settingKey="partners_hero_title1" {...commonProps} />
-                  <SettingInput label="Ana Baslik Satir 1 (EN)" settingKey="partners_hero_title1_en" {...commonProps} />
-                  <SettingInput label="Vurgulu Baslik Satir 2 (TR)" settingKey="partners_hero_title2" {...commonProps} />
-                  <SettingInput label="Vurgulu Baslik Satir 2 (EN)" settingKey="partners_hero_title2_en" {...commonProps} />
-                </div>
-                <div className="adm-form-grid2" style={{marginTop:'10px'}}>
-                  <SettingInput label="Giris Aciklamasi (TR)" settingKey="partners_page_desc" type="textarea" {...commonProps} />
-                  <SettingInput label="Giris Aciklamasi (EN)" settingKey="partners_page_desc_en" type="textarea" {...commonProps} />
-                </div>
-                <div className="adm-form-grid2" style={{marginTop:'10px'}}>
-                  <SettingInput label="Kaydirma Butonu (TR)" settingKey="partners_hero_scroll" {...commonProps} />
-                  <SettingInput label="Kaydirma Butonu (EN)" settingKey="partners_hero_scroll_en" {...commonProps} />
-                </div>
-
-                <div className="adm-divider" style={{margin: '20px 0'}} />
-
-                <SectionHeader iconClass="fas fa-bars" title="Icerik Bolumu Basliklari" />
-                <div className="adm-form-grid2">
-                  <SettingInput label="Bolum Etiketi (TR)" settingKey="partners_sec_label" {...commonProps} />
-                  <SettingInput label="Bolum Etiketi (EN)" settingKey="partners_sec_label_en" {...commonProps} />
-                  <SettingInput label="Bolum Basligi (TR)" settingKey="partners_sec_title" {...commonProps} />
-                  <SettingInput label="Bolum Basligi (EN)" settingKey="partners_sec_title_en" {...commonProps} />
-                </div>
-              </div>
-
-              <div className="adm-form-card">
-                <div className="adm-form-card-title">
-                  <div>
-                    <i className={isEditing ? 'fas fa-pen' : 'fas fa-plus'} />
-                    {isEditing ? ' Ortak Duzenle' : ' Yeni Ortak Ekle'}
+              {(userRole === 'Super Admin' || userRole === 'Admin') && (
+                <div className="adm-section">
+                  <SectionHeader iconClass="fas fa-layer-group" title="Sayfa Ust Bilgileri (Hero)" />
+                  <div className="adm-form-grid2" style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:'12px'}}>
+                    <SettingInput label="Ust Ufak Baslik (TR)" settingKey="partners_hero_eyebrow" {...commonProps} />
+                    <SettingInput label="Ust Ufak Baslik (EN)" settingKey="partners_hero_eyebrow_en" {...commonProps} />
+                    <SettingInput label="Ana Baslik Satir 1 (TR)" settingKey="partners_hero_title1" {...commonProps} />
+                    <SettingInput label="Ana Baslik Satir 1 (EN)" settingKey="partners_hero_title1_en" {...commonProps} />
+                    <SettingInput label="Vurgulu Baslik Satir 2 (TR)" settingKey="partners_hero_title2" {...commonProps} />
+                    <SettingInput label="Vurgulu Baslik Satir 2 (EN)" settingKey="partners_hero_title2_en" {...commonProps} />
+                  </div>
+                  <div className="adm-form-grid2" style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:'12px', marginTop:'10px'}}>
+                    <SettingInput label="Giris Aciklamasi (TR)" settingKey="partners_page_desc" type="textarea" {...commonProps} />
+                    <SettingInput label="Giris Aciklamasi (EN)" settingKey="partners_page_desc_en" type="textarea" {...commonProps} />
+                  </div>
+                  <div className="adm-form-grid2" style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:'12px', marginTop:'10px'}}>
+                    <SettingInput label="Kaydirma Butonu (TR)" settingKey="partners_hero_scroll" {...commonProps} />
+                    <SettingInput label="Kaydirma Butonu (EN)" settingKey="partners_hero_scroll_en" {...commonProps} />
                   </div>
                 </div>
-                <form onSubmit={saveItem} style={{display:'grid', gap:'14px'}}>
-                  
-                  <div className="adm-form-grid2">
+              )}
+
+              <div className="adm-form-card" style={{background:'var(--surface)', border:'1px solid var(--border)', borderRadius:'14px', padding:'24px', marginBottom:'24px'}}>
+                <div className="adm-form-card-title" style={{fontWeight:700, marginBottom:'20px', display:'flex', alignItems:'center', gap:'8px'}}>
+                  <i className={isEditing ? 'fas fa-pen' : 'fas fa-plus'} style={{color:'var(--accent)'}} />
+                  {isEditing ? ' Ortak Duzenle' : ' Yeni Ortak Ekle'}
+                </div>
+                
+                {/* ✨ formKey EKLENDİ, FORM TAMAMEN SIFIRLANIR ✨ */}
+                <form key={formKey} onSubmit={saveItem} style={{display:'grid', gap:'14px'}}>
+                  <div className="adm-form-grid2" style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:'12px'}}>
                     <div className="adm-form-item">
-                      <label>Kurum Adi (TR) *</label>
-                      <input className="adm-input-full" placeholder="Kurum adi..." value={partnerForm.name} onChange={e => setPartnerForm({...partnerForm, name: e.target.value})} required />
+                      <label style={{fontSize:'0.75rem', fontWeight:600, color:'var(--text-secondary)', marginBottom:'6px', display:'block'}}>Kurum Adi (TR) *</label>
+                      <input className="adm-input-full" style={{width:'100%', background:'var(--surface-2)', border:'1px solid var(--border)', borderRadius:'8px', padding:'10px', color:'#fff'}} placeholder="Kurum adi..." value={partnerForm.name} onChange={e => setPartnerForm(prev => ({...prev, name: e.target.value}))} required />
                     </div>
                     <div className="adm-form-item">
-                      <label>Kurum Adi (EN)</label>
-                      <input className="adm-input-full" placeholder="Institution name..." value={partnerForm.name_en} onChange={e => setPartnerForm({...partnerForm, name_en: e.target.value})} />
+                      <label style={{fontSize:'0.75rem', fontWeight:600, color:'var(--text-secondary)', marginBottom:'6px', display:'block'}}>Kurum Adi (EN)</label>
+                      <input className="adm-input-full" style={{width:'100%', background:'var(--surface-2)', border:'1px solid var(--border)', borderRadius:'8px', padding:'10px', color:'#fff'}} placeholder="Institution name..." value={partnerForm.name_en} onChange={e => setPartnerForm(prev => ({...prev, name_en: e.target.value}))} />
                     </div>
                   </div>
 
-                  <div className="adm-form-grid2">
+                  <div className="adm-form-grid2" style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:'12px'}}>
                     <div className="adm-form-item">
-                      <label>Ulke (TR) *</label>
-                      <input className="adm-input-full" placeholder="Turkiye..." value={partnerForm.country} onChange={e => setPartnerForm({...partnerForm, country: e.target.value})} required />
+                      <label style={{fontSize:'0.75rem', fontWeight:600, color:'var(--text-secondary)', marginBottom:'6px', display:'block'}}>Ulke (TR) *</label>
+                      <input className="adm-input-full" style={{width:'100%', background:'var(--surface-2)', border:'1px solid var(--border)', borderRadius:'8px', padding:'10px', color:'#fff'}} placeholder="Turkiye..." value={partnerForm.country} onChange={e => setPartnerForm(prev => ({...prev, country: e.target.value}))} required />
                     </div>
                     <div className="adm-form-item">
-                      <label>Ulke (EN)</label>
-                      <input className="adm-input-full" placeholder="Turkey..." value={partnerForm.country_en} onChange={e => setPartnerForm({...partnerForm, country_en: e.target.value})} />
+                      <label style={{fontSize:'0.75rem', fontWeight:600, color:'var(--text-secondary)', marginBottom:'6px', display:'block'}}>Ulke (EN)</label>
+                      <input className="adm-input-full" style={{width:'100%', background:'var(--surface-2)', border:'1px solid var(--border)', borderRadius:'8px', padding:'10px', color:'#fff'}} placeholder="Turkey..." value={partnerForm.country_en} onChange={e => setPartnerForm(prev => ({...prev, country_en: e.target.value}))} />
                     </div>
                   </div>
 
-                  <div className="adm-form-grid2">
-                      <div className="adm-form-item">
-                        <label>Rol (TR)</label>
-                        <select className="adm-select-full" value={partnerForm.role} onChange={e => setPartnerForm({...partnerForm, role: e.target.value})}>
-                          <option value="Ortak">Ortak</option>
-                          <option value="Koordinator">Koordinator</option>
-                        </select>
-                      </div>
-                      <div className="adm-form-item">
-                        <label>Rol (EN)</label>
-                        <select className="adm-select-full" value={partnerForm.role_en} onChange={e => setPartnerForm({...partnerForm, role_en: e.target.value})}>
-                          <option value="">(Ingilizce karsiligini girin...)</option>
-                          <option value="Partner">Partner</option>
-                          <option value="Coordinator">Coordinator</option>
-                        </select>
-                      </div>
+                  <div className="adm-form-grid2" style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:'12px'}}>
+                    <div className="adm-form-item">
+                      <label style={{fontSize:'0.75rem', fontWeight:600, color:'var(--text-secondary)', marginBottom:'6px', display:'block'}}>Rol (TR)</label>
+                      <select className="adm-select-full" style={{width:'100%', background:'var(--surface-2)', border:'1px solid var(--border)', borderRadius:'8px', padding:'10px', color:'#fff'}} value={partnerForm.role} onChange={e => setPartnerForm(prev => ({...prev, role: e.target.value}))}>
+                        <option value="Ortak">Ortak</option>
+                        <option value="Koordinator">Koordinator</option>
+                      </select>
+                    </div>
+                    <div className="adm-form-item">
+                      <label style={{fontSize:'0.75rem', fontWeight:600, color:'var(--text-secondary)', marginBottom:'6px', display:'block'}}>Rol (EN)</label>
+                      <input className="adm-input-full" style={{width:'100%', background:'var(--surface-2)', border:'1px solid var(--border)', borderRadius:'8px', padding:'10px', color:'#fff'}} placeholder="Partner / Coordinator" value={partnerForm.role_en} onChange={e => setPartnerForm(prev => ({...prev, role_en: e.target.value}))} />
+                    </div>
                   </div>
 
-                  <div className="adm-form-grid2">
-                      <div className="adm-form-item">
-                        <label>Aciklama (TR)</label>
-                        <textarea className="adm-textarea-full" placeholder="Kurum hakkinda..." value={partnerForm.description} onChange={e => setPartnerForm({...partnerForm, description: e.target.value})} rows={4} />
-                      </div>
-                      <div className="adm-form-item">
-                        <label>Aciklama (EN)</label>
-                        <textarea className="adm-textarea-full" placeholder="About the institution..." value={partnerForm.description_en} onChange={e => setPartnerForm({...partnerForm, description_en: e.target.value})} rows={4} />
-                      </div>
+                  <div className="adm-form-grid2" style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:'12px'}}>
+                    <div className="adm-form-item">
+                      <label style={{fontSize:'0.75rem', fontWeight:600, color:'var(--text-secondary)', marginBottom:'6px', display:'block'}}>Aciklama (TR)</label>
+                      <textarea className="adm-textarea-full" style={{width:'100%', background:'var(--surface-2)', border:'1px solid var(--border)', borderRadius:'8px', padding:'10px', color:'#fff'}} placeholder="Kurum hakkinda..." value={partnerForm.description} onChange={e => setPartnerForm(prev => ({...prev, description: e.target.value}))} rows={3} />
+                    </div>
+                    <div className="adm-form-item">
+                      <label style={{fontSize:'0.75rem', fontWeight:600, color:'var(--text-secondary)', marginBottom:'6px', display:'block'}}>Aciklama (EN)</label>
+                      <textarea className="adm-textarea-full" style={{width:'100%', background:'var(--surface-2)', border:'1px solid var(--border)', borderRadius:'8px', padding:'10px', color:'#fff'}} placeholder="About institution..." value={partnerForm.description_en} onChange={e => setPartnerForm(prev => ({...prev, description_en: e.target.value}))} rows={3} />
+                    </div>
                   </div>
 
                   <div className="adm-form-item">
-                    <label>Web Sitesi</label>
-                    <input className="adm-input-full" placeholder="https://..." value={partnerForm.website} onChange={e => setPartnerForm({...partnerForm, website: e.target.value})} />
+                    <label style={{fontSize:'0.75rem', fontWeight:600, color:'var(--text-secondary)', marginBottom:'6px', display:'block'}}>Web Sitesi</label>
+                    <input className="adm-input-full" style={{width:'100%', background:'var(--surface-2)', border:'1px solid var(--border)', borderRadius:'8px', padding:'10px', color:'#fff'}} placeholder="https://..." value={partnerForm.website} onChange={e => setPartnerForm(prev => ({...prev, website: e.target.value}))} />
                   </div>
 
-                  <div className="adm-form-grid2">
+                  <div className="adm-form-grid2" style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:'12px'}}>
                       <div className="adm-form-item">
-                        <label>Kurum Logosu</label>
-                        <FileInput value={partnerForm.image_url} onChange={url => setPartnerForm({...partnerForm, image_url: url})} placeholder="Logo URL..." uploadFile={uploadFile} showToast={showToast} />
+                        <label style={{fontSize:'0.75rem', fontWeight:600, color:'var(--text-secondary)', marginBottom:'6px', display:'block'}}>Kurum Logosu</label>
+                        <FileInput value={partnerForm.image_url} onChange={url => setPartnerForm(prev => ({...prev, image_url: url}))} placeholder="Logo URL..." uploadFile={uploadFile} showToast={showToast} />
                       </div>
                       <div className="adm-form-item">
-                        <label>Ulke Bayragi</label>
-                        <FileInput value={partnerForm.flag_url} onChange={url => setPartnerForm({...partnerForm, flag_url: url})} placeholder="Bayrak URL..." uploadFile={uploadFile} showToast={showToast} />
+                        <label style={{fontSize:'0.75rem', fontWeight:600, color:'var(--text-secondary)', marginBottom:'6px', display:'block'}}>Ulke Bayragi</label>
+                        <FileInput value={partnerForm.flag_url} onChange={url => setPartnerForm(prev => ({...prev, flag_url: url}))} placeholder="Bayrak URL..." uploadFile={uploadFile} showToast={showToast} />
                       </div>
                   </div>
 
-                  <button type="submit" className="adm-form-submit">
-                    {isEditing ? 'Ortak Bilgilerini Guncelle' : '+ Ortak Ekle'}
-                  </button>
+                  {/* ✨ VAZGEÇ VE KAYDET BUTONLARI ✨ */}
+                  <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
+                    {isEditing && (
+                      <button type="button" className="adm-btn adm-btn-ghost" onClick={resetForm} style={{ flex: 1, padding: '10px', borderRadius: '8px' }}>
+                        Vazgec
+                      </button>
+                    )}
+                    <button type="submit" className="adm-btn adm-btn-save" style={{ flex: isEditing ? 1 : 'unset', width: isEditing ? 'auto' : '100%', padding: '10px', borderRadius: '8px' }}>
+                      {isEditing ? 'Ortak Bilgilerini Guncelle' : '+ Ortak Ekle'}
+                    </button>
+                  </div>
                 </form>
               </div>
-              
+
               <div style={{marginTop:'24px'}}>
                 <div style={{fontSize:'0.8rem', fontWeight:'700', color:'var(--text-muted)', textTransform:'uppercase', letterSpacing:'0.08em', marginBottom:'12px'}}>Mevcut Ortaklar ({partners.length})</div>
                 {partners.length === 0 ? (
-                  <div className="adm-empty"><i className="fas fa-handshake" />Ortak bulunamadi.</div>
+                  <div className="adm-empty" style={{textAlign: 'center', padding: '40px', background: 'var(--surface)', borderRadius: '14px', border: '1px dashed var(--border)', color: 'var(--text-secondary)'}}>Ortak bulunamadi.</div>
                 ) : partners.map(item => (
-                  <div key={item.id} className="adm-item-row">
+                  <div key={item.id} className="adm-item-row" style={{display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'var(--surface)', padding: '14px 16px', border: '1px solid var(--border)', borderRadius: '10px', marginBottom: '8px'}}>
                     <div className="adm-item-info" style={{display:'flex', alignItems:'center', gap:'12px'}}>
-                      {item.image_url && <img src={item.image_url} style={{width:'40px', height:'28px', objectFit:'contain', borderRadius:'4px', border:'1px solid var(--border)', background:'white', padding:'2px'}} alt="" />}
+                      {item.image_url && <img src={item.image_url} style={{width:'40px', height:'28px', objectFit:'contain', borderRadius:'4px', background:'white'}} alt="" />}
                       <div>
-                        <strong>{item.name}</strong>
-                        <span>
-                          <span className={`adm-badge ${item.role === 'Koordinator' ? 'adm-badge-yellow' : 'adm-badge-green'}`}>{item.role}</span>
-                          {' '}&bull; {item.country}
-                        </span>
+                        <strong style={{display: 'block', color: 'var(--text-primary)', fontSize: '0.875rem', fontWeight: 600}}>{item.name}</strong>
+                        <span style={{fontSize: '0.75rem', color: 'var(--text-secondary)'}}><span className={`adm-badge ${item.role === 'Koordinator' ? 'adm-badge-yellow' : 'adm-badge-green'}`}>{item.role}</span> &bull; {item.country}</span>
                       </div>
                     </div>
-                    <div className="adm-item-actions">
-                      <button className="adm-btn adm-btn-ghost" onClick={() => startEdit(item)} style={{height:'32px', fontSize:'0.78rem'}}>
-                        <i className="fas fa-pen" /> Duzenle
-                      </button>
-                      <button className="adm-btn adm-btn-danger" onClick={() => deleteItem(item.id, [item.image_url, item.flag_url])}>
-                        <i className="fas fa-trash" />
-                      </button>
+                    <div className="adm-item-actions" style={{display: 'flex', gap: '8px'}}>
+                      <button className="adm-btn adm-btn-ghost" onClick={() => startEdit(item)} style={{height:'32px', fontSize:'0.78rem', background: 'var(--surface-2)', border: '1px solid var(--border)', color: 'var(--text-secondary)', borderRadius: '8px', cursor: 'pointer', padding: '0 12px'}}><i className="fas fa-pen" style={{marginRight: '6px'}} /> Duzenle</button>
+                      <button className="adm-btn adm-btn-danger" onClick={() => deleteItem(item)} style={{height:'32px', background: 'transparent', border: '1px solid rgba(239,68,68,0.3)', color: 'var(--red)', borderRadius: '8px', cursor: 'pointer', padding: '0 12px'}}><i className="fas fa-trash" /></button>
                     </div>
                   </div>
                 ))}
               </div>
             </div>
-
           </div>
         </main>
       </div>

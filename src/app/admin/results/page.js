@@ -64,7 +64,7 @@ const SettingInput = ({ label, settingKey, type = 'text', placeholder = '', sett
             </div>
             <label className="adm-upload-btn" title="Masaustunden Yukle"><i className="fas fa-upload" />
               <input type="file" hidden onChange={async e => {
-                const url = await uploadFile(e.target.files[0]);
+                const url = await uploadFile(e.target.files[0], 'images'); // Site ayar resimleri images klasörüne gider
                 if (url) { handleSettingChange(settingKey, url); updateSetting(settingKey, url); }
               }} />
             </label>
@@ -79,14 +79,14 @@ const SettingInput = ({ label, settingKey, type = 'text', placeholder = '', sett
 };
 
 /* ─── FILE INPUT ─── */
-const FileInput = ({ value, onChange, placeholder, uploadFile, showToast }) => {
+const FileInput = ({ value, onChange, placeholder, uploadFile, showToast, targetBucket = 'public-files' }) => {
   const [uploading, setUploading] = useState(false);
   const handleFile = async e => {
     try {
       setUploading(true);
       const file = e.target.files[0];
       if (!file) return;
-      const url = await uploadFile(file);
+      const url = await uploadFile(file, targetBucket);
       if (url) { onChange(url); if (showToast) showToast('Dosya basariyla yuklendi.', 'success'); }
     } catch { if (showToast) showToast('Yukleme hatasi olustu.', 'error'); }
     finally { setUploading(false); }
@@ -94,10 +94,10 @@ const FileInput = ({ value, onChange, placeholder, uploadFile, showToast }) => {
   return (
     <div className="adm-img-field">
       <div className="adm-img-preview-wrap">
-        {value ? <img src={value} className="adm-img-thumb" alt="" onError={e => e.target.style.display='none'} /> : <i className="fas fa-link" style={{color:'var(--text-muted)', fontSize:'0.8rem'}} />}
+        {value ? <i className="fas fa-file-check" style={{color:'var(--accent)', fontSize:'1rem'}}></i> : <i className="fas fa-link" style={{color:'var(--text-muted)', fontSize:'0.8rem'}} />}
         <input type="text" className="adm-img-url-input" placeholder={placeholder} value={value || ''} onChange={e => onChange(e.target.value)} />
       </div>
-      <label className="adm-upload-btn" title="Yukle">
+      <label className="adm-upload-btn" title="Dosya Yukle">
         {uploading ? <i className="fas fa-spinner fa-spin" /> : <i className="fas fa-upload" />}
         <input type="file" onChange={handleFile} disabled={uploading} />
       </label>
@@ -120,14 +120,14 @@ export default function AdminResultsPage() {
   const [loading, setLoading] = useState(true);
   
   const [currentUser, setCurrentUser] = useState(null);
-  const [userRole, setUserRole] = useState('Editor'); // ✨ KULLANICI ROLÜ
+  const [userRole, setUserRole] = useState('Editor');
   const [userIp, setUserIp] = useState('Bilinmiyor');
 
   // Data States
   const [settings, setSettings] = useState([]);
   const [results, setResults] = useState([]);
   
-  // YENI: Arama State'i
+  // Arama State'i
   const [searchQuery, setSearchQuery] = useState('');
   
   // Badge Counts
@@ -136,19 +136,21 @@ export default function AdminResultsPage() {
   const [activitiesCount, setActivitiesCount] = useState(0);
   const [partnersCount, setPartnersCount] = useState(0);
 
+  // ✨ YENİ: FORM SIFIRLAMA KEY'İ ✨
+  const [formKey, setFormKey] = useState(0);
+
   // Form State
- // Form State - Başlangıç değerlerini boş string yaparak hatayı engelliyoruz
-const [resultForm, setResultForm] = useState({ 
-  id: null, 
-  title: '', 
-  title_en: '', 
-  description: '', 
-  description_en: '', 
-  status: 'Planlaniyor', 
-  status_en: 'Planned', 
-  link: '', 
-  icon: 'file' 
-});
+  const [resultForm, setResultForm] = useState({ 
+    id: null, 
+    title: '', 
+    title_en: '', 
+    description: '', 
+    description_en: '', 
+    status: 'Planlaniyor', 
+    status_en: 'Planned', 
+    link: '', 
+    icon: 'file' 
+  });
   const [isEditing, setIsEditing] = useState(false);
 
   const [toast, setToast] = useState(null);
@@ -192,7 +194,6 @@ const [resultForm, setResultForm] = useState({
       
       if (isMounted) {
         setCurrentUser(session.user);
-        // ✨ ROLÜ ÇEK
         const { data: profile } = await supabase.from('user_profiles').select('role').eq('id', session.user.id).single();
         if (profile) setUserRole(profile.role);
       }
@@ -209,15 +210,16 @@ const [resultForm, setResultForm] = useState({
     return () => { isMounted = false; };
   }, [router, fetchPageData]);
 
-  async function uploadFile(file) {
+  // ✨ Dinamik Yükleme Fonksiyonu (Hem images hem files kovanına yükleyebilir) ✨
+  async function uploadFile(file, bucketName = 'public-files') {
     if (!file) return null;
     const fileExt = file.name.split('.').pop();
     const fileName = `${Date.now()}_${crypto.randomUUID()}.${fileExt}`;
     
-    const { error } = await supabase.storage.from('images').upload(fileName, file);
+    const { error } = await supabase.storage.from(bucketName).upload(fileName, file);
     if (error) { showToast('Yukleme Hatasi: ' + error.message, 'error'); return null; }
     
-    const { data: { publicUrl } } = supabase.storage.from('images').getPublicUrl(fileName);
+    const { data: { publicUrl } } = supabase.storage.from(bucketName).getPublicUrl(fileName);
     return publicUrl;
   }
 
@@ -230,7 +232,6 @@ const [resultForm, setResultForm] = useState({
   };
 
   async function updateSetting(key, value) {
-    // ✨ GÜVENLİK: Eğer editörse işlem yapmasına izin verme
     if (userRole === 'Editor') {
       showToast('Bu ayarı değiştirme yetkiniz bulunmuyor.', 'error');
       return;
@@ -255,65 +256,81 @@ const [resultForm, setResultForm] = useState({
     }]);
   }
 
-  async function deleteItem(id, fileUrls = []) {
+  // ✨ Dosya Silme İşlemi Güçlendirildi ✨
+  async function deleteItem(item) {
     showConfirm('Bu dosyayi kalici olarak silmek istediginize emin misiniz?', async () => {
       
-      setResults(prev => prev.filter(r => r.id !== id));
-      
-      const { error } = await supabase.from('results').delete().eq('id', id);
+      // 1. Supabase Storage'dan dosyayı bulup güvenle sil
+      if (item.link && item.link.includes('/storage/v1/object/public/')) {
+        const fileName = decodeURIComponent(item.link.split('/').pop().split('?')[0]);
+        if (fileName) {
+          try { 
+            // Dosyalar sayfasındaki ana linkler 'public-files' bucket'ına kaydedilir
+            await supabase.storage.from('public-files').remove([fileName]); 
+          } catch (err) { 
+            console.error("Storage silme hatasi:", err); 
+          }
+        }
+      }
+
+      // 2. Veritabanından satırı sil
+      const { error } = await supabase.from('results').delete().eq('id', item.id);
       
       if (error) {
         showToast('Hata: ' + error.message, 'error');
-        fetchPageData(); 
       } else {
-        await logAction(`Dosyalar tablosundan bir kayit silindi. (ID: ${id})`);
+        await logAction(`Dosyalar tablosundan bir kayit silindi. (ID: ${item.id})`);
+        fetchPageData(); 
         showToast('Basariyla silindi.', 'success');
-        
-        if (fileUrls && fileUrls.length > 0) {
-          const fileNamesToDelete = fileUrls.filter(url => url).map(url => {
-              const parts = url.split('/images/');
-              return parts.length > 1 ? parts[1] : null;
-            }).filter(name => name);
-  
-          if (fileNamesToDelete.length > 0) {
-            try { await supabase.storage.from('images').remove(fileNamesToDelete); } 
-            catch (err) { console.error("Storage silme hatasi:", err); }
-          }
-        }
       }
     });
   }
 
+  // ✨ FORMU TAMAMEN SIFIRLAMA FONKSİYONU ✨
+  const resetForm = () => {
+    setIsEditing(false);
+    setResultForm({ 
+      id: null, 
+      title: '', 
+      title_en: '', 
+      description: '', 
+      description_en: '', 
+      status: 'Planlaniyor', 
+      status_en: 'Planned', 
+      link: '', 
+      icon: 'file' 
+    });
+    setFormKey(prev => prev + 1); // Bu kod formu baştan çizdirir
+  };
+
   async function saveItem(e) {
     e.preventDefault();
-    const { id, ...data } = resultForm;
-    let result = id ? await supabase.from('results').update(data).eq('id', id) : await supabase.from('results').insert([data]);
+    
+    // ✨ ID HATASI DÜZELTİLDİ: Yeni eklerken ID'yi null olarak göndermiyoruz
+    const { id, ...dataToSave } = resultForm;
+
+    let result;
+    if (id) {
+        result = await supabase.from('results').update(dataToSave).eq('id', id);
+    } else {
+        result = await supabase.from('results').insert([dataToSave]);
+    }
+
     if (result?.error) { showToast('Hata: ' + result.error.message, 'error'); return; }
     
-    setIsEditing(false); 
     await logAction(`Dosyalar tablosunda islem yapildi. (Ekleme/Guncelleme)`);
     fetchPageData(); 
     showToast('Basariyla kaydedildi.', 'success');
-    setResultForm({ 
-  id: null, 
-  title: '', 
-  title_en: '', 
-  description: '', 
-  description_en: '', 
-  status: 'Planlaniyor', 
-  status_en: 'Planned', 
-  link: '', 
-  icon: 'file' 
-});
+    resetForm(); // ✨ İşlem bitince formu sıfırla
   }
 
   function startEdit(item) {
     setIsEditing(true);
     setResultForm({ ...item });
+    setFormKey(prev => prev + 1);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
-  // YENI: Arama Fonksiyonu (Filtreleme)
   const filteredResults = results.filter(item => {
     const searchVal = searchQuery.toLowerCase();
     return (
@@ -328,7 +345,6 @@ const [resultForm, setResultForm] = useState({
 
   const currentPath = typeof window !== 'undefined' ? window.location.pathname : '';
   
-  // ✨ MENÜYÜ ROLÜNE GÖRE FİLTRELEME YAPIYORUZ
   const fullNAV = [
     { id: 'dashboard', label: 'Dashboard', icon: 'fas fa-chart-pie', group: 'Genel', link: '/admin', active: currentPath === '/admin', roles: ['Super Admin', 'Admin', 'Editor'] },
     { id: 'messages', label: `Mesajlar`, icon: 'fas fa-inbox', badge: typeof unreadMsgCount !== 'undefined' ? unreadMsgCount : 0, group: 'Genel', link: '/admin/messages', active: currentPath === '/admin/messages', roles: ['Super Admin', 'Admin', 'Editor'] },
@@ -344,15 +360,14 @@ const [resultForm, setResultForm] = useState({
         { id: 'strategy', label: 'Strateji', tab: 'strategy' }
       ]
     },
-    { id: 'news', label: 'Haberler', icon: 'fas fa-newspaper', badge: typeof newsCount !== 'undefined' ? newsCount : (typeof news !== 'undefined' ? news.length : 0), group: 'Icerik', link: '/admin/news', active: currentPath === '/admin/news', roles: ['Super Admin', 'Admin', 'Editor'] },
-    { id: 'activities', label: 'Faaliyetler', icon: 'fas fa-calendar-check', badge: typeof activitiesCount !== 'undefined' ? activitiesCount : (typeof activities !== 'undefined' ? activities.length : 0), group: 'Icerik', link: '/admin/activities', active: currentPath === '/admin/activities', roles: ['Super Admin', 'Admin', 'Editor'] },
-    { id: 'partners', label: 'Ortaklar', icon: 'fas fa-handshake', badge: typeof partnersCount !== 'undefined' ? partnersCount : (typeof partners !== 'undefined' ? partners.length : 0), group: 'Icerik', link: '/admin/partners', active: currentPath === '/admin/partners', roles: ['Super Admin', 'Admin'] },
-    { id: 'results', label: 'Dosyalar', icon: 'fas fa-file-circle-check', badge: typeof resultsCount !== 'undefined' ? resultsCount : (typeof results !== 'undefined' ? results.length : 0), group: 'Icerik', link: '/admin/results', active: currentPath === '/admin/results', roles: ['Super Admin', 'Admin', 'Editor'] },
+    { id: 'news', label: 'Haberler', icon: 'fas fa-newspaper', badge: typeof newsCount !== 'undefined' ? newsCount : 0, group: 'Icerik', link: '/admin/news', active: currentPath === '/admin/news', roles: ['Super Admin', 'Admin', 'Editor'] },
+    { id: 'activities', label: 'Faaliyetler', icon: 'fas fa-calendar-check', badge: typeof activitiesCount !== 'undefined' ? activitiesCount : 0, group: 'Icerik', link: '/admin/activities', active: currentPath === '/admin/activities', roles: ['Super Admin', 'Admin', 'Editor'] },
+    { id: 'partners', label: 'Ortaklar', icon: 'fas fa-handshake', badge: typeof partnersCount !== 'undefined' ? partnersCount : 0, group: 'Icerik', link: '/admin/partners', active: currentPath === '/admin/partners', roles: ['Super Admin', 'Admin'] },
+    { id: 'results', label: 'Dosyalar', icon: 'fas fa-file-circle-check', badge: typeof resultsCount !== 'undefined' ? resultsCount : 0, group: 'Icerik', link: '/admin/results', active: currentPath === '/admin/results', roles: ['Super Admin', 'Admin', 'Editor'] },
     { id: 'contact', label: 'Iletisim', icon: 'fas fa-phone', group: 'Icerik', link: '/admin/contact', active: currentPath === '/admin/contact', roles: ['Super Admin', 'Admin'] },
     { id: 'site', label: 'Header/Footer', icon: 'fas fa-sliders', group: 'Icerik', link: '/admin/site', active: currentPath === '/admin/site', roles: ['Super Admin', 'Admin'] },
     { id: 'users', label: 'Kullanicilar', icon: 'fas fa-users', group: 'Ayarlar', link: '/admin/users', active: currentPath === '/admin/users', roles: ['Super Admin'] },
     { id: 'logs', label: 'Loglar', icon: 'fas fa-list', group: 'Ayarlar', link: '/admin/logs', active: currentPath === '/admin/logs', roles: ['Super Admin', 'Admin', 'Editor'] },
-    // ✨ Editörün Şifre & Güvenlik sekmesini görmesini engelledik: roles: ['Super Admin', 'Admin']
     { id: 'security', label: 'Sifre & Guvenlik', icon: 'fas fa-lock', group: 'Ayarlar', link: '/admin/security', active: currentPath === '/admin/security', roles: ['Super Admin', 'Admin'] },
   ];
 
@@ -410,8 +425,8 @@ const [resultForm, setResultForm] = useState({
         .adm-topbar-title { font-family: var(--font-display); font-size: 0.95rem; font-weight: 700; color: var(--text-primary); flex: 1; }
         
         .adm-content { padding: 32px; flex: 1; }
-        .adm-page-header { margin-bottom: 28px; }
-        .adm-page-title { font-family: var(--font-display); font-size: 1.5rem; font-weight: 700; color: var(--text-primary); letter-spacing: -0.02em; line-height: 1.2; text-transform: capitalize; }
+        .adm-page-header { margin-bottom: 28px; display: flex; justify-content: space-between; align-items: flex-end;}
+        .adm-page-title { font-family: var(--font-display); font-size: 1.5rem; font-weight: 700; color: var(--text-primary); letter-spacing: -0.02em; line-height: 1.2; display: flex; align-items: center; gap: 10px; }
         .adm-page-title em { color: var(--accent); font-style: normal; }
         .adm-section { margin-bottom: 36px; background: var(--surface-2); padding: 20px; border-radius: 14px; border: 1px dashed var(--border); }
 
@@ -474,7 +489,7 @@ const [resultForm, setResultForm] = useState({
         @keyframes fadeUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes fadeDown { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: translateY(0); } }
 
-        .adm-toast { position: fixed; top: 20px; right: 20px; z-index: 9999; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 14px 18px; box-shadow: 0 8px 32px rgba(0,0,0,0.6); display: flex; align-items: center; gap: 12px; min-width: 280px; animation: slideIn 0.25s cubic-bezier(0.4,0,0.2,1); }
+        .adm-toast { fixed; top: 20px; right: 20px; z-index: 9999; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 14px 18px; box-shadow: 0 8px 32px rgba(0,0,0,0.6); display: flex; align-items: center; gap: 12px; min-width: 280px; animation: slideIn 0.25s cubic-bezier(0.4,0,0.2,1); }
         .adm-toast-icon { width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 0.9rem; flex-shrink: 0; }
         .adm-toast-icon.success { background: var(--accent-dim); color: var(--accent); border: 1px solid rgba(34,197,94,0.25); }
         .adm-toast-icon.error { background: var(--red-dim); color: var(--red); border: 1px solid rgba(239,68,68,0.25); }
@@ -497,10 +512,6 @@ const [resultForm, setResultForm] = useState({
         @keyframes spin { to { transform: rotate(360deg); } }
         @keyframes slideIn { from { transform: translateX(110%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
         @keyframes topbarDropdown { from { opacity: 0; transform: translateY(-6px) scale(0.97); } to { opacity: 1; transform: translateY(0); } }
-        .adm-badge { display: inline-flex; align-items: center; padding: 2px 9px; border-radius: 20px; font-size: 0.68rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; }
-        .adm-badge-blue { background: var(--blue-dim); color: var(--blue); border: 1px solid rgba(59,130,246,0.25); }
-        .adm-empty { text-align: center; padding: 40px; color: var(--text-muted); font-size: 0.875rem; border: 1px dashed var(--border); border-radius: var(--radius-lg); }
-        .adm-empty i { display: block; font-size: 2rem; margin-bottom: 12px; opacity: 0.4; }
 
         /* YENI ARAMA KUTUSU CSS */
         .adm-search-wrap { position: relative; margin-bottom: 16px; width: 100%; display: flex; align-items: center; }
@@ -509,6 +520,10 @@ const [resultForm, setResultForm] = useState({
         .adm-search-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow); background: var(--surface-2); }
         .adm-search-clear { position: absolute; right: 12px; background: none; border: none; color: var(--text-muted); cursor: pointer; padding: 4px; transition: color var(--transition); }
         .adm-search-clear:hover { color: var(--text-primary); }
+
+        /* YENI: Link Butonu CSS */
+        .adm-external-link { background: var(--surface-2); border: 1px solid var(--border); color: var(--text-secondary); width: 34px; height: 34px; border-radius: 8px; display: flex; align-items: center; justify-content: center; text-decoration: none; transition: all var(--transition); margin-left: 10px; }
+        .adm-external-link:hover { background: var(--accent-dim); color: var(--accent); border-color: var(--accent); transform: translateY(-1px); box-shadow: 0 4px 12px var(--accent-glow); }
       `}</style>
 
       <div className="adm-layout">
@@ -534,6 +549,7 @@ const [resultForm, setResultForm] = useState({
                 <div className="adm-nav-label">{group}</div>
                 {items.map(item => {
                   
+                  // Alt menulu (Dropdown) Eleman Icin Render
                   if (item.subItems) {
                     return (
                       <div key={item.id}>
@@ -563,6 +579,7 @@ const [resultForm, setResultForm] = useState({
                     );
                   }
 
+                  // Normal Linkli Eleman Icin Render
                   if (item.link) {
                     return (
                       <Link 
@@ -621,16 +638,6 @@ const [resultForm, setResultForm] = useState({
                   outline: 'none',
                   userSelect: 'none',
                 }}
-                onMouseEnter={e => {
-                  e.currentTarget.style.borderColor = 'var(--accent, #6366f1)';
-                  e.currentTarget.style.background = 'var(--surface-3, rgba(255,255,255,0.08))';
-                }}
-                onMouseLeave={e => {
-                  if (!profileOpen) {
-                    e.currentTarget.style.borderColor = 'var(--border, rgba(255,255,255,0.08))';
-                    e.currentTarget.style.background = 'var(--surface-2, rgba(255,255,255,0.04))';
-                  }
-                }}
               >
                 <div style={{
                   width: '28px', height: '28px',
@@ -658,57 +665,57 @@ const [resultForm, setResultForm] = useState({
               {profileOpen && (
                 <>
                   <div style={{ position: 'fixed', inset: 0, zIndex: 99 }} onClick={() => setProfileOpen(false)} />
-                  <div style={{ position: 'absolute', top: 'calc(100% + 12px)', right: 0, width: '240px', background: '#111318', border: '1px solid var(--border, rgba(255,255,255,0.1))', borderRadius: '16px', padding: '8px', boxShadow: '0 20px 40px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.04) inset', zIndex: 100, animation: 'topbarDropdown 0.18s cubic-bezier(0.16,1,0.3,1)' }}>
+                  <div style={{ position: 'absolute', top: 'calc(100% + 10px)', right: 0, width: '240px', background: '#111318', border: '1px solid var(--border, rgba(255,255,255,0.1))', borderRadius: '16px', padding: '8px', boxShadow: '0 20px 40px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.04) inset', zIndex: 100, animation: 'topbarDropdown 0.18s cubic-bezier(0.16,1,0.3,1)' }}>
                     <div style={{ padding: '12px 14px', marginBottom: '6px', background: 'var(--surface-3, rgba(255,255,255,0.04))', borderRadius: '10px', display: 'flex', alignItems: 'center', gap: '12px' }}>
                       <div style={{ width: '38px', height: '38px', flexShrink: 0, background: 'linear-gradient(135deg, var(--accent, #6366f1), #8b5cf6)', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 700, fontSize: '1.1rem', lineHeight: 1, paddingBottom: '2px' }}>
                         {currentUser?.email ? currentUser.email.charAt(0).toUpperCase() : 'A'}
                       </div>
                       <div style={{ overflow: 'hidden' }}>
                         <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '2px' }}>Oturum acik</div>
-                        <div style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{currentUser?.email}</div>
+                        <div style={{ fontSize: '0.85rem', fontWeight: 600, color: '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '140px' }}>{currentUser?.email}</div>
                       </div>
                     </div>
                     <button
-  onClick={async () => {
-    // 1. Çıkış yapıldığını veritabanına bildir
-    if (currentUser?.email) {
-      await supabase.from('login_logs').insert([{ 
-        user_email: currentUser.email, 
-        location: 'Çıkış Yapıldı', 
-        status: 'logout' 
-      }]);
-    }
-    // 2. Oturumu kapat ve logine at
-    document.cookie = 'sb-access-token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
-    await supabase.auth.signOut(); 
-    router.push('/login'); 
-  }}
-  style={{
-    width: '100%',
-    display: 'flex', alignItems: 'center', gap: '10px',
-    padding: '11px 14px',
-    background: 'transparent',
-    border: '1px solid transparent',
-    borderRadius: '10px',
-    cursor: 'pointer',
-    color: '#f87171',
-    fontSize: '0.875rem',
-    fontWeight: 500,
-    transition: 'all 0.15s ease',
-    textAlign: 'left',
-  }}
-  onMouseEnter={e => {
-    e.currentTarget.style.background = 'rgba(248,113,113,0.1)';
-    e.currentTarget.style.borderColor = 'rgba(248,113,113,0.25)';
-  }}
-  onMouseLeave={e => {
-    e.currentTarget.style.background = 'transparent';
-    e.currentTarget.style.borderColor = 'transparent';
-  }}
->
-  <i className="fas fa-arrow-right-from-bracket" style={{ fontSize: '0.9rem', width: '16px' }} />
-  Çıkış Yap
-</button>
+                      onClick={async () => {
+                        // 1. Çıkış yapıldığını veritabanına bildir
+                        if (currentUser?.email) {
+                          await supabase.from('login_logs').insert([{ 
+                            user_email: currentUser.email, 
+                            location: 'Çıkış Yapıldı', 
+                            status: 'logout' 
+                          }]);
+                        }
+                        // 2. Oturumu kapat ve logine at
+                        document.cookie = 'sb-access-token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+                        await supabase.auth.signOut(); 
+                        router.push('/login'); 
+                      }}
+                      style={{
+                        width: '100%',
+                        display: 'flex', alignItems: 'center', gap: '10px',
+                        padding: '11px 14px',
+                        background: 'transparent',
+                        border: '1px solid transparent',
+                        borderRadius: '10px',
+                        cursor: 'pointer',
+                        color: '#f87171',
+                        fontSize: '0.875rem',
+                        fontWeight: 500,
+                        transition: 'all 0.15s ease',
+                        textAlign: 'left',
+                      }}
+                      onMouseEnter={e => {
+                        e.currentTarget.style.background = 'rgba(248,113,113,0.1)';
+                        e.currentTarget.style.borderColor = 'rgba(248,113,113,0.25)';
+                      }}
+                      onMouseLeave={e => {
+                        e.currentTarget.style.background = 'transparent';
+                        e.currentTarget.style.borderColor = 'transparent';
+                      }}
+                    >
+                      <i className="fas fa-arrow-right-from-bracket" style={{ fontSize: '0.9rem', width: '16px' }} />
+                      Çıkış Yap
+                    </button>
                   </div>
                 </>
               )}
@@ -718,7 +725,12 @@ const [resultForm, setResultForm] = useState({
           <div className="adm-content">
             <div className="adm-fade-in">
               <div className="adm-page-header">
-                <div className="adm-page-title">Proje <em>Dosyalari</em></div>
+                <div className="adm-page-title">Proje <em>Dosyalari</em>
+                  {/* ✨ SİTEYE GİT BUTONU EKLENDİ ✨ */}
+                  <a href="/results" target="_blank" rel="noopener noreferrer" className="adm-external-link" title="Sitede Goruntule">
+                    <i className="fas fa-external-link-alt"></i>
+                  </a>
+                </div>
               </div>
 
               {/* ✨ EĞER KULLANICI SUPER ADMIN VEYA ADMIN İSE TASARIM AYARLARINI GÖSTER ✨ */}
@@ -760,36 +772,39 @@ const [resultForm, setResultForm] = useState({
                     <i className="fas fa-plus" /> {isEditing ? ' Dosya Guncelle' : ' Yeni Dosya Ekle'}  
                   </div>
                 </div>
-               <form onSubmit={saveItem} style={{display:'grid', gap:'14px'}}>
+               <form key={formKey} onSubmit={saveItem} style={{display:'grid', gap:'14px'}}>
                  
                  <div className="adm-form-grid2">
                      <div className="adm-form-item">
                        <label>Dosya Basligi (TR) *</label>
-                       <input className="adm-input-full" placeholder="Dosya basligi..." value={resultForm.title} onChange={e => setResultForm({...resultForm, title: e.target.value})} required />
+                       <input className="adm-input-full" placeholder="Dosya basligi..." value={resultForm.title} onChange={e => setResultForm(prev => ({...prev, title: e.target.value}))} required />
                      </div>
-                     <input 
-  className="adm-input-full" 
-  placeholder="File title..." 
-  value={resultForm.title_en || ''} // ✨ Buraya || '' ekledik
-  onChange={e => setResultForm({...resultForm, title_en: e.target.value})} 
-/>
+                     <div className="adm-form-item">
+                       <label>Dosya Başlığı (EN)</label>
+                       <input 
+                         className="adm-input-full" 
+                         placeholder="File title..." 
+                         value={resultForm.title_en || ''}
+                         onChange={e => setResultForm(prev => ({...prev, title_en: e.target.value}))} 
+                       />
+                     </div>
                  </div>
 
                  <div className="adm-form-grid2">
                      <div className="adm-form-item">
                        <label>Aciklama (TR)</label>
-                       <textarea className="adm-textarea-full" placeholder="Aciklama..." value={resultForm.description} onChange={e => setResultForm({...resultForm, description: e.target.value})} rows={3} />
+                       <textarea className="adm-textarea-full" placeholder="Aciklama..." value={resultForm.description} onChange={e => setResultForm(prev => ({...prev, description: e.target.value}))} rows={3} />
                      </div>
                      <div className="adm-form-item">
                        <label>Aciklama (EN)</label>
-                       <textarea className="adm-textarea-full" placeholder="Description..." value={resultForm.description_en} onChange={e => setResultForm({...resultForm, description_en: e.target.value})} rows={3} />
+                       <textarea className="adm-textarea-full" placeholder="Description..." value={resultForm.description_en} onChange={e => setResultForm(prev => ({...prev, description_en: e.target.value}))} rows={3} />
                      </div>
                  </div>
 
                  <div className="adm-form-grid2">
                      <div className="adm-form-item">
                        <label>Durum (TR)</label>
-                       <select className="adm-select-full" value={resultForm.status} onChange={e => setResultForm({...resultForm, status: e.target.value})}>
+                       <select className="adm-select-full" value={resultForm.status} onChange={e => setResultForm(prev => ({...prev, status: e.target.value}))}>
                          <option value="Planlaniyor">Planlaniyor</option>
                          <option value="Devam Ediyor">Devam Ediyor</option>
                          <option value="Tamamlandi">Tamamlandi</option>
@@ -797,7 +812,7 @@ const [resultForm, setResultForm] = useState({
                      </div>
                      <div className="adm-form-item">
                        <label>Durum (EN)</label>
-                       <select className="adm-select-full" value={resultForm.status_en} onChange={e => setResultForm({...resultForm, status_en: e.target.value})}>
+                       <select className="adm-select-full" value={resultForm.status_en} onChange={e => setResultForm(prev => ({...prev, status_en: e.target.value}))}>
                          <option value="Planned">Planned</option>
                          <option value="In Progress">In Progress</option>
                          <option value="Completed">Completed</option>
@@ -807,11 +822,20 @@ const [resultForm, setResultForm] = useState({
 
                  <div className="adm-form-item">
                    <label>Dosya / Link</label>
-                   <FileInput value={resultForm.link} onChange={url => setResultForm({...resultForm, link: url})} placeholder="Dosya yukleyin veya URL girin..." uploadFile={uploadFile} showToast={showToast} />
+                   <FileInput value={resultForm.link} onChange={url => setResultForm(prev => ({...prev, link: url}))} placeholder="Dosya yukleyin veya URL girin..." uploadFile={uploadFile} showToast={showToast} />
                  </div>
-                 <button type="submit" className="adm-form-submit">
-                   {isEditing ? 'Guncelle' : '+ Ekle'}
-                 </button>
+
+                 {/* ✨ VAZGEÇ VE KAYDET BUTONLARI ✨ */}
+                 <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
+                   {isEditing && (
+                     <button type="button" className="adm-btn adm-btn-ghost" onClick={resetForm} style={{ flex: 1 }}>
+                       Vazgec
+                     </button>
+                   )}
+                   <button type="submit" className="adm-btn adm-btn-save" style={{ flex: isEditing ? 1 : 'unset', width: isEditing ? 'auto' : '100%' }}>
+                     {isEditing ? 'Guncelle' : '+ Ekle'}
+                   </button>
+                 </div>
                </form>
               </div>
               
@@ -854,7 +878,7 @@ const [resultForm, setResultForm] = useState({
                       <button className="adm-btn adm-btn-ghost" onClick={() => startEdit(item)} style={{height:'32px', fontSize:'0.78rem'}}>
                         <i className="fas fa-pen" /> Duzenle
                       </button>
-                      <button className="adm-btn adm-btn-danger" onClick={() => deleteItem(item.id, [item.link])}>
+                      <button className="adm-btn adm-btn-danger" onClick={() => deleteItem(item)}>
                         <i className="fas fa-trash" />
                       </button>
                     </div>

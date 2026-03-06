@@ -151,8 +151,15 @@ export default function AdminActivitiesPage() {
   // Arama State'i
   const [searchQuery, setSearchQuery] = useState('');
 
+  // ✨ YENİ: FORMUN TAMAMEN SIFIRLANMASINI GARANTİLEYEN KEY ✨
+  const [formKey, setFormKey] = useState(0);
+
   // Form State
-  const [activityForm, setActivityForm] = useState({ id: null, title: '', title_en: '', type: 'Toplanti (TPM)', type_en: '', location: '', location_en: '', date: '', summary: '', summary_en: '', description: '', description_en: '', image_url: '', gallery: [] });
+  const [activityForm, setActivityForm] = useState({ 
+    id: null, title: '', title_en: '', type: 'Toplanti (TPM)', type_en: '', 
+    location: '', location_en: '', date: '', summary: '', summary_en: '', 
+    description: '', description_en: '', image_url: '', gallery: [] 
+  });
   const [isEditing, setIsEditing] = useState(false);
 
   const [toast, setToast] = useState(null);
@@ -257,18 +264,15 @@ export default function AdminActivitiesPage() {
     }]);
   }
 
-  // ✨ GÜNCELLENDİ: Ana Görsel ve Galeri Resimlerini Beraber Kusursuz Siler ✨
   async function deleteItem(item) {
     showConfirm('Bu faaliyeti kalici olarak silmek istediginize emin misiniz?', async () => {
       let filesToDelete = [];
 
-      // 1. Ana görselin dosya adını güvenli bir şekilde URL'den ayıkla
       if (item.image_url) {
         const mainFile = decodeURIComponent(item.image_url.split('/').pop().split('?')[0]);
         if (mainFile) filesToDelete.push(mainFile);
       }
 
-      // 2. Galerideki resimlerin dosya adlarını ayıkla
       if (item.gallery) {
         let parsedGallery = [];
         try { parsedGallery = typeof item.gallery === 'string' ? JSON.parse(item.gallery) : item.gallery; } 
@@ -280,15 +284,11 @@ export default function AdminActivitiesPage() {
         });
       }
 
-      // 3. Supabase Storage'dan Dosyaları Toplu Sil
       if (filesToDelete.length > 0) {
-        const { error: storageError } = await supabase.storage.from('images').remove(filesToDelete);
-        if (storageError) {
-          console.error("Storage silme hatasi:", storageError);
-        }
+        try { await supabase.storage.from('images').remove(filesToDelete); } 
+        catch (err) { console.error("Storage silme hatasi:", err); }
       }
 
-      // 4. Veritabanından satırı sil
       const { error: dbError } = await supabase.from('activities').delete().eq('id', item.id);
       
       if (dbError) {
@@ -301,24 +301,38 @@ export default function AdminActivitiesPage() {
     });
   }
 
+  // ✨ FORMU SIFIRLAMA FONKSİYONU (Zombi Veri ve ID Sorununu çözer) ✨
+  const resetForm = () => {
+    setIsEditing(false);
+    setActivityForm({ id: null, title: '', title_en: '', type: 'Toplanti (TPM)', type_en: '', location: '', location_en: '', date: '', summary: '', summary_en: '', description: '', description_en: '', image_url: '', gallery: [] });
+    setFormKey(prev => prev + 1); // Bu kod formu ve editörleri baştan çizdirir
+  };
+
+  // ✨ ID VE EKLENME HATASI ÇÖZÜLDÜ ✨
   async function saveItem(e) {
     e.preventDefault();
+    
+    // Veritabanına id sütununu null olarak göndermemek için id'yi ayırıyoruz
+    const { id, ...restOfData } = activityForm; 
     const dataToSave = {
-      ...activityForm,
+      ...restOfData,
       gallery: JSON.stringify(activityForm.gallery) 
     };
 
-    let result = activityForm.id 
-      ? await supabase.from('activities').update(dataToSave).eq('id', activityForm.id) 
-      : await supabase.from('activities').insert([dataToSave]);
+    let result;
+    if (activityForm.id) {
+      result = await supabase.from('activities').update(dataToSave).eq('id', activityForm.id);
+    } else {
+      result = await supabase.from('activities').insert([dataToSave]);
+    }
 
     if (result?.error) { showToast('Hata: ' + result.error.message, 'error'); return; }
     
-    setIsEditing(false); 
     await logAction(`Faaliyetler tablosunda islem yapildi. (Ekleme/Guncelleme)`);
     fetchPageData(); 
     showToast('Basariyla kaydedildi.', 'success');
-    setActivityForm({ id: null, title: '', title_en: '', type: 'Toplanti (TPM)', type_en: '', location: '', location_en: '', date: '', summary: '', summary_en: '', description: '', description_en: '', image_url: '', gallery: [] });
+    
+    resetForm();
   }
 
   function startEdit(item) {
@@ -329,10 +343,10 @@ export default function AdminActivitiesPage() {
        catch(e) { parsedGallery = []; }
     }
     setActivityForm({ ...item, gallery: parsedGallery || [] });
+    setFormKey(prev => prev + 1); // Düzenlemeye geçerken de editörü tazele
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
-  // ✨ ÇOKLU GÖRSEL EKLEME FONKSİYONLARI ✨
   const handleAddGalleryImage = async (e) => {
     setLoading(true);
     const file = e.target.files[0];
@@ -345,26 +359,20 @@ export default function AdminActivitiesPage() {
     setLoading(false);
   };
 
-  // ✨ GÜNCELLENDİ: Galeriden resim silindiğinde Supabase'den de KALICI siler ✨
   const removeGalleryImage = async (index) => {
     const urlToDelete = activityForm.gallery[index];
     
-    // 1. Supabase Storage'dan dosyayı kalıcı siliyoruz
     if (urlToDelete) {
       const fileName = decodeURIComponent(urlToDelete.split('/').pop().split('?')[0]);
       if (fileName) {
-        const { error: storageError } = await supabase.storage.from('images').remove([fileName]);
-        if (storageError) {
-          console.error("Storage'dan silinirken hata:", storageError);
-        }
+        try { await supabase.storage.from('images').remove([fileName]); } 
+        catch (err) { console.error("Storage'dan silinirken hata:", err); }
       }
     }
 
-    // 2. Ekranda (React State) görseli kaldır
     const updatedGallery = activityForm.gallery.filter((_, i) => i !== index);
     setActivityForm(prev => ({ ...prev, gallery: updatedGallery }));
     
-    // 3. Eğer daha önceden kaydedilmiş bir faaliyetse, DB'yi anında güncelle
     if (activityForm.id) {
       await supabase.from('activities').update({ gallery: JSON.stringify(updatedGallery) }).eq('id', activityForm.id);
       fetchPageData(); 
@@ -372,7 +380,6 @@ export default function AdminActivitiesPage() {
     showToast('Gorsel kalici olarak silindi.', 'success');
   };
 
-  // Arama Fonksiyonu (Filtreleme)
   const filteredActivities = activities.filter(item => {
     const searchVal = searchQuery.toLowerCase();
     return (
@@ -404,10 +411,10 @@ export default function AdminActivitiesPage() {
         { id: 'strategy', label: 'Strateji', tab: 'strategy' }
       ]
     },
-    { id: 'news', label: 'Haberler', icon: 'fas fa-newspaper', badge: typeof newsCount !== 'undefined' ? newsCount : (typeof news !== 'undefined' ? news.length : 0), group: 'Icerik', link: '/admin/news', active: currentPath === '/admin/news', roles: ['Super Admin', 'Admin', 'Editor'] },
-    { id: 'activities', label: 'Faaliyetler', icon: 'fas fa-calendar-check', badge: typeof activitiesCount !== 'undefined' ? activitiesCount : (typeof activities !== 'undefined' ? activities.length : 0), group: 'Icerik', link: '/admin/activities', active: currentPath === '/admin/activities', roles: ['Super Admin', 'Admin', 'Editor'] },
-    { id: 'partners', label: 'Ortaklar', icon: 'fas fa-handshake', badge: typeof partnersCount !== 'undefined' ? partnersCount : (typeof partners !== 'undefined' ? partners.length : 0), group: 'Icerik', link: '/admin/partners', active: currentPath === '/admin/partners', roles: ['Super Admin', 'Admin'] },
-    { id: 'results', label: 'Dosyalar', icon: 'fas fa-file-circle-check', badge: typeof resultsCount !== 'undefined' ? resultsCount : (typeof results !== 'undefined' ? results.length : 0), group: 'Icerik', link: '/admin/results', active: currentPath === '/admin/results', roles: ['Super Admin', 'Admin', 'Editor'] },
+    { id: 'news', label: 'Haberler', icon: 'fas fa-newspaper', badge: typeof newsCount !== 'undefined' ? newsCount : 0, group: 'Icerik', link: '/admin/news', active: currentPath === '/admin/news', roles: ['Super Admin', 'Admin', 'Editor'] },
+    { id: 'activities', label: 'Faaliyetler', icon: 'fas fa-calendar-check', badge: typeof activitiesCount !== 'undefined' ? activitiesCount : 0, group: 'Icerik', link: '/admin/activities', active: currentPath === '/admin/activities', roles: ['Super Admin', 'Admin', 'Editor'] },
+    { id: 'partners', label: 'Ortaklar', icon: 'fas fa-handshake', badge: typeof partnersCount !== 'undefined' ? partnersCount : 0, group: 'Icerik', link: '/admin/partners', active: currentPath === '/admin/partners', roles: ['Super Admin', 'Admin'] },
+    { id: 'results', label: 'Dosyalar', icon: 'fas fa-file-circle-check', badge: typeof resultsCount !== 'undefined' ? resultsCount : 0, group: 'Icerik', link: '/admin/results', active: currentPath === '/admin/results', roles: ['Super Admin', 'Admin', 'Editor'] },
     { id: 'contact', label: 'Iletisim', icon: 'fas fa-phone', group: 'Icerik', link: '/admin/contact', active: currentPath === '/admin/contact', roles: ['Super Admin', 'Admin'] },
     { id: 'site', label: 'Header/Footer', icon: 'fas fa-sliders', group: 'Icerik', link: '/admin/site', active: currentPath === '/admin/site', roles: ['Super Admin', 'Admin'] },
     { id: 'users', label: 'Kullanicilar', icon: 'fas fa-users', group: 'Ayarlar', link: '/admin/users', active: currentPath === '/admin/users', roles: ['Super Admin'] },
@@ -431,7 +438,7 @@ export default function AdminActivitiesPage() {
 
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=Syne:wght@600;700&family=JetBrains+Mono:wght@500&display=swap');
-        .adm-layout, .adm-loading, .adm-toast, .adm-modal-overlay { --bg: #0d1117; --surface: #161b22; --surface-2: #1c2333; --border: rgba(255,255,255,0.07); --border-hover: rgba(255,255,255,0.15); --accent: #22c55e; --accent-dim: rgba(34,197,94,0.12); --accent-glow: rgba(34,197,94,0.25); --blue: #3b82f6; --blue-dim: rgba(59,130,246,0.12); --red: #ef4444; --red-dim: rgba(239,68,68,0.12); --yellow: #f59e0b; --text-primary: #e6edf3; --text-secondary: #7d8590; --text-muted: #484f58; --sidebar-w: 260px; --radius: 10px; --radius-lg: 14px; --font: 'DM Sans', sans-serif; --font-display: 'Syne', sans-serif; --transition: 0.18s cubic-bezier(0.4,0,0.2,1); }
+        .adm-layout, .adm-loading, .adm-toast, .adm-modal-overlay { --bg: #0d1117; --surface: #161b22; --surface-2: #1c2333; --surface-3: #21262d; --border: rgba(255,255,255,0.07); --border-hover: rgba(255,255,255,0.15); --accent: #22c55e; --accent-dim: rgba(34,197,94,0.12); --accent-glow: rgba(34,197,94,0.25); --blue: #3b82f6; --blue-dim: rgba(59,130,246,0.12); --red: #ef4444; --red-dim: rgba(239,68,68,0.12); --yellow: #f59e0b; --text-primary: #e6edf3; --text-secondary: #7d8590; --text-muted: #484f58; --sidebar-w: 260px; --radius: 10px; --radius-lg: 14px; --font: 'DM Sans', sans-serif; --font-display: 'Syne', sans-serif; --transition: 0.18s cubic-bezier(0.4,0,0.2,1); }
         .adm-layout { font-family: var(--font); background: var(--bg); color: var(--text-primary); line-height: 1.6; display: flex; min-height: 100vh; width: 100%; -webkit-font-smoothing: antialiased; }
         .adm-sidebar { width: var(--sidebar-w); background: var(--surface); border-right: 1px solid var(--border); display: flex; flex-direction: column; position: fixed; top: 0; left: 0; bottom: 0; z-index: 100; overflow-y: auto; }
         .adm-sidebar::-webkit-scrollbar { width: 4px; } .adm-sidebar::-webkit-scrollbar-track { background: transparent; } .adm-sidebar::-webkit-scrollbar-thumb { background: var(--border-hover); border-radius: 4px; }
@@ -490,6 +497,10 @@ export default function AdminActivitiesPage() {
         .adm-btn { display: inline-flex; align-items: center; justify-content: center; gap: 7px; border: none; border-radius: 8px; font-family: var(--font); font-size: 0.8rem; font-weight: 600; cursor: pointer; transition: var(--transition); white-space: nowrap; line-height: 1; padding: 0 16px; height: 38px; }
         .adm-btn-save { background: var(--accent); color: #000; }
         .adm-btn-save:hover { background: #16a34a; transform: translateY(-1px); box-shadow: 0 4px 14px var(--accent-glow); }
+        .adm-btn-danger { background: transparent; border: 1px solid rgba(239,68,68,0.3); color: var(--red); }
+        .adm-btn-danger:hover { background: var(--red-dim); border-color: rgba(239,68,68,0.6); }
+        .adm-btn-ghost { background: var(--surface-2); border: 1px solid var(--border); color: var(--text-secondary); }
+        .adm-btn-ghost:hover { border-color: var(--border-hover); color: var(--text-primary); }
 
         .adm-img-field { display: flex; gap: 8px; align-items: center; width: 100%; }
         .adm-img-preview-wrap { flex: 1; display: flex; align-items: center; background: var(--surface-2); border: 1px solid var(--border); border-radius: 8px; padding: 6px 10px; gap: 10px; overflow: hidden; }
@@ -527,7 +538,7 @@ export default function AdminActivitiesPage() {
         @keyframes fadeUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes fadeDown { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: translateY(0); } }
 
-        .adm-toast { position: fixed; top: 20px; right: 20px; z-index: 9999; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 14px 18px; box-shadow: 0 8px 32px rgba(0,0,0,0.6); display: flex; align-items: center; gap: 12px; min-width: 280px; animation: slideIn 0.25s cubic-bezier(0.4,0,0.2,1); }
+        .adm-toast { fixed; top: 20px; right: 20px; z-index: 9999; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 14px 18px; box-shadow: 0 8px 32px rgba(0,0,0,0.6); display: flex; align-items: center; gap: 12px; min-width: 280px; animation: slideIn 0.25s cubic-bezier(0.4,0,0.2,1); }
         .adm-toast-icon { width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 0.9rem; flex-shrink: 0; }
         .adm-toast-icon.success { background: var(--accent-dim); color: var(--accent); border: 1px solid rgba(34,197,94,0.25); }
         .adm-toast-icon.error { background: var(--red-dim); color: var(--red); border: 1px solid rgba(239,68,68,0.25); }
@@ -562,6 +573,20 @@ export default function AdminActivitiesPage() {
         /* YENI: Link Butonu CSS */
         .adm-external-link { background: var(--surface-2); border: 1px solid var(--border); color: var(--text-secondary); width: 34px; height: 34px; border-radius: 8px; display: flex; align-items: center; justify-content: center; text-decoration: none; transition: all var(--transition); margin-left: 10px; }
         .adm-external-link:hover { background: var(--accent-dim); color: var(--accent); border-color: var(--accent); transform: translateY(-1px); box-shadow: 0 4px 12px var(--accent-glow); }
+      `}</style>
+
+      {/* ✨ İÇERİK (QUILL) VE BUTON İÇİN GLOBAL CSS ✨ */}
+      <style jsx global>{`
+        /* ✨ REACT QUILL EDITOR DÜZELTMELERİ ✨ */
+        .quill { width: 100%; display: flex; flex-direction: column; }
+        .ql-toolbar.ql-snow { border: 1px solid var(--border); background: var(--surface-3); border-radius: 8px 8px 0 0; }
+        .ql-container.ql-snow { border: 1px solid var(--border); border-top: none; background: var(--surface-2); border-radius: 0 0 8px 8px; font-family: var(--font); color: var(--text-primary); font-size: 0.875rem; }
+        .ql-editor { min-height: 200px; padding: 15px; cursor: text; }
+        .ql-editor:focus { outline: none; box-shadow: inset 0 0 0 2px var(--accent-glow); border-radius: 0 0 8px 8px; }
+        .ql-snow .ql-stroke { stroke: var(--text-secondary); }
+        .ql-snow .ql-fill, .ql-snow .ql-stroke.ql-fill { fill: var(--text-secondary); }
+        .ql-snow .ql-picker { color: var(--text-secondary); }
+        .ql-snow .ql-picker-options { background-color: var(--surface); border-color: var(--border); }
       `}</style>
 
       <div className="adm-layout">
@@ -708,50 +733,50 @@ export default function AdminActivitiesPage() {
                       </div>
                       <div style={{ overflow: 'hidden' }}>
                         <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '2px' }}>Oturum acik</div>
-                        <div style={{ fontSize: '0.85rem', fontWeight: 600, color: '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{currentUser?.email}</div>
+                        <div style={{ fontSize: '0.85rem', fontWeight: 600, color: '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '140px' }}>{currentUser?.email}</div>
                       </div>
                     </div>
                     <button
-  onClick={async () => {
-    // 1. Çıkış yapıldığını veritabanına bildir
-    if (currentUser?.email) {
-      await supabase.from('login_logs').insert([{ 
-        user_email: currentUser.email, 
-        location: 'Çıkış Yapıldı', 
-        status: 'logout' 
-      }]);
-    }
-    // 2. Oturumu kapat ve logine at
-    document.cookie = 'sb-access-token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
-    await supabase.auth.signOut(); 
-    router.push('/login'); 
-  }}
-  style={{
-    width: '100%',
-    display: 'flex', alignItems: 'center', gap: '10px',
-    padding: '11px 14px',
-    background: 'transparent',
-    border: '1px solid transparent',
-    borderRadius: '10px',
-    cursor: 'pointer',
-    color: '#f87171',
-    fontSize: '0.875rem',
-    fontWeight: 500,
-    transition: 'all 0.15s ease',
-    textAlign: 'left',
-  }}
-  onMouseEnter={e => {
-    e.currentTarget.style.background = 'rgba(248,113,113,0.1)';
-    e.currentTarget.style.borderColor = 'rgba(248,113,113,0.25)';
-  }}
-  onMouseLeave={e => {
-    e.currentTarget.style.background = 'transparent';
-    e.currentTarget.style.borderColor = 'transparent';
-  }}
->
-  <i className="fas fa-arrow-right-from-bracket" style={{ fontSize: '0.9rem', width: '16px' }} />
-  Çıkış Yap
-</button>
+                      onClick={async () => {
+                        // 1. Çıkış yapıldığını veritabanına bildir
+                        if (currentUser?.email) {
+                          await supabase.from('login_logs').insert([{ 
+                            user_email: currentUser.email, 
+                            location: 'Çıkış Yapıldı', 
+                            status: 'logout' 
+                          }]);
+                        }
+                        // 2. Oturumu kapat ve logine at
+                        document.cookie = 'sb-access-token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+                        await supabase.auth.signOut(); 
+                        router.push('/login'); 
+                      }}
+                      style={{
+                        width: '100%',
+                        display: 'flex', alignItems: 'center', gap: '10px',
+                        padding: '11px 14px',
+                        background: 'transparent',
+                        border: '1px solid transparent',
+                        borderRadius: '10px',
+                        cursor: 'pointer',
+                        color: '#f87171',
+                        fontSize: '0.875rem',
+                        fontWeight: 500,
+                        transition: 'all 0.15s ease',
+                        textAlign: 'left',
+                      }}
+                      onMouseEnter={e => {
+                        e.currentTarget.style.background = 'rgba(248,113,113,0.1)';
+                        e.currentTarget.style.borderColor = 'rgba(248,113,113,0.25)';
+                      }}
+                      onMouseLeave={e => {
+                        e.currentTarget.style.background = 'transparent';
+                        e.currentTarget.style.borderColor = 'transparent';
+                      }}
+                    >
+                      <i className="fas fa-arrow-right-from-bracket" style={{ fontSize: '0.9rem', width: '16px' }} />
+                      Çıkış Yap
+                    </button>
                   </div>
                 </>
               )}
@@ -810,48 +835,50 @@ export default function AdminActivitiesPage() {
                     {isEditing ? ' Faaliyeti Duzenle' : ' Yeni Faaliyet Ekle'}
                   </div>
                 </div>
-                <form onSubmit={saveItem} style={{display:'grid', gap:'14px'}}>
+                
+                {/* ✨ formKey EKLENDİ, FORM TAMAMEN SIFIRLANIR ✨ */}
+                <form key={formKey} onSubmit={saveItem} style={{display:'grid', gap:'14px'}}>
                   
                   <div className="adm-form-grid2">
                       <div className="adm-form-item">
                         <label>Faaliyet Basligi (TR) *</label>
-                        <input className="adm-input-full" placeholder="Baslik..." value={activityForm.title} onChange={e => setActivityForm({...activityForm, title: e.target.value})} required />
+                        <input className="adm-input-full" placeholder="Baslik..." value={activityForm.title} onChange={e => setActivityForm(prev => ({...prev, title: e.target.value}))} required />
                       </div>
                       <div className="adm-form-item">
                         <label>Faaliyet Basligi (EN)</label>
-                        <input className="adm-input-full" placeholder="Title..." value={activityForm.title_en} onChange={e => setActivityForm({...activityForm, title_en: e.target.value})} />
+                        <input className="adm-input-full" placeholder="Title..." value={activityForm.title_en} onChange={e => setActivityForm(prev => ({...prev, title_en: e.target.value}))} />
                       </div>
                   </div>
 
                   <div className="adm-form-grid2">
                     <div className="adm-form-item">
                       <label>Turu (TR)</label>
-                      <input className="adm-input-full" placeholder="Toplanti..." value={activityForm.type} onChange={e => setActivityForm({...activityForm, type: e.target.value})} />
+                      <input className="adm-input-full" placeholder="Toplanti..." value={activityForm.type} onChange={e => setActivityForm(prev => ({...prev, type: e.target.value}))} />
                     </div>
                     <div className="adm-form-item">
                       <label>Turu (EN)</label>
-                      <input className="adm-input-full" placeholder="Meeting..." value={activityForm.type_en} onChange={e => setActivityForm({...activityForm, type_en: e.target.value})} />
+                      <input className="adm-input-full" placeholder="Meeting..." value={activityForm.type_en} onChange={e => setActivityForm(prev => ({...prev, type_en: e.target.value}))} />
                     </div>
                   </div>
 
                   <div className="adm-form-grid3">
                     <div className="adm-form-item">
                       <label>Konum (TR)</label>
-                      <input className="adm-input-full" placeholder="Istanbul..." value={activityForm.location} onChange={e => setActivityForm({...activityForm, location: e.target.value})} />
+                      <input className="adm-input-full" placeholder="Istanbul..." value={activityForm.location} onChange={e => setActivityForm(prev => ({...prev, location: e.target.value}))} />
                     </div>
                     <div className="adm-form-item">
                       <label>Konum (EN)</label>
-                      <input className="adm-input-full" placeholder="Istanbul..." value={activityForm.location_en} onChange={e => setActivityForm({...activityForm, location_en: e.target.value})} />
+                      <input className="adm-input-full" placeholder="Istanbul..." value={activityForm.location_en} onChange={e => setActivityForm(prev => ({...prev, location_en: e.target.value}))} />
                     </div>
                     <div className="adm-form-item">
                       <label>Tarih</label>
-                      <input type="date" className="adm-input-full" value={activityForm.date} onChange={e => setActivityForm({...activityForm, date: e.target.value})} style={{colorScheme:'dark'}} />
+                      <input type="date" className="adm-input-full" value={activityForm.date} onChange={e => setActivityForm(prev => ({...prev, date: e.target.value}))} style={{colorScheme:'dark'}} />
                     </div>
                   </div>
 
                   <div className="adm-form-item">
                     <label>Ana Gorsel (Kapak)</label>
-                    <FileInput value={activityForm.image_url} onChange={url => setActivityForm({...activityForm, image_url: url})} placeholder="Faaliyet kapak gorseli..." uploadFile={uploadFile} showToast={showToast} />
+                    <FileInput value={activityForm.image_url} onChange={url => setActivityForm(prev => ({...prev, image_url: url}))} placeholder="Faaliyet kapak gorseli..." uploadFile={uploadFile} showToast={showToast} />
                   </div>
 
                   {/* ✨ ÇOKLU GÖRSEL (GALERİ) ALANI ✨ */}
@@ -883,32 +910,40 @@ export default function AdminActivitiesPage() {
                   <div className="adm-form-grid2">
                       <div className="adm-form-item">
                         <label>Kisa Ozet (TR)</label>
-                        <textarea className="adm-textarea-full" placeholder="Kisa aciklama..." value={activityForm.summary} onChange={e => setActivityForm({...activityForm, summary: e.target.value})} rows={3} />
+                        <textarea className="adm-textarea-full" placeholder="Kisa aciklama..." value={activityForm.summary} onChange={e => setActivityForm(prev => ({...prev, summary: e.target.value}))} rows={3} />
                       </div>
                       <div className="adm-form-item">
                         <label>Kisa Ozet (EN)</label>
-                        <textarea className="adm-textarea-full" placeholder="Short summary..." value={activityForm.summary_en} onChange={e => setActivityForm({...activityForm, summary_en: e.target.value})} rows={3} />
+                        <textarea className="adm-textarea-full" placeholder="Short summary..." value={activityForm.summary_en} onChange={e => setActivityForm(prev => ({...prev, summary_en: e.target.value}))} rows={3} />
                       </div>
                   </div>
 
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
                       <div className="adm-form-item">
                         <label>Detayli Aciklama (TR)</label>
-                        <div style={{ borderRadius: '8px', overflow: 'hidden' }}>
-                          <ReactQuill theme="snow" modules={quillModules} value={activityForm.description || ''} onChange={val => setActivityForm({...activityForm, description: val})} />
+                        <div style={{ width: '100%' }}>
+                          <ReactQuill theme="snow" modules={quillModules} value={activityForm.description || ''} onChange={val => setActivityForm(prev => ({...prev, description: val}))} />
                         </div>
                       </div>
                       <div className="adm-form-item">
                         <label>Detayli Aciklama (EN)</label>
-                        <div style={{ borderRadius: '8px', overflow: 'hidden' }}>
-                          <ReactQuill theme="snow" modules={quillModules} value={activityForm.description_en || ''} onChange={val => setActivityForm({...activityForm, description_en: val})} />
+                        <div style={{ width: '100%' }}>
+                          <ReactQuill theme="snow" modules={quillModules} value={activityForm.description_en || ''} onChange={val => setActivityForm(prev => ({...prev, description_en: val}))} />
                         </div>
                       </div>
                   </div>
 
-                  <button type="submit" className="adm-form-submit">
-                    {isEditing ? 'Degisiklikleri Kaydet' : '+ Faaliyet Ekle'}
-                  </button>
+                  {/* ✨ VAZGEÇ VE KAYDET BUTONLARI (Form Sıfırlama) ✨ */}
+                  <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
+                    {isEditing && (
+                      <button type="button" className="adm-btn adm-btn-ghost" onClick={resetForm} style={{ flex: 1 }}>
+                        Vazgec
+                      </button>
+                    )}
+                    <button type="submit" className="adm-btn adm-btn-save" style={{ flex: isEditing ? 1 : 'unset', width: isEditing ? 'auto' : '100%' }}>
+                      {isEditing ? 'Degisiklikleri Kaydet' : '+ Faaliyet Ekle'}
+                    </button>
+                  </div>
                 </form>
               </div>
               

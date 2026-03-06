@@ -21,6 +21,9 @@ export default function LogsPage() {
   const loaderRef = useRef(null);
   const LOGS_PER_PAGE = 30; // Her kaydırmada yüklenecek log sayısı
   
+  // ✨ ARAMA KUTUSU STATE'İ ✨
+  const [searchQuery, setSearchQuery] = useState('');
+  
   // Badge Counts
   const [unreadMsgCount, setUnreadMsgCount] = useState(0);
   const [newsCount, setNewsCount] = useState(0);
@@ -102,8 +105,8 @@ export default function LogsPage() {
   useEffect(() => {
     const observer = new IntersectionObserver((entries) => {
       const target = entries[0];
-      // Kullanıcı loader div'ini gördüyse, yüklenecek veri varsa ve şu an yüklenmiyorsa sayfa sayısını artır
-      if (target.isIntersecting && hasMore && !isFetchingMore && !loading) {
+      // Kullanıcı loader div'ini gördüyse, yüklenecek veri varsa, şu an yüklenmiyorsa ve ARAMA YAPILMIYORSA sayfa sayısını artır
+      if (target.isIntersecting && hasMore && !isFetchingMore && !loading && !searchQuery) {
         setPage((prevPage) => prevPage + 1);
       }
     }, {
@@ -117,7 +120,7 @@ export default function LogsPage() {
     return () => {
       if (loaderRef.current) observer.unobserve(loaderRef.current);
     };
-  }, [hasMore, isFetchingMore, loading]);
+  }, [hasMore, isFetchingMore, loading, searchQuery]);
 
   // Sayfa sayısı arttıkça yeni logları çek
   useEffect(() => {
@@ -126,6 +129,17 @@ export default function LogsPage() {
     }
   }, [page, fetchLogs]);
 
+  // ✨ LOGLARI FİLTRELEME İŞLEMİ ✨
+  const filteredLogs = logs.filter(log => {
+    if (!searchQuery) return true;
+    const q = searchQuery.toLowerCase();
+    return (
+      log.action?.toLowerCase().includes(q) ||
+      log.user_email?.toLowerCase().includes(q) ||
+      log.page_section?.toLowerCase().includes(q) ||
+      log.ip_address?.toLowerCase().includes(q)
+    );
+  });
 
   const currentPath = typeof window !== 'undefined' ? window.location.pathname : '';
   
@@ -217,6 +231,14 @@ export default function LogsPage() {
         .adm-badge { display: inline-flex; align-items: center; padding: 2px 9px; border-radius: 20px; font-size: 0.68rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; }
         .adm-badge-blue { background: var(--blue-dim); color: var(--blue); border: 1px solid rgba(59,130,246,0.25); }
 
+        /* YENI ARAMA KUTUSU CSS */
+        .adm-search-wrap { position: relative; margin-bottom: 16px; width: 100%; display: flex; align-items: center; }
+        .adm-search-wrap i { position: absolute; left: 14px; color: var(--text-muted); font-size: 0.85rem; }
+        .adm-search-input { width: 100%; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 10px 14px 10px 38px; color: var(--text-primary); font-family: var(--font); font-size: 0.875rem; transition: all var(--transition); outline: none; }
+        .adm-search-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow); background: var(--surface-2); }
+        .adm-search-clear { position: absolute; right: 12px; background: none; border: none; color: var(--text-muted); cursor: pointer; padding: 4px; transition: color var(--transition); }
+        .adm-search-clear:hover { color: var(--text-primary); }
+
         .adm-loading { height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; background: var(--bg); gap: 16px; font-family: var(--font); color: var(--text-primary); }
         .adm-loading-spinner { width: 40px; height: 40px; border: 3px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; }
         
@@ -235,7 +257,7 @@ export default function LogsPage() {
                 <i className="fas fa-leaf" />
               </div>
               <div className="adm-brand-text">
-                <div className="adm-brand-logo"><span>DIGI-<span>GREEN</span></span></div>
+                <div className="adm-brand-logo">DIGI-<span>GREEN</span></div>
                 <div className="adm-brand-sub">
                   Yonetim Paneli 
                   <i className="fas fa-external-link-alt" style={{ marginLeft: '6px', fontSize: '0.6rem' }} />
@@ -325,7 +347,7 @@ export default function LogsPage() {
                 onClick={() => setProfileOpen(!profileOpen)}
                 style={{
                   display: 'flex', alignItems: 'center', gap: '10px',
-                  padding: '6px 14px 6px 8px',
+                  padding: '6px 14px 6px 6px',
                   background: profileOpen ? 'var(--surface-3, rgba(255,255,255,0.08))' : 'var(--surface-2, rgba(255,255,255,0.04))',
                   border: '1px solid',
                   borderColor: profileOpen ? 'var(--accent, #6366f1)' : 'var(--border, rgba(255,255,255,0.08))',
@@ -336,26 +358,16 @@ export default function LogsPage() {
                   outline: 'none',
                   userSelect: 'none',
                 }}
-                onMouseEnter={e => {
-                  e.currentTarget.style.borderColor = 'var(--accent, #6366f1)';
-                  e.currentTarget.style.background = 'var(--surface-3, rgba(255,255,255,0.08))';
-                }}
-                onMouseLeave={e => {
-                  if (!profileOpen) {
-                    e.currentTarget.style.borderColor = 'var(--border, rgba(255,255,255,0.08))';
-                    e.currentTarget.style.background = 'var(--surface-2, rgba(255,255,255,0.04))';
-                  }
-                }}
               >
                 <div style={{
                   width: '28px', height: '28px',
-                  background: 'linear-gradient(135deg, var(--accent, #6366f1), #8b5cf6)',
+                  background: 'linear-gradient(135deg, #22c55e, #16a34a)',
                   borderRadius: '50%',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   color: '#fff', fontWeight: 700, fontSize: '0.85rem',
                   lineHeight: 1, paddingBottom: '1px',
                   flexShrink: 0,
-                  boxShadow: '0 2px 8px rgba(99,102,241,0.4)',
+                  boxShadow: '0 2px 8px rgba(34, 197, 94, 0.4)',
                 }}>
                   {currentUser?.email ? currentUser.email.charAt(0).toUpperCase() : 'A'}
                 </div>
@@ -373,57 +385,55 @@ export default function LogsPage() {
               {profileOpen && (
                 <>
                   <div style={{ position: 'fixed', inset: 0, zIndex: 99 }} onClick={() => setProfileOpen(false)} />
-                  <div style={{ position: 'absolute', top: 'calc(100% + 10px)', right: 0, width: '240px', background: 'var(--surface-2, #1e1e2e)', border: '1px solid var(--border, rgba(255,255,255,0.1))', borderRadius: '16px', padding: '8px', boxShadow: '0 20px 40px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.04) inset', zIndex: 100, animation: 'topbarDropdown 0.18s cubic-bezier(0.16,1,0.3,1)' }}>
+                  <div style={{ position: 'absolute', top: 'calc(100% + 10px)', right: 0, width: '240px', background: '#111318', border: '1px solid var(--border, rgba(255,255,255,0.1))', borderRadius: '16px', padding: '8px', boxShadow: '0 20px 40px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.04) inset', zIndex: 100, animation: 'topbarDropdown 0.18s cubic-bezier(0.16,1,0.3,1)' }}>
                     <div style={{ padding: '12px 14px', marginBottom: '6px', background: 'var(--surface-3, rgba(255,255,255,0.04))', borderRadius: '10px', display: 'flex', alignItems: 'center', gap: '12px' }}>
                       <div style={{ width: '38px', height: '38px', flexShrink: 0, background: 'linear-gradient(135deg, var(--accent, #6366f1), #8b5cf6)', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 700, fontSize: '1.1rem', lineHeight: 1, paddingBottom: '2px' }}>
                         {currentUser?.email ? currentUser.email.charAt(0).toUpperCase() : 'A'}
                       </div>
                       <div style={{ overflow: 'hidden' }}>
-                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', margin: 0 }}>Oturum acik</div>
+                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '2px' }}>Oturum acik</div>
                         <div style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{currentUser?.email}</div>
                       </div>
                     </div>
-                   <button
-  onClick={async () => {
-    // 1. Çıkış yapıldığını veritabanına bildir
-    if (currentUser?.email) {
-      await supabase.from('login_logs').insert([{ 
-        user_email: currentUser.email, 
-        location: 'Çıkış Yapıldı', 
-        status: 'logout' 
-      }]);
-    }
-    // 2. Oturumu kapat ve logine at
-    document.cookie = 'sb-access-token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
-    await supabase.auth.signOut(); 
-    router.push('/login'); 
-  }}
-  style={{
-    width: '100%',
-    display: 'flex', alignItems: 'center', gap: '10px',
-    padding: '11px 14px',
-    background: 'transparent',
-    border: '1px solid transparent',
-    borderRadius: '10px',
-    cursor: 'pointer',
-    color: '#f87171',
-    fontSize: '0.875rem',
-    fontWeight: 500,
-    transition: 'all 0.15s ease',
-    textAlign: 'left',
-  }}
-  onMouseEnter={e => {
-    e.currentTarget.style.background = 'rgba(248,113,113,0.1)';
-    e.currentTarget.style.borderColor = 'rgba(248,113,113,0.25)';
-  }}
-  onMouseLeave={e => {
-    e.currentTarget.style.background = 'transparent';
-    e.currentTarget.style.borderColor = 'transparent';
-  }}
->
-  <i className="fas fa-arrow-right-from-bracket" style={{ fontSize: '0.9rem', width: '16px' }} />
-  Çıkış Yap
-</button>
+                    <button
+                      onClick={async () => {
+                        if (currentUser?.email) {
+                          await supabase.from('login_logs').insert([{ 
+                            user_email: currentUser.email, 
+                            location: 'Çıkış Yapıldı', 
+                            status: 'logout' 
+                          }]);
+                        }
+                        document.cookie = 'sb-access-token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+                        await supabase.auth.signOut(); 
+                        router.push('/login'); 
+                      }}
+                      style={{
+                        width: '100%',
+                        display: 'flex', alignItems: 'center', gap: '10px',
+                        padding: '11px 14px',
+                        background: 'transparent',
+                        border: '1px solid transparent',
+                        borderRadius: '10px',
+                        cursor: 'pointer',
+                        color: '#f87171',
+                        fontSize: '0.875rem',
+                        fontWeight: 500,
+                        transition: 'all 0.15s ease',
+                        textAlign: 'left',
+                      }}
+                      onMouseEnter={e => {
+                        e.currentTarget.style.background = 'rgba(248,113,113,0.1)';
+                        e.currentTarget.style.borderColor = 'rgba(248,113,113,0.25)';
+                      }}
+                      onMouseLeave={e => {
+                        e.currentTarget.style.background = 'transparent';
+                        e.currentTarget.style.borderColor = 'transparent';
+                      }}
+                    >
+                      <i className="fas fa-arrow-right-from-bracket" style={{ fontSize: '0.9rem', width: '16px' }} />
+                      Çıkış Yap
+                    </button>
                   </div>
                 </>
               )}
@@ -432,10 +442,32 @@ export default function LogsPage() {
 
           <div className="adm-content">
             <div className="adm-fade-in">
-              <div className="adm-page-header">
-                <div className="adm-page-title">Sistem <em>Loglari</em></div>
-                <div className="adm-page-desc">Admin paneli uzerinde gerceklestirilen etkinlikler.</div>
+              
+              {/* ✨ GÜNCELLENMİŞ BAŞLIK VE ARAMA ALANI ✨ */}
+              <div className="adm-page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', flexWrap: 'wrap', gap: '15px' }}>
+                <div>
+                  <div className="adm-page-title">Sistem <em>Loglari</em></div>
+                  <div className="adm-page-desc">Admin paneli uzerinde gerceklestirilen etkinlikler.</div>
+                </div>
+                
+                {/* ARAMA KUTUSU */}
+                <div className="adm-search-wrap" style={{ width: '300px', marginBottom: 0 }}>
+                  <i className="fas fa-search" />
+                  <input 
+                    type="text" 
+                    className="adm-search-input" 
+                    placeholder="İşlem, e-posta veya ip ara..." 
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                  />
+                  {searchQuery && (
+                    <button className="adm-search-clear" onClick={() => setSearchQuery('')}>
+                      <i className="fas fa-times" />
+                    </button>
+                  )}
+                </div>
               </div>
+              
               <div className="adm-card" style={{padding: '0'}}>
                 <table style={{width: '100%', textAlign: 'left', borderCollapse: 'collapse'}}>
                    <thead>
@@ -447,9 +479,13 @@ export default function LogsPage() {
                      </tr>
                    </thead>
                    <tbody>
-                     {logs.length === 0 ? (
-                       <tr><td colSpan="4" style={{padding: '20px', textAlign: 'center', color: 'var(--text-muted)'}}>Henuz bir islem logu bulunmuyor.</td></tr>
-                     ) : logs.map((log) => (
+                     {filteredLogs.length === 0 ? (
+                       <tr>
+                         <td colSpan="4" style={{padding: '40px', textAlign: 'center', color: 'var(--text-muted)'}}>
+                           {searchQuery ? 'Arama sonucu bulunamadı.' : 'Henuz bir islem logu bulunmuyor.'}
+                         </td>
+                       </tr>
+                     ) : filteredLogs.map((log) => (
                        <tr key={log.id} style={{borderBottom: '1px solid var(--border)'}}>
                          <td style={{padding: '16px 20px', fontSize:'0.85rem', color:'var(--text-secondary)'}}>
                            {new Date(log.created_at).toLocaleString('tr-TR')}
@@ -471,7 +507,7 @@ export default function LogsPage() {
                  </table>
                  
                  {/* ✨ İNFINITE SCROLL YÜKLEME GÖSTERGESİ ✨ */}
-                 {hasMore && (
+                 {hasMore && !searchQuery && (
                     <div ref={loaderRef} style={{ padding: '24px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
                       {isFetchingMore ? (
                         <span><i className="fas fa-spinner fa-spin" style={{marginRight: '8px'}}></i> Daha fazla log yükleniyor...</span>
@@ -482,7 +518,7 @@ export default function LogsPage() {
                  )}
                  
                  {/* ✨ TÜM VERİ BİTTİĞİNDE ÇIKAN UYARI ✨ */}
-                 {!hasMore && logs.length > 0 && (
+                 {!hasMore && logs.length > 0 && !searchQuery && (
                     <div style={{ padding: '20px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.85rem', borderTop: '1px solid var(--border)' }}>
                       Mevcut tüm logların sonuna ulaştınız.
                     </div>
