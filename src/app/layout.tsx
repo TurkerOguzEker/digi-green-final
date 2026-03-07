@@ -7,6 +7,7 @@ import { supabase } from '../lib/supabase';
 import { LanguageProvider } from '../context/LanguageContext';
 import CookieBanner from '../components/CookieBanner';
 import Script from 'next/script';
+import ConditionalLayout from '../components/ConditionalLayout'; // ✨ YENİ EKLENDİ
 
 export const revalidate = 0;
 export const dynamic = 'force-dynamic';
@@ -26,7 +27,7 @@ export async function generateMetadata() {
     : '/favicon.ico';
 
   return {
-    metadataBase: new URL('https://digigreenfuture.eu'), // ✨ EKLENEN SATIR BURASI (Uyarıyı çözen kısım)
+    metadataBase: new URL('https://digigreenfuture.eu'),
     title: 'DIGI-GREEN FUTURE | Dijital Yeşil Dönüşüm',
     description: 'Kapaklı Belediyesi liderliğinde yürütülen, iklim değişikliği ile mücadelede dijital araçları kullanmayı hedefleyen Erasmus+ projesi.',
     keywords: 'çevre, dijital dönüşüm, sürdürülebilirlik, erasmus+, kapaklı belediyesi, yeşil gelecek',
@@ -114,18 +115,25 @@ export default async function RootLayout({
         </Script>
 
         <LanguageProvider>
-            {/* @ts-ignore */}
-            <Header initialSettings={settings} />
+            
+            {/* ✨ GİZLENECEK ALANLARI SARMALADIK ✨ */}
+            <ConditionalLayout>
+              {/* @ts-ignore */}
+              <Header initialSettings={settings} />
+            </ConditionalLayout>
             
             <main style={{ minHeight: '80vh' }}>
                 {children}
             </main>
             
-            {/* @ts-ignore */}
-            <Footer initialSettings={settings} />
-            
-            <ScrollToTop />
-            <CookieBanner />
+            {/* ✨ GİZLENECEK ALANLARI SARMALADIK ✨ */}
+            <ConditionalLayout>
+              {/* @ts-ignore */}
+              <Footer initialSettings={settings} />
+              <ScrollToTop />
+              <CookieBanner />
+            </ConditionalLayout>
+
         </LanguageProvider>
         
       </body>
