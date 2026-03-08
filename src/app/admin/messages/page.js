@@ -1,11 +1,10 @@
 'use client';
-import { useEffect, useState, useRef, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '../../../lib/supabase';
 import Link from 'next/link';
-import '../../globals.css';
 
-/* ─── TOAST (BILDIRIM) BILESENI ─── */
+/* ─── TOAST (BİLDİRİM) BİLEŞENİ ─── */
 const Toast = ({ message, type, onClose }) => {
   if (!message) return null;
   return (
@@ -30,12 +29,12 @@ const ConfirmModal = ({ isOpen, message, onConfirm, onCancel }) => {
   return (
     <div className="adm-modal-overlay">
       <div className="adm-modal">
-        <div className="adm-modal-icon"><i className="fas fa-exclamation-triangle" style={{color:'#ef4444'}} /></div>
+        <div className="adm-modal-icon"><i className="fas fa-exclamation-triangle" style={{color:'var(--red)'}} /></div>
         <h3>Emin misiniz?</h3>
         <p>{message}</p>
         <div className="adm-modal-btns">
           <button className="adm-btn adm-btn-ghost" onClick={onCancel}>Vazgec</button>
-          <button className="adm-btn adm-btn-danger" style={{background:'#ef4444', color:'white', border:'none'}} onClick={onConfirm}>Evet, Onayla</button>
+          <button className="adm-btn adm-btn-danger" style={{background:'var(--red)', color:'white', border:'none'}} onClick={onConfirm}>Evet, Onayla</button>
         </div>
       </div>
     </div>
@@ -47,7 +46,6 @@ const PAGE_SIZE = 15;
 export default function MessagesPage() {
   const router = useRouter();
   
-  const [profileOpen, setProfileOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
@@ -55,7 +53,6 @@ export default function MessagesPage() {
 
   const [messages, setMessages] = useState([]);
   const [blockedEmails, setBlockedEmails] = useState([]);
-  const [currentUser, setCurrentUser] = useState(null);
   
   const [searchQuery, setSearchQuery] = useState('');
   const [currentView, setCurrentView] = useState('all'); 
@@ -64,7 +61,6 @@ export default function MessagesPage() {
   const [toast, setToast] = useState(null);
   const [modal, setModal] = useState({ isOpen: false, message: '', onConfirm: null });
   
-  // SATIR ICI YANITLAMA & OTURUM HAFIZASI
   const [replyingTo, setReplyingTo] = useState(null);
   const [replyText, setReplyText] = useState('');
   const [isSendingReply, setIsSendingReply] = useState(false);
@@ -81,7 +77,6 @@ export default function MessagesPage() {
   const closeConfirm = () => setModal({ ...modal, isOpen: false });
   const handleConfirmAction = () => { if (modal.onConfirm) modal.onConfirm(); closeConfirm(); };
 
-  // SEKMELER ARASI GEÇİŞ
   const changeView = (view) => {
     setCurrentView(view);
     setExpandedId(null);
@@ -89,7 +84,6 @@ export default function MessagesPage() {
     setReadInSession([]);
   };
 
-  // 1. DATA CEKME
   const fetchInitialData = useCallback(async () => {
     const { data: bData } = await supabase.from('blocked_emails').select('*').order('created_at', { ascending: false });
     if (bData) setBlockedEmails(bData);
@@ -108,7 +102,6 @@ export default function MessagesPage() {
     setLoading(false);
   }, []);
 
-  // 2. OTURUM VE REALTIME
   useEffect(() => {
     let isMounted = true;
     let channel;
@@ -118,7 +111,6 @@ export default function MessagesPage() {
       if (!session) { router.push('/login'); return; }
       
       if (isMounted) {
-        setCurrentUser(session.user);
         await fetchInitialData();
       }
 
@@ -149,8 +141,6 @@ export default function MessagesPage() {
     };
   }, [router, fetchInitialData, showToast]);
 
-
-  // 3. SONSUZ KAYDIRMA
   const loadMoreMessages = useCallback(async () => {
     if (loadingMore || !hasMore) return;
     setLoadingMore(true);
@@ -194,7 +184,6 @@ export default function MessagesPage() {
   }, [loading, hasMore, loadingMore, loadMoreMessages, searchQuery]);
 
 
-  // EYLEM FONKSIYONLARI
   function deleteMessage(id, e) {
     e.stopPropagation();
     showConfirm('Bu mesaji kalici olarak silmek istediginize emin misiniz?', async () => {
@@ -213,18 +202,6 @@ export default function MessagesPage() {
     await supabase.from('contact_messages').update({ is_read: true }).eq('id', msg.id);
   }
 
-  async function toggleReadStatus(msg, e) {
-    e.stopPropagation();
-    const newStatus = !msg.is_read;
-    if (newStatus) {
-      setReadInSession(prev => [...prev, msg.id]);
-    } else {
-      setReadInSession(prev => prev.filter(id => id !== msg.id));
-    }
-    setMessages(prev => prev.map(m => m.id === msg.id ? { ...m, is_read: newStatus } : m));
-    await supabase.from('contact_messages').update({ is_read: newStatus }).eq('id', msg.id);
-  }
-
   async function toggleStarStatus(msg, e) {
     e.stopPropagation();
     const newStatus = !msg.is_starred;
@@ -232,7 +209,6 @@ export default function MessagesPage() {
     await supabase.from('contact_messages').update({ is_starred: newStatus }).eq('id', msg.id);
   }
 
-  // Siteden Direkt E-Posta Gonderme Fonksiyonu
   async function handleSendReply(msg) {
     if (!replyText.trim()) {
       showToast('Lütfen bir yanıt yazın.', 'error');
@@ -258,7 +234,7 @@ export default function MessagesPage() {
           const errorData = await res.json();
           throw new Error(errorData.error || 'API bir hata döndürdü.');
         } else {
-          throw new Error('API Bulunamadı veya yanlış yapılandırıldı (Lütfen /api/send-email/route.js dosyasını kontrol edin).');
+          throw new Error('API Bulunamadı. Lütfen /api/send-email/route.js dosyasını kontrol edin.');
         }
       }
 
@@ -270,7 +246,6 @@ export default function MessagesPage() {
       setReplyText(''); 
       
     } catch (err) {
-      console.error(err);
       showToast('Hata: ' + err.message, 'error');
     } finally {
       setIsSendingReply(false);
@@ -340,7 +315,7 @@ export default function MessagesPage() {
   }
 
   function formatFullDate(dateStr) {
-    const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' };
+    const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' };
     return new Date(dateStr).toLocaleDateString('tr-TR', options);
   }
 
@@ -351,720 +326,386 @@ export default function MessagesPage() {
   }
   function getInitials(name = '') { return name.split(' ').slice(0, 2).map(w => w[0]).join('').toUpperCase() || '?'; }
 
+  if (loading) return <div className="adm-loading"><div className="adm-loading-spinner" /></div>;
+
   return (
-    <>
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=Syne:wght@600;700&family=JetBrains+Mono:wght@500&display=swap');
+    <div className="msg-layout">
+      <Toast message={toast?.message} type={toast?.type} onClose={() => setToast(null)} />
+      <ConfirmModal isOpen={modal.isOpen} message={modal.message} onConfirm={handleConfirmAction} onCancel={closeConfirm} />
 
-        .msg-layout { display: flex; min-height: 100vh; background: #0d0f14; font-family: 'DM Sans', sans-serif; color: #e2e8f0; }
+      {/* ✨ SOL İÇ MENÜ (DAHA DAR - 220px) ✨ */}
+      <div style={{ 
+        width: '220px', 
+        minWidth: '220px',
+        background: 'var(--surface)', 
+        borderRight: '1px solid var(--border)', 
+        display: 'flex', 
+        flexDirection: 'column', 
+        padding: '20px 10px',
+        overflowY: 'auto',
+        flexShrink: 0
+      }}>
+        <Link href="/admin" style={{
+          display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 12px',
+          background: 'var(--surface-2)', border: '1px solid var(--border)', borderRadius: '10px',
+          color: 'var(--text-primary)', textDecoration: 'none', fontSize: '0.8rem', fontWeight: 600,
+          marginBottom: '20px', transition: 'all 0.2s'
+        }}
+        onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'var(--text-secondary)' }}
+        onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--border)' }}>
+          <i className="fas fa-arrow-left" style={{color: 'var(--text-muted)'}} /> Ana Panele Dön
+        </Link>
 
-        /* Sidebar CSS */
-        .adm-sidebar { width: 260px; flex-shrink: 0; background: #111318; border-right: 1px solid rgba(255,255,255,0.06); display: flex; flex-direction: column; position: sticky; top: 0; height: 100vh; z-index: 100;}
-        
-        .adm-brand-wrapper { padding: 24px 20px 20px; border-bottom: 1px solid rgba(255,255,255,0.06); }
-        .adm-brand-card {
-          display: flex; align-items: center; gap: 14px; padding: 14px 16px;
-          background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.04);
-          border-radius: 14px; text-decoration: none; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-          cursor: pointer;
-        }
-        .adm-brand-card:hover {
-          background: rgba(34, 197, 94, 0.08); border-color: rgba(34, 197, 94, 0.2);
-          transform: translateY(-2px); box-shadow: 0 8px 20px rgba(0,0,0,0.2);
-        }
-        .adm-brand-icon {
-          width: 40px; height: 40px; border-radius: 10px; background: linear-gradient(135deg, #22c55e, #16a34a);
-          display: flex; align-items: center; justify-content: center; font-size: 1.1rem; color: #fff;
-          flex-shrink: 0; box-shadow: 0 4px 10px rgba(34, 197, 94, 0.3);
-        }
-        .adm-brand-text { display: flex; flex-direction: column; }
-        .adm-brand-logo { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 1.15rem; letter-spacing: 0.5px; color: #fff; line-height: 1.1; white-space: nowrap; }
-        .adm-brand-logo span { color: #22c55e; }
-        .adm-brand-sub { margin-top: 4px; font-size: 0.65rem; color: #9ca3af; letter-spacing: 1px; text-transform: uppercase; font-weight: 600; display: flex; align-items: center; transition: color 0.3s; }
-        .adm-brand-card:hover .adm-brand-sub { color: #22c55e; }
-
-        .msg-nav { padding: 16px 12px; flex: 1; display: flex; flex-direction: column; gap: 4px; overflow-y: auto; }
-        .msg-nav-label { font-size: 0.65rem; letter-spacing: 2.5px; color: #6b7280; font-weight: 600; text-transform: uppercase; padding: 0 12px; margin-top: 16px; margin-bottom: 8px; }
-        .msg-nav-btn { display: flex; align-items: center; gap: 12px; padding: 11px 14px; border-radius: 10px; font-size: 0.875rem; font-weight: 500; color: #9ca3af; cursor: pointer; transition: all 0.2s; text-decoration: none; border: none; background: transparent; width: 100%; text-align: left; }
-        .msg-nav-btn:hover { background: rgba(255,255,255,0.05); color: #f9fafb; }
-        
-        .msg-nav-btn.active { background: rgba(34,197,94,0.12); color: #22c55e; }
-        .msg-nav-btn.active-warning { background: rgba(245, 158, 11, 0.12); color: #f59e0b; }
-        .msg-nav-btn.active-star { background: rgba(234, 179, 8, 0.12); color: #eab308; }
-        .msg-nav-btn.active-replied { background: rgba(59, 130, 246, 0.12); color: #3b82f6; }
-        
-        .msg-nav-icon { width: 18px; text-align: center; }
-        .msg-nav-badge { margin-left: auto; background: #22c55e; color: #000; font-size: 0.7rem; font-weight: 600; padding: 2px 8px; border-radius: 20px; }
-
-        .msg-main { flex: 1; display: flex; flex-direction: column; min-width: 0; }
-        
-        .msg-topbar { height: 76px; display: flex; align-items: center; justify-content: space-between; padding: 0 36px; border-bottom: 1px solid rgba(255,255,255,0.06); background: rgba(17,19,24,0.7); backdrop-filter: blur(12px); position: sticky; top: 0; z-index: 50; }
-        .msg-topbar-left { display: flex; align-items: center; gap: 16px; }
-        .msg-topbar-title { font-family: 'Syne', sans-serif; font-size: 1.15rem; font-weight: 700; color: #f9fafb; display: flex; align-items: center; }
-
-        .msg-content { padding: 36px; flex: 1; overflow-y: auto; }
-        
-        .msg-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 32px; }
-        @media(max-width: 1100px) { .msg-stats { grid-template-columns: repeat(2, 1fr); } }
-        .msg-stat-card { background: #111318; border: 1px solid rgba(255,255,255,0.07); border-radius: 14px; padding: 20px 22px; display: flex; align-items: center; gap: 16px; }
-        .msg-stat-icon { width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1rem; flex-shrink: 0; }
-        .msg-stat-val { font-family: 'Syne', sans-serif; font-size: 1.6rem; font-weight: 700; color: #f9fafb; line-height: 1; }
-        .msg-stat-lbl { font-size: 0.78rem; color: #6b7280; margin-top: 4px; }
-
-        .msg-toolbar { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; flex-wrap: wrap; }
-        .msg-search-wrap { flex: 1; min-width: 200px; position: relative; }
-        .msg-search-wrap i { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: #4b5563; font-size: 0.85rem; }
-        .msg-search-input { width: 100%; background: #111318; border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 10px 14px 10px 38px; color: #e2e8f0; font-size: 0.875rem; font-family: 'DM Sans', sans-serif; outline: none; transition: border-color 0.2s; box-sizing: border-box; }
-        .msg-search-input:focus { border-color: rgba(34,197,94,0.4); }
-
-        .msg-list { background: #111318; border: 1px solid rgba(255,255,255,0.07); border-radius: 16px; overflow: hidden; }
-        .msg-item { border-bottom: 1px solid rgba(255,255,255,0.05); cursor: pointer; transition: background 0.2s; }
-        .msg-item:last-child { border-bottom: none; }
-        .msg-item:hover { background: rgba(255,255,255,0.02); }
-        .msg-item.unread { border-left: 3px solid #22c55e; }
-        .msg-item.read { border-left: 3px solid transparent; }
-
-        .msg-item-header { display: flex; align-items: center; gap: 16px; padding: 18px 22px; }
-        .msg-avatar { width: 42px; height: 42px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 0.9rem; font-weight: 600; color: #000; flex-shrink: 0; letter-spacing: 0.5px; }
-        .msg-meta { flex: 1; min-width: 0; }
-        .msg-sender-row { display: flex; align-items: center; gap: 8px; margin-bottom: 3px; }
-        .msg-sender-name { font-size: 0.925rem; font-weight: 600; color: #f1f5f9; }
-        .msg-new-badge { background: #22c55e; color: #000; font-size: 0.6rem; font-weight: 700; letter-spacing: 0.5px; padding: 2px 7px; border-radius: 6px; text-transform: uppercase; }
-        .msg-replied-badge { background: rgba(59, 130, 246, 0.15); color: #3b82f6; font-size: 0.6rem; font-weight: 700; letter-spacing: 0.5px; padding: 2px 7px; border-radius: 6px; text-transform: uppercase; border: 1px solid rgba(59, 130, 246, 0.3); }
-        
-        .msg-ticket-id { font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; color: #9ca3af; background: rgba(255,255,255,0.05); padding: 3px 8px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.08); transition: all 0.2s; cursor: pointer; display: inline-block; }
-        .msg-ticket-id:hover { color: #f9fafb; background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.2); }
-
-        .msg-subject { font-size: 0.82rem; color: #6b7280; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: flex; align-items: center; gap: 8px; }
-        .msg-item-right { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
-        .msg-time { font-size: 0.75rem; color: #4b5563; white-space: nowrap; }
-        
-        .msg-action-btn { width: 32px; height: 32px; border-radius: 8px; background: none; border: 1px solid transparent; display: flex; align-items: center; justify-content: center; cursor: pointer; color: #4b5563; transition: all 0.2s; font-size: 0.8rem; }
-        .msg-action-btn:hover { background: rgba(255,255,255,0.07); color: #9ca3af; border-color: rgba(255,255,255,0.1); }
-        .msg-action-btn.delete:hover { background: rgba(239,68,68,0.1); color: #ef4444; border-color: rgba(239,68,68,0.2); }
-        .msg-action-btn.block:hover { background: rgba(245, 158, 11, 0.1); color: #f59e0b; border-color: rgba(245, 158, 11, 0.2); }
-        .msg-action-btn.starred:hover { background: rgba(234, 179, 8, 0.1); color: #eab308 !important; border-color: rgba(234, 179, 8, 0.2); }
-        
-        .msg-body { padding: 0 22px 20px 80px; animation: fadeDown 0.2s ease; }
-        @keyframes fadeDown { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: translateY(0); } }
-        .msg-body-inner { background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; padding: 18px 20px; }
-        
-        .msg-full-date { font-size: 0.75rem; color: #4b5563; font-style: italic; font-weight: normal; text-transform: none; letter-spacing: 0; }
-        
-        .msg-body-text { font-size: 0.875rem; color: #d1d5db; line-height: 1.8; white-space: pre-wrap; margin: 0; }
-        .msg-body-footer { display: flex; align-items: center; gap: 10px; margin-top: 18px; padding-top: 15px; border-top: 1px dashed rgba(255,255,255,0.05); }
-        
-        /* ✨ YENİ ŞIK YANITLA BUTONU ✨ */
-        .msg-reply-btn {
-          display: inline-flex;
-          align-items: center;
-          gap: 8px;
-          background: linear-gradient(135deg, #22c55e, #16a34a);
-          color: #fff;
-          cursor: pointer;
-          padding: 9px 22px;
-          border-radius: 9px;
-          border: none;
-          font-size: 0.85rem;
-          font-weight: 600;
-          letter-spacing: 0.03em;
-          transition: all 0.3s ease;
-          box-shadow: 0 4px 15px rgba(34,197,94,0.3);
-        }
-        .msg-reply-btn:hover {
-          transform: translateY(-2px);
-          box-shadow: 0 8px 20px rgba(34,197,94,0.4);
-        }
-        .msg-reply-btn:active {
-          transform: translateY(0);
-        }
-
-        /* INLINE REPLY KUTUSU CSS */
-        .inline-reply-box { margin-top: 15px; background: #111318; border: 1px solid rgba(34,197,94,0.3); border-radius: 10px; padding: 16px; animation: fadeDown 0.2s ease; }
-        .inline-reply-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; font-size: 0.85rem; color: #9ca3af; }
-        .inline-reply-textarea { width: 100%; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: #f9fafb; padding: 12px; font-family: inherit; font-size: 0.875rem; resize: vertical; outline: none; transition: border-color 0.2s; }
-        .inline-reply-textarea:focus { border-color: rgba(34,197,94,0.5); }
-        .inline-reply-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 12px; }
-
-        .msg-empty { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 80px 0; gap: 14px; color: #4b5563; }
-        .msg-empty-icon { width: 64px; height: 64px; border-radius: 20px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); display: flex; align-items: center; justify-content: center; font-size: 1.6rem; color: #374151; }
-        .msg-empty p { margin: 0; font-size: 0.875rem; }
-
-        .msg-loading { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; gap: 16px; background: #0d0f14; color: #6b7280; font-family: 'DM Sans', sans-serif; }
-        .msg-spinner { width: 36px; height: 36px; border-radius: 50%; border: 3px solid rgba(34,197,94,0.15); border-top-color: #22c55e; animation: spin 0.7s linear infinite; }
-        @keyframes spin { to { transform: rotate(360deg); } }
-
-        .msg-result-count { font-size: 0.78rem; color: #4b5563; padding: 0 2px; margin-bottom: 10px; }
-        
-        .adm-toast { position: fixed; top: 20px; right: 20px; z-index: 9999; background: #1f2937; border: 1px solid #374151; color: #f9fafb; padding: 16px 20px; border-radius: 12px; display: flex; align-items: center; gap: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); animation: toastSlideIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.2); }
-        .adm-toast-icon { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 0.9rem; }
-        .adm-toast-icon.success { background: rgba(34,197,94,0.2); color: #22c55e; }
-        .adm-toast-icon.error { background: rgba(239,68,68,0.2); color: #ef4444; }
-        .adm-toast-text { display: flex; flex-direction: column; }
-        .adm-toast-text strong { font-size: 0.9rem; margin-bottom: 2px; }
-        .adm-toast-text span { font-size: 0.8rem; color: #9ca3af; }
-        .adm-toast-close { background: none; border: none; color: #6b7280; cursor: pointer; padding: 5px; font-size: 1rem; }
-        .adm-toast-close:hover { color: #f9fafb; }
-        
-        .adm-modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; z-index: 9999; }
-        .adm-modal { background: #111318; border: 1px solid #374151; padding: 30px; border-radius: 20px; max-width: 400px; width: 90%; text-align: center; color: #f9fafb; box-shadow: 0 20px 40px rgba(0,0,0,0.5); animation: modalPop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.2); }
-        .adm-modal-icon { width: 50px; height: 50px; border-radius: 50%; background: rgba(239,68,68,0.1); color: #ef4444; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; margin: 0 auto 20px; }
-        .adm-modal h3 { margin: 0 0 10px; font-size: 1.2rem; }
-        .adm-modal p { color: #9ca3af; font-size: 0.9rem; margin-bottom: 25px; line-height: 1.5; }
-        .adm-modal-btns { display: flex; gap: 10px; justify-content: center; }
-        .adm-btn { padding: 10px 20px; border-radius: 8px; font-weight: 500; cursor: pointer; font-size: 0.9rem; transition: all 0.2s; }
-        .adm-btn-ghost { background: transparent; border: 1px solid #374151; color: #d1d5db; }
-        .adm-btn-ghost:hover { background: rgba(255,255,255,0.05); }
-
-        .loader-ring { display: inline-block; position: relative; width: 30px; height: 30px; }
-        .loader-ring div { box-sizing: border-box; display: block; position: absolute; width: 24px; height: 24px; margin: 3px; border: 2px solid #22c55e; border-radius: 50%; animation: loader-spin 1.2s cubic-bezier(0.5,0,0.5,1) infinite; border-color: #22c55e transparent transparent transparent; }
-        .loader-ring div:nth-child(1) { animation-delay: -0.45s; }
-        .loader-ring div:nth-child(2) { animation-delay: -0.3s; }
-        .loader-ring div:nth-child(3) { animation-delay: -0.15s; }
-        
-        .load-more-indicator { display: flex; flex-direction: column; align-items: center; padding: 20px 0; color: #6b7280; font-size: 0.8rem; letter-spacing: 1px; text-transform: uppercase; }
-
-        @keyframes topbarDropdown {
-          from { opacity: 0; transform: translateY(-6px) scale(0.97); }
-          to   { opacity: 1; transform: translateY(0) scale(1); }
-        }
-      `}</style>
-
-      {loading ? (
-        <div className="msg-loading">
-          <div className="msg-spinner" />
-          <p>Sistem yukleniyor...</p>
+        <div style={{ fontSize: '0.65rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '8px', padding: '0 8px' }}>
+          Gelen Kutusu
         </div>
-      ) : (
-        <div className="msg-layout">
 
-          <Toast message={toast?.message} type={toast?.type} onClose={() => setToast(null)} />
-          <ConfirmModal isOpen={modal.isOpen} message={modal.message} onConfirm={handleConfirmAction} onCancel={closeConfirm} />
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+          <button onClick={() => changeView('all')} className={`msg-nav-btn ${currentView === 'all' ? 'active' : ''}`}>
+            <i className="fas fa-inbox msg-nav-icon" /> Tümü
+            <span className="msg-nav-badge">{messages.length}</span>
+          </button>
           
-          <aside className="adm-sidebar">
-            <div className="adm-brand-wrapper">
-              <Link href="/admin" className="adm-brand-card" title="Yonetim Paneline Git">
-                <div className="adm-brand-icon">
-                  <i className="fas fa-leaf" />
-                </div>
-                <div className="adm-brand-text">
-                  <div className="adm-brand-logo">DIGI-<span>GREEN</span></div>
-                  <div className="adm-brand-sub">
-                    Yonetim Paneli 
-                    <i className="fas fa-external-link-alt" style={{ marginLeft: '6px', fontSize: '0.6rem' }} />
-                  </div>
-                </div>
-              </Link>
-            </div>
-            
-            <nav className="msg-nav">
-              <div className="msg-nav-label">Ana Menu</div>
-              
-              <Link href="/admin" className="msg-nav-btn" style={{textDecoration:'none', color:'inherit', marginBottom:'10px', background:'rgba(255,255,255,0.03)'}}>
-                <span className="msg-nav-icon"><i className="fas fa-arrow-left" /></span> Ana Panele Don
-              </Link>
-              
-              <div className="msg-nav-label" style={{marginTop:'10px'}}>Gelen Kutusu</div>
+          <button onClick={() => changeView('unread')} className={`msg-nav-btn ${currentView === 'unread' ? 'active' : ''}`}>
+            <i className="fas fa-envelope msg-nav-icon" /> Okunmamış
+            {unreadCount > 0 && <span className="msg-nav-badge">{unreadCount}</span>}
+          </button>
+          
+          <button onClick={() => changeView('read')} className={`msg-nav-btn ${currentView === 'read' ? 'active' : ''}`}>
+            <i className="fas fa-envelope-open msg-nav-icon" /> Okunanlar
+          </button>
+          
+          <button onClick={() => changeView('starred')} className={`msg-nav-btn ${currentView === 'starred' ? 'active' : ''}`} style={{ color: currentView === 'starred' ? '#eab308' : '' }}>
+            <i className="fas fa-star msg-nav-icon" /> Yıldızlılar
+            {starredCount > 0 && <span className="msg-nav-badge" style={{background: '#eab308', color: '#000'}}>{starredCount}</span>}
+          </button>
 
-              <button 
-                className={`msg-nav-btn ${currentView === 'all' ? 'active' : ''}`} 
-                onClick={() => changeView('all')}
-              >
-                <span className="msg-nav-icon"><i className="fas fa-inbox" /></span> Tumu
-                <span className="msg-nav-badge" style={{background: 'rgba(255,255,255,0.1)', color: '#d1d5db'}}>{messages.length}</span>
-              </button>
-
-              <button 
-                className={`msg-nav-btn ${currentView === 'unread' ? 'active' : ''}`} 
-                onClick={() => changeView('unread')}
-              >
-                <span className="msg-nav-icon"><i className="fas fa-envelope" /></span> Okunmamis
-                {unreadCount > 0 && <span className="msg-nav-badge">{unreadCount}</span>}
-              </button>
-
-              <button 
-                className={`msg-nav-btn ${currentView === 'read' ? 'active' : ''}`} 
-                onClick={() => changeView('read')}
-              >
-                <span className="msg-nav-icon"><i className="fas fa-envelope-open" /></span> Okunanlar
-              </button>
-              
-              <button 
-                className={`msg-nav-btn ${currentView === 'starred' ? 'active-star' : ''}`} 
-                onClick={() => changeView('starred')}
-              >
-                <span className="msg-nav-icon"><i className="fas fa-star" /></span> Yildizlilar
-                {starredCount > 0 && <span className="msg-nav-badge" style={{background: '#eab308', color: '#fff'}}>{starredCount}</span>}
-              </button>
-
-              <button 
-                className={`msg-nav-btn ${currentView === 'replied' ? 'active-replied' : ''}`} 
-                onClick={() => changeView('replied')}
-              >
-                <span className="msg-nav-icon"><i className="fas fa-reply-all" /></span> Cevaplananlar
-                {repliedCount > 0 && <span className="msg-nav-badge" style={{background: '#3b82f6', color: '#fff'}}>{repliedCount}</span>}
-              </button>
-
-              <div className="msg-nav-label" style={{marginTop:'20px'}}>Guvenlik & Sistem</div>
-              
-              <button 
-                className={`msg-nav-btn ${currentView === 'blocked' ? 'active-warning' : ''}`} 
-                onClick={() => changeView('blocked')}
-              >
-                <span className="msg-nav-icon"><i className="fas fa-ban" /></span> Engellenenler
-                {blockedEmails.length > 0 && <span className="msg-nav-badge" style={{background: '#f59e0b', color: '#fff'}}>{blockedEmails.length}</span>}
-              </button>
-
-            </nav>
-          </aside>
-
-          <main className="msg-main">
-
-            <div className="msg-topbar">
-              <div className="msg-topbar-left">
-                <div className="msg-topbar-title">
-                  <i className={`fas ${
-                    currentView === 'blocked' ? 'fa-ban' : 
-                    currentView === 'starred' ? 'fa-star' : 
-                    currentView === 'replied' ? 'fa-reply-all' : 
-                    'fa-inbox'
-                  }`} style={{
-                    color: 
-                      currentView === 'blocked' ? '#f59e0b' : 
-                      currentView === 'starred' ? '#eab308' : 
-                      currentView === 'replied' ? '#3b82f6' : 
-                      '#22c55e', 
-                    marginRight:'10px'
-                  }} />
-                  {
-                    currentView === 'all' ? 'Tum Mesajlar' : 
-                    currentView === 'unread' ? 'Okunmamis Mesajlar' : 
-                    currentView === 'read' ? 'Okunan Mesajlar' : 
-                    currentView === 'starred' ? 'Yildizli Mesajlar' : 
-                    currentView === 'replied' ? 'Cevaplanan Mesajlar' : 
-                    'Engellenen E-postalar'
-                  }
-                </div>
-              </div>
-              
-              <div style={{ position: 'relative', display: 'flex', alignItems: 'center', height: '100%' }}>
-                <button
-                  onClick={() => setProfileOpen(!profileOpen)}
-                  style={{
-                    display: 'flex', alignItems: 'center', gap: '10px',
-                    padding: '6px 14px 6px 6px',
-                    background: profileOpen ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.02)',
-                    border: '1px solid',
-                    borderColor: profileOpen ? '#22c55e' : 'rgba(255,255,255,0.05)',
-                    borderRadius: '999px',
-                    cursor: 'pointer',
-                    color: '#fff',
-                    transition: 'all 0.2s ease',
-                    outline: 'none',
-                    userSelect: 'none',
-                  }}
-                  onMouseEnter={e => {
-                    e.currentTarget.style.borderColor = '#22c55e';
-                    e.currentTarget.style.background = 'rgba(255,255,255,0.08)';
-                  }}
-                  onMouseLeave={e => {
-                    if (!profileOpen) {
-                      e.currentTarget.style.borderColor = 'rgba(255,255,255,0.05)';
-                      e.currentTarget.style.background = 'rgba(255,255,255,0.02)';
-                    }
-                  }}
-                >
-                  <div style={{
-                    width: '28px', height: '28px',
-                    background: 'linear-gradient(135deg, #22c55e, #16a34a)',
-                    borderRadius: '50%',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    color: '#fff', fontWeight: 700, fontSize: '0.85rem',
-                    lineHeight: 1, paddingBottom: '1px',
-                    flexShrink: 0,
-                    boxShadow: '0 2px 8px rgba(34, 197, 94, 0.4)',
-                  }}>
-                    {currentUser?.email ? currentUser.email.charAt(0).toUpperCase() : 'A'}
-                  </div>
-
-                  <span style={{ fontSize: '0.85rem', fontWeight: 500, maxWidth: '130px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {currentUser?.email?.split('@')[0] || 'Admin'}
-                  </span>
-
-                  <i
-                    className={`fas fa-chevron-${profileOpen ? 'up' : 'down'}`}
-                    style={{
-                      fontSize: '0.7rem',
-                      opacity: 0.5,
-                      transition: 'transform 0.2s ease',
-                      transform: profileOpen ? 'rotate(180deg)' : 'rotate(0deg)',
-                    }}
-                  />
-                </button>
-
-                {profileOpen && (
-                  <>
-                    <div
-                      style={{ position: 'fixed', inset: 0, zIndex: 99 }}
-                      onClick={() => setProfileOpen(false)}
-                    />
-
-                    <div style={{
-                      position: 'absolute',
-                      top: 'calc(100% + 10px)',
-                      right: 0,
-                      width: '240px',
-                      background: '#111318',
-                      border: '1px solid rgba(255,255,255,0.1)',
-                      borderRadius: '16px',
-                      padding: '8px',
-                      boxShadow: '0 20px 40px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.04) inset',
-                      zIndex: 100,
-                      animation: 'topbarDropdown 0.18s cubic-bezier(0.16,1,0.3,1)',
-                    }}>
-
-                      <div style={{
-                        padding: '12px 14px',
-                        marginBottom: '6px',
-                        background: 'rgba(255,255,255,0.04)',
-                        borderRadius: '10px',
-                        display: 'flex', alignItems: 'center', gap: '12px',
-                      }}>
-                        <div style={{
-                          width: '38px', height: '38px', flexShrink: 0,
-                          background: 'linear-gradient(135deg, #22c55e, #16a34a)',
-                          borderRadius: '12px',
-                          display: 'flex', alignItems: 'center', justifyContent: 'center',
-                          color: '#fff', fontWeight: 700, fontSize: '1.1rem',
-                          lineHeight: 1, paddingBottom: '2px',
-                        }}>
-                          {currentUser?.email ? currentUser.email.charAt(0).toUpperCase() : 'A'}
-                        </div>
-                        <div style={{ overflow: 'hidden' }}>
-                          <div style={{ fontSize: '0.75rem', color: '#9ca3af', marginBottom: '2px' }}>
-                            Oturum acik
-                          </div>
-                          <div style={{
-                            fontSize: '0.85rem', fontWeight: 600,
-                            color: '#fff',
-                            overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-                          }}>
-                            {currentUser?.email}
-                          </div>
-                        </div>
-                      </div>
-
-                      <button
-                        onClick={async () => { await supabase.auth.signOut(); router.push('/login'); }}
-                        style={{
-                          width: '100%',
-                          display: 'flex', alignItems: 'center', gap: '10px',
-                          padding: '11px 14px',
-                          background: 'transparent',
-                          border: '1px solid transparent',
-                          borderRadius: '10px',
-                          cursor: 'pointer',
-                          color: '#f87171',
-                          fontSize: '0.875rem',
-                          fontWeight: 500,
-                          transition: 'all 0.15s ease',
-                          textAlign: 'left',
-                        }}
-                        onMouseEnter={e => {
-                          e.currentTarget.style.background = 'rgba(248,113,113,0.1)';
-                          e.currentTarget.style.borderColor = 'rgba(248,113,113,0.25)';
-                        }}
-                        onMouseLeave={e => {
-                          e.currentTarget.style.background = 'transparent';
-                          e.currentTarget.style.borderColor = 'transparent';
-                        }}
-                      >
-                        <i className="fas fa-arrow-right-from-bracket" style={{ fontSize: '0.9rem', width: '16px' }} />
-                        Cikis Yap
-                      </button>
-                    </div>
-                  </>
-                )}
-              </div>
-            </div>
-
-            <div className="msg-content">
-
-              <div className="msg-stats">
-                <div className="msg-stat-card">
-                  <div className="msg-stat-icon" style={{background:'rgba(34,197,94,0.12)', color:'#22c55e'}}>
-                    <i className="fas fa-inbox" />
-                  </div>
-                  <div>
-                    <div className="msg-stat-val">{messages.length}</div>
-                    <div className="msg-stat-lbl">Toplam Mesaj</div>
-                  </div>
-                </div>
-                <div className="msg-stat-card">
-                  <div className="msg-stat-icon" style={{background:'rgba(251,191,36,0.12)', color:'#fbbf24'}}>
-                    <i className="fas fa-envelope" />
-                  </div>
-                  <div>
-                    <div className="msg-stat-val">{unreadCount}</div>
-                    <div className="msg-stat-lbl">Okunmamis</div>
-                  </div>
-                </div>
-                <div className="msg-stat-card">
-                  <div className="msg-stat-icon" style={{background:'rgba(59, 130, 246, 0.12)', color:'#3b82f6'}}>
-                    <i className="fas fa-reply-all" />
-                  </div>
-                  <div>
-                    <div className="msg-stat-val">{repliedCount}</div>
-                    <div className="msg-stat-lbl">Cevaplanan</div>
-                  </div>
-                </div>
-                <div className="msg-stat-card">
-                  <div className="msg-stat-icon" style={{background:'rgba(245,158,11,0.12)', color:'#f59e0b'}}>
-                    <i className="fas fa-ban" />
-                  </div>
-                  <div>
-                    <div className="msg-stat-val">{blockedEmails.length}</div>
-                    <div className="msg-stat-lbl">Engellenen</div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="msg-toolbar">
-                <div className="msg-search-wrap">
-                  <i className="fas fa-search" />
-                  <input
-                    className="msg-search-input"
-                    placeholder={currentView === 'blocked' ? "Engellenen e-posta ara..." : "Isim, e-posta, ID veya konu ara..."}
-                    value={searchQuery}
-                    onChange={e => setSearchQuery(e.target.value)}
-                  />
-                </div>
-              </div>
-
-              {searchQuery && (
-                <div className="msg-result-count">
-                  {currentView === 'blocked' ? filteredBlocked.length : filteredMessages.length} sonuc bulundu
-                </div>
-              )}
-
-              <div className="msg-list">
-                
-                {currentView === 'blocked' ? (
-                  filteredBlocked.length === 0 ? (
-                    <div className="msg-empty">
-                      <div className="msg-empty-icon" style={{color:'#f59e0b', background:'rgba(245,158,11,0.05)', borderColor:'rgba(245,158,11,0.1)'}}>
-                        <i className="fas fa-shield-alt" />
-                      </div>
-                      <p>{searchQuery ? 'Arama sonucu bulunamadi.' : 'Engellenmis bir e-posta adresi bulunmuyor.'}</p>
-                    </div>
-                  ) : (
-                    filteredBlocked.map(b => (
-                      <div key={b.id} className="msg-item read" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '18px 22px' }}>
-                        <div style={{display: 'flex', alignItems: 'center', gap: '15px'}}>
-                          <div className="msg-avatar" style={{background: 'rgba(245, 158, 11, 0.15)', color: '#f59e0b'}}>
-                            <i className="fas fa-ban"></i>
-                          </div>
-                          <div>
-                            <div style={{fontWeight: 600, color: '#f1f5f9'}}>{b.email}</div>
-                            <div style={{fontSize: '0.8rem', color: '#6b7280', marginTop: '4px'}}>
-                              Engellenme Tarihi: {formatFullDate(b.created_at)}
-                            </div>
-                          </div>
-                        </div>
-                        <button 
-                          className="msg-action-btn"
-                          title="Engeli Kaldir"
-                          onClick={() => handleUnblockEmail(b.email)} 
-                          style={{background: 'rgba(34,197,94,0.1)', color: '#22c55e', width: 'auto', padding: '0 15px', fontWeight:'500'}}
-                        >
-                          <i className="fas fa-unlock" style={{marginRight: '8px'}} /> Engeli Kaldir
-                        </button>
-                      </div>
-                    ))
-                  )
-
-                ) : (
-                  
-                  filteredMessages.length === 0 ? (
-                    <div className="msg-empty">
-                      <div className="msg-empty-icon">
-                        <i className={currentView === 'starred' ? 'fas fa-star' : currentView === 'replied' ? 'fas fa-reply-all' : 'fas fa-envelope-open-text'} />
-                      </div>
-                      <p>{searchQuery ? 'Arama sonucu bulunamadi.' : 'Bu kategoride hic mesajiniz yok.'}</p>
-                    </div>
-                  ) : (
-                    filteredMessages.map(msg => {
-                      const isExpanded = expandedId === msg.id;
-                      const isReplying = replyingTo === msg.id;
-                      const avatarColor = getAvatarColor(msg.name);
-                      
-                      return (
-                        <div
-                          key={msg.id}
-                          className={`msg-item ${msg.is_read ? 'read' : 'unread'}`}
-                          onClick={() => {
-                            if (!isReplying) {
-                              setExpandedId(isExpanded ? null : msg.id);
-                            }
-                            markAsRead(msg);
-                          }}
-                        >
-                          <div className="msg-item-header">
-                            <div className="msg-avatar" style={{background: avatarColor}}>
-                              {getInitials(msg.name)}
-                            </div>
-
-                            <div className="msg-meta">
-                              <div className="msg-sender-row">
-                                <span className="msg-sender-name">{msg.name}</span>
-                                <span style={{fontSize: '0.75rem', color: '#6b7280', margin: '0 6px'}}>&lt;{msg.email}&gt;</span>
-                                {!msg.is_read && <span className="msg-new-badge">Yeni</span>}
-                                {msg.is_replied && <span className="msg-replied-badge"><i className="fas fa-check" style={{marginRight:'3px'}}/>Cevaplandi</span>}
-                              </div>
-                              <div className="msg-subject">
-                                <span style={{color:'#9ca3af'}}>{msg.subject}</span>
-                                <span style={{color:'#374151', margin:'0 6px'}}>—</span>
-                                <span>{msg.message?.slice(0, 60)}{msg.message?.length > 60 ? '...' : ''}</span>
-                              </div>
-                            </div>
-
-                            <div className="msg-item-right" onClick={e => e.stopPropagation()}>
-                              
-                              <span 
-                                className="msg-ticket-id" 
-                                title="ID Kopyala"
-                                onClick={(e) => copyToClipboard(msg.id, e)}
-                                style={{ marginRight: '10px' }}
-                              >
-                                ID: {msg.id}
-                              </span>
-
-                              <span className="msg-time" style={{marginRight: '10px'}}>{formatShortDate(msg.created_at)}</span>
-                              
-                              <button
-                                className={`msg-action-btn starred`}
-                                title={msg.is_starred ? 'Yildizi Kaldir' : 'Yildizla'}
-                                onClick={e => toggleStarStatus(msg, e)}
-                                style={{ color: msg.is_starred ? '#eab308' : 'var(--text-muted)' }}
-                              >
-                                <i className={msg.is_starred ? 'fas fa-star' : 'far fa-star'} />
-                              </button>
-
-                              <button
-                                className="msg-action-btn block"
-                                title="Bu mail adresini engelle (Spam)"
-                                onClick={e => handleBlockEmail(msg.email, e)}
-                              >
-                                <i className="fas fa-ban" />
-                              </button>
-
-                              <button
-                                className="msg-action-btn delete"
-                                title="Mesaji Sil"
-                                onClick={e => deleteMessage(msg.id, e)}
-                              >
-                                <i className="fas fa-trash" />
-                              </button>
-                            </div>
-                          </div>
-
-                          {isExpanded && (
-                            <div className="msg-body" onClick={e => e.stopPropagation()}>
-                              <div className="msg-body-inner">
-                                
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '16px', paddingBottom: '16px', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                                    <div>
-                                      <div style={{ fontSize: '0.95rem', color: '#f9fafb', fontWeight: '600' }}>
-                                        {msg.name} <span style={{ color: '#9ca3af', fontWeight: '400', fontSize: '0.85rem', marginLeft: '6px' }}>&lt;{msg.email}&gt;</span>
-                                      </div>
-                                      <div style={{ fontSize: '0.85rem', color: '#6b7280', marginTop: '6px' }}>
-                                        Konu: <span style={{ color: '#e2e8f0' }}>{msg.subject}</span>
-                                      </div>
-                                    </div>
-                                    <span className="msg-full-date" style={{ marginTop: '2px' }}>{formatFullDate(msg.created_at)}</span>
-                                  </div>
-                                </div>
-
-                                <p className="msg-body-text">{msg.message}</p>
-                                
-                                {!isReplying ? (
-                                  <div className="msg-body-footer">
-                                    {/* ✨ YENİ ŞIK YANITLA BUTONU BURADA ✨ */}
-                                    <button 
-                                      className="msg-reply-btn"
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        setReplyingTo(msg.id);
-                                        setReplyText('');
-                                      }}
-                                    >
-                                      <i className="fas fa-reply" />
-                                      Yanıtla
-                                    </button>
-                                  </div>
-                                ) : (
-                                  <div className="inline-reply-box">
-                                    <div className="inline-reply-header">
-                                      <span><strong>{msg.email}</strong> adresine yanıt yazıyorsunuz:</span>
-                                      <button 
-                                        style={{background:'none', border:'none', color:'#ef4444', cursor:'pointer'}}
-                                        onClick={() => setReplyingTo(null)}
-                                      >
-                                        <i className="fas fa-times" /> İptal
-                                      </button>
-                                    </div>
-                                    <textarea 
-                                      className="inline-reply-textarea"
-                                      rows="4" 
-                                      placeholder="Yanıtınızı buraya yazın..."
-                                      value={replyText}
-                                      onChange={(e) => setReplyText(e.target.value)}
-                                      disabled={isSendingReply}
-                                      autoFocus
-                                    />
-                                    <div className="inline-reply-actions">
-                                      <button 
-                                        className="adm-btn" 
-                                        style={{background:'#22c55e', color:'#000', border:'none'}} 
-                                        onClick={() => handleSendReply(msg)} 
-                                        disabled={isSendingReply}
-                                      >
-                                        {isSendingReply ? <i className="fas fa-spinner fa-spin" /> : <><i className="fas fa-paper-plane" /> Gönder</>}
-                                      </button>
-                                    </div>
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      );
-                    })
-                  )
-                )}
-
-                {currentView !== 'blocked' && hasMore && !searchQuery && (
-                  <div ref={sentinelRef} className="load-more-indicator">
-                    {loadingMore ? (
-                      <>
-                        <div className="loader-ring">
-                          <div></div><div></div><div></div><div></div>
-                        </div>
-                        <div style={{marginTop:'8px'}}>Yukleniyor...</div>
-                      </>
-                    ) : (
-                       <div style={{height: '20px'}}></div>
-                    )}
-                  </div>
-                )}
-                
-              </div>
-
-            </div>
-          </main>
+          <button onClick={() => changeView('replied')} className={`msg-nav-btn ${currentView === 'replied' ? 'active' : ''}`} style={{ color: currentView === 'replied' ? '#3b82f6' : '' }}>
+            <i className="fas fa-reply-all msg-nav-icon" /> Cevaplananlar
+            {repliedCount > 0 && <span className="msg-nav-badge" style={{background: '#3b82f6', color: '#fff'}}>{repliedCount}</span>}
+          </button>
         </div>
-      )}
-    </>
+
+        <div style={{ fontSize: '0.65rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.1em', marginTop: '24px', marginBottom: '8px', padding: '0 8px' }}>
+          Güvenlik & Sistem
+        </div>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+          <button onClick={() => changeView('blocked')} className={`msg-nav-btn ${currentView === 'blocked' ? 'active' : ''}`} style={{ color: currentView === 'blocked' ? '#ef4444' : '' }}>
+            <i className="fas fa-ban msg-nav-icon" /> Engellenenler
+            {blockedEmails.length > 0 && <span className="msg-nav-badge" style={{background: '#ef4444', color: '#fff'}}>{blockedEmails.length}</span>}
+          </button>
+        </div>
+      </div>
+
+      {/* ✨ SAĞ İÇERİK ALANI (MESAJ LİSTESİ VE KARTLAR) ✨ */}
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', background: 'var(--bg)' }}>
+        
+        {/* SABİT ÖZET KARTLARI (HER ZAMAN GÖRÜNÜR) */}
+        <div style={{ padding: '24px 32px 0 32px', flexShrink: 0 }}>
+          <div className="msg-stats">
+            <div className="msg-stat-card">
+              <div className="msg-stat-icon" style={{background:'rgba(34,197,94,0.12)', color:'#22c55e'}}>
+                <i className="fas fa-inbox" />
+              </div>
+              <div>
+                <div className="msg-stat-val">{messages.length}</div>
+                <div className="msg-stat-lbl">Toplam Mesaj</div>
+              </div>
+            </div>
+            <div className="msg-stat-card">
+              <div className="msg-stat-icon" style={{background:'rgba(251,191,36,0.12)', color:'#fbbf24'}}>
+                <i className="fas fa-envelope" />
+              </div>
+              <div>
+                <div className="msg-stat-val">{unreadCount}</div>
+                <div className="msg-stat-lbl">Okunmamis</div>
+              </div>
+            </div>
+            <div className="msg-stat-card">
+              <div className="msg-stat-icon" style={{background:'rgba(59, 130, 246, 0.12)', color:'#3b82f6'}}>
+                <i className="fas fa-reply-all" />
+              </div>
+              <div>
+                <div className="msg-stat-val">{repliedCount}</div>
+                <div className="msg-stat-lbl">Cevaplanan</div>
+              </div>
+            </div>
+            <div className="msg-stat-card">
+              <div className="msg-stat-icon" style={{background:'rgba(245,158,11,0.12)', color:'#f59e0b'}}>
+                <i className="fas fa-ban" />
+              </div>
+              <div>
+                <div className="msg-stat-val">{blockedEmails.length}</div>
+                <div className="msg-stat-lbl">Engellenen</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* LİSTE BAŞLIĞI VE ARAMA KUTUSU */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 32px 16px 32px', borderBottom: '1px solid var(--border)', flexShrink: 0 }}>
+          <div style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--text-primary)', fontFamily: 'var(--font-display)', display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <i className={`fas ${
+              currentView === 'blocked' ? 'fa-ban' : 
+              currentView === 'starred' ? 'fa-star' : 
+              currentView === 'replied' ? 'fa-reply-all' : 
+              currentView === 'unread' ? 'fa-envelope' : 'fa-inbox'
+            }`} style={{
+              color: 
+                currentView === 'blocked' ? '#ef4444' : 
+                currentView === 'starred' ? '#eab308' : 
+                currentView === 'replied' ? '#3b82f6' : 
+                'var(--accent)'
+            }} />
+            {
+              currentView === 'all' ? 'Tüm Mesajlar' : 
+              currentView === 'unread' ? 'Okunmamış Mesajlar' : 
+              currentView === 'read' ? 'Okunan Mesajlar' : 
+              currentView === 'starred' ? 'Yıldızlı Mesajlar' : 
+              currentView === 'replied' ? 'Cevaplanan Mesajlar' : 
+              'Engellenen E-postalar'
+            }
+          </div>
+
+          <div className="adm-search-wrap" style={{ width: '280px', margin: 0 }}>
+            <i className="fas fa-search" />
+            <input
+              className="adm-search-input"
+              placeholder={currentView === 'blocked' ? "E-posta ara..." : "İsim, konu veya mesaj..."}
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+            />
+            {searchQuery && (
+              <button className="adm-search-clear" onClick={() => setSearchQuery('')}>
+                <i className="fas fa-times" />
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* MESAJLARIN LİSTESİ (KAYDIRILABİLİR ALAN) */}
+        <div className="adm-fade-in" style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', padding: '24px 32px' }}>
+          
+          {searchQuery && (
+            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '16px' }}>
+              {currentView === 'blocked' ? filteredBlocked.length : filteredMessages.length} sonuç bulundu
+            </div>
+          )}
+
+          {currentView === 'blocked' ? (
+            filteredBlocked.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: '60px 0', color: 'var(--text-muted)' }}>
+                <i className="fas fa-shield-check" style={{ fontSize: '3rem', marginBottom: '16px', opacity: 0.3 }} />
+                <p>Engellenmiş bir adres bulunmuyor.</p>
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                {filteredBlocked.map(b => (
+                  <div key={b.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--surface)', padding: '16px 20px', borderRadius: '12px', border: '1px solid var(--border)' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '16px', minWidth: 0 }}>
+                      <div style={{ width: '40px', height: '40px', borderRadius: '10px', background: 'rgba(239,68,68,0.1)', color: '#ef4444', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.1rem', flexShrink: 0 }}>
+                        <i className="fas fa-ban"></i>
+                      </div>
+                      <div style={{ overflow: 'hidden' }}>
+                        <div style={{ fontWeight: 600, color: 'var(--text-primary)', fontSize: '0.9rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{b.email}</div>
+                        <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '4px' }}>
+                          Engellenme Tarihi: {formatFullDate(b.created_at)}
+                        </div>
+                      </div>
+                    </div>
+                    <button 
+                      onClick={() => handleUnblockEmail(b.email)} 
+                      style={{ background: 'var(--accent-dim)', color: 'var(--accent)', border: 'none', padding: '8px 16px', borderRadius: '8px', fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s', flexShrink: 0 }}
+                    >
+                      <i className="fas fa-unlock" style={{ marginRight: '6px' }} /> Engeli Kaldır
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )
+          ) : (
+            filteredMessages.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: '60px 0', color: 'var(--text-muted)' }}>
+                <i className="fas fa-envelope-open" style={{ fontSize: '3rem', marginBottom: '16px', opacity: 0.3 }} />
+                <p>{searchQuery ? 'Arama sonucu bulunamadı.' : 'Bu kategoride hiç mesajınız yok.'}</p>
+              </div>
+            ) : (
+              <div style={{ background: 'var(--surface)', borderRadius: '14px', border: '1px solid var(--border)', overflow: 'hidden' }}>
+                {filteredMessages.map(msg => {
+                  const isExpanded = expandedId === msg.id;
+                  const isReplying = replyingTo === msg.id;
+                  const avatarColor = getAvatarColor(msg.name);
+                  
+                  return (
+                    <div
+                      key={msg.id}
+                      style={{
+                        borderBottom: '1px solid var(--border)',
+                        background: isExpanded ? 'rgba(255,255,255,0.02)' : 'transparent',
+                        borderLeft: !msg.is_read ? '3px solid var(--accent)' : '3px solid transparent',
+                        cursor: 'pointer', transition: 'background 0.2s'
+                      }}
+                      onClick={() => {
+                        if (!isReplying) setExpandedId(isExpanded ? null : msg.id);
+                        markAsRead(msg);
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '16px', padding: '18px 24px' }}>
+                        <div style={{ width: '42px', height: '42px', borderRadius: '12px', background: avatarColor, color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, flexShrink: 0 }}>
+                          {getInitials(msg.name)}
+                        </div>
+
+                        <div style={{ flex: 1, minWidth: 0, paddingRight: '10px' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px', flexWrap: 'wrap' }}>
+                            <span style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '200px' }}>{msg.name}</span>
+                            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '150px' }}>&lt;{msg.email}&gt;</span>
+                            {!msg.is_read && <span style={{ background: 'var(--accent)', color: '#000', fontSize: '0.6rem', fontWeight: 700, padding: '2px 6px', borderRadius: '4px', textTransform: 'uppercase', flexShrink: 0 }}>Yeni</span>}
+                            {msg.is_replied && <span style={{ background: 'rgba(59,130,246,0.15)', border: '1px solid rgba(59,130,246,0.3)', color: '#3b82f6', fontSize: '0.6rem', fontWeight: 700, padding: '2px 6px', borderRadius: '4px', textTransform: 'uppercase', flexShrink: 0 }}><i className="fas fa-check" style={{marginRight:'3px'}}/>Cevaplandı</span>}
+                          </div>
+                          <div style={{ fontSize: '0.85rem', color: isExpanded ? 'var(--text-primary)' : 'var(--text-secondary)', whiteSpace: isExpanded ? 'normal' : 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                            <strong style={{marginRight: '6px'}}>{msg.subject}</strong> 
+                            {!isExpanded && <span style={{opacity: 0.6}}>— {msg.message}</span>}
+                          </div>
+                        </div>
+
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexShrink: 0 }} onClick={e => e.stopPropagation()}>
+                          <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginRight: '10px', whiteSpace: 'nowrap' }}>
+                            {new Date(msg.created_at).toLocaleDateString('tr-TR', { day: 'numeric', month: 'short' })}
+                          </span>
+                          
+                          <button
+                            title={msg.is_starred ? 'Yıldızı Kaldır' : 'Yıldızla'}
+                            onClick={e => toggleStarStatus(msg, e)}
+                            style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.9rem', color: msg.is_starred ? '#eab308' : 'var(--text-muted)', transition: 'color 0.2s', padding: '4px' }}
+                          >
+                            <i className={msg.is_starred ? 'fas fa-star' : 'far fa-star'} />
+                          </button>
+
+                          <button
+                            title="Bu mail adresini engelle"
+                            onClick={e => handleBlockEmail(msg.email, e)}
+                            style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.9rem', color: 'var(--text-muted)', transition: 'color 0.2s', padding: '4px' }}
+                            onMouseEnter={e => e.currentTarget.style.color = '#f59e0b'}
+                            onMouseLeave={e => e.currentTarget.style.color = 'var(--text-muted)'}
+                          >
+                            <i className="fas fa-ban" />
+                          </button>
+
+                          <button
+                            title="Mesajı Sil"
+                            onClick={e => deleteMessage(msg.id, e)}
+                            style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.9rem', color: 'var(--text-muted)', transition: 'color 0.2s', padding: '4px' }}
+                            onMouseEnter={e => e.currentTarget.style.color = '#ef4444'}
+                            onMouseLeave={e => e.currentTarget.style.color = 'var(--text-muted)'}
+                          >
+                            <i className="fas fa-trash" />
+                          </button>
+                        </div>
+                      </div>
+
+                      {isExpanded && (
+                        <div style={{ padding: '0 24px 24px 82px', animation: 'fadeUp 0.2s ease' }} onClick={e => e.stopPropagation()}>
+                          <div style={{ background: 'var(--surface-2)', border: '1px solid var(--border)', borderRadius: '12px', padding: '20px' }}>
+                            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '14px', borderBottom: '1px solid var(--border)', paddingBottom: '10px', display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px' }}>
+                              <span>Tarih: {formatFullDate(msg.created_at)}</span>
+                              <span style={{ cursor: 'pointer', fontFamily: 'var(--font-mono)' }} onClick={(e) => copyToClipboard(msg.id, e)} title="ID Kopyala">ID: {msg.id}</span>
+                            </div>
+                            
+                            <p style={{ fontSize: '0.9rem', color: 'var(--text-primary)', lineHeight: 1.7, whiteSpace: 'pre-wrap', margin: 0, wordBreak: 'break-word' }}>
+                              {msg.message}
+                            </p>
+
+                            {!isReplying ? (
+                              <div style={{ marginTop: '20px', paddingTop: '16px', borderTop: '1px dashed var(--border)' }}>
+                                <button 
+                                  onClick={(e) => { e.stopPropagation(); setReplyingTo(msg.id); setReplyText(''); }}
+                                  style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', background: 'var(--accent)', color: '#000', border: 'none', padding: '8px 20px', borderRadius: '8px', fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s' }}
+                                >
+                                  <i className="fas fa-reply" /> Müşteriye Yanıt Yaz
+                                </button>
+                              </div>
+                            ) : (
+                              <div style={{ marginTop: '20px', background: 'var(--surface)', border: '1px solid rgba(34,197,94,0.3)', borderRadius: '10px', padding: '16px' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                                  <span><strong>{msg.email}</strong> adresine e-posta gönderilecek:</span>
+                                  <button onClick={() => setReplyingTo(null)} style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer' }}><i className="fas fa-times" /> İptal</button>
+                                </div>
+                                <textarea 
+                                  style={{ width: '100%', background: 'var(--surface-2)', border: '1px solid var(--border)', borderRadius: '8px', color: 'var(--text-primary)', padding: '12px', fontSize: '0.85rem', resize: 'vertical', minHeight: '120px', outline: 'none' }}
+                                  placeholder="E-posta içeriğinizi yazın..."
+                                  value={replyText}
+                                  onChange={(e) => setReplyText(e.target.value)}
+                                  disabled={isSendingReply}
+                                  autoFocus
+                                />
+                                <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '12px' }}>
+                                  <button 
+                                    onClick={() => handleSendReply(msg)} 
+                                    disabled={isSendingReply}
+                                    style={{ background: '#22c55e', color: '#000', border: 'none', padding: '8px 20px', borderRadius: '8px', fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}
+                                  >
+                                    {isSendingReply ? <i className="fas fa-spinner fa-spin" /> : <><i className="fas fa-paper-plane" /> Gönder</>}
+                                  </button>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )
+          )}
+
+          {/* INFINITE SCROLL LOADER */}
+          {currentView !== 'blocked' && hasMore && !searchQuery && (
+            <div ref={sentinelRef} style={{ padding: '30px', textAlign: 'center', color: 'var(--text-muted)' }}>
+              {loadingMore ? <span><i className="fas fa-spinner fa-spin" style={{marginRight: '8px'}}></i> Daha fazla mesaj yükleniyor...</span> : ''}
+            </div>
+          )}
+        </div>
+
+      </div>
+
+      <style>{`
+        .msg-layout { 
+          display: flex; 
+          width: 100vw; 
+          max-width: 100%;
+          height: 100vh; 
+          background: var(--bg); 
+          overflow: hidden; 
+        }
+        .msg-nav-btn {
+          display: flex; align-items: center; gap: 10px; width: 100%; padding: 10px 14px;
+          border-radius: 8px; border: none; background: transparent; color: var(--text-secondary);
+          font-family: var(--font); font-size: 0.85rem; font-weight: 500; cursor: pointer; transition: all 0.2s;
+          text-align: left; margin-bottom: 2px;
+        }
+        .msg-nav-btn:hover { background: var(--surface-2); color: var(--text-primary); }
+        .msg-nav-btn.active { background: var(--accent-dim); color: var(--accent); font-weight: 600; }
+        .msg-nav-btn.active-star { background: rgba(234,179,8,0.15); color: #eab308; font-weight: 600; }
+        .msg-nav-btn.active-replied { background: rgba(59,130,246,0.15); color: #3b82f6; font-weight: 600; }
+        .msg-nav-icon { width: 20px; display: flex; justify-content: center; font-size: 0.9rem; }
+        .msg-nav-badge { margin-left: auto; font-size: 0.65rem; font-weight: 700; padding: 2px 8px; border-radius: 20px; }
+
+        .msg-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 20px; }
+        @media(max-width: 1100px) { .msg-stats { grid-template-columns: repeat(2, 1fr); } }
+        .msg-stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 16px 20px; display: flex; align-items: center; gap: 16px; }
+        .msg-stat-icon { width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1rem; flex-shrink: 0; }
+        .msg-stat-val { font-family: var(--font-display); font-size: 1.5rem; font-weight: 700; color: var(--text-primary); line-height: 1; }
+        .msg-stat-lbl { font-size: 0.75rem; color: var(--text-secondary); margin-top: 4px; }
+        
+        .adm-search-wrap { position: relative; display: flex; align-items: center; }
+        .adm-search-wrap i.fa-search { position: absolute; left: 14px; color: var(--text-muted); font-size: 0.85rem; }
+        .adm-search-input { width: 100%; background: var(--surface-2); border: 1px solid var(--border); border-radius: 10px; padding: 10px 14px 10px 38px; color: var(--text-primary); font-family: var(--font); font-size: 0.875rem; transition: all 0.2s; outline: none; }
+        .adm-search-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow); }
+        .adm-search-clear { position: absolute; right: 12px; background: none; border: none; color: var(--text-muted); cursor: pointer; padding: 4px; transition: color 0.2s; }
+        .adm-search-clear:hover { color: var(--text-primary); }
+      `}</style>
+    </div>
   );
 }
