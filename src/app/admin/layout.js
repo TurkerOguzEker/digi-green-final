@@ -19,25 +19,21 @@ export default function AdminLayout({ children }) {
   
   const [currentTime, setCurrentTime] = useState(new Date());
   
-  // Bildirim State'leri
   const [loginAlerts, setLoginAlerts] = useState([]);
   const [notifLastSeen, setNotifLastSeen] = useState(null);
   const [unseenCount, setUnseenCount] = useState(0);
   const notifRef = useRef(null);
   
-  // Hareketsizlik Sayacı Ref'leri
   const inactivityTimerRef = useRef(null);
-  const timeoutRef = useRef(30 * 60 * 1000); // Varsayılan: 30 dk
+  const timeoutRef = useRef(30 * 60 * 1000); 
   
   const [navBadges, setNavBadges] = useState({ unreadMsgCount: 0, newsCount: 0, activitiesCount: 0, partnersCount: 0, resultsCount: 0 });
 
   const isMessagesPage = currentPath.includes('/admin/messages');
   
-  // ✨ YENİ: Hangi sayfalarda "Sitede Görüntüle" butonunun gizleneceği ✨
   const hideViewButtonPaths = ['/admin/users', '/admin/logs', '/admin/security','/admin/messages'];
   const shouldShowViewButton = !hideViewButtonPaths.some(p => currentPath.includes(p));
 
-  // ✨ YENİ: Hakkında alt sekmelerinin doğru linke yönlendirilmesi ✨
   const getViewUrl = () => {
     if (currentPath.includes('/admin/news')) return '/news';
     if (currentPath.includes('/admin/activities')) return '/activities';
@@ -45,7 +41,6 @@ export default function AdminLayout({ children }) {
     if (currentPath.includes('/admin/contact')) return '/contact';
     if (currentPath.includes('/admin/results')) return '/results';
     
-    // Hakkında alt sayfaları için dinamik yönlendirme
     if (currentPath.includes('/admin/about')) {
       const tab = searchParams.get('tab');
       if (tab && tab !== 'general') return `/about/${tab}`;
@@ -85,7 +80,7 @@ export default function AdminLayout({ children }) {
                 .select('*')
                 .eq('status', 'success')
                 .order('created_at', { ascending: false })
-                .limit(10), // Son 10 başarılı girişi her zaman çek
+                .limit(10),
       ];
 
       const [profileReq, loginLogsReq] = await Promise.all(promises);
@@ -93,14 +88,11 @@ export default function AdminLayout({ children }) {
       if (profileReq?.data) {
         setUserRole(profileReq.data.role);
         
-        // ✨ YENİ: Bildirimleri sayma mantığı düzeltildi ✨
-        // Eğer notif_last_seen yoksa (veya eskiyse), tüm logları yeni kabul et (geçmişe dair bir sınır koymadık ki çan yansın)
         const lastSeenDate = profileReq.data.notif_last_seen ? new Date(profileReq.data.notif_last_seen) : new Date(0);
         setNotifLastSeen(lastSeenDate);
         
         if (loginLogsReq?.data) {
           setLoginAlerts(loginLogsReq.data);
-          // Bildirim ayarı kapalı mı kontrol et
           const savedAlerts = localStorage.getItem(`admin_alerts_${session.user.id}`);
           if (savedAlerts !== 'false') {
              const unseen = loginLogsReq.data.filter(log => new Date(log.created_at).getTime() > lastSeenDate.getTime()).length;
@@ -136,11 +128,8 @@ export default function AdminLayout({ children }) {
       document.cookie = 'sb-access-token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
       await supabase.auth.signOut();
       
-      if (reason === 'timeout') alert('Uzun süre işlem yapmadığınız için oturumunuz kapatıldı.');
-      else if (reason === 'blocked') alert('Hesabınız yönetici tarafından engellendi.');
-      else if (reason === 'force') alert('Güvenlik nedeniyle oturumunuz sonlandırıldı.');
-      
-      window.location.href = '/login';
+      // ✨ YENİ: Oturumu kapatıp login sayfasına hatayı URL üzerinden taşıyoruz ✨
+      window.location.href = `/login?reason=${reason}`;
     };
 
     const updateActivityTime = () => {
@@ -250,7 +239,6 @@ export default function AdminLayout({ children }) {
 
   return (
     <div className="adm-layout">
-      
       {!isMessagesPage && (
         <aside className="adm-sidebar">
           <div className="adm-brand-wrapper">
@@ -323,7 +311,6 @@ export default function AdminLayout({ children }) {
               {fmtTime(currentTime)}
             </div>
             
-            {/* ✨ SADECE GEREKLİ SAYFALARDA BUTONU GÖSTER ✨ */}
             {shouldShowViewButton && (
               <a 
                 href={getViewUrl()} 

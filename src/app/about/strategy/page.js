@@ -266,7 +266,7 @@ export default function StrategyPage() {
       <ScrollToTop />
 
       <style jsx>{`
-        .sp {
+       .sp {
           font-family:'Inter',sans-serif; overflow-x:hidden;
           --gd:#1a5c38; --gm:#27ae60; --gp:#e8f5ee;
           --td:#1a1a1a; --ts:#6b8277;
@@ -286,24 +286,30 @@ export default function StrategyPage() {
         .loader-text{font-size:.9rem;font-weight:600;color:var(--ts);letter-spacing:.1em;text-transform:uppercase;}
         @keyframes lspin{0%{transform:rotate(0)}100%{transform:rotate(360deg)}}
 
-        /* REVEAL */
-        .reveal{opacity:0;transition:opacity .9s cubic-bezier(.165,.84,.44,1),transform .9s cubic-bezier(.165,.84,.44,1);}
-        .reveal.active{opacity:1;transform:translate(0,0)!important;}
-        .reveal-left{transform:translateX(-60px);}
-        .reveal-right{transform:translateX(60px);}
-        .reveal-up{opacity:0;transform:translateY(28px);transition:opacity .8s ease,transform .8s ease;}
-        .reveal-up.active{opacity:1;transform:translateY(0);}
+        /* ✨ REVEAL (GPU HIZLANDIRMASI EKLENDİ) ✨ */
+        .reveal{opacity:0;transition:opacity .9s cubic-bezier(.165,.84,.44,1),transform .9s cubic-bezier(.165,.84,.44,1); will-change: transform, opacity;}
+        .reveal.active{opacity:1;transform:translate3d(0,0,0)!important;}
+        .reveal-left{transform:translate3d(-60px,0,0);}
+        .reveal-right{transform:translate3d(60px,0,0);}
+        .reveal-up{opacity:0;transform:translate3d(0,28px,0);transition:opacity .8s ease,transform .8s ease;}
+        .reveal-up.active{opacity:1;transform:translate3d(0,0,0);}
 
         /* HERO - Şeffaf ve Temiz Arka Plan */
         .hero{position:relative;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;overflow:hidden;background:transparent;}
+        
+        /* ✨ SVG NOISE EFEKTİ İÇİN GPU ZORLAMASI ✨ */
         .hero-noise{position:absolute;inset:0;z-index:0;pointer-events:none;opacity:.3;
           background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
-          background-size:256px;}
-        .orb{position:absolute;border-radius:50%;pointer-events:none;z-index:0;filter:blur(80px);opacity:.4;}
+          background-size:256px;
+          transform: translateZ(0); 
+          will-change: transform;
+        }
+        
+        .orb{position:absolute;border-radius:50%;pointer-events:none;z-index:0;filter:blur(80px);opacity:.4; transform: translateZ(0);}
         .orb-1{width:500px;height:500px;top:-120px;left:-80px;background:radial-gradient(circle,rgba(39,174,96,.15) 0%,transparent 70%);animation:orbF 14s ease-in-out infinite;}
         .orb-2{width:400px;height:400px;bottom:-100px;right:-60px;background:radial-gradient(circle,rgba(201,168,76,.1) 0%,transparent 70%);animation:orbF 18s ease-in-out infinite reverse;}
         .orb-3{width:300px;height:300px;top:50%;left:55%;background:radial-gradient(circle,rgba(100,220,150,.1) 0%,transparent 70%);animation:orbF 10s ease-in-out infinite 3s;}
-        @keyframes orbF{0%,100%{transform:translateY(0) scale(1);}50%{transform:translateY(-28px) scale(1.05);}}
+        @keyframes orbF{0%,100%{transform:translate3d(0,0,0) scale(1);}50%{transform:translate3d(0,-28px,0) scale(1.05);}}
 
         .hero-content{position:relative;z-index:3;}
         .eyebrow{display:inline-flex;align-items:center;gap:10px;font-size:.74rem;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:#ea580c;margin-bottom:20px;}
@@ -330,15 +336,29 @@ export default function StrategyPage() {
 
         /* STATS */
         .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:36px;}
-        .stat{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:22px 18px;text-align:center;backdrop-filter:blur(12px);box-shadow:var(--sh);transition:transform .3s,box-shadow .3s;}
-        .stat:hover{transform:translateY(-4px);box-shadow:var(--shh);}
+        .stat{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:22px 18px;text-align:center;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);box-shadow:var(--sh);transition:transform .3s,box-shadow .3s; transform: translateZ(0); backface-visibility: hidden;}
+        .stat:hover{transform:translate3d(0,-4px,0);box-shadow:var(--shh);}
         .stat-v{font-size:1.85rem;font-weight:800;color:var(--gd);line-height:1;}
         .stat-u{font-size:.92rem;font-weight:600;color:var(--gm);margin-left:3px;}
         .stat-l{font-size:.75rem;color:var(--ts);margin-top:7px;font-weight:500;}
 
-        /* SECTION CARD (Arayı açmak için margin-bottom eklendi) */
-        .sc{background:var(--card);backdrop-filter:blur(14px);border-radius:20px;box-shadow:var(--sh);border:1px solid var(--border);border-left:4px solid var(--accent);margin-bottom:64px;position:relative;overflow:hidden;transition:transform .4s ease,box-shadow .4s ease;}
-        .sc:hover{transform:translateY(-4px);box-shadow:var(--shh);}
+        /* ✨ SECTION CARD ANA YAPISI (BEYAZ KUTU / PİKSELLENME ÇÖZÜMÜ) ✨ */
+        .sc{
+          background:var(--card);
+          backdrop-filter:blur(14px);
+          -webkit-backdrop-filter:blur(14px); /* Safari / iOS Desteği */
+          border-radius:20px;
+          box-shadow:var(--sh);
+          border:1px solid var(--border);
+          border-left:4px solid var(--accent);
+          margin-bottom:64px;
+          position:relative;
+          overflow:hidden;
+          transition:transform .4s ease,box-shadow .4s ease;
+          transform: translateZ(0); /* Ekran kartı (GPU) hızlandırması */
+          backface-visibility: hidden;
+        }
+        .sc:hover{transform:translate3d(0,-4px,0);box-shadow:var(--shh);}
         .sc-shine{position:absolute;top:0;left:-120%;width:55%;height:100%;background:linear-gradient(to right,rgba(255,255,255,0),rgba(255,255,255,.32),rgba(255,255,255,0));transform:skewX(-20deg);transition:left .65s ease;pointer-events:none;z-index:1;}
         .sc:hover .sc-shine{left:180%;}
         
@@ -389,7 +409,7 @@ export default function StrategyPage() {
         .pill-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-top:18px;}
         .pill-grid.two-col{grid-template-columns:repeat(2,1fr);}
         .pill{display:flex;align-items:center;gap:12px;padding:11px 16px;border-radius:12px;border:1px solid;transition:background .22s,transform .22s,box-shadow .22s;}
-        .pill:hover{transform:translateY(-2px);box-shadow:0 6px 18px rgba(0,0,0,.08);}
+        .pill:hover{transform:translate3d(0,-2px,0);box-shadow:0 6px 18px rgba(0,0,0,.08);}
 
         .blue-pill  {border-color:rgba(37,99,235,.2); background:rgba(37,99,235,.06);}
         .blue-pill:hover{background:rgba(37,99,235,.11);}
@@ -409,7 +429,7 @@ export default function StrategyPage() {
         /* ── PRIORITY GRID ── */
         .priority-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:18px;}
         .prio-item{display:flex;flex-direction:column;align-items:flex-start;gap:12px;padding:20px 18px;background:rgba(255,255,255,.78);border:1px solid rgba(0,0,0,.06);border-radius:14px;transition:background .25s,transform .25s,box-shadow .25s;}
-        .prio-item:hover{background:#fff;transform:translateY(-3px);box-shadow:0 8px 24px rgba(0,0,0,.07);}
+        .prio-item:hover{background:#fff;transform:translate3d(0,-3px,0);box-shadow:0 8px 24px rgba(0,0,0,.07);}
         .prio-icon-wrap{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;}
         .orange-bg-light{background:rgba(234,88,12,.1);}
         .prio-title{font-size:.88rem;font-weight:700;color:var(--td);}
@@ -426,6 +446,10 @@ export default function StrategyPage() {
         }
         @media(max-width:640px){
           .hero{min-height:100svh;}
+          
+          /* ✨ MOBİLDE GPU'YU ÇÖKERTEN EFEKTİ SAKLIYORUZ ✨ */
+          .hero-noise { display: none; }
+          
           .content-section{padding:36px 0 60px;}
           .stats{grid-template-columns:1fr 1fr;gap:10px;}
           .pill-grid{grid-template-columns:1fr;}

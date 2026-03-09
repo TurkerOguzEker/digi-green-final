@@ -238,13 +238,17 @@ export default function PartnersPage() {
           100% { transform: rotate(360deg); } 
         }
 
-        /* REVEAL */
-        .reveal { opacity:0; transition:all 1s cubic-bezier(0.165,0.84,0.44,1); }
-        .reveal.active { opacity:1; transform:translate(0,0); }
-        .reveal-left { transform:translateX(-80px); }
-        .reveal-right { transform:translateX(80px); }
-        .reveal-up { opacity:0; transform:translateY(30px); transition:all 0.8s ease; }
-        .reveal-up.active { opacity:1; transform:translateY(0); }
+        /* ✨ REVEAL (GPU HIZLANDIRMASI EKLENDİ) ✨ */
+        .reveal { 
+          opacity:0; 
+          transition:all 1s cubic-bezier(0.165,0.84,0.44,1); 
+          will-change: transform, opacity; 
+        }
+        .reveal.active { opacity:1; transform:translate3d(0,0,0); }
+        .reveal-left { transform:translate3d(-80px,0,0); }
+        .reveal-right { transform:translate3d(80px,0,0); }
+        .reveal-up { opacity:0; transform:translate3d(0,30px,0); transition:all 0.8s ease; }
+        .reveal-up.active { opacity:1; transform:translate3d(0,0,0); }
 
         /* HERO */
         .page-header {
@@ -287,15 +291,24 @@ export default function PartnersPage() {
         /* ── KARTLAR ARASI ─────────────────────────────────── */
         .partners-list { display:flex; flex-direction:column; gap: 28px; padding: 0; }
 
+        /* ✨ PARTNER ROW (BEYAZ KUTUYU ENGELLEYEN AYARLAR) ✨ */
         .partner-row {
           display:flex; align-items:stretch; gap:0;
-          background:var(--card-bg); backdrop-filter:blur(14px);
+          background:var(--card-bg); 
+          backdrop-filter:blur(14px);
+          -webkit-backdrop-filter:blur(14px);
           border-radius:20px; box-shadow:var(--shadow-card);
           transition:transform 0.4s ease, box-shadow 0.4s ease;
           position:relative; z-index:2;
           border:1px solid var(--border); overflow:hidden;
+          transform: translateZ(0); 
+          backface-visibility: hidden;
         }
-        .partner-row:hover { transform:translateY(-4px); box-shadow:var(--shadow-hover); border-color:rgba(39,174,96,0.3); }
+        .partner-row:hover { 
+          transform:translate3d(0, -4px, 0); 
+          box-shadow:var(--shadow-hover); 
+          border-color:rgba(39,174,96,0.3); 
+        }
         .partner-row.row-reverse { flex-direction:row-reverse; }
 
         .card-shine { position:absolute; top:0; left:-120%; width:60%; height:100%; background:linear-gradient(to right,rgba(255,255,255,0) 0%,rgba(255,255,255,0.4) 50%,rgba(255,255,255,0) 100%); transform:skewX(-20deg); transition:left 0.7s ease; pointer-events:none; z-index:1; }
