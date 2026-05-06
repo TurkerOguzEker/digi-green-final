@@ -108,13 +108,13 @@ export default function RoadmapPage() {
           <section id="icerik" className="content-section">
             <div className="container" style={{maxWidth:'1200px'}}>
 
-              <div className="sec-head reveal-up">
+              <div className="sec-head reveal-up active">
                 <p className="sec-label">{getDynamicContent('roadmap_sec_label', 'roadmap.section.part')}</p>
                 <h2 className="sec-title">{getDynamicContent('roadmap_sec_title', 'roadmap.section.title')}</h2>
               </div>
 
               {/* TABLO ALANI */}
-              <div className="table-wrapper reveal-up" style={{transitionDelay:'.15s'}}>
+              <div className="table-wrapper reveal-up active" style={{transitionDelay:'.15s'}}>
                 <div className="table-responsive">
                     <table className="plan-table">
                         <thead>

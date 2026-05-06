@@ -21,7 +21,44 @@ export const translations = {
         consortium: { loading: "Hazırlanıyor…" },
         impact: { loading: "Hazırlanıyor…" },
         plan: { loading: "Hazırlanıyor…" },
-        roadmap: { loading: "Hazırlanıyor…" },
+        roadmap: {
+            loading: "Hazırlanıyor…",
+            hero: {
+                eyebrow: 'Proje Zaman Çizelgesi',
+                title1: 'Proje Yol',
+                title2: 'Haritası',
+                descDefault: '24 aylık proje sürecinde gerçekleştirilecek tüm faaliyetler ve uygulama adımları.',
+                scrollBtn: 'Aşağı Kaydır'
+            },
+            section: {
+                part: 'V. Bölüm',
+                title: 'Detaylı Faaliyet Planı'
+            },
+            table: { header: 'Faaliyet / Ay' },
+            tasks: {
+                task1:  'Proje Planlama ve Hazırlık Çalışmaları',
+                task2:  'Proje Başlangıç Toplantısı',
+                task3:  "Liepaja'ya Teknik Ziyaret",
+                task4:  "Cascais'e Teknik Ziyaret",
+                task5:  'İyi Uygulama Raporlarının Hazırlanması',
+                task6:  'Ara Raporların Hazırlanması ve Değerlendirme',
+                task7:  'SECAP Atölye Çalışması ve Hazırlık',
+                task8:  'SECAP Bilgilendirme Toplantıları',
+                task9:  'NKÜ Hava Kirliliği Cihazı Temini ve Montajı',
+                task10: 'İyi Uygulama Verileri ve E-Öğrenme Modülü',
+                task11: 'Kapaklı Mobil Uygulamasının Hazırlanması',
+                task12: 'Liepaja Akıllı Atık Kutuları Temini',
+                task13: 'Liepaja Mobil Uygulama Modülü',
+                task14: 'Kapaklı Geri Dönüşüm İade Makineleri Kurulumu',
+                task15: 'Liepaja E-Öğrenme Kursu',
+                task16: 'Vatandaşlara Yönelik Farkındalık',
+                task17: 'Belediye Personeline Yönelik Farkındalık',
+                task18: 'Bilgilendirici Materyallerin Hazırlanması',
+                task19: 'Belediye Saha Personeli Eğitim Seminerleri',
+                task20: 'Vatandaş Etkinlikleri ve Teşvik',
+                task21: 'Son Değerlendirme ve Kapanış'
+            }
+        },
         strategy: { loading: "Hazırlanıyor…" },
         about: { loading: "Hazırlanıyor…" },
         activities: {
@@ -105,7 +142,44 @@ export const translations = {
         consortium: { loading: "Loading…" },
         impact: { loading: "Loading…" },
         plan: { loading: "Loading…" },
-        roadmap: { loading: "Loading…" },
+        roadmap: {
+            loading: "Loading…",
+            hero: {
+                eyebrow: 'Project Timeline',
+                title1: 'Project',
+                title2: 'Roadmap',
+                descDefault: 'All activities and implementation steps across the 24-month project period.',
+                scrollBtn: 'Scroll Down'
+            },
+            section: {
+                part: 'Section V',
+                title: 'Detailed Activity Plan'
+            },
+            table: { header: 'Activity / Month' },
+            tasks: {
+                task1:  'Project Planning & Preparation',
+                task2:  'Project Kick-off Meeting',
+                task3:  'Technical Visit to Liepaja',
+                task4:  'Technical Visit to Cascais',
+                task5:  'Good Practice Reports',
+                task6:  'Interim Reports & Evaluation',
+                task7:  'SECAP Workshop & Preparation',
+                task8:  'SECAP Information Sessions',
+                task9:  'NKÜ Air Pollution Device Deployment',
+                task10: 'Good Practice Data & E-Learning Module',
+                task11: 'Kapaklı Mobile App Build',
+                task12: 'Liepaja Smart Bin Procurement',
+                task13: 'Liepaja Mobile App Module',
+                task14: 'Kapaklı Reverse Vending Machines',
+                task15: 'Liepaja E-Learning Course',
+                task16: 'Citizen Awareness',
+                task17: 'Municipal Staff Awareness',
+                task18: 'Informational Materials',
+                task19: 'Municipal Field Staff Trainings',
+                task20: 'Citizen Events & Promotion',
+                task21: 'Final Evaluation & Closing'
+            }
+        },
         strategy: { loading: "Loading…" },
         about: { loading: "Loading…" },
         activities: {
