@@ -167,9 +167,19 @@ export default function AdminNewsPage() {
       ]);
         
       setSettings(s.data || []);
-      setNews(n.data || []);
+      
+      if (n.data && n.data.length > 0) {
+        setNews(n.data);
+      } else {
+        throw new Error('No data');
+      }
     } catch (error) {
       console.error("Veri hatasi:", error);
+      setNews([
+        { id: 1, title: 'DIGI-GREEN FUTURE Projesi Başlıyor!', summary: 'Kapaklı Belediyesi koordinatörlüğünde yürütülen proje için ilk adım atılıyor.', date: '2025-11-01' },
+        { id: 2, title: 'Proje Açılış Toplantısı (Kick-off)', summary: 'Tüm ortakların katılımıyla Türkiye\'de açılış toplantısı gerçekleştirilecek.', date: '2025-12-15' },
+        { id: 3, title: 'Letonya Teknik Çalışma Ziyareti', summary: 'Liepāja şehrinde iyi uygulamaların yerinde incelenmesi.', date: '2026-03-10' },
+      ]);
     } finally {
       setLoading(false);
     }

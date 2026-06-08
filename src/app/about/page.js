@@ -108,10 +108,37 @@ export default function AboutPage() {
 
   useEffect(() => {
     async function fetchData() {
-      const { data } = await supabase.from('settings').select('*');
-      if (data) {
-        const map = data.reduce((acc, item) => ({ ...acc, [item.key]: item.value }), {});
-        setContent(map);
+      try {
+        const { data } = await supabase.from('settings').select('*');
+        if (data && data.length > 0) {
+          const map = data.reduce((acc, item) => ({ ...acc, [item.key]: item.value }), {});
+          setContent(map);
+        } else {
+          throw new Error('No settings');
+        }
+      } catch (e) {
+        console.warn("Settings çekilemedi, offline yedek yükleniyor...", e);
+        setContent({
+          about_hero_eyebrow: "HAKKIMIZDA",
+          about_hero_title1: "Vatandaş Odaklı",
+          about_hero_title2: "Yerel Yeşil",
+          about_hero_title3: "Gelecek",
+          about_page_desc: "DIGI-GREEN FUTURE Projesi",
+          about_vision_label: "VİZYON",
+          about_vision_title: "Geleceğe Dijital Dokunuş",
+          about_vision_text: "Daha temiz ve yeşil bir dünya için dijitalleşmeyi kullanıyoruz.",
+          about_stats_label: "RAKAMLAR",
+          about_stats_title: "Hedeflenen Etki",
+          about_target_label: "HEDEF KİTLE",
+          about_target_title: "Kimlere Ulaşıyoruz?",
+          about_spec_label: "PROJE",
+          about_spec_title: "Özet Künye",
+          about_cta_badge: "BİZE KATILIN",
+          about_cta_title1: "Geleceği Birlikte",
+          about_cta_title2: "İnşa Edelim",
+          about_cta_desc: "Sorularınız ve görüşleriniz için iletişim kurabilirsiniz.",
+          about_cta_button: "İLETİŞİME GEÇ"
+        });
       }
       setLoading(false);
     }
@@ -200,23 +227,23 @@ export default function AboutPage() {
   const tableRows = [
     { 
       label: getSpecValue('about_project_name_label', 'Proje Adı'), 
-      value: getSpecValue('about_project_name', 'DIGI-GREEN FUTURE') 
+      value: getSpecValue('about_project_name', 'Vatandaş Odaklı Yerel Yeşil Gelecek için Dijital Dönüşüm') 
     },
     { 
-      label: getSpecValue('about_project_code_label', 'Proje Kodu'), 
-      value: getSpecValue('about_project_code', '2023-1-TR01-KA220-ADU-00015421') 
+      label: getSpecValue('about_project_code_label', 'Kısaltma'), 
+      value: getSpecValue('about_project_code', 'DIGI-GREEN FUTURE') 
     },
     { 
       label: getSpecValue('about_project_program_label', 'Program'), 
-      value: getSpecValue('about_project_program', 'Erasmus+ Yetişkin Eğitimi') 
+      value: getSpecValue('about_project_program', 'Erasmus+ Yetişkin Eğitimi (KA220-ADU)') 
     },
     { 
       label: getSpecValue('about_project_duration_label', 'Süre'), 
-      value: getSpecValue('about_project_duration', '24 Ay (Aralık 2023 - Kasım 2025)') 
+      value: getSpecValue('about_project_duration', '24 Ay (1 Kasım 2025 – 31 Ekim 2027)') 
     },
     { 
       label: getSpecValue('about_project_budget_label', 'Bütçe'), 
-      value: getSpecValue('about_project_budget', '250.000 €') 
+      value: getSpecValue('about_project_budget', '250.000,00 €') 
     },
   ];
 

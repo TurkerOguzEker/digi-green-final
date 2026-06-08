@@ -89,6 +89,34 @@ export default function Home() {
         }
       } catch (error) {
         console.error("Veri hatası:", error);
+        setContent({
+          home_hero_eyebrow: "DİJİTAL DÖNÜŞÜM",
+          hero_title: "Yeşil Bir Gelecek",
+          hero_desc: "Kapaklı Belediyesi öncülüğünde, sürdürülebilir bir gelecek için teknoloji ve çevreyi buluşturuyoruz.",
+          home_hero_btn1: "Neler Yapıyoruz?",
+          home_hero_btn2: "Projeyi Keşfet",
+          home_summary_1_val: "24",
+          home_summary_1_label: "AY SÜRE",
+          home_summary_2_val: "250K",
+          home_summary_2_label: "EURO BÜTÇE",
+          home_summary_3_val: "KA220",
+          home_summary_3_label: "ERASMUS+",
+          home_summary_4_val: "3",
+          home_summary_4_label: "ORTAK ÜLKE",
+          home_about_badge_val: "24 Ay",
+          home_about_badge: "Proje Süresi",
+          home_about_eyebrow: "HAKKIMIZDA",
+          home_about_title: "Dijital Yeşil Dönüşüm",
+          home_about_text: "Daha temiz bir çevre ve bilinçli bir toplum için yola çıktık.",
+          home_target_main_title: "Kimlere Ulaşıyoruz?",
+          home_target_main_subtitle: "Projemizin faydalanıcıları",
+          home_eco_main_title1: "Dijital",
+          home_eco_main_title2: "Ekosistem",
+          home_eco_main_subtitle: "Proje kapsamında geliştirilen yenilikçi çözümler",
+          home_cta_title: "Geleceği Birlikte İnşa Edelim",
+          home_cta_text: "Projemiz hakkında daha fazla bilgi almak için bizimle iletişime geçin.",
+          home_cta_btn: "Bize Ulaşın"
+        });
       } finally {
         setIsLoading(false);
       }

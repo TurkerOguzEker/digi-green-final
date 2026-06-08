@@ -16,16 +16,44 @@ export default function PartnersPage() {
   useEffect(() => {
     async function fetchData() {
       // Önce ayarları çek
-      const { data: settingsData } = await supabase.from('settings').select('*');
-      if (settingsData) {
-        const map = {}; settingsData.forEach(item => map[item.key] = item.value);
-        setContent(map);
+      try {
+        const { data: settingsData } = await supabase.from('settings').select('*');
+        if (settingsData && settingsData.length > 0) {
+          const map = {}; settingsData.forEach(item => map[item.key] = item.value);
+          setContent(map);
+        } else {
+          throw new Error('No settings');
+        }
+      } catch (e) {
+        console.warn("Settings çekilemedi, offline yedek yükleniyor...", e);
+        setContent({
+          partners_hero_eyebrow: "AĞIMIZ",
+          partners_hero_title1: "Proje",
+          partners_hero_title2: "Ortakları",
+          partners_page_desc: "Daha yeşil bir gelecek için uluslararası işbirliği ile çalışıyoruz.",
+          partners_hero_scroll: "AŞAĞI KAYDIR",
+          partners_sec_label: "TÜM ORTAKLAR",
+          partners_sec_title: "Ağımızdaki Kurumlar"
+        });
       }
 
-      // Sonra ortakları çek
-      const { data: partnersData } = await supabase.from('partners').select('*').order('id');
-      if (partnersData) setPartners(partnersData);
-      
+      // Sonra ortakları çek (Fallback destekli)
+      try {
+        const { data: partnersData } = await supabase.from('partners').select('*').order('id');
+        if (partnersData && partnersData.length > 0) {
+          setPartners(partnersData);
+        } else {
+          throw new Error('No partners data');
+        }
+      } catch (err) {
+        setPartners([
+          { id: 1, name: 'Kapaklı Belediyesi', role: 'Koordinatör / Başvuru Sahibi', country: 'Türkiye', description: 'Projenin yerel uygulayıcısı. Genç nüfusu ve sanayi sorunlarıyla projenin ana öğrenen ve uygulayan kurumudur.' },
+          { id: 2, name: 'Liepājas Centrālā administrācija', role: 'Ortak', country: 'Letonya', description: '100 İklim Nötr Şehir misyonu üyesi. Akıllı şehir ve atık sensörleri konularında Kapaklı\'ya rol model olacaktır.' },
+          { id: 3, name: 'Cascais Belediyesi / EMAC', role: 'Ortak', country: 'Portekiz', description: 'İklim değişikliğiyle uzun vadeli mücadele eden, doğa tabanlı çözümler ve çevre eğitiminde uzman rehber ortak.' },
+          { id: 4, name: 'Tekirdağ Namık Kemal Üniversitesi', role: 'Akademik Ortak', country: 'Türkiye', description: 'Akademik ve teknik omurga. Veri analizi, SECAP hazırlanması ve mobil uygulamaların teknik geliştirmesine liderlik edecektir.' },
+          { id: 5, name: 'Kampüs Sivil Toplum Derneği', role: 'Ortak', country: 'Türkiye', description: 'Gençlerin ve dezavantajlı grupların projeye katılımını sağlama, eğitim materyali ve içerik üretme.' },
+        ]);
+      }
       setLoading(false);
     }
     fetchData();

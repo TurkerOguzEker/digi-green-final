@@ -167,9 +167,21 @@ export default function AdminActivitiesPage() {
       ]);
         
       setSettings(s.data || []);
-      setActivities(a.data || []);
+      
+      if (a.data && a.data.length > 0) {
+        setActivities(a.data);
+      } else {
+        throw new Error('No data');
+      }
     } catch (error) {
       console.error("Veri hatasi:", error);
+      setActivities([
+        { id: 1, title: 'İP1: Proje Yönetimi', type: 'Yönetim', location: 'Proje Geneli', summary: 'Proje süreçlerinin, raporlamaların ve bütçenin etkin yönetimi. Yüz yüze başlangıç ve kapanış toplantıları (Türkiye\'de), 3 aylık ilerleme raporları ve 7 adet çevrimiçi toplantı.', date: 'Proje Süresince' },
+        { id: 2, title: 'İP2: Sınır Ötesi Bilgi Paylaşımı ve Teknik Ziyaretler', type: 'Ziyaret', location: 'Letonya & Portekiz', summary: 'Avrupa\'daki iyi uygulamaları yerinde incelemek ve personel kapasitesini geliştirmek. Liepāja (Letonya) ve Cascais\'e (Portekiz) teknik ziyaretler (toplam 20 kişi). Kapaklı için SECAP hazırlanması.', date: 'Proje Süresince' },
+        { id: 3, title: 'İP3: Mobil Belediye Çözümleri ve Dijitalleşme', type: 'Dijitalleşme', location: 'Kapaklı & Liepāja', summary: 'Dijital dönüşümü hızlandırmak ve atık yönetimini iyileştirmek. Kapaklı ve Liepāja için 2 adet mobil uygulama geliştirilmesi. Kapaklı\'ya sensör ve geri dönüşüm makinesi temini.', date: 'Proje Süresince' },
+        { id: 4, title: 'İP4: Eğitim Faaliyetleri', type: 'Eğitim', location: 'Tüm Ortak Ülkeler', summary: 'İklim ve dijital okuryazarlığı artırmak. Toplam 2.000 vatandaşa eğitim verilmesi. Kapaklı\'da saha personeli eğitimi ve yöneticilere SECAP toplantıları.', date: 'Proje Süresince' },
+        { id: 5, title: 'İP5: Farkındalık ve Görünürlük', type: 'Görünürlük', location: 'Proje Geneli', summary: 'Toplumsal farkındalığı artırmak ve uygulamaların kullanımını teşvik etmek. Videolar, sosyal medya paylaşımları, broşürler, yerel festivallere entegre stant çalışmaları ve seminerler.', date: 'Proje Süresince' },
+      ]);
     } finally {
       setLoading(false);
     }

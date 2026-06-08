@@ -29,22 +29,50 @@ export default function ActivitiesClient() {
   useEffect(() => {
     async function fetchInitialData() {
       // 1. Ayarları Çek
-      const { data: settingsData } = await supabase.from('settings').select('*');
-      if (settingsData) {
-        const map = {}; settingsData.forEach(item => map[item.key] = item.value);
-        setContent(map);
+      try {
+        const { data: settingsData } = await supabase.from('settings').select('*');
+        if (settingsData && settingsData.length > 0) {
+          const map = {}; settingsData.forEach(item => map[item.key] = item.value);
+          setContent(map);
+        } else {
+          throw new Error('No settings');
+        }
+      } catch (e) {
+        console.warn("Settings çekilemedi, offline yedek yükleniyor...", e);
+        setContent({
+          activities_hero_eyebrow: "SÜREÇLER",
+          activities_hero_title1: "Faaliyetler &",
+          activities_hero_title2: "Etkinlikler",
+          activities_page_desc: "Proje kapsamında gerçekleştirdiğimiz toplantılar ve faaliyetleri buradan inceleyebilirsiniz.",
+          activities_hero_scroll: "AŞAĞI KAYDIR",
+          activities_sec_label: "TÜM FAALİYETLER",
+          activities_sec_title: "Gerçekleşen Etkinlikler"
+        });
       }
 
-      // 2. İlk Faaliyetleri Çek
-      const { data: actData } = await supabase
-        .from('activities')
-        .select('*')
-        .order('date', { ascending: false })
-        .range(0, PAGE_SIZE - 1);
+      // 2. İlk Faaliyetleri Çek (Fallback destekli)
+      try {
+        const { data: actData } = await supabase
+          .from('activities')
+          .select('*')
+          .order('date', { ascending: false })
+          .range(0, PAGE_SIZE - 1);
 
-      if (actData) {
-        setActivities(actData);
-        setHasMore(actData.length === PAGE_SIZE);
+        if (actData && actData.length > 0) {
+          setActivities(actData);
+          setHasMore(actData.length === PAGE_SIZE);
+        } else {
+          throw new Error('No activities data');
+        }
+      } catch (err) {
+        setActivities([
+          { id: 1, title: 'İP1: Proje Yönetimi', type: 'Yönetim', location: 'Proje Geneli', summary: 'Proje süreçlerinin, raporlamaların ve bütçenin etkin yönetimi. Yüz yüze başlangıç ve kapanış toplantıları (Türkiye\'de), 3 aylık ilerleme raporları ve 7 adet çevrimiçi toplantı.', date: 'Proje Süresince' },
+          { id: 2, title: 'İP2: Sınır Ötesi Bilgi Paylaşımı ve Teknik Ziyaretler', type: 'Ziyaret', location: 'Letonya & Portekiz', summary: 'Avrupa\'daki iyi uygulamaları yerinde incelemek ve personel kapasitesini geliştirmek. Liepāja (Letonya) ve Cascais\'e (Portekiz) teknik ziyaretler (toplam 20 kişi). Kapaklı için SECAP hazırlanması.', date: 'Proje Süresince' },
+          { id: 3, title: 'İP3: Mobil Belediye Çözümleri ve Dijitalleşme', type: 'Dijitalleşme', location: 'Kapaklı & Liepāja', summary: 'Dijital dönüşümü hızlandırmak ve atık yönetimini iyileştirmek. Kapaklı ve Liepāja için 2 adet mobil uygulama geliştirilmesi. Kapaklı\'ya sensör ve geri dönüşüm makinesi temini.', date: 'Proje Süresince' },
+          { id: 4, title: 'İP4: Eğitim Faaliyetleri', type: 'Eğitim', location: 'Tüm Ortak Ülkeler', summary: 'İklim ve dijital okuryazarlığı artırmak. Toplam 2.000 vatandaşa eğitim verilmesi. Kapaklı\'da saha personeli eğitimi ve yöneticilere SECAP toplantıları.', date: 'Proje Süresince' },
+          { id: 5, title: 'İP5: Farkındalık ve Görünürlük', type: 'Görünürlük', location: 'Proje Geneli', summary: 'Toplumsal farkındalığı artırmak ve uygulamaların kullanımını teşvik etmek. Videolar, sosyal medya paylaşımları, broşürler, yerel festivallere entegre stant çalışmaları ve seminerler.', date: 'Proje Süresince' },
+        ]);
+        setHasMore(false);
       }
       
       setLoading(false); // Yükleme bitti, ekranı aç!

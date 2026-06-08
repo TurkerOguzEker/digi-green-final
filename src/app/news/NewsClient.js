@@ -30,10 +30,25 @@ export default function NewsClient() {
   useEffect(() => {
     async function fetchInitialData() {
       // 1. Ayarları Çek
-      const { data: settingsData } = await supabase.from('settings').select('*');
-      if (settingsData) {
-        const map = {}; settingsData.forEach(item => map[item.key] = item.value);
-        setContent(map);
+      try {
+        const { data: settingsData } = await supabase.from('settings').select('*');
+        if (settingsData && settingsData.length > 0) {
+          const map = {}; settingsData.forEach(item => map[item.key] = item.value);
+          setContent(map);
+        } else {
+          throw new Error('No settings');
+        }
+      } catch (e) {
+        console.warn("Settings çekilemedi, offline yedek yükleniyor...", e);
+        setContent({
+          news_hero_eyebrow: "GÜNCEL",
+          news_hero_title1: "Haberler &",
+          news_hero_title2: "Duyurular",
+          news_page_desc: "Projemizle ilgili en güncel gelişmeleri buradan takip edebilirsiniz.",
+          news_hero_scroll: "AŞAĞI KAYDIR",
+          news_sec_label: "TÜM HABERLER",
+          news_sec_title: "Son Gelişmeler"
+        });
       }
 
       // 2. İlk Haberleri Çek

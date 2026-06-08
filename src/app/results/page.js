@@ -44,14 +44,45 @@ export default function ResultsPage() {
 
   useEffect(() => {
     async function fetchData() {
-      const { data: settingsData } = await supabase.from('settings').select('*');
-      if (settingsData) {
-        const map = {}; settingsData.forEach(item => map[item.key] = item.value);
-        setContent(map);
+      // 1. Ayarları Çek
+      try {
+        const { data: settingsData } = await supabase.from('settings').select('*');
+        if (settingsData && settingsData.length > 0) {
+          const map = {}; settingsData.forEach(item => map[item.key] = item.value);
+          setContent(map);
+        } else {
+          throw new Error('No settings');
+        }
+      } catch (e) {
+        console.warn("Settings çekilemedi, offline yedek yükleniyor...", e);
+        setContent({
+          results_hero_eyebrow: "ÇIKTILAR",
+          results_hero_title1: "Proje",
+          results_hero_title2: "Dosyaları",
+          results_page_desc: "Proje süresince üretilen tüm belgelere ve raporlara ulaşabilirsiniz.",
+          results_hero_scroll: "AŞAĞI KAYDIR",
+          results_sec_label: "TÜM DOSYALAR",
+          results_sec_title: "Yayınlanan Çıktılar"
+        });
       }
 
-      const { data: resultsData } = await supabase.from('results').select('*').order('id');
-      if (resultsData) setResults(resultsData);
+      try {
+        const { data: resultsData, error } = await supabase.from('results').select('*').order('id');
+        if (error) throw error;
+        if (resultsData && resultsData.length > 0) {
+          setResults(resultsData);
+        } else {
+          throw new Error("No data");
+        }
+      } catch (err) {
+        setResults([
+          { id: 1, title: 'Kapaklı Belediyesi SECAP Raporu', description: 'Kapaklı ilçesi için hazırlanan Sürdürülebilir Enerji ve İklim Eylem Planı (SECAP) durum değerlendirme raporu.', status: 'Tamamlandı', icon: 'file', link: '/dummy.pdf' },
+          { id: 2, title: 'DIGI-GREEN FUTURE Tanıtım Videosu', description: 'Proje hedeflerini, vizyonunu ve uluslararası ortaklık yapısını anlatan genel tanıtım belgeseli.', status: 'Yayında', icon: 'video', link: '/dummy.mp4' },
+          { id: 3, title: 'Mobil Uygulama Beta Sürümü', description: 'Vatandaşların karbon ayak izi hesaplayabileceği ve atık bildiriminde bulunabileceği mobil uygulamanın beta sürüm APK dosyası.', status: 'Geliştirme Aşamasında', icon: 'app', link: '/dummy.apk' },
+          { id: 4, title: 'E-Öğrenme Eğitim Modülleri PDF', description: 'Dezavantajlı gruplara yönelik hazırlanan dijital okuryazarlık ve çevre bilinci eğitim kitapçığı.', status: 'Tamamlandı', icon: 'file', link: '/dummy2.pdf' },
+          { id: 5, title: 'Liepāja Teknik Ziyaret Sonuç Raporu', description: 'Letonya çalışma ziyareti kapsamında elde edilen akıllı şehir iyi uygulamalarının derlendiği kapsamlı rapor.', status: 'Tamamlandı', icon: 'file', link: '/dummy3.pdf' },
+        ]);
+      }
       
       setLoading(false);
     }

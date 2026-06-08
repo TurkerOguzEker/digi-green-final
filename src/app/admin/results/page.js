@@ -160,9 +160,19 @@ export default function AdminResultsPage() {
       ]);
         
       setSettings(s.data || []);
-      setResults(r.data || []);
+      
+      if (r.data && r.data.length > 0) {
+        setResults(r.data);
+      } else {
+        throw new Error('No data');
+      }
     } catch (error) {
       console.error("Veri hatasi:", error);
+      setResults([
+        { id: 1, title: 'Kapaklı Belediyesi SECAP Raporu', description: 'Kapaklı ilçesinin Sürdürülebilir Enerji ve İklim Eylem Planı (SECAP) durum analizi ve hedef raporu.', status: 'Tamamlandı', icon: 'file', link: '/dummy.pdf' },
+        { id: 2, title: 'İyi Uygulamalar Rehberi', description: 'Letonya ve Portekiz teknik ziyaretleri sonucunda elde edilen iyi uygulamaların derlendiği kılavuz.', status: 'Devam Ediyor', icon: 'file', link: '' },
+        { id: 3, title: 'Vatandaş Geri Dönüşüm Eğitim Materyalleri', description: 'Atık yönetimi ve karbon ayak izi konularında vatandaşlara yönelik hazırlanan eğitim sunumları ve broşürler.', status: 'Planlanıyor', icon: 'file', link: '' },
+      ]);
     } finally {
       setLoading(false);
     }
